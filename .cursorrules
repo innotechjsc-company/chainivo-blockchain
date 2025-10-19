@@ -1,0 +1,81 @@
+# Chainivo Blockchain - Cursor Rules
+
+## State Management with Zustand
+
+This project uses Zustand v5.0.8 for state management.
+
+### Available Stores
+
+Import from `@/stores`:
+
+```typescript
+// User Store - Authentication & Profile
+import { useUserStore, useUser, useIsAuthenticated, useUserActions } from '@/stores'
+
+// Wallet Store - Crypto Wallet & Transactions
+import { useWalletStore, useWallet, useTransactions, useWalletActions } from '@/stores'
+
+// Investment Store - Portfolio Management
+import { useInvestmentStore, useInvestments, usePortfolioSummary, useInvestmentActions } from '@/stores'
+
+// NFT Store - NFT Marketplace
+import { useNFTStore, useNFTs, useUserNFTs, useSelectedNFT, useNFTActions } from '@/stores'
+
+// Mission Store - Daily Missions
+import { useMissionStore, useMissions, useActiveMissions, useDailyStreak, useMissionActions } from '@/stores'
+
+// Notification Store - In-App Notifications
+import { useNotificationStore, useNotifications, useUnreadCount, useNotificationActions } from '@/stores'
+```
+
+### Best Practices
+
+1. **Use optimized selectors** to prevent unnecessary re-renders
+2. **Always handle errors** in async actions
+3. **Use TypeScript types** from `@/stores/types`
+4. **Check loading states** when displaying UI
+5. **Use DevTools** for debugging store state
+
+### Example Usage
+
+```typescript
+'use client'
+
+import { useUser, useUserStore } from '@/stores'
+
+export default function Component() {
+  // Optimized selector - only re-renders when user changes
+  const user = useUser()
+  
+  // Access actions
+  const { login, logout, isLoading } = useUserStore()
+  
+  return <div>Welcome, {user?.username}!</div>
+}
+```
+
+### Documentation
+
+- See `ZUSTAND_GUIDE.md` for complete documentation
+- See `ZUSTAND_CHEATSHEET.md` for quick reference
+- See `src/stores/README.md` for store reference
+- Visit `/examples/zustand-demo` for live examples
+
+### Store Structure
+
+All stores follow this pattern:
+- State properties (data, isLoading, error)
+- Action methods (fetch, add, update, delete)
+- Clear error handling
+- TypeScript strict typing
+- Persisted to localStorage (where applicable)
+- Redux DevTools integration
+
+### When Creating Components
+
+- Import only what you need from stores
+- Use selectors for individual values
+- Handle loading and error states
+- Clear errors on unmount if needed
+- Use `'use client'` directive for client components
+

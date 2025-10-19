@@ -10,6 +10,7 @@ A modern blockchain project built with **Next.js 15**, **React 19**, **Tailwind 
 - **Tailwind CSS v4** - Utility-first CSS framework
 - **shadcn/ui** - High-quality UI components
 - **Radix UI** - Accessible component primitives
+- **Zustand 5.0.8** - Lightweight state management
 
 ## ✨ Features
 
@@ -19,6 +20,8 @@ A modern blockchain project built with **Next.js 15**, **React 19**, **Tailwind 
 - ✅ **Responsive Design** - Mobile-first approach
 - ✅ **Accessibility** - WCAG compliant components
 - ✅ **Customizable** - Easy theme customization
+- ✅ **State Management** - Zustand with TypeScript, persist & DevTools
+- ✅ **6 Pre-configured Stores** - User, Wallet, Investment, NFT, Mission, Notification
 
 ## 📦 Installed shadcn/ui Components
 
@@ -66,7 +69,27 @@ npm run build
 npm start
 ```
 
-## 📖 shadcn/ui Documentation
+## 📖 Documentation
+
+### State Management with Zustand
+
+For detailed information about Zustand configuration and usage, see [ZUSTAND_GUIDE.md](./ZUSTAND_GUIDE.md).
+
+**Quick Start:**
+```typescript
+import { useUser, useWallet } from '@/stores'
+
+function MyComponent() {
+  const user = useUser()
+  const wallet = useWallet()
+  
+  return <div>Welcome, {user?.username}!</div>
+}
+```
+
+**Demo:** Visit `/examples/zustand-demo` to see all stores in action.
+
+### shadcn/ui Components
 
 For detailed information about shadcn/ui setup and usage, see [SHADCN_SETUP.md](./SHADCN_SETUP.md).
 
@@ -120,16 +143,32 @@ import { Button } from "@/components/ui/button";
 chainivo-blockchain/
 ├── src/
 │   ├── app/
-│   │   ├── globals.css       # Global styles & theme variables
-│   │   ├── layout.tsx        # Root layout with dark mode
-│   │   └── page.tsx          # Home page
+│   │   ├── examples/
+│   │   │   ├── page.tsx           # Component examples
+│   │   │   └── zustand-demo/      # Zustand demo page
+│   │   ├── globals.css            # Global styles & theme variables
+│   │   ├── layout.tsx             # Root layout with dark mode
+│   │   └── page.tsx               # Home page
 │   ├── components/
-│   │   ├── ui/               # shadcn/ui components
-│   │   └── theme-toggle.tsx  # Dark mode toggle
+│   │   ├── ui/                    # shadcn/ui components
+│   │   ├── buttons/               # Custom button components
+│   │   ├── inputs/                # Custom input components
+│   │   └── theme-toggle.tsx       # Dark mode toggle
+│   ├── stores/
+│   │   ├── index.ts               # Store exports
+│   │   ├── types.ts               # TypeScript types
+│   │   ├── userStore.ts           # User authentication
+│   │   ├── walletStore.ts         # Crypto wallet
+│   │   ├── investmentStore.ts     # Portfolio management
+│   │   ├── nftStore.ts            # NFT marketplace
+│   │   ├── missionStore.ts        # Daily missions
+│   │   ├── notificationStore.ts   # Notifications
+│   │   └── README.md              # Quick reference
 │   └── lib/
-│       └── utils.ts          # Utility functions
-├── components.json           # shadcn/ui configuration
-├── SHADCN_SETUP.md          # Detailed setup guide
+│       └── utils.ts               # Utility functions
+├── components.json                # shadcn/ui configuration
+├── ZUSTAND_GUIDE.md              # Zustand documentation
+├── SHADCN_SETUP.md               # shadcn/ui setup guide
 └── package.json
 ```
 
@@ -144,11 +183,13 @@ chainivo-blockchain/
 
 ### Official Documentation
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Zustand Documentation](https://docs.pmnd.rs/zustand)
 - [shadcn/ui Documentation](https://ui.shadcn.com)
 - [Tailwind CSS v4 Documentation](https://tailwindcss.com/docs)
 - [Radix UI Documentation](https://www.radix-ui.com)
 
 ### Useful Links
+- [Zustand GitHub](https://github.com/pmndrs/zustand)
 - [shadcn/ui Components](https://ui.shadcn.com/docs/components)
 - [shadcn/ui Themes](https://ui.shadcn.com/themes)
 - [shadcn/ui Blocks](https://ui.shadcn.com/blocks)
