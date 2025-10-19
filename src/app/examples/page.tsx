@@ -38,7 +38,26 @@ export default function ComponentsExamplePage() {
   return (
     <div className="container mx-auto p-8 space-y-12">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Components Library</h1>
+        <h1 className="text-4xl font-bold mb-2">Examples & Demos</h1>
+        <p className="text-muted-foreground">
+          Comprehensive examples of components and API usage
+        </p>
+        
+        <div className="mt-6 flex gap-4">
+          <Button asChild>
+            <a href="/examples">Components Demo</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/examples/api-demo">API Demo</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/examples/zustand-demo">Zustand Demo</a>
+          </Button>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-3xl font-bold mb-2">Components Library</h2>
         <p className="text-muted-foreground">
           Comprehensive button and input components built with shadcn/ui
         </p>
