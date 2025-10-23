@@ -1,0 +1,324 @@
+/**
+ * Theme Presets
+ * 
+ * File này chứa các theme preset có sẵn cho dự án
+ * Copy và paste vào globals.css để thay đổi theme
+ */
+
+/* ============================================
+   THEME 1: DEFAULT (Zinc - Current)
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+*/
+
+/* ============================================
+   THEME 2: BLOCKCHAIN BLUE
+   Màu xanh dương công nghệ cho blockchain
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
+  }
+}
+*/
+
+/* ============================================
+   THEME 3: CRYPTO PURPLE
+   Màu tím neon cho crypto/web3
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 280 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 280 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 280 10% 10%;
+    --primary: 280 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 280 30% 95%;
+    --secondary-foreground: 280 10% 10%;
+    --muted: 280 20% 96%;
+    --muted-foreground: 280 10% 45%;
+    --accent: 280 20% 96%;
+    --accent-foreground: 280 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 280 30% 90%;
+    --input: 280 30% 90%;
+    --ring: 280 80% 55%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 280 20% 8%;
+    --foreground: 280 10% 98%;
+    --card: 280 20% 8%;
+    --card-foreground: 280 10% 98%;
+    --popover: 280 20% 8%;
+    --popover-foreground: 280 10% 98%;
+    --primary: 280 80% 65%;
+    --primary-foreground: 280 20% 8%;
+    --secondary: 280 20% 15%;
+    --secondary-foreground: 280 10% 98%;
+    --muted: 280 20% 15%;
+    --muted-foreground: 280 10% 65%;
+    --accent: 280 20% 15%;
+    --accent-foreground: 280 10% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 280 10% 98%;
+    --border: 280 20% 15%;
+    --input: 280 20% 15%;
+    --ring: 280 80% 65%;
+  }
+}
+*/
+
+/* ============================================
+   THEME 4: GOLD LUXURY
+   Màu vàng sang trọng cho premium features
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 45 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 45 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 45 10% 10%;
+    --primary: 45 93% 58%;
+    --primary-foreground: 45 10% 10%;
+    --secondary: 45 30% 95%;
+    --secondary-foreground: 45 10% 10%;
+    --muted: 45 20% 96%;
+    --muted-foreground: 45 10% 45%;
+    --accent: 45 20% 96%;
+    --accent-foreground: 45 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 45 30% 90%;
+    --input: 45 30% 90%;
+    --ring: 45 93% 58%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 45 20% 8%;
+    --foreground: 45 10% 98%;
+    --card: 45 20% 8%;
+    --card-foreground: 45 10% 98%;
+    --popover: 45 20% 8%;
+    --popover-foreground: 45 10% 98%;
+    --primary: 45 93% 58%;
+    --primary-foreground: 45 20% 8%;
+    --secondary: 45 20% 15%;
+    --secondary-foreground: 45 10% 98%;
+    --muted: 45 20% 15%;
+    --muted-foreground: 45 10% 65%;
+    --accent: 45 20% 15%;
+    --accent-foreground: 45 10% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 45 10% 98%;
+    --border: 45 20% 15%;
+    --input: 45 20% 15%;
+    --ring: 45 93% 58%;
+  }
+}
+*/
+
+/* ============================================
+   THEME 5: GREEN MATRIX
+   Màu xanh lá Matrix style cho tech/hacker vibe
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 142 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 142 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 142 10% 10%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 142 30% 95%;
+    --secondary-foreground: 142 10% 10%;
+    --muted: 142 20% 96%;
+    --muted-foreground: 142 10% 45%;
+    --accent: 142 20% 96%;
+    --accent-foreground: 142 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 142 30% 90%;
+    --input: 142 30% 90%;
+    --ring: 142 76% 36%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 142 20% 8%;
+    --foreground: 142 10% 98%;
+    --card: 142 20% 8%;
+    --card-foreground: 142 10% 98%;
+    --popover: 142 20% 8%;
+    --popover-foreground: 142 10% 98%;
+    --primary: 142 76% 45%;
+    --primary-foreground: 142 20% 8%;
+    --secondary: 142 20% 15%;
+    --secondary-foreground: 142 10% 98%;
+    --muted: 142 20% 15%;
+    --muted-foreground: 142 10% 65%;
+    --accent: 142 20% 15%;
+    --accent-foreground: 142 10% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 142 10% 98%;
+    --border: 142 20% 15%;
+    --input: 142 20% 15%;
+    --ring: 142 76% 45%;
+  }
+}
+*/
+
+/* ============================================
+   THEME 6: DARK CYBERPUNK
+   Theme tối với accent neon cho cyberpunk vibe
+   ============================================ */
+/*
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 330 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 330 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 330 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 180 100% 60%;
+    --accent-foreground: 240 10% 3.9%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 330 100% 60%;
+  }
+}
+*/
+
