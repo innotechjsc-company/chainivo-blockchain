@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Button,
   IconButton,
@@ -17,23 +17,23 @@ import {
   CheckboxInput,
   SwitchInput,
   RadioGroup,
-} from '@/components'
-import { 
-  Mail, 
-  User, 
-  Settings, 
-  Download, 
-  Trash, 
-  Edit, 
+} from "@/components";
+import {
+  Mail,
+  User,
+  Settings,
+  Download,
+  Trash,
+  Edit,
   Plus,
   DollarSign,
   Heart,
-} from 'lucide-react'
+} from "lucide-react";
 
 export default function ComponentsExamplePage() {
-  const [loading, setLoading] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState('')
+  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("");
 
   return (
     <div className="container mx-auto p-8 space-y-12">
@@ -42,15 +42,15 @@ export default function ComponentsExamplePage() {
         <p className="text-muted-foreground">
           Comprehensive examples of components and API usage
         </p>
-        
+
         <div className="mt-6 flex gap-4">
-          <Button asChild>
+          <Button>
             <a href="/examples">Components Demo</a>
           </Button>
-          <Button asChild variant="outline">
+          <Button variant="outline">
             <a href="/examples/api-demo">API Demo</a>
           </Button>
-          <Button asChild variant="outline">
+          <Button variant="outline">
             <a href="/examples/zustand-demo">Zustand Demo</a>
           </Button>
         </div>
@@ -66,7 +66,7 @@ export default function ComponentsExamplePage() {
       {/* Buttons Section */}
       <section className="space-y-6">
         <h2 className="text-3xl font-semibold">Buttons</h2>
-        
+
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Button Variants</h3>
           <div className="flex flex-wrap gap-4">
@@ -98,28 +98,33 @@ export default function ComponentsExamplePage() {
             <Button loading loadingText="Processing...">
               Submit
             </Button>
-            <Button fullWidth className="max-w-xs">Full Width</Button>
+            <Button fullWidth className="max-w-xs">
+              Full Width
+            </Button>
           </div>
         </div>
 
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Icon Buttons</h3>
           <div className="flex gap-4">
-            <IconButton icon={<Settings className="h-4 w-4" />} aria-label="Settings" />
-            <IconButton 
-              icon={<Trash className="h-4 w-4" />} 
-              variant="destructive" 
-              aria-label="Delete" 
+            <IconButton
+              icon={<Settings className="h-4 w-4" />}
+              aria-label="Settings"
             />
-            <IconButton 
-              icon={<Edit className="h-4 w-4" />} 
-              variant="outline" 
-              aria-label="Edit" 
+            <IconButton
+              icon={<Trash className="h-4 w-4" />}
+              variant="destructive"
+              aria-label="Delete"
             />
-            <IconButton 
-              icon={<Plus className="h-4 w-4" />} 
-              size="icon-lg" 
-              aria-label="Add" 
+            <IconButton
+              icon={<Edit className="h-4 w-4" />}
+              variant="outline"
+              aria-label="Edit"
+            />
+            <IconButton
+              icon={<Plus className="h-4 w-4" />}
+              size="icon-lg"
+              aria-label="Add"
             />
           </div>
         </div>
@@ -132,7 +137,7 @@ export default function ComponentsExamplePage() {
               <Button>Middle</Button>
               <Button>Right</Button>
             </ButtonGroup>
-            
+
             <ButtonGroup orientation="vertical" attached>
               <Button>Top</Button>
               <Button>Middle</Button>
@@ -156,11 +161,11 @@ export default function ComponentsExamplePage() {
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Special Buttons</h3>
           <div className="flex flex-wrap gap-4">
-            <LoadingButton 
+            <LoadingButton
               isLoading={loading}
               onClick={() => {
-                setLoading(true)
-                setTimeout(() => setLoading(false), 2000)
+                setLoading(true);
+                setTimeout(() => setLoading(false), 2000);
               }}
             >
               Submit Form
@@ -186,7 +191,7 @@ export default function ComponentsExamplePage() {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Text Inputs</h3>
-            
+
             <TextInput
               label="Email"
               type="email"
@@ -212,7 +217,7 @@ export default function ComponentsExamplePage() {
 
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Password Input</h3>
-            
+
             <PasswordInput
               label="Password"
               placeholder="Enter password"
@@ -231,7 +236,7 @@ export default function ComponentsExamplePage() {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Number Input</h3>
-            
+
             <NumberInput
               label="Quantity"
               min={0}
@@ -250,11 +255,11 @@ export default function ComponentsExamplePage() {
 
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Search Input</h3>
-            
+
             <SearchInput
               label="Search"
               placeholder="Search anything..."
-              onSearch={(value) => console.log('Searching:', value)}
+              onSearch={(value) => console.log("Searching:", value)}
             />
 
             <SearchInput
@@ -267,7 +272,7 @@ export default function ComponentsExamplePage() {
 
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Textarea Input</h3>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <TextareaInput
               label="Description"
@@ -290,16 +295,16 @@ export default function ComponentsExamplePage() {
 
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Select Input</h3>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <SelectInput
               label="Country"
               placeholder="Select country"
               options={[
-                { value: 'vn', label: 'Vietnam' },
-                { value: 'us', label: 'United States' },
-                { value: 'uk', label: 'United Kingdom' },
-                { value: 'jp', label: 'Japan' },
+                { value: "vn", label: "Vietnam" },
+                { value: "us", label: "United States" },
+                { value: "uk", label: "United Kingdom" },
+                { value: "jp", label: "Japan" },
               ]}
             />
 
@@ -307,9 +312,21 @@ export default function ComponentsExamplePage() {
               label="Framework"
               placeholder="Choose framework"
               options={[
-                { value: 'react', label: 'React', description: 'JavaScript library' },
-                { value: 'vue', label: 'Vue', description: 'Progressive framework' },
-                { value: 'angular', label: 'Angular', description: 'Platform & framework' },
+                {
+                  value: "react",
+                  label: "React",
+                  description: "JavaScript library",
+                },
+                {
+                  value: "vue",
+                  label: "Vue",
+                  description: "Progressive framework",
+                },
+                {
+                  value: "angular",
+                  label: "Angular",
+                  description: "Platform & framework",
+                },
               ]}
             />
           </div>
@@ -317,7 +334,7 @@ export default function ComponentsExamplePage() {
 
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Checkbox & Switch</h3>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <CheckboxInput
@@ -358,15 +375,19 @@ export default function ComponentsExamplePage() {
 
         <div className="space-y-4">
           <h3 className="text-xl font-medium">Radio Group</h3>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <RadioGroup
               label="Choose a plan"
               name="plan"
               options={[
-                { value: 'free', label: 'Free', description: '$0/month' },
-                { value: 'pro', label: 'Pro', description: '$10/month' },
-                { value: 'enterprise', label: 'Enterprise', description: '$50/month' },
+                { value: "free", label: "Free", description: "$0/month" },
+                { value: "pro", label: "Pro", description: "$10/month" },
+                {
+                  value: "enterprise",
+                  label: "Enterprise",
+                  description: "$50/month",
+                },
               ]}
               value={selectedPlan}
               onValueChange={setSelectedPlan}
@@ -377,10 +398,10 @@ export default function ComponentsExamplePage() {
               name="size"
               layout="horizontal"
               options={[
-                { value: 's', label: 'Small' },
-                { value: 'm', label: 'Medium' },
-                { value: 'l', label: 'Large' },
-                { value: 'xl', label: 'Extra Large' },
+                { value: "s", label: "Small" },
+                { value: "m", label: "Medium" },
+                { value: "l", label: "Large" },
+                { value: "xl", label: "Extra Large" },
               ]}
             />
           </div>
@@ -390,7 +411,7 @@ export default function ComponentsExamplePage() {
       {/* Complete Form Example */}
       <section className="space-y-6">
         <h2 className="text-3xl font-semibold">Complete Form Example</h2>
-        
+
         <form className="max-w-2xl space-y-6 p-6 border rounded-lg">
           <TextInput
             label="Full Name"
@@ -419,9 +440,9 @@ export default function ComponentsExamplePage() {
             placeholder="Select your country"
             required
             options={[
-              { value: 'vn', label: 'Vietnam' },
-              { value: 'us', label: 'United States' },
-              { value: 'uk', label: 'United Kingdom' },
+              { value: "vn", label: "Vietnam" },
+              { value: "us", label: "United States" },
+              { value: "uk", label: "United Kingdom" },
             ]}
           />
 
@@ -430,9 +451,21 @@ export default function ComponentsExamplePage() {
             name="subscription"
             required
             options={[
-              { value: 'free', label: 'Free Plan', description: 'Perfect for getting started' },
-              { value: 'pro', label: 'Pro Plan', description: 'For professionals' },
-              { value: 'enterprise', label: 'Enterprise', description: 'For large teams' },
+              {
+                value: "free",
+                label: "Free Plan",
+                description: "Perfect for getting started",
+              },
+              {
+                value: "pro",
+                label: "Pro Plan",
+                description: "For professionals",
+              },
+              {
+                value: "enterprise",
+                label: "Enterprise",
+                description: "For large teams",
+              },
             ]}
           />
 
@@ -444,10 +477,7 @@ export default function ComponentsExamplePage() {
             autoResize
           />
 
-          <CheckboxInput
-            label="I agree to the terms and conditions"
-            required
-          />
+          <CheckboxInput label="I agree to the terms and conditions" required />
 
           <div className="flex gap-4">
             <Button type="submit" fullWidth>
@@ -460,6 +490,5 @@ export default function ComponentsExamplePage() {
         </form>
       </section>
     </div>
-  )
+  );
 }
-

@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { Button, Badge, ThemeToggle } from '@/components'
-import { ArrowRight, TrendingUp, Users, Zap } from 'lucide-react'
-import Link from 'next/link'
+import { Button, Badge, ThemeToggle } from "@/components";
+import { ArrowRight, TrendingUp, Users, Zap } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -30,19 +30,34 @@ export default function Home() {
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-white hover:text-cyan-300 transition-colors">
+              <Link
+                href="/"
+                className="text-white hover:text-cyan-300 transition-colors"
+              >
                 Trang chủ
               </Link>
-              <Link href="/invest" className="text-white/80 hover:text-cyan-300 transition-colors">
+              <Link
+                href="/investments"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
                 Đầu tư
               </Link>
-              <Link href="/shop" className="text-white/80 hover:text-cyan-300 transition-colors">
+              <Link
+                href="/shop"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
                 Mua hàng
               </Link>
-              <Link href="/nft" className="text-white/80 hover:text-cyan-300 transition-colors">
+              <Link
+                href="/nft"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
                 NFT Market
               </Link>
-              <Link href="/missions" className="text-white/80 hover:text-cyan-300 transition-colors">
+              <Link
+                href="/missions"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
                 Nhiệm vụ
               </Link>
             </div>
@@ -66,7 +81,7 @@ export default function Home() {
             {/* Hero Content */}
             <div className="text-center space-y-8 max-w-4xl mx-auto">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
-                Nền tảng{' '}
+                Nền tảng{" "}
                 <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                   Blockchain
                 </span>
@@ -75,7 +90,8 @@ export default function Home() {
               </h1>
 
               <p className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto">
-                Đầu tư thông minh, giao dịch NFT và nhận phần thưởng hấp dẫn dần mỗi ngày
+                Đầu tư thông minh, giao dịch NFT và nhận phần thưởng hấp dẫn dần
+                mỗi ngày
               </p>
 
               {/* CTA Buttons */}
@@ -139,5 +155,5 @@ export default function Home() {
         </main>
       </div>
     </div>
-  )
+  );
 }
