@@ -60,6 +60,12 @@ export default function Home() {
               >
                 Nhiệm vụ
               </Link>
+              <Link
+                href="/staking"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Staking
+              </Link>
             </div>
 
             {/* Right Side */}
