@@ -1,39 +1,79 @@
 "use client";
 
-import { InvestmentHero } from "@/components/investments/investmentHero/investmentHero";
-import { UserDashboard } from "@/components/investments/UserDashboard/UserDashboard";
-import { InvestmentPhases } from "./InvestmentPhases";
-import { TransactionHistory } from "./TransactionHistory";
-import { BlockchainStats } from "./BlockchainStats/BlockchainStats";
-import { CompanyInfo } from "./CompanyInfo";
+// TODO: Import InvestmentHero and UserDashboard when they are created
+// import { InvestmentHero, UserDashboard } from "@/components/investments";
+import {
+  BlockchainStatsCard,
+  CompanyInfoCard,
+  InvestmentPhasesCard,
+  TransactionHistoryCard,
+  UserDashboardCard,
+} from "./components";
+import { InvestmentHero } from "./components/InvestmentHero";
+import {
+  useBlockchainStats,
+  useInvestmentPhases,
+  useTransactionHistory,
+  useUserProfile,
+} from "./hooks";
 
 export default function InvestmentsScreen() {
+  // 1. Fetch dữ liệu qua hooks
+  const {
+    stats: blockchainStats,
+    loading: statsLoading,
+    error: statsError,
+  } = useBlockchainStats();
+  const { phases } = useInvestmentPhases();
+  const {
+    transactions,
+    loading: transactionsLoading,
+    error: transactionsError,
+  } = useTransactionHistory();
+  const {
+    profile: userProfile,
+    loading: profileLoading,
+    error: profileError,
+  } = useUserProfile();
+
+  // 2. Event handlers
+  const handleInvestmentAction = (phaseId: number) => {
+    // TODO: Implement investment action
+    console.log("Investment action for phase:", phaseId);
+  };
+
+  // 3. Compose UI
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
         {/* Investment Hero with Charts & Metrics */}
+        {/* TODO: Add InvestmentHero component */}
         <InvestmentHero />
 
         {/* User Dashboard */}
-        <UserDashboard />
+        <UserDashboardCard
+          profile={userProfile}
+          loading={profileLoading}
+          error={profileError}
+        />
 
         {/* Investment Phases */}
-        <InvestmentPhases />
+        <InvestmentPhasesCard phases={phases} />
 
         {/* Transaction History */}
-        <section className="py-12 bg-gradient-to-br from-background to-background/50">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <TransactionHistory />
-            </div>
-          </div>
-        </section>
+        <TransactionHistoryCard
+          transactions={transactions}
+          loading={transactionsLoading}
+          error={transactionsError}
+        />
 
         {/* Blockchain Stats */}
-        <BlockchainStats />
+        {blockchainStats && (
+          <BlockchainStatsCard stats={blockchainStats} loading={statsLoading} />
+        )}
 
         {/* Company & Token Info */}
-        <CompanyInfo />
+        <CompanyInfoCard />
       </main>
     </div>
   );
