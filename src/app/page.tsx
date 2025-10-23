@@ -43,13 +43,13 @@ export default function Home() {
                 Đầu tư
               </Link>
               <Link
-                href="/shop"
+                href="/membership"
                 className="text-white/80 hover:text-cyan-300 transition-colors"
               >
-                Mua hàng
+                Mua hạng
               </Link>
               <Link
-                href="/nft"
+                href="/nftmarket"
                 className="text-white/80 hover:text-cyan-300 transition-colors"
               >
                 NFT Market
