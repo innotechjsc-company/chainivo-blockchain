@@ -30,3 +30,4 @@
 - \*\*Không tạo mới code hay tự viết code mới mà chỉ chuyển đổi giao diện đang có
 - chỉ sử dụng các component trong thư mục /Users/huy/Documents/code/chanivo-blockchain/chainivo-blockchain/src/components/ui chứ không được install các thư viện Progress của shadcn/ui
 - màu sắc của component này sẽ giữ nguyên và không thay đổi
+-
