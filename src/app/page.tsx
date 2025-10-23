@@ -49,7 +49,7 @@ export default function Home() {
                 Mua hạng
               </Link>
               <Link
-                href="/nft"
+                href="/nftmarket"
                 className="text-white/80 hover:text-cyan-300 transition-colors"
               >
                 NFT Market
