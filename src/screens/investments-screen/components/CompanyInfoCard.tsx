@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 
-export const CompanyInfo = () => {
+export const CompanyInfoCard = () => {
   return (
     <section className="py-16 bg-gradient-to-br from-background to-background/50">
       <div className="container mx-auto px-4">

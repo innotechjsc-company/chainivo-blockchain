@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, Layers, DollarSign } from "lucide-react";
 
@@ -13,27 +12,39 @@ interface BlockchainData {
   total_value_locked: number;
 }
 
-export const BlockchainStats = () => {
-  const [stats, setStats] = useState<BlockchainData | null>(null);
+interface BlockchainStatsCardProps {
+  stats: BlockchainData;
+  loading?: boolean;
+}
 
-  useEffect(() => {
-    // Mock data for demonstration
-    const mockStats: BlockchainData = {
-      total_can_supply: 100000000,
-      circulating_supply: 45000000,
-      total_holders: 12500,
-      total_transactions: 850000,
-      current_phase: 2,
-      total_value_locked: 2500000,
-    };
-
-    // Simulate loading
-    setTimeout(() => {
-      setStats(mockStats);
-    }, 1000);
-  }, []);
-
-  if (!stats) return null;
+export const BlockchainStatsCard = ({
+  stats,
+  loading = false,
+}: BlockchainStatsCardProps) => {
+  if (loading) {
+    return (
+      <section className="py-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <div className="h-8 bg-muted animate-pulse rounded w-64 mx-auto mb-4" />
+            <div className="h-4 bg-muted animate-pulse rounded w-96 mx-auto" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="glass">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-muted animate-pulse rounded w-24 mb-2" />
+                  <div className="h-8 bg-muted animate-pulse rounded w-16 mb-2" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 relative overflow-hidden">
