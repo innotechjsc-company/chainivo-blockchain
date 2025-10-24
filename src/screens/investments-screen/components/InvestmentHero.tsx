@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useRouter } from "next/navigation";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -59,6 +60,7 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
   className = "",
 }) => {
   const [stats, setStats] = useState<BlockchainData | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Mock data for demonstration
@@ -171,8 +173,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
 
                   <Button
                     size="default"
-                    className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
-                    onClick={() => console.log("Navigate to phase 3")}
+                    className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
+                    onClick={() => router.push(`/phase/${currentPhase.phase}`)}
                   >
                     <Rocket className="w-4 h-4 mr-2 group-hover/btn:animate-bounce" />
                     Đầu tư ngay

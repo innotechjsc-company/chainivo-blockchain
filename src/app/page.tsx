@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header/Header";
 import { Hero } from "@/components/hero/Hero";
-import { UserDashboard } from "@/components/user-dashboard/UserDashboard";
-import { BlockchainStats } from "@/components/blockchain-stats/BlockchainStats";
-import { InvestmentPhases } from "@/components/investment-phases/InvestmentPhases";
-import { MembershipTiers } from "@/components/membership-tiers/MembershipTiers";
-import { NFTMarketplace } from "@/components/nft-marketplace/NFTMarketplace";
-import { Missions } from "@/components/missions/Missions";
-import { NewsEvents } from "@/components/news-events/NewsEvents";
+import { UserDashboard } from "@/screens/home-screen/user-dashboard/UserDashboard";
+import { BlockchainStats } from "@/screens/home-screen/blockchain-stats/BlockchainStats";
+import { InvestmentPhases } from "@/screens/home-screen/investment-phases/InvestmentPhases";
+import { MembershipTiers } from "@/screens/home-screen/membership-tiers/MembershipTiers";
+import { NFTMarketplace } from "@/screens/home-screen/nft-marketplace/NFTMarketplace";
+import { Missions } from "@/screens/home-screen/missions/Missions";
+import { NewsEvents } from "@/screens/home-screen/news-events/NewsEvents";
 import { Footer } from "@/components/footer/Footer";
 
 export default function Home() {
