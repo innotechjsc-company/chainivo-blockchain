@@ -162,12 +162,12 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
             >
               Staking
             </Link>
-            <Link
+            {/* <Link
               href="/news"
               className="text-foreground/80 hover:text-primary transition-colors"
             >
               Tin tức
-            </Link>
+            </Link> */}
             <Link
               href="/about"
               className="text-foreground/80 hover:text-primary transition-colors"
@@ -361,12 +361,12 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
               >
                 Staking
               </Link>
-              <Link
+              {/* <Link
                 href="/news"
                 className="text-foreground/80 hover:text-primary transition-colors py-2"
               >
                 Tin tức
-              </Link>
+              </Link> */}
               {user ? (
                 <>
                   <div className="flex items-center space-x-2 py-2 border-t border-border/50 mt-2">

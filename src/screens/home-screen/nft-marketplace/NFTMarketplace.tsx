@@ -86,9 +86,21 @@ export const NFTMarketplace = () => {
                   {/* Box Image */}
                   <div
                     className={`relative h-64 rounded-xl bg-gradient-to-br ${box.color} mb-6 overflow-hidden group`}
+                    style={{
+                      backgroundImage: `url('/nft-box.jpg')`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                    }}
                   >
+                    {/* Overlay for better text visibility */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60"></div>
+                    {/* Color overlay based on box type */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${box.color} opacity-30`}
+                    ></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Package className="w-24 h-24 text-white animate-float" />
+                      <Package className="w-24 h-24 text-white animate-float drop-shadow-lg" />
                     </div>
                     {/* Rarity Badge */}
                     <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold">
@@ -140,10 +152,20 @@ export const NFTMarketplace = () => {
               >
                 <CardContent className="p-0">
                   {/* NFT Image */}
-                  <div className="relative h-64 overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                      <Package className="w-24 h-24 text-primary/50" />
-                    </div>
+                  <div
+                    className="relative h-64 overflow-hidden"
+                    style={{
+                      backgroundImage: `url('/nft-box.jpg')`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  >
+                    {/* Overlay for better content visibility */}
+                    <div className="absolute inset-0 "></div>
+                    {/* <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <Package className="w-24 h-24 text-white/80 drop-shadow-lg" />
+                    </div> */}
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
                   </div>
 

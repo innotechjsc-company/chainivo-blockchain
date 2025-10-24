@@ -37,7 +37,7 @@ export default function Home() {
         <MembershipTiers />
         <NFTMarketplace />
         <Missions />
-        <NewsEvents />
+        {/* <NewsEvents /> */}
       </main>
     </div>
   );
