@@ -103,4 +103,4 @@ export { Missions } from "../screens/home-screen/missions/Missions";
 export { NewsEvents } from "../screens/home-screen/news-events/NewsEvents";
 export { Footer } from "./footer/Footer";
 export { Auth } from "../screens/auth-screen/Auth";
-export { LiveTransactionFeed } from "./live-transaction-feed/LiveTransactionFeed";
+export { LiveTransactionFeed } from "../screens/phase-screen/component/LiveTransactionFeed";

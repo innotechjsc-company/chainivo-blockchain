@@ -25,7 +25,7 @@ import {
   BarChart3,
   Rocket,
 } from "lucide-react";
-import { LiveTransactionFeed } from "@/components/live-transaction-feed/LiveTransactionFeed";
+import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransactionFeed";
 
 const phasesData = [
   {
