@@ -12,6 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useRouter } from "next/navigation";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -55,10 +62,27 @@ const INVESTMENT_PHASES = [
   { phase: 4, price: 0.75, coins: 25000000, progress: 0, status: "locked" },
 ];
 
+// Chart configuration for shadcn/ui
+const chartConfig = {
+  holders: {
+    label: "Người mua",
+    color: "hsl(var(--primary))",
+  },
+  price: {
+    label: "Đơn giá",
+    color: "hsl(var(--accent))",
+  },
+  projected: {
+    label: "Dự kiến",
+    color: "hsl(var(--secondary))",
+  },
+};
+
 export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
   className = "",
 }) => {
   const [stats, setStats] = useState<BlockchainData | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Mock data for demonstration
@@ -171,8 +195,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
 
                   <Button
                     size="default"
-                    className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
-                    onClick={() => console.log("Navigate to phase 3")}
+                    className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
+                    onClick={() => router.push(`/phase/${currentPhase.phase}`)}
                   >
                     <Rocket className="w-4 h-4 mr-2 group-hover/btn:animate-bounce" />
                     Đầu tư ngay
@@ -183,46 +207,81 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
             </div>
           </Card>
 
-          {/* Stats Section - RIGHT SIDE */}
+          {/* Chart Section - RIGHT SIDE */}
           <Card className="lg:col-span-2 glass p-3 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-[fade-in_1s_ease-out_0.2s] hover:scale-[1.01] group">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold gradient-text">
-                Thống kê tăng trưởng
+                Tăng trưởng người mua & Giá token
               </h3>
               <TrendingUp className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" />
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center p-2 bg-primary/5 rounded-lg">
-                  <div className="text-lg font-bold text-primary">
-                    {CHART_DATA[
-                      CHART_DATA.length - 2
-                    ]?.holders?.toLocaleString() || "0"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Người mua hiện tại
-                  </div>
-                </div>
-                <div className="text-center p-2 bg-accent/5 rounded-lg">
-                  <div className="text-lg font-bold text-accent">
-                    ${CHART_DATA[CHART_DATA.length - 2]?.price || "0"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Giá token hiện tại
-                  </div>
-                </div>
-              </div>
-              <div className="text-center p-2 bg-secondary/5 rounded-lg">
-                <div className="text-lg font-bold text-secondary">
-                  {CHART_DATA[
-                    CHART_DATA.length - 1
-                  ]?.projected?.toLocaleString() || "0"}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Dự kiến kỳ sau
-                </div>
-              </div>
-            </div>
+            <ChartContainer config={chartConfig} className="h-[120px] w-full">
+              <LineChart data={CHART_DATA}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value, name) => {
+                        if (name === "holders")
+                          return [value?.toLocaleString(), "Người mua"];
+                        if (name === "price") return [`$${value}`, "Đơn giá"];
+                        if (name === "projected")
+                          return [value?.toLocaleString(), "Dự kiến"];
+                        return [value, name];
+                      }}
+                    />
+                  }
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="holders"
+                  stroke="var(--color-holders)"
+                  strokeWidth={2}
+                  dot={{ fill: "var(--color-holders)", strokeWidth: 2, r: 3 }}
+                  name="holders"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="price"
+                  stroke="var(--color-price)"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={{ fill: "var(--color-price)", strokeWidth: 2, r: 3 }}
+                  name="price"
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="projected"
+                  stroke="var(--color-projected)"
+                  strokeWidth={2}
+                  strokeDasharray="3 3"
+                  dot={{ fill: "var(--color-projected)", strokeWidth: 2, r: 3 }}
+                  name="projected"
+                />
+              </LineChart>
+            </ChartContainer>
           </Card>
         </div>
 
