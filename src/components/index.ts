@@ -1,55 +1,58 @@
 // Export all button components
-export { Button } from './buttons/Button'
-export type { ButtonProps } from './buttons/Button'
-export { IconButton } from './buttons/IconButton'
-export type { IconButtonProps } from './buttons/IconButton'
-export { ButtonGroup } from './buttons/ButtonGroup'
-export type { ButtonGroupProps } from './buttons/ButtonGroup'
-export { SocialButton } from './buttons/SocialButton'
-export type { SocialButtonProps } from './buttons/SocialButton'
-export { LoadingButton } from './buttons/LoadingButton'
-export type { LoadingButtonProps } from './buttons/LoadingButton'
-export { CopyButton } from './buttons/CopyButton'
-export type { CopyButtonProps } from './buttons/CopyButton'
+export { Button } from "./buttons/Button";
+export type { ButtonProps } from "./buttons/Button";
+export { IconButton } from "./buttons/IconButton";
+export type { IconButtonProps } from "./buttons/IconButton";
+export { ButtonGroup } from "./buttons/ButtonGroup";
+export type { ButtonGroupProps } from "./buttons/ButtonGroup";
+export { SocialButton } from "./buttons/SocialButton";
+export type { SocialButtonProps } from "./buttons/SocialButton";
+export { LoadingButton } from "./buttons/LoadingButton";
+export type { LoadingButtonProps } from "./buttons/LoadingButton";
+export { CopyButton } from "./buttons/CopyButton";
+export type { CopyButtonProps } from "./buttons/CopyButton";
 
 // Export all input components
-export { TextInput } from './inputs/TextInput'
-export type { TextInputProps } from './inputs/TextInput'
-export { PasswordInput } from './inputs/PasswordInput'
-export type { PasswordInputProps } from './inputs/PasswordInput'
-export { NumberInput } from './inputs/NumberInput'
-export type { NumberInputProps } from './inputs/NumberInput'
-export { SearchInput } from './inputs/SearchInput'
-export type { SearchInputProps } from './inputs/SearchInput'
-export { TextareaInput } from './inputs/TextareaInput'
-export type { TextareaInputProps } from './inputs/TextareaInput'
-export { SelectInput } from './inputs/SelectInput'
-export type { SelectInputProps, SelectOption } from './inputs/SelectInput'
-export { CheckboxInput } from './inputs/CheckboxInput'
-export type { CheckboxInputProps } from './inputs/CheckboxInput'
-export { SwitchInput } from './inputs/SwitchInput'
-export type { SwitchInputProps } from './inputs/SwitchInput'
-export { RadioGroup } from './inputs/RadioGroup'
-export type { RadioGroupProps, RadioOption } from './inputs/RadioGroup'
+export { TextInput } from "./inputs/TextInput";
+export type { TextInputProps } from "./inputs/TextInput";
+export { PasswordInput } from "./inputs/PasswordInput";
+export type { PasswordInputProps } from "./inputs/PasswordInput";
+export { NumberInput } from "./inputs/NumberInput";
+export type { NumberInputProps } from "./inputs/NumberInput";
+export { SearchInput } from "./inputs/SearchInput";
+export type { SearchInputProps } from "./inputs/SearchInput";
+export { TextareaInput } from "./inputs/TextareaInput";
+export type { TextareaInputProps } from "./inputs/TextareaInput";
+export { SelectInput } from "./inputs/SelectInput";
+export type { SelectInputProps, SelectOption } from "./inputs/SelectInput";
+export { CheckboxInput } from "./inputs/CheckboxInput";
+export type { CheckboxInputProps } from "./inputs/CheckboxInput";
+export { SwitchInput } from "./inputs/SwitchInput";
+export type { SwitchInputProps } from "./inputs/SwitchInput";
+export { RadioGroup } from "./inputs/RadioGroup";
+export type { RadioGroupProps, RadioOption } from "./inputs/RadioGroup";
 
 // Export UI components
-export { ThemeToggle } from './theme-toggle'
+export { ThemeToggle } from "./theme-toggle";
 
 // Export shadcn UI components (for direct use if needed)
-export { Button as UIButton, buttonVariants } from './ui/button'
-export { Input as UIInput } from './ui/input'
-export { Label as UILabel } from './ui/label'
-export { Textarea as UITextarea } from './ui/textarea'
-export { Checkbox as UICheckbox } from './ui/checkbox'
-export { Switch as UISwitch } from './ui/switch'
-export { RadioGroup as UIRadioGroup, RadioGroupItem as UIRadioGroupItem } from './ui/radio-group'
+export { Button as UIButton, buttonVariants } from "./ui/button";
+export { Input as UIInput } from "./ui/input";
+export { Label as UILabel } from "./ui/label";
+export { Textarea as UITextarea } from "./ui/textarea";
+export { Checkbox as UICheckbox } from "./ui/checkbox";
+export { Switch as UISwitch } from "./ui/switch";
+export {
+  RadioGroup as UIRadioGroup,
+  RadioGroupItem as UIRadioGroupItem,
+} from "./ui/radio-group";
 export {
   Select as UISelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select'
+} from "./ui/select";
 export {
   Card,
   CardContent,
@@ -57,11 +60,11 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-} from './ui/card'
-export { Badge } from './ui/badge'
-export { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-export { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-export { 
+} from "./ui/card";
+export { Badge } from "./ui/badge";
+export { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+export {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -69,7 +72,7 @@ export {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from './ui/dialog'
+} from "./ui/dialog";
 export {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +80,7 @@ export {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu'
+} from "./ui/dropdown-menu";
 export {
   Table,
   TableBody,
@@ -86,4 +89,16 @@ export {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table'
+} from "./ui/table";
+
+// Export new page components
+export { Header } from "./header/Header";
+export { Hero } from "./hero/Hero";
+export { UserDashboard } from "./user-dashboard/UserDashboard";
+export { BlockchainStats } from "./blockchain-stats/BlockchainStats";
+export { InvestmentPhases } from "./investment-phases/InvestmentPhases";
+export { MembershipTiers } from "./membership-tiers/MembershipTiers";
+export { NFTMarketplace } from "./nft-marketplace/NFTMarketplace";
+export { Missions } from "./missions/Missions";
+export { NewsEvents } from "./news-events/NewsEvents";
+export { Footer } from "./footer/Footer";
