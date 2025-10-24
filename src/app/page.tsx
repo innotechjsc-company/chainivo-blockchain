@@ -72,6 +72,12 @@ export default function Home() {
               >
                 Tin tức
               </Link>
+              <Link
+                href="/about"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Về chúng tôi
+              </Link>
             </div>
 
             {/* Right Side */}
