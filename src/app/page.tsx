@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header/Header";
 import { Hero } from "@/components/hero/Hero";
 import { UserDashboard } from "@/components/user-dashboard/UserDashboard";
@@ -13,13 +13,25 @@ import { NewsEvents } from "@/components/news-events/NewsEvents";
 import { Footer } from "@/components/footer/Footer";
 
 export default function Home() {
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check for user in localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    setUser(null);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <main>
         <Hero />
-        {session && <UserDashboard />}
+        {user && <UserDashboard />}
         <BlockchainStats />
         <InvestmentPhases />
         <MembershipTiers />

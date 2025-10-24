@@ -25,6 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   session?: any;
@@ -40,6 +41,20 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [language, setLanguage] = useState("vi");
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check for user in localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setUserProfile({
+        username: JSON.parse(storedUser).username,
+        avatar_url: null,
+      });
+    }
+  }, []);
 
   const notifications = [
     {
@@ -85,8 +100,16 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   };
 
   const handleSignOut = async () => {
-    // Sign out logic would go here
+    // Clear user from localStorage
+    localStorage.removeItem("user");
+    setUser(null);
+    setUserProfile(null);
     onSignOut?.();
+    router.push("/");
+  };
+
+  const handleSignIn = () => {
+    router.push("/auth");
   };
 
   return (
@@ -155,7 +178,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
 
           {/* Auth Buttons */}
           <div className="flex items-center space-x-4">
-            {session ? (
+            {user ? (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -273,12 +296,16 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                 </DropdownMenu>
               </>
             ) : (
-              <Button variant="default" className="hidden md:flex">
+              <Button
+                variant="default"
+                className="hidden md:flex cursor-pointer"
+                onClick={handleSignIn}
+              >
                 <LogIn className="w-4 h-4 mr-2" />
                 Đăng nhập
               </Button>
             )}
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             <Button
               variant="ghost"
               size="icon"
@@ -336,7 +363,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
               >
                 Tin tức
               </Link>
-              {session ? (
+              {user ? (
                 <>
                   <div className="flex items-center space-x-2 py-2 border-t border-border/50 mt-2">
                     <Button
@@ -371,7 +398,11 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   </Button>
                 </>
               ) : (
-                <Button variant="default" className="w-full mt-2">
+                <Button
+                  variant="default"
+                  className="w-full mt-2"
+                  onClick={handleSignIn}
+                >
                   <LogIn className="w-4 h-4 mr-2" />
                   Đăng nhập
                 </Button>

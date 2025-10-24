@@ -102,3 +102,4 @@ export { NFTMarketplace } from "./nft-marketplace/NFTMarketplace";
 export { Missions } from "./missions/Missions";
 export { NewsEvents } from "./news-events/NewsEvents";
 export { Footer } from "./footer/Footer";
+export { Auth } from "./auth/Auth";
