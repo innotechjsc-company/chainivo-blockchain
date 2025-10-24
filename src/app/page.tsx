@@ -66,6 +66,12 @@ export default function Home() {
               >
                 Staking
               </Link>
+              <Link
+                href="/news"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Tin tức
+              </Link>
             </div>
 
             {/* Right Side */}
