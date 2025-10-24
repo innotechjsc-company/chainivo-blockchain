@@ -29,10 +29,13 @@ interface TierPackagesCardProps {
 export const TierPackagesCard = ({ tiers }: TierPackagesCardProps) => {
   const router = useRouter();
 
-  const iconMap = {
-    Star,
-    Zap,
-    Crown,
+  const getTierImage = (tierName: string) => {
+    const name = tierName.toLowerCase();
+    if (name.includes("bronze")) return "/tier-bronze.jpg";
+    if (name.includes("silver")) return "/tier-silver.jpg";
+    if (name.includes("gold")) return "/tier-gold.jpg";
+    if (name.includes("platinum")) return "/tier-platinum.jpg";
+    return "/tier-bronze.jpg"; // fallback
   };
 
   const handlePurchase = (e: React.MouseEvent, tierId: string) => {
@@ -42,7 +45,7 @@ export const TierPackagesCard = ({ tiers }: TierPackagesCardProps) => {
   };
 
   const renderTierCard = (tier: TierPackage, isFeatured = false) => {
-    const Icon = iconMap[tier.icon as keyof typeof iconMap] || Star;
+    const tierImage = getTierImage(tier.name);
 
     return (
       <Card
@@ -62,9 +65,19 @@ export const TierPackagesCard = ({ tiers }: TierPackagesCardProps) => {
         <CardHeader className="pb-3">
           <div className="flex gap-3">
             <div
-              className={`w-16 h-16 rounded-lg bg-gradient-to-br ${tier.color} flex items-center justify-center flex-shrink-0`}
+              className={`w-16 h-16 rounded-lg bg-gradient-to-br ${tier.color} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
+              style={{
+                backgroundImage: `url('${tierImage}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
             >
-              <Icon className="w-8 h-8 text-white" />
+              {/* Overlay for better icon visibility */}
+              {/* <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Crown className="w-8 h-8 text-white drop-shadow-lg" />
+              </div> */}
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle

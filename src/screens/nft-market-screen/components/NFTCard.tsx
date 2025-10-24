@@ -29,18 +29,38 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
       ? (nft.sharesSold / nft.totalShares) * 100
       : 0;
 
+  // Function to get NFT image from public folder
+  const getNFTImage = (nft: NFT) => {
+    // If it's a tier NFT, use tier images
+    if (nft.type === "tier") {
+      const tierName = nft.name.toLowerCase();
+      if (tierName.includes("bronze")) return "/tier-bronze.jpg";
+      if (tierName.includes("silver")) return "/tier-silver.jpg";
+      if (tierName.includes("gold")) return "/tier-gold.jpg";
+      if (tierName.includes("platinum")) return "/tier-platinum.jpg";
+    }
+
+    // For other NFTs, use nft-box.jpg as default
+    return "/nft-box.jpg";
+  };
+
+  const nftImage = getNFTImage(nft);
+
   return (
     <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
         onClick={() => router.push(`/nft/${nft.id}`)}
+        style={{
+          backgroundImage: `url('${nftImage}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
       >
-        <img
-          src={nft.image}
-          alt={nft.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-        />
+        {/* Overlay for better content visibility */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
 
         {/* Rarity Badge */}

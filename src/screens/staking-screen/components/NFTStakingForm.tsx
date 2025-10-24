@@ -52,11 +52,23 @@ export const NFTStakingForm = ({
 
   return (
     <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
-      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/5">
+      <div
+        className="relative h-48 overflow-hidden"
+        style={{
+          backgroundImage: `url('/staking-nft-hero.jpg')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Overlay for better text visibility */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
         <div className="absolute bottom-4 left-4 right-4">
-          <h3 className="text-2xl font-bold mb-1">Stake NFT</h3>
-          <p className="text-muted-foreground">
+          <h3 className="text-2xl font-bold mb-1 text-white drop-shadow-lg">
+            Stake NFT
+          </h3>
+          <p className="text-white/90 drop-shadow-lg">
             APY {apy}% - Phần thưởng cao hơn
           </p>
         </div>
