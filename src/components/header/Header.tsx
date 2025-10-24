@@ -283,7 +283,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/account")}>
                       <User className="w-4 h-4 mr-2" />
                       Quản lý tài khoản
                     </DropdownMenuItem>

@@ -111,7 +111,7 @@ export const P2PMarketplaceCard = ({ listings }: P2PMarketplaceCardProps) => {
         ))}
       </div>
 
-      <Button variant="outline" className="w-full" size="lg">
+      <Button variant="outline" className="w-full cursor-pointer" size="lg">
         Xem tất cả NFT đang bán
       </Button>
     </div>
