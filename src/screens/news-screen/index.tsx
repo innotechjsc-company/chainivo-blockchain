@@ -5,22 +5,18 @@ import { useNewsData } from "./hooks/useNewsData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NewsCard } from "./components/NewsCard";
 import "./news-screen.css";
+import { useRouter } from "next/navigation";
 
-/**
- * NewsScreen - Copy y hệt từ NewsList.tsx gốc
- * Màn hình quản lý tin tức & sự kiện
- */
 export const NewsScreen = () => {
   const { user, isAuthenticated } = useUserStore();
-
+  const router = useRouter();
   // Custom hooks
   const { allNews, loading, filterByType, getEventStatus } = useNewsData();
 
   // Handle navigation - copy y hệt logic từ component gốc
   const handleNavigate = (id: string) => {
     // TODO: Implement navigation to news detail page
-    console.log(`Navigate to news detail: ${id}`);
-    // Example: router.push(`/news/${id}`);
+    router.push(`/news/${id}`);
   };
 
   // Copy y hệt logic từ component gốc

@@ -137,15 +137,6 @@ export const UserTierInfoCard = ({
             <div className="text-xs text-muted-foreground">NFT</div>
           </div>
         </div>
-
-        {/* Additional Info */}
-        <div className="bg-muted/10 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <Clock className="w-4 h-4" />
-            <span>Thời gian tham gia</span>
-          </div>
-          <div className="text-lg font-bold text-primary">6 tháng</div>
-        </div>
       </CardContent>
     </Card>
   );

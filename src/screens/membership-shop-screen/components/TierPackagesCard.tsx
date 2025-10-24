@@ -155,12 +155,7 @@ export const TierPackagesCard = ({ tiers }: TierPackagesCardProps) => {
   return (
     <div className="space-y-6">
       {/* Featured Popular Tier */}
-      <div>
-        <h2 className="text-2xl font-bold gradient-text mb-4">
-          Gói hạng phổ biến
-        </h2>
-        {renderTierCard(mostPopularTier, true)}
-      </div>
+      <div>{renderTierCard(mostPopularTier, true)}</div>
 
       {/* Other Tiers */}
       <div>
