@@ -162,12 +162,12 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
             >
               Staking
             </Link>
-            <Link
+            {/* <Link
               href="/news"
               className="text-foreground/80 hover:text-primary transition-colors"
             >
               Tin tức
-            </Link>
+            </Link> */}
             <Link
               href="/about"
               className="text-foreground/80 hover:text-primary transition-colors"
@@ -185,7 +185,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hidden md:flex relative"
+                      className="hidden md:flex relative cursor-pointer"
                     >
                       <Bell className="w-5 h-5" />
                       {notifications.some((n) => n.unread) && (
@@ -196,7 +196,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   <DropdownMenuContent align="end" className="w-80">
                     <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <div className="max-h-72 overflow-y-auto">
+                    <div className="max-h-72 overflow-y-auto notification-scrollbar">
                       {notifications.map((notif) => (
                         <div
                           key={notif.id}
@@ -232,7 +232,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hidden md:flex"
+                      className="hidden md:flex cursor-pointer"
                     >
                       <Globe className="w-5 h-5" />
                     </Button>
@@ -255,7 +255,11 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="default" className="hidden md:flex">
+                <Button
+                  variant="default"
+                  className="hidden md:flex cursor-pointer"
+                  onClick={() => router.push("/wallet")}
+                >
                   <Wallet className="w-4 h-4 mr-2" />
                   Kết nối ví
                 </Button>
@@ -263,7 +267,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="hidden md:flex items-center space-x-2 h-auto py-2"
+                      className="hidden md:flex items-center space-x-2 h-auto py-2 cursor-pointer"
                     >
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={userProfile?.avatar_url || ""} />
@@ -279,7 +283,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/account")}>
                       <User className="w-4 h-4 mr-2" />
                       Quản lý tài khoản
                     </DropdownMenuItem>
@@ -357,12 +361,12 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
               >
                 Staking
               </Link>
-              <Link
+              {/* <Link
                 href="/news"
                 className="text-foreground/80 hover:text-primary transition-colors py-2"
               >
                 Tin tức
-              </Link>
+              </Link> */}
               {user ? (
                 <>
                   <div className="flex items-center space-x-2 py-2 border-t border-border/50 mt-2">
