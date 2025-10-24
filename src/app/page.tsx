@@ -60,6 +60,24 @@ export default function Home() {
               >
                 Nhiệm vụ
               </Link>
+              <Link
+                href="/staking"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Staking
+              </Link>
+              <Link
+                href="/news"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Tin tức
+              </Link>
+              <Link
+                href="/about"
+                className="text-white/80 hover:text-cyan-300 transition-colors"
+              >
+                Về chúng tôi
+              </Link>
             </div>
 
             {/* Right Side */}

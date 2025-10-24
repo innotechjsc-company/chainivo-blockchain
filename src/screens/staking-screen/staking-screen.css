@@ -1,0 +1,153 @@
+/* Staking Screen Custom Styles */
+
+/* Equal Height Grid Layout */
+.staking-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .staking-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Equal Height Cards */
+.staking-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 600px; /* Minimum height to ensure consistency */
+}
+
+.staking-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.staking-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.staking-form-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.staking-form-actions {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+/* Stakes List */
+.stakes-list {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stakes-list-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.stakes-list-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .staking-card {
+    min-height: auto;
+  }
+  
+  .stakes-list-card {
+    min-height: auto;
+  }
+}
+
+/* Smooth transitions */
+.staking-card,
+.stakes-list-card {
+  transition: all 0.3s ease;
+}
+
+/* Hover effects */
+.staking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading states */
+.staking-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Empty states */
+.staking-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Form validation states */
+.staking-form-error {
+  border-color: hsl(var(--destructive));
+  box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.2);
+}
+
+.staking-form-success {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+/* Animation improvements */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.staking-animate-in {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* Custom scrollbar for stakes list */
+.stakes-list-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stakes-list-content::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+.stakes-list-content::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+.stakes-list-content::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground));
+}
