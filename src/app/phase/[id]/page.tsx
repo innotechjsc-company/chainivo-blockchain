@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -115,9 +115,9 @@ const phasesData = [
 ];
 
 interface PhaseDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
@@ -125,7 +125,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [investAmount, setInvestAmount] = useState<string>("100");
 
-  const phase = phasesData.find((p) => p.id === Number(params.id));
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params);
+  const phase = phasesData.find((p) => p?.id === Number(resolvedParams?.id));
 
   useEffect(() => {
     // Simulate loading

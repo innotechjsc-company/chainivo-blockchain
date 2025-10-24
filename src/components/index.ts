@@ -102,5 +102,5 @@ export { NFTMarketplace } from "../screens/home-screen/nft-marketplace/NFTMarket
 export { Missions } from "../screens/home-screen/missions/Missions";
 export { NewsEvents } from "../screens/home-screen/news-events/NewsEvents";
 export { Footer } from "./footer/Footer";
-export { Auth } from "./auth/Auth";
+export { Auth } from "../screens/auth-screen/Auth";
 export { LiveTransactionFeed } from "./live-transaction-feed/LiveTransactionFeed";
