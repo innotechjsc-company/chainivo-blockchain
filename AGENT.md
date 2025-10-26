@@ -29,8 +29,9 @@
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-├── components/             # Reusable UI components
+├── app/                   # Next.js App Router pages
+├── api/                   # Call api from server
+├── components/            # Reusable UI components
 │   ├── ui/                # Basic UI components (buttons, inputs, etc.)
 │   ├── layout/            # Layout components (header, footer, sidebar)
 │   ├── home/              # Home page specific components
