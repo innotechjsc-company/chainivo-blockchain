@@ -67,3 +67,5 @@ src/
 - **types/**: Định nghĩa các kiểu dữ liệu TypeScript
 - **utils/**: Các hàm tiện ích và helper functions
 - **constants/**: Các hằng số của ứng dụng
+
+**Note**: Xem file `AGENT.md` trong từng folder để biết chi tiết về cấu trúc và quy ước của từng folder trong `src/`
