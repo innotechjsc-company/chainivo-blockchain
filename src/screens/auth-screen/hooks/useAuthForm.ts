@@ -100,39 +100,58 @@ export const useAuthForm = (type: "login" | "register") => {
 
   // Handle submit
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    (e: React.FormEvent) => {
+      // CRITICAL: Prevent default form submission behavior FIRST
       e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('[AUTH] Form submitted, starting validation...');
 
+      // Validate form before submitting
       if (!validateForm()) {
+        console.log('[AUTH] Validation failed');
         return;
       }
 
-      try {
-        if (type === "login") {
-          const credentials: LoginCredentials = {
-            email: formData.email,
-            password: formData.password,
-          };
-          const result = await dispatch(loginAction(credentials)).unwrap();
-          if (result) {
-            router.push("/");
+      console.log('[AUTH] Validation passed, starting async dispatch...');
+
+      // Use setTimeout to ensure we're not blocking the event loop
+      setTimeout(async () => {
+        try {
+          if (type === "login") {
+            const credentials: LoginCredentials = {
+              email: formData.email,
+              password: formData.password,
+            };
+            console.log('[AUTH] Dispatching login action...');
+            const result = await dispatch(loginAction(credentials)).unwrap();
+            console.log('[AUTH] Login result:', result);
+            // Only navigate if we have a valid result
+            if (result && result.token) {
+              console.log('[AUTH] Login successful, navigating to home...');
+              router.push("/");
+            }
+          } else {
+            const registerPayload: RegisterData = {
+              email: formData.email,
+              password: formData.password,
+              username: formData.username,
+              walletAddress: formData.walletAddress,
+            };
+            console.log('[AUTH] Dispatching register action...');
+            const result = await dispatch(registerAction(registerPayload)).unwrap();
+            console.log('[AUTH] Register result:', result);
+            // Only navigate if we have a valid result
+            if (result && result.token) {
+              console.log('[AUTH] Register successful, navigating to home...');
+              router.push("/");
+            }
           }
-        } else {
-          const registerPayload: RegisterData = {
-            email: formData.email,
-            password: formData.password,
-            username: formData.username,
-            walletAddress: formData.walletAddress,
-          };
-          const result = await dispatch(registerAction(registerPayload)).unwrap();
-          if (result) {
-            router.push("/");
-          }
+        } catch (error) {
+          // Error is already in Redux state and will be displayed via serverError
+          console.log('[AUTH] Error caught:', error);
         }
-      } catch (error) {
-        // Error is already in state
-      }
-      // Error will be displayed via serverError state in Alert component
+      }, 0);
     },
     [formData, type, validateForm, dispatch, router]
   );

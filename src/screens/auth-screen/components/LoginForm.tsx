@@ -17,8 +17,14 @@ export const LoginForm = () => {
     handleSubmit,
   } = useAuthForm("login");
 
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    console.log('[LoginForm] onSubmit called');
+    handleSubmit(e);
+    return false;
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6" noValidate action="javascript:void(0)">
       {/* Server Error */}
       {serverError && (
         <Alert variant="destructive">
