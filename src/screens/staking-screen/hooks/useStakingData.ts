@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
+import { useAppSelector } from "@/stores";
 import {
   StakingCoin,
   StakingNFT,
@@ -13,7 +13,7 @@ import {
  * Custom hook để quản lý dữ liệu staking
  */
 export const useStakingData = () => {
-  const { user, isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

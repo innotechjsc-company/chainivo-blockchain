@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useAuthStore } from "@/stores/authStore";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import { store, persistor } from "@/stores";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const hasHydrated = useRef(false);
-
-  useEffect(() => {
-    // Hydrate store only once on client side
-    if (!hasHydrated.current) {
-      useAuthStore.persist.rehydrate();
-      hasHydrated.current = true;
-    }
-  }, []);
-
-  return <>{children}</>;
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        {children}
+      </PersistGate>
+    </Provider>
+  );
 }

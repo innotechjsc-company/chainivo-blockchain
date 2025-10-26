@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
+import { useAppSelector } from "@/stores";
 import { useNewsData } from "./hooks/useNewsData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NewsCard } from "./components/NewsCard";
@@ -8,7 +8,7 @@ import "./news-screen.css";
 import { useRouter } from "next/navigation";
 
 export const NewsScreen = () => {
-  const { user, isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const router = useRouter();
   // Custom hooks
   const { allNews, loading, filterByType, getEventStatus } = useNewsData();

@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useUserStore } from "@/stores/userStore";
-import { useNotificationStore } from "@/stores/notificationStore";
+import { useAppSelector, useAppDispatch, addNotification } from "@/stores";
 import {
   CreateStakingCoinRequest,
   CreateStakingNFTRequest,
@@ -15,8 +14,8 @@ import {
  * Custom hook để quản lý các hành động staking
  */
 export const useStakingActions = () => {
-  const { user, isAuthenticated } = useUserStore();
-  const { addNotification } = useNotificationStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
+  const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +48,11 @@ export const useStakingActions = () => {
         updatedAt: new Date().toISOString(),
       };
 
-      addNotification({
+      dispatch(addNotification({
         type: "success",
         title: "Staking thành công! 🎉",
         message: `Đã stake ${request.amountStaked.toLocaleString()} CAN. Phần thưởng sẽ tích lũy theo thời gian!`,
-      });
+      }));
 
       return mockStake;
     } catch (err) {
@@ -61,11 +60,11 @@ export const useStakingActions = () => {
         err instanceof Error ? err.message : "Failed to stake coins";
       setError(errorMessage);
 
-      addNotification({
+      dispatch(addNotification({
         type: "error",
         title: "Lỗi staking",
         message: errorMessage,
-      });
+      }));
 
       throw err;
     } finally {
@@ -105,11 +104,11 @@ export const useStakingActions = () => {
         updatedAt: new Date().toISOString(),
       };
 
-      addNotification({
+      dispatch(addNotification({
         type: "success",
         title: "Staking NFT thành công! 🎉",
         message: `Đã stake NFT ${request.nftName}. Phần thưởng sẽ tích lũy theo thời gian!`,
-      });
+      }));
 
       return mockStake;
     } catch (err) {
@@ -117,11 +116,11 @@ export const useStakingActions = () => {
         err instanceof Error ? err.message : "Failed to stake NFT";
       setError(errorMessage);
 
-      addNotification({
+      dispatch(addNotification({
         type: "error",
         title: "Lỗi staking NFT",
         message: errorMessage,
-      });
+      }));
 
       throw err;
     } finally {
@@ -148,13 +147,13 @@ export const useStakingActions = () => {
         newBalance: 5000, // Mock balance
       };
 
-      addNotification({
+      dispatch(addNotification({
         type: "success",
         title: "Nhận thưởng thành công! 🎉",
         message: `Đã nhận ${mockResponse.rewardsClaimed.toFixed(
           2
         )} CAN. Thời gian staking đã được reset và tiếp tục tích lũy.`,
-      });
+      }));
 
       return mockResponse;
     } catch (err) {
@@ -162,11 +161,11 @@ export const useStakingActions = () => {
         err instanceof Error ? err.message : "Failed to claim rewards";
       setError(errorMessage);
 
-      addNotification({
+      dispatch(addNotification({
         type: "error",
         title: "Lỗi nhận thưởng",
         message: errorMessage,
-      });
+      }));
 
       throw err;
     } finally {
@@ -196,13 +195,13 @@ export const useStakingActions = () => {
 
       const actionText = request.type === "coin" ? "staking" : "staking NFT";
 
-      addNotification({
+      dispatch(addNotification({
         type: "success",
         title: `Huỷ ${actionText} thành công! ✅`,
         message: `Đã hoàn trả ${mockResponse.amountReturned.toLocaleString()} CAN và ${mockResponse.rewardsClaimed.toFixed(
           2
         )} CAN phần thưởng.`,
-      });
+      }));
 
       return mockResponse;
     } catch (err) {
@@ -210,11 +209,11 @@ export const useStakingActions = () => {
         err instanceof Error ? err.message : "Failed to cancel stake";
       setError(errorMessage);
 
-      addNotification({
+      dispatch(addNotification({
         type: "error",
         title: "Lỗi huỷ staking",
         message: errorMessage,
-      });
+      }));
 
       throw err;
     } finally {

@@ -1,21 +1,53 @@
 /**
- * Xuất các Zustand Store
+ * Redux Store Configuration
  * 
- * File này xuất tất cả các store và các hook của chúng để dễ dàng import
- * vào toàn bộ ứng dụng.
+ * File này xuất Redux store, typed hooks và selectors
+ * để sử dụng trong toàn bộ ứng dụng.
  * 
  * Cách dùng:
- * import { useUserStore, useWalletStore } from '@/stores'
+ * import { useAppDispatch, useAppSelector } from '@/stores'
+ * import { login } from '@/stores/authSlice'
  */
 
-// Xuất các store
-export { useUserStore, useUser, useIsAuthenticated, useUserActions } from './userStore'
-export { useWalletStore, useWallet, useTransactions, useWalletActions } from './walletStore'
-export { useInvestmentStore, useInvestments, usePortfolioSummary, useInvestmentActions } from './investmentStore'
-export { useNFTStore, useNFTs, useUserNFTs, useSelectedNFT, useNFTActions } from './nftStore'
-export { useMissionStore, useMissions, useActiveMissions, useCompletedMissions, useDailyStreak, useMissionActions } from './missionStore'
-export { useNotificationStore, useNotifications, useUnreadCount, useUnreadNotifications, useNotificationActions } from './notificationStore'
+import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
+import type { RootState, AppDispatch } from './store';
 
-// Xuất các kiểu dữ liệu
-export type * from './types'
+// Export store và persistor
+export { store, persistor } from './store';
+export type { RootState, AppDispatch } from './store';
+
+// Typed hooks
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
+// Export slices with namespaces to avoid conflicts
+import * as authSlice from './authSlice';
+import * as userSlice from './userSlice';
+import * as walletSlice from './walletSlice';
+import * as investmentSlice from './investmentSlice';
+import * as nftSlice from './nftSlice';
+import * as missionSlice from './missionSlice';
+import * as notificationSlice from './notificationSlice';
+
+export {
+  authSlice,
+  userSlice,
+  walletSlice,
+  investmentSlice,
+  nftSlice,
+  missionSlice,
+  notificationSlice,
+};
+
+// Export specific commonly used actions
+export { login, register, logout, refreshToken, clearError, setUser as setAuthUser, initializeAuth } from './authSlice';
+export { loginUser, registerUser, logoutUser, updateProfile, setUser } from './userSlice';
+export { connectWallet, disconnectWallet, fetchTransactions, sendCrypto } from './walletSlice';
+export { fetchInvestments, addInvestment, removeInvestment, updateInvestment } from './investmentSlice';
+export { fetchNFTs, fetchUserNFTs, buyNFT, sellNFT, selectNFT, setFilters, clearFilters } from './nftSlice';
+export { fetchMissions, completeMission, claimReward, updateProgress, resetDailyMissions, incrementStreak } from './missionSlice';
+export { addNotification, markAsRead, markAllAsRead, removeNotification, clearAll } from './notificationSlice';
+
+// Export types
+export type * from './types';
 

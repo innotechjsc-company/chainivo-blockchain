@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
+import { useAppSelector } from "@/stores";
 import { useAboutData } from "./hooks/useAboutData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import "./about-screen.css";
  * Màn hình giới thiệu về công ty
  */
 export const AboutUsScreen = () => {
-  const { user, isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
 
   // Custom hooks
   const {

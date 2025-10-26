@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
-import { useNotificationStore } from "@/stores/notificationStore";
+import { useAppSelector, useAppDispatch, addNotification } from "@/stores";
 import {
   Leader,
   Partner,
@@ -29,8 +28,8 @@ import {
  * Copy y hệt logic từ AboutUs.tsx gốc
  */
 export const useAboutData = () => {
-  const { user, isAuthenticated } = useUserStore();
-  const { addNotification } = useNotificationStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
+  const dispatch = useAppDispatch();
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -147,11 +146,11 @@ export const useAboutData = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    addNotification({
+    dispatch(addNotification({
       type: "success",
       title: "Đã gửi thành công",
-      message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất!",
-    });
+      message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sờbm nhất!",
+    }));
 
     setFormData({
       name: "",

@@ -1,12 +1,6 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useLogin,
-  useRegister,
-  useClearError,
-  useAuthError,
-  useAuthLoading,
-} from "@/stores/authStore";
+import { useAppSelector, useAppDispatch, login as loginAction, register as registerAction, clearError as clearErrorAction } from "@/stores";
 import type { LoginCredentials, RegisterData } from "@/api/services/auth-service";
 
 interface ValidationErrors {
@@ -19,11 +13,12 @@ interface ValidationErrors {
 
 export const useAuthForm = (type: "login" | "register") => {
   const router = useRouter();
-  const login = useLogin();
-  const register = useRegister();
-  const clearError = useClearError();
-  const serverError = useAuthError();
-  const isLoading = useAuthLoading();
+  const dispatch = useAppDispatch();
+  const { error: serverError, isLoading } = useAppSelector((state) => state.auth);
+  
+  const clearError = useCallback(() => {
+    dispatch(clearErrorAction());
+  }, [dispatch]);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -112,31 +107,34 @@ export const useAuthForm = (type: "login" | "register") => {
         return;
       }
 
-      let success = false;
-
-      if (type === "login") {
-        const credentials: LoginCredentials = {
-          email: formData.email,
-          password: formData.password,
-        };
-        success = await login(credentials);
-      } else {
-        const registerPayload: RegisterData = {
-          email: formData.email,
-          password: formData.password,
-          username: formData.username,
-          walletAddress: formData.walletAddress,
-        };
-        success = await register(registerPayload);
-      }
-
-      // Only navigate on success
-      if (success) {
-        router.push("/");
+      try {
+        if (type === "login") {
+          const credentials: LoginCredentials = {
+            email: formData.email,
+            password: formData.password,
+          };
+          const result = await dispatch(loginAction(credentials)).unwrap();
+          if (result) {
+            router.push("/");
+          }
+        } else {
+          const registerPayload: RegisterData = {
+            email: formData.email,
+            password: formData.password,
+            username: formData.username,
+            walletAddress: formData.walletAddress,
+          };
+          const result = await dispatch(registerAction(registerPayload)).unwrap();
+          if (result) {
+            router.push("/");
+          }
+        }
+      } catch (error) {
+        // Error is already in state
       }
       // Error will be displayed via serverError state in Alert component
     },
-    [formData, type, validateForm, login, register, router]
+    [formData, type, validateForm, dispatch, router]
   );
 
   return {

@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useAuthUser,  useLogout } from "@/stores/authStore";
+import { useAppSelector, useAppDispatch, logout as logoutAction } from "@/stores";
 
 interface UserProfile {
   username: string;
@@ -8,8 +8,8 @@ interface UserProfile {
 
 export const useAuth = (onSignOut?: () => void) => {
   const router = useRouter();
-  const user = useAuthUser();
-  const logout = useLogout();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
 
   // Convert authStore user to userProfile format
   const userProfile: UserProfile | null = user
@@ -20,7 +20,7 @@ export const useAuth = (onSignOut?: () => void) => {
     : null;
 
   const handleSignOut = async () => {
-    await logout();
+    await dispatch(logoutAction());
     onSignOut?.();
     router.push("/");
   };

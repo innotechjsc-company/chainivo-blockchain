@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
+import { useAppSelector } from "@/stores";
 import { NewsEvent, EventStatus } from "@/types/news";
 
 /**
@@ -8,7 +8,7 @@ import { NewsEvent, EventStatus } from "@/types/news";
  * Copy y hệt logic từ NewsList.tsx gốc
  */
 export const useNewsData = () => {
-  const { user, isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
   const [allNews, setAllNews] = useState<NewsEvent[]>([]);
 

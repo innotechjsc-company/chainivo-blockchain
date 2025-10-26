@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { useUserStore } from "@/stores/userStore";
+import { useAppSelector } from "@/stores";
 import { useStakingData } from "./hooks/useStakingData";
 import { useStakingActions } from "./hooks/useStakingActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +26,7 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
  * - Huỷ staking và nhận lại tài sản
  */
 export const StakingScreen = () => {
-  const { user, isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
 
   // Custom hooks
   const {
