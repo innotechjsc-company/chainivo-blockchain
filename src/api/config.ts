@@ -1,23 +1,23 @@
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const environment = process.env.ENVIRONMENT || (isDevelopment ? "development" : "production");
-
 const getEnvValue = (devKey: string, prodKey: string, fallback: string): string => {
-  if (environment === "development") {
+  console.log('environment', isDevelopment);
+  if (isDevelopment) {
+    console.log('devKey', process.env[devKey]);
     return process.env[devKey] || fallback;
-  } else if (environment === "production") {
+  } else if (!isDevelopment) {
     return process.env[prodKey] || fallback;
   }
   return fallback;
 };
 
 export const config = {
-  ENVIRONMENT: environment,
+  ENVIRONMENT: isDevelopment ? "development" : "production",
 
   API_BASE_URL: getEnvValue(
-    "API_BASE_URL_DEV",
+    "NEXT_PUBLIC_API_BASE_URL_DEV",
     "API_BASE_URL_PROD",
-    "http://localhost:3001"
+    "https://chainivo.online"
   ),
 
   FRONTEND_BASE_URL: getEnvValue(
@@ -25,55 +25,6 @@ export const config = {
     "FRONTEND_BASE_URL_PROD",
     "http://localhost:3002"
   ),
-
-  API_ENDPOINTS: {
-    NFT: {
-      GET_BY_ID: (tokenId: string) => `/api/nft/${tokenId}`,
-      LIKE: (tokenId: string) => `/api/nft/${tokenId}/like`,
-      COMMENT: (tokenId: string) => `/api/nft/${tokenId}/comment`,
-      UPDATE_TRANSACTION: "/api/nft/update-transaction",
-      MINT: "/api/nft/mint",
-      MINT_VIA_METAMASK: "/api/nft/mint-via-metamask",
-      OWNER: (address: string) => `/api/nft/owner/${address}`,
-      MARKETPLACE: {
-        FOR_SALE: (page: number, limit: number) =>
-          `/api/nft/marketplace/for-sale?page=${page}&limit=${limit}`,
-        LIST: "/api/nft/marketplace/list",
-      },
-    },
-
-    AUTH: {
-      LOGIN: "/auth/login",
-      TEST_TOKEN: "/auth/test-token",
-    },
-
-    DIGITALIZE: {
-      TEST_TOKEN: "/digitalize/test/token",
-      BALANCE: (address: string) =>
-        `/api/digitalize/balance?address=${address}`,
-      USDT_BALANCE: (address: string) =>
-        `/api/digitalize/token/usdt-balance/${address}`,
-      POL_BALANCE: (address: string) =>
-        `/api/digitalize/token/pol-balance/${address}`,
-      CAN_BALANCE: (address: string) =>
-        `/api/digitalize/token/can-balance/${address}`,
-      TOKEN_BALANCE: (tokenType: string, address: string) =>
-        `/api/digitalize/token/${tokenType}-balance/${address}`,
-    },
-
-    MYSTERY_BOX: {
-      TYPES: "/api/mystery-box/types?active=true",
-    },
-
-    ANALYTICS: {
-      OVERVIEW: "/api/digitalize/analytics/overview",
-      PHASES: "/api/digitalize/analytics/phases",
-      INVESTORS: "/api/digitalize/analytics/investors",
-      NFTS: "/api/digitalize/analytics/nfts",
-      STAKING: "/api/digitalize/analytics/staking",
-      RECENT_ACTIVITIES: "/api/digitalize/analytics/recent-activities",
-    },
-  },
 
   BLOCKCHAIN: {
     NETWORK: getEnvValue(
@@ -116,7 +67,7 @@ export const config = {
   },
 
   _debug: {
-    environment,
+    environment: isDevelopment ? "development" : "production",
     blockchain: {
       network: getEnvValue(
         "BLOCKCHAIN_NETWORK_DEV",

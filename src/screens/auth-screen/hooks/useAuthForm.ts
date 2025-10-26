@@ -1,0 +1,151 @@
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useLogin,
+  useRegister,
+  useClearError,
+  useAuthError,
+  useAuthLoading,
+} from "@/stores/authStore";
+import type { LoginCredentials, RegisterData } from "@/api/services/auth-service";
+
+interface ValidationErrors {
+  email?: string;
+  password?: string;
+  username?: string;
+  walletAddress?: string;
+  confirmPassword?: string;
+}
+
+export const useAuthForm = (type: "login" | "register") => {
+  const router = useRouter();
+  const login = useLogin();
+  const register = useRegister();
+  const clearError = useClearError();
+  const serverError = useAuthError();
+  const isLoading = useAuthLoading();
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    username: "",
+    walletAddress: "",
+    confirmPassword: "",
+  });
+
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+
+  // Validate email
+  const validateEmail = (email: string): string | undefined => {
+    if (!email) return "Email là bắt buộc";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Email không hợp lệ";
+    return undefined;
+  };
+
+  // Validate password
+  const validatePassword = (password: string): string | undefined => {
+    if (!password) return "Mật khẩu là bắt buộc";
+    if (password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
+    return undefined;
+  };
+
+  // Validate username
+  const validateUsername = (username: string): string | undefined => {
+    if (!username) return "Tên người dùng là bắt buộc";
+    if (username.length < 3) return "Tên người dùng phải có ít nhất 3 ký tự";
+    return undefined;
+  };
+
+  // Validate wallet address
+  const validateWalletAddress = (address: string): string | undefined => {
+    if (!address) return "Địa chỉ ví là bắt buộc";
+    // Basic validation - can be enhanced based on specific blockchain
+    if (address.length < 20) return "Địa chỉ ví không hợp lệ";
+    return undefined;
+  };
+
+  // Validate confirm password
+  const validateConfirmPassword = (confirmPassword: string, password: string): string | undefined => {
+    if (!confirmPassword) return "Xác nhận mật khẩu là bắt buộc";
+    if (confirmPassword !== password) return "Mật khẩu không khớp";
+    return undefined;
+  };
+
+  // Validate form
+  const validateForm = useCallback((): boolean => {
+    const errors: ValidationErrors = {};
+
+    errors.email = validateEmail(formData.email);
+    errors.password = validatePassword(formData.password);
+
+    if (type === "register") {
+      errors.username = validateUsername(formData.username);
+      errors.walletAddress = validateWalletAddress(formData.walletAddress);
+      errors.confirmPassword = validateConfirmPassword(
+        formData.confirmPassword,
+        formData.password
+      );
+    }
+
+    setValidationErrors(errors);
+
+    // Return true if no errors
+    return !Object.values(errors).some((error) => error !== undefined);
+  }, [formData, type]);
+
+  // Handle field change
+  const handleChange = useCallback((field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear validation error for this field
+    setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
+    // Clear server error when user types
+    clearError();
+  }, [clearError]);
+
+  // Handle submit
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      let success = false;
+
+      if (type === "login") {
+        const credentials: LoginCredentials = {
+          email: formData.email,
+          password: formData.password,
+        };
+        success = await login(credentials);
+      } else {
+        const registerPayload: RegisterData = {
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+          walletAddress: formData.walletAddress,
+        };
+        success = await register(registerPayload);
+      }
+
+      // Only navigate on success
+      if (success) {
+        router.push("/");
+      }
+      // Error will be displayed via serverError state in Alert component
+    },
+    [formData, type, validateForm, login, register, router]
+  );
+
+  return {
+    formData,
+    validationErrors,
+    serverError,
+    isLoading,
+    handleChange,
+    handleSubmit,
+    clearError,
+  };
+};

@@ -30,7 +30,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("jwt_token");
-      window.location.href = "/login";
+      window.location.href = "/auth?tab=login";
     }
     return Promise.reject(error);
   }
@@ -38,10 +38,10 @@ api.interceptors.response.use(
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: "/api/digitalize/auth/login",
-    REGISTER: "/api/digitalize/auth/register",
-    REFRESH: "/api/digitalize/auth/refresh",
-    LOGOUT: "/api/digitalize/auth/logout",
+    LOGIN: "/api/auth/login",
+    REGISTER: "/api/auth/register",
+    REFRESH: "/api/auth/refresh",
+    LOGOUT: "/api/auth/logout",
   },
   
   PHASES: {

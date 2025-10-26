@@ -47,6 +47,33 @@ A modern blockchain project built with **Next.js 15**, **React 19**, **Tailwind 
 - Node.js 18+ 
 - npm, yarn, pnpm, or bun
 
+### Environment Setup
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env.local
+```
+
+2. Configure your environment variables in `.env.local`:
+   - Set `ENVIRONMENT` to `development` or `production`
+   - Update API URLs for your backend
+   - Configure blockchain settings (network, RPC URLs, contract addresses)
+   - Set up wallet addresses
+   - Configure gas fees and defaults
+
+**Environment Variables:**
+- `ENVIRONMENT`: Set to `development` or `production`
+- `API_BASE_URL_DEV/PROD`: Backend API URL
+- `FRONTEND_BASE_URL_DEV/PROD`: Frontend URL
+- `BLOCKCHAIN_*_DEV/PROD`: Blockchain configuration (network, chain ID, RPC URLs, etc.)
+- `CAN_TOKEN_ADDRESS_DEV/PROD`: CAN token contract address
+- `USDT_CONTRACT_ADDRESS_DEV/PROD`: USDT contract address
+- `ADMIN_WALLET`: Admin wallet address
+- `DEFAULT_GAS_FEE`: Default gas fee
+- `DEFAULT_CURRENCY`: Default currency
+
+See `.env.example` for all available configuration options.
+
 ### Installation
 
 ```bash

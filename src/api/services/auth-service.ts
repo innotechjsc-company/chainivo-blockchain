@@ -61,21 +61,29 @@ export class AuthService {
     }
   }
 
-  static getUserInfo(): any {
+  static getUserInfo(): {
+    id: string;
+    email: string;
+    username: string;
+    walletAddress: string;
+    role: string;
+    permissions: string[];
+  } | null {
     const token = this.getToken();
     if (!token) return null;
     
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       return {
-        id: payload.userId,
-        email: payload.email,
-        username: payload.username,
-        walletAddress: payload.walletAddress,
-        role: payload.role,
+        id: payload.userId || payload.id,
+        email: payload.email || "",
+        username: payload.username || "",
+        walletAddress: payload.walletAddress || "",
+        role: payload.role || "user",
         permissions: payload.permissions || [],
       };
     } catch (error) {
+      console.error("Failed to parse user info from token:", error);
       return null;
     }
   }
@@ -87,12 +95,14 @@ export class AuthService {
         credentials
       );
       
-      if (response.success && response.data) {
+      if (response.success && response.data?.token) {
         this.setToken(response.data.token);
+        return response as AuthResponse;
       }
       
-      return response as AuthResponse;
+      throw new Error(response.message || "Đăng nhập thất bại");
     } catch (error: any) {
+      console.error("Login error:", error);
       return {
         success: false,
         data: {
@@ -106,7 +116,7 @@ export class AuthService {
             permissions: [],
           },
         },
-        message: error.message,
+        message: error.message || "Đăng nhập thất bại",
       };
     }
   }
@@ -118,12 +128,14 @@ export class AuthService {
         data
       );
       
-      if (response.success && response.data) {
+      if (response.success && response.data?.token) {
         this.setToken(response.data.token);
+        return response as AuthResponse;
       }
       
-      return response as AuthResponse;
+      throw new Error(response.message || "Đăng ký thất bại");
     } catch (error: any) {
+      console.error("Register error:", error);
       return {
         success: false,
         data: {
@@ -137,7 +149,7 @@ export class AuthService {
             permissions: [],
           },
         },
-        message: error.message,
+        message: error.message || "Đăng ký thất bại",
       };
     }
   }

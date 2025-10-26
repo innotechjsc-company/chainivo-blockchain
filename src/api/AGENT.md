@@ -188,7 +188,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("jwt_token");
-      window.location.href = "/login";
+      window.location.href = "/auth?tab=login";
     }
     return Promise.reject(error);
   }

@@ -92,7 +92,7 @@ export {
 } from "./ui/table";
 
 // Export new page components
-export { Header } from "./header/Header";
+export { Header } from "./header";
 export { Hero } from "./hero/Hero";
 export { UserDashboard } from "../screens/home-screen/user-dashboard/UserDashboard";
 export { BlockchainStats } from "../screens/home-screen/blockchain-stats/BlockchainStats";

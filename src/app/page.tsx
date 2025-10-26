@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/components/header/Header";
+import { Header } from "@/components/header";
 import { Hero } from "@/components/hero/Hero";
 import { UserDashboard } from "@/screens/home-screen/user-dashboard/UserDashboard";
 import { BlockchainStats } from "@/screens/home-screen/blockchain-stats/BlockchainStats";
