@@ -9,20 +9,20 @@ Thư mục `/api` chứa toàn bộ logic tương tác với backend API, bao g�
 ```
 src/api/
 ├── index.ts                    # Entry point chính - export tất cả
+├── api.ts                      # Axios instance với interceptors & ApiService
 ├── config.ts                   # Cấu hình API endpoints và settings
-├── types.ts                    # TypeScript types cho requests/responses
-├── axios.ts                    # Axios instance với interceptors
+├── constants.ts                # Constants và static values
 ├── services/                   # Service modules theo feature
-│   ├── authService.ts         # Authentication & authorization
-│   ├── userService.ts         # User management
-│   ├── walletService.ts       # Wallet & transactions
-│   ├── investmentService.ts   # Investment portfolio
-│   ├── nftService.ts          # NFT marketplace
-│   ├── missionService.ts      # Daily missions & rewards
-│   ├── notificationService.ts # Notifications system
-│   ├── blockchainService.ts   # Blockchain data & stats
-│   └── index.ts               # Export tất cả services
-├── README.md                   # Documentation chi tiết
+│   ├── index.ts               # Export tất cả services
+│   ├── auth-service.ts        # Authentication & authorization
+│   ├── phase-service.ts       # Investment phases management
+│   ├── nft-service.ts         # NFT marketplace
+│   ├── staking-service.ts     # Staking pools & rewards
+│   ├── airdrop-service.ts     # Airdrop campaigns
+│   ├── mystery-box-service.ts # Mystery box system
+│   ├── investor-service.ts    # Investor analytics & stats
+│   ├── analytics-service.ts   # Platform analytics
+│   └── wallet-service.ts      # Wallet & transactions
 └── AGENT.md                   # Quy tắc development (file này)
 ```
 
@@ -59,16 +59,16 @@ src/api/
 
 ```typescript
 // Export axios instance và utilities
-export { default as axiosInstance, apiRequest, tokenManager, uploadFile } from './axios'
+export { default as api } from "./api";
+export { ApiService, API_ENDPOINTS } from "./api";
+export type { ApiResponse } from "./api";
+
+// Export all services from services directory
+export * from "./services";
 
 // Export configuration
-export { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS } from './config'
-
-// Export types
-export * from './types'
-
-// Export all services
-export * from './services'
+export { config, buildApiUrl, buildFrontendUrl, buildBlockchainUrl } from "./config";
+export { constants } from "./constants";
 ```
 
 **Nguyên tắc:**
@@ -79,22 +79,33 @@ export * from './services'
 ### config.ts - Configuration
 
 ```typescript
-export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.chainivo.com',
-  TIMEOUT: 30000,
-  API_VERSION: 'v1',
-  RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000,
-} as const
-
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    // ...
+export const config = {
+  ENVIRONMENT: environment,
+  API_BASE_URL: getEnvValue("API_BASE_URL_DEV", "API_BASE_URL_PROD", "http://localhost:3001"),
+  FRONTEND_BASE_URL: getEnvValue("FRONTEND_BASE_URL_DEV", "FRONTEND_BASE_URL_PROD", "http://localhost:3002"),
+  
+  API_ENDPOINTS: {
+    NFT: {
+      GET_BY_ID: (tokenId: string) => `/api/nft/${tokenId}`,
+      MINT: "/api/nft/mint",
+      MARKETPLACE: {
+        FOR_SALE: (page: number, limit: number) => `/api/nft/marketplace/for-sale?page=${page}&limit=${limit}`,
+      },
+    },
+    AUTH: {
+      LOGIN: "/auth/login",
+      TEST_TOKEN: "/auth/test-token",
+    },
+    // ... more endpoints
   },
-  // ...
-} as const
+  
+  BLOCKCHAIN: {
+    NETWORK: "amoy",
+    CHAIN_ID: 80002,
+    RPC_URL: "https://rpc-amoy.polygon.technology",
+    CAN_TOKEN_ADDRESS: "0x5b54896A3F8d144E02DcEEa05668C4a4EDe83c4F",
+  },
+}
 ```
 
 **Nguyên tắc:**
@@ -103,83 +114,132 @@ export const API_ENDPOINTS = {
 - Environment variables với fallback values
 - Organized theo feature groups
 
-### types.ts - Type Definitions
+### Types - Type Definitions
+
+Types được định nghĩa trong từng service file:
 
 ```typescript
+// api.ts - Common types
 export interface ApiResponse<T = any> {
-  success: boolean
-  data: T
-  message?: string
-  timestamp?: string
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
-export interface LoginRequest {
-  email: string
-  password: string
-  rememberMe?: boolean
+// auth-service.ts - Auth types
+export interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
-export interface LoginResponse {
-  user: User
-  tokens: TokenPair
+export interface RegisterData {
+  email: string;
+  password: string;
+  username: string;
+  walletAddress: string;
+}
+
+// nft-service.ts - NFT types
+export interface NFT {
+  _id: string;
+  tokenId: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  // ... more fields
 }
 ```
 
 **Nguyên tắc:**
-- Generic types cho common patterns
-- Request/Response types cho mỗi endpoint
-- Comprehensive type coverage
-- Grouped theo feature areas
+- Types được định nghĩa trong service files tương ứng
+- Common types trong `api.ts`
+- Request/Response types cho mỗi service
+- Comprehensive type coverage cho từng domain
 
-### axios.ts - HTTP Client
+### api.ts - HTTP Client
 
 ```typescript
-export const axiosInstance = axios.create({
-  baseURL: `${API_CONFIG.BASE_URL}/api/${API_CONFIG.API_VERSION}`,
-  timeout: API_CONFIG.TIMEOUT,
+const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    "Content-Type": "application/json",
   },
-})
+});
 
 // Request interceptor - add auth token
-// Response interceptor - handle errors & token refresh
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - handle errors & auto logout
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("jwt_token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 ```
 
 **Nguyên tắc:**
 - Single axios instance cho toàn bộ app
 - Automatic authentication via interceptors
-- Centralized error handling
-- Development logging
-- Token refresh logic
+- Centralized error handling với auto-logout
+- JWT token management
+- Consistent error responses
 
 ### services/ - Service Modules
 
 Mỗi service file chứa API calls cho một feature cụ thể:
 
 ```typescript
-// authService.ts
-export const authService = {
-  login: (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
-    return apiRequest.post(API_ENDPOINTS.AUTH.LOGIN, data)
-  },
+// auth-service.ts
+export class AuthService {
+  static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
+    return ApiService.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
+  }
   
-  register: (data: RegisterRequest): Promise<ApiResponse<LoginResponse>> => {
-    return apiRequest.post(API_ENDPOINTS.AUTH.REGISTER, data)
-  },
+  static async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
+    return ApiService.post(API_ENDPOINTS.AUTH.REGISTER, data);
+  }
   
-  logout: (): Promise<ApiResponse<void>> => {
-    return apiRequest.post(API_ENDPOINTS.AUTH.LOGOUT)
-  },
+  static async testToken(): Promise<ApiResponse<{ token: string }>> {
+    return ApiService.get(API_ENDPOINTS.AUTH.TEST_TOKEN);
+  }
+}
+
+// nft-service.ts
+export class NFTService {
+  static async getNFTById(tokenId: string): Promise<ApiResponse<NFT>> {
+    return ApiService.get(API_ENDPOINTS.NFT.GET_BY_ID(tokenId));
+  }
+  
+  static async mintNFT(data: MintNFTData): Promise<ApiResponse<NFT>> {
+    return ApiService.post(API_ENDPOINTS.NFT.MINT, data);
+  }
 }
 ```
 
 **Nguyên tắc:**
-- Mỗi service tập trung vào một domain
-- Consistent naming convention
+- Mỗi service tập trung vào một domain cụ thể
+- Sử dụng class-based static methods
 - Type-safe parameters và return types
-- Sử dụng `apiRequest` helper thay vì axios trực tiếp
+- Sử dụng `ApiService` helper thay vì axios trực tiếp
+- Consistent error handling qua ApiService
 
 ## Nguyên Tắc Development
 
@@ -187,10 +247,13 @@ export const authService = {
 
 ```typescript
 // ✅ ĐÚNG - Import từ main entry point
-import { authService, walletService, ApiResponse } from '@/api'
+import { AuthService, NFTService, WalletService, ApiResponse } from '@/api'
 
 // ✅ ĐÚNG - Import specific services
-import { authService } from '@/api/services/authService'
+import { AuthService } from '@/api/services/auth-service'
+
+// ✅ ĐÚNG - Import ApiService cho custom calls
+import { ApiService, API_ENDPOINTS } from '@/api'
 
 // ❌ SAI - Import axios trực tiếp
 import axios from 'axios'
@@ -200,10 +263,13 @@ import axios from 'axios'
 
 ```typescript
 // ✅ ĐÚNG - Sử dụng services
-const response = await authService.login({ email, password })
+const response = await AuthService.login({ email, password })
 if (response.success) {
   console.log(response.data.user)
 }
+
+// ✅ ĐÚNG - Sử dụng ApiService cho custom calls
+const response = await ApiService.get('/custom/endpoint')
 
 // ❌ SAI - Gọi API trực tiếp
 const response = await axios.post('/auth/login', { email, password })
@@ -214,31 +280,32 @@ const response = await axios.post('/auth/login', { email, password })
 ```typescript
 // ✅ ĐÚNG - Handle errors properly
 try {
-  const response = await authService.login(credentials)
+  const response = await AuthService.login(credentials)
   if (response.success) {
     // Handle success
+  } else {
+    console.error(response.error)
   }
 } catch (error) {
-  const apiError = error as ApiError
-  console.error(apiError.error.message)
+  console.error('Login failed:', error)
 }
 
 // ❌ SAI - Ignore errors
-const response = await authService.login(credentials) // No error handling
+const response = await AuthService.login(credentials) // No error handling
 ```
 
 ### 4. **Type Safety**
 
 ```typescript
 // ✅ ĐÚNG - Use typed requests
-const loginData: LoginRequest = {
+const loginData: LoginCredentials = {
   email: 'user@example.com',
   password: 'password123'
 }
-const response: ApiResponse<LoginResponse> = await authService.login(loginData)
+const response: ApiResponse<AuthResponse> = await AuthService.login(loginData)
 
 // ❌ SAI - Use any types
-const response: any = await authService.login({ email, password })
+const response: any = await AuthService.login({ email, password })
 ```
 
 ## Integration với Stores
@@ -247,14 +314,14 @@ const response: any = await authService.login({ email, password })
 
 ```typescript
 import { create } from 'zustand'
-import { authService, userService } from '@/api'
-import type { LoginRequest, User } from '@/api'
+import { AuthService, NFTService } from '@/api'
+import type { LoginCredentials, AuthResponse, NFT } from '@/api'
 
 interface UserState {
-  user: User | null
+  user: any | null
   isLoading: boolean
   error: string | null
-  login: (credentials: LoginRequest) => Promise<void>
+  login: (credentials: LoginCredentials) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -266,19 +333,22 @@ export const useUserStore = create<UserState>((set) => ({
   login: async (credentials) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await authService.login(credentials)
+      const response = await AuthService.login(credentials)
       if (response.success) {
         set({ user: response.data.user, isLoading: false })
+      } else {
+        set({ error: response.error || 'Login failed', isLoading: false })
       }
     } catch (error: any) {
-      set({ error: error.error?.message || 'Login failed', isLoading: false })
+      set({ error: error.message || 'Login failed', isLoading: false })
     }
   },
   
   logout: async () => {
     set({ isLoading: true })
     try {
-      await authService.logout()
+      // Clear local storage
+      localStorage.removeItem('jwt_token')
       set({ user: null, isLoading: false })
     } catch (error) {
       set({ isLoading: false })
@@ -292,13 +362,15 @@ export const useUserStore = create<UserState>((set) => ({
 ### ✅ NÊN
 
 - **Sử dụng services thay vì axios trực tiếp**
-- **Handle errors với try-catch blocks**
+- **Handle errors với try-catch blocks và response.success checks**
 - **Sử dụng TypeScript types cho tất cả API calls**
+- **Sử dụng ApiService cho custom API calls**
 - **Test API integration với mock data**
 - **Document complex API endpoints**
 - **Sử dụng environment variables cho configuration**
 - **Implement proper loading states**
 - **Cache responses khi phù hợp**
+- **Sử dụng class-based services cho consistency**
 
 ### ❌ KHÔNG NÊN
 
@@ -310,6 +382,7 @@ export const useUserStore = create<UserState>((set) => ({
 - **Store sensitive data trong localStorage**
 - **Make API calls trong render functions**
 - **Forget to handle loading states**
+- **Bypass ApiService error handling**
 
 ## Testing
 
@@ -318,10 +391,16 @@ export const useUserStore = create<UserState>((set) => ({
 ```typescript
 // Mock API responses
 jest.mock('@/api', () => ({
-  authService: {
+  AuthService: {
     login: jest.fn().mockResolvedValue({
       success: true,
-      data: { user: mockUser, tokens: mockTokens }
+      data: { user: mockUser, token: mockToken }
+    })
+  },
+  ApiService: {
+    post: jest.fn().mockResolvedValue({
+      success: true,
+      data: mockData
     })
   }
 }))
@@ -329,8 +408,8 @@ jest.mock('@/api', () => ({
 // Test service calls
 test('should call login service with correct parameters', async () => {
   const credentials = { email: 'test@example.com', password: 'password' }
-  await authService.login(credentials)
-  expect(authService.login).toHaveBeenCalledWith(credentials)
+  await AuthService.login(credentials)
+  expect(AuthService.login).toHaveBeenCalledWith(credentials)
 })
 ```
 
@@ -339,13 +418,13 @@ test('should call login service with correct parameters', async () => {
 ```typescript
 // Test với real API (development only)
 test('should authenticate user with valid credentials', async () => {
-  const response = await authService.login({
+  const response = await AuthService.login({
     email: 'test@example.com',
     password: 'password123'
   })
   
   expect(response.success).toBe(true)
-  expect(response.data.user).toBeDefined()
+  expect(response.data).toBeDefined()
 })
 ```
 
@@ -512,7 +591,7 @@ export const migrateApiResponse = <T>(response: any, version: string): ApiRespon
 Khi thêm API endpoints mới:
 
 1. **Thêm endpoint vào `config.ts`**
-2. **Định nghĩa types trong `types.ts`**
+2. **Định nghĩa types trong service file tương ứng**
 3. **Tạo/update service trong `services/`**
 4. **Export từ `services/index.ts`**
 5. **Update documentation**

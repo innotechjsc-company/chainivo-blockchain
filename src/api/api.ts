@@ -1,0 +1,222 @@
+import axios, { AxiosInstance, AxiosResponse } from "axios";
+
+import { config } from "./config";
+
+const API_BASE_URL = config.API_BASE_URL;
+
+const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("jwt_token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: "/api/digitalize/auth/login",
+    REGISTER: "/api/digitalize/auth/register",
+    REFRESH: "/api/digitalize/auth/refresh",
+    LOGOUT: "/api/digitalize/auth/logout",
+  },
+  
+  PHASES: {
+    LIST: "/api/digitalize/phases",
+    DETAIL: (id: string) => `/api/digitalize/phases/${id}`,
+    INVEST: "/api/digitalize/invest",
+  },
+  
+  INVESTOR: {
+    STATS: (address: string) => `/api/digitalize/investor/${address}`,
+    HISTORY: (address: string) => `/api/digitalize/investor/${address}/history`,
+    PHASES: (address: string) => `/api/digitalize/investor/${address}/phases`,
+  },
+  
+  ANALYTICS: {
+    OVERVIEW: "/api/digitalize/analytics/overview",
+    PHASES: "/api/digitalize/analytics/phases",
+    INVESTORS: "/api/digitalize/analytics/investors",
+    NFTS: "/api/digitalize/analytics/nfts",
+    STAKING: "/api/digitalize/analytics/staking",
+  },
+  
+  NFT: {
+    LIST: "/api/digitalize/nfts",
+    DETAIL: (id: string) => `/api/digitalize/nfts/${id}`,
+    MINT: "/api/digitalize/nfts/mint",
+    TRANSFER: "/api/digitalize/nfts/transfer",
+  },
+  
+  MYSTERY_BOX: {
+    LIST: "/api/digitalize/mystery-boxes",
+    OPEN: "/api/digitalize/mystery-boxes/open",
+    PURCHASE: "/api/digitalize/mystery-boxes/purchase",
+  },
+  
+  STAKING: {
+    POOLS: "/api/staking/pools",
+    STAKE: "/api/staking/stake",
+    UNSTAKE: "/api/staking/unstake",
+    REWARDS: "/api/staking/rewards",
+  },
+  
+  AIRDROP: {
+    CAMPAIGNS: "/api/digitalize/airdrop/campaigns",
+    PARTICIPATE: "/api/digitalize/airdrop/participate",
+    CLAIM: "/api/digitalize/airdrop/claim",
+  },
+  
+  TEST_TOKEN: "/api/digitalize/test/token",
+  UPDATE_TRANSACTION_STATUS: "/api/digitalize/update-transaction-status",
+  UPDATE_PHASE_STATISTICS: "/api/digitalize/update-phase-statistics",
+  GET_WALLET_BALANCES: "/api/digitalize/wallet-balances",
+  EXECUTE_TOKEN_PURCHASE: "/api/digitalize/execute-purchase",
+} as const;
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export class ApiService {
+  static async get<T>(endpoint: string, params?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.get(endpoint, { params });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.post(endpoint, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.put(endpoint, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.delete(endpoint);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async getTestToken(): Promise<ApiResponse<{ token: string }>> {
+    return this.get(API_ENDPOINTS.TEST_TOKEN);
+  }
+
+  static async getPhases(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.PHASES.LIST);
+  }
+
+  static async createInvestment(data: {
+    phaseId: number;
+    amount: number;
+    walletAddress: string;
+  }): Promise<ApiResponse<any>> {
+    const backendData = {
+      phaseId: data.phaseId,
+      investmentAmount: data.amount,
+      investorAddress: data.walletAddress,
+      paymentMethod: "USDT",
+      paymentAmount: data.amount,
+      paymentCurrency: "USD",
+      investorEmail: "",
+      status: "pending",
+    };
+    return this.post(API_ENDPOINTS.PHASES.INVEST, backendData);
+  }
+
+  static async getInvestorStats(address: string): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.INVESTOR.STATS(address));
+  }
+
+  static async getAnalyticsOverview(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.ANALYTICS.OVERVIEW);
+  }
+
+  static async updateTransactionStatus(data: {
+    transactionHash: string;
+    status: string;
+    blockchainTxHash?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.UPDATE_TRANSACTION_STATUS, data);
+  }
+
+  static async updatePhaseStatistics(data: {
+    phaseId: number;
+    tokensSold: number;
+    amountRaised: number;
+    transactionHash: string;
+  }): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.UPDATE_PHASE_STATISTICS, data);
+  }
+
+  static async getWalletBalances(address: string, network: string): Promise<ApiResponse<any>> {
+    return this.get(`${API_ENDPOINTS.GET_WALLET_BALANCES}?address=${address}&network=${network}`);
+  }
+
+  static async executeTokenPurchase(data: {
+    phaseId: number;
+    amount: number;
+    walletAddress: string;
+    network: string;
+    usdtTransactionHash?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.EXECUTE_TOKEN_PURCHASE, data);
+  }
+}
+
+export default api;
