@@ -141,7 +141,6 @@ export const useAuthForm = (type: "login" | "register") => {
               email: formData.email,
               password: formData.password,
             };
-            debugger;
             const result = await dispatch(
               loginAction({
                 email: formData.email,

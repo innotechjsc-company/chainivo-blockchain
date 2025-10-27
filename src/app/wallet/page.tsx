@@ -6,16 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { UserService } from "@/api/services/user-service";
+import { useAppSelector, useAppDispatch, updateAuthProfile } from "@/stores";
 
 // MetaMask types
 interface MetaMaskProvider {
   isMetaMask?: boolean;
   request: (args: { method: string; params?: any[] }) => Promise<any>;
-  on: (event: string, handler: (accounts: string[]) => void) => void;
-  removeListener: (
-    event: string,
-    handler: (accounts: string[]) => void
-  ) => void;
+  on: (event: string, handler: (...args: any[]) => void) => void;
+  removeListener: (event: string, handler: (...args: any[]) => void) => void;
 }
 
 declare global {
@@ -55,16 +53,76 @@ export default function WalletConnectPage() {
   const router = useRouter();
   const [connected, setConnected] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
-  // Check if MetaMask is installed
+  // Initialize wallet address from user if available
+  useEffect(() => {
+    console.log("User from Redux:", user);
+    debugger;
+    if (user?.walletAddress) {
+      setWalletAddress(user.walletAddress);
+      setConnected("metamask");
+      console.log("Initialized wallet from Redux user:", user.walletAddress);
+    } else {
+      // Check localStorage as fallback
+      const storedWalletAddress = localStorage.getItem("walletAddress");
+      if (storedWalletAddress) {
+        setWalletAddress(storedWalletAddress);
+        setConnected("metamask");
+        // Update Redux store with localStorage value
+        dispatch(updateAuthProfile({ walletAddress: storedWalletAddress }));
+      }
+    }
+  }, [user, dispatch]);
+
+  // Check if MetaMask is installed and set up listeners
   useEffect(() => {
     if (typeof window !== "undefined" && window.ethereum?.isMetaMask) {
       setIsMetaMaskInstalled(true);
+
+      // Listen for account changes (when user switches accounts or disconnects)
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length === 0) {
+          // User disconnected from MetaMask
+          setConnected(null);
+          setWalletAddress(null);
+          setError(null);
+          localStorage.removeItem("walletAddress");
+          console.log("MetaMask disconnected externally");
+        } else if (connected === "metamask") {
+          // User switched accounts
+          setWalletAddress(accounts[0]);
+          localStorage.setItem("walletAddress", accounts[0]);
+          console.log("MetaMask account switched to:", accounts[0]);
+        }
+      };
+
+      // Listen for chain changes
+      const handleChainChanged = (chainId: string) => {
+        console.log("MetaMask chain changed to:", chainId);
+        // You might want to handle chain changes here
+      };
+
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
+
+      // Cleanup listeners on unmount
+      return () => {
+        if (window.ethereum?.removeListener) {
+          window.ethereum.removeListener(
+            "accountsChanged",
+            handleAccountsChanged
+          );
+          window.ethereum.removeListener("chainChanged", handleChainChanged);
+        }
+      };
     }
-  }, []);
+  }, [connected]);
 
   // MetaMask connection function
   const connectToMetaMask = async () => {
@@ -87,14 +145,31 @@ export default function WalletConnectPage() {
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
-        console.log("Connected to MetaMask:", accounts[0]);
-        if (accounts[0]) {
-          let res = await UserService.updateWalletAddress({
-            walletAddress: accounts[0],
-          });
-          if (res.success) {
-            localStorage.setItem("walletAddress", accounts[0]);
+
+        // Always update Redux store and backend if wallet address is different
+        if (accounts[0] && user?.walletAddress !== accounts[0]) {
+          try {
+            let res = await UserService.updateWalletAddress({
+              walletAddress: accounts[0],
+            });
+            if (res.success) {
+              localStorage.setItem("walletAddress", accounts[0]);
+              dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+              localStorage.setItem("walletAddress", accounts[0]);
+            } else {
+              console.error(
+                "Failed to update wallet address in backend:",
+                res.message
+              );
+            }
+          } catch (err) {
+            console.error("Error updating wallet address:", err);
           }
+        } else if (accounts[0]) {
+          // If wallet address is the same, still update local state
+          localStorage.setItem("walletAddress", accounts[0]);
+          dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+          console.log("Wallet address synced with Redux store:", accounts[0]);
         }
       }
     } catch (err: any) {
@@ -111,6 +186,59 @@ export default function WalletConnectPage() {
     }
   };
 
+  // MetaMask disconnect function
+  const disconnectFromMetaMask = async () => {
+    if (!window.ethereum?.isMetaMask) {
+      console.log("MetaMask not available for disconnect");
+      return;
+    }
+
+    setIsDisconnecting(true);
+    setError(null);
+
+    try {
+      // Try to revoke permissions (if supported)
+      await window.ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [
+          {
+            eth_accounts: {},
+          },
+        ],
+      });
+      console.log("MetaMask permissions revoked");
+    } catch (err: any) {
+      // If revokePermissions is not supported, just log the error
+      console.log("MetaMask revoke permissions not supported or failed:", err);
+    }
+
+    // Clear local state regardless of API success
+    setConnected(null);
+    setWalletAddress(null);
+    setError(null);
+
+    // Clear localStorage
+    localStorage.removeItem("walletAddress");
+
+    // Update backend and Redux store
+    try {
+      await UserService.updateWalletAddress({
+        walletAddress: "",
+      });
+      console.log("Wallet address cleared from backend");
+      // Update Redux store
+      dispatch(updateAuthProfile({ walletAddress: "" }));
+      console.log("Wallet address cleared from Redux store");
+    } catch (err) {
+      console.error("Failed to clear wallet address from backend:", err);
+      // Still update Redux store even if backend fails
+      dispatch(updateAuthProfile({ walletAddress: "" }));
+      console.log("Wallet address cleared from Redux store (backend failed)");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
   const handleConnect = async (walletId: string) => {
     if (walletId === "metamask") {
       await connectToMetaMask();
@@ -122,11 +250,16 @@ export default function WalletConnectPage() {
     }
   };
 
-  const handleDisconnect = () => {
-    setConnected(null);
-    setWalletAddress(null);
-    setError(null);
-    console.log("Wallet disconnected");
+  const handleDisconnect = async () => {
+    if (connected === "metamask") {
+      await disconnectFromMetaMask();
+    } else {
+      // For other wallets, just clear local state
+      setConnected(null);
+      setWalletAddress(null);
+      setError(null);
+      console.log("Wallet disconnected");
+    }
   };
 
   return (
@@ -149,6 +282,20 @@ export default function WalletConnectPage() {
             <p className="text-muted-foreground">
               Chọn ví để kết nối với tài khoản của bạn
             </p>
+            {user && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Đang đăng nhập với:{" "}
+                  <span className="font-semibold">{user.username}</span>
+                </p>
+                {user.walletAddress && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ví hiện tại: {user.walletAddress.slice(0, 6)}...
+                    {user.walletAddress.slice(-4)}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {error && (
@@ -181,8 +328,19 @@ export default function WalletConnectPage() {
                     )}
                   </div>
                 </div>
-                <Button variant="outline" onClick={handleDisconnect}>
-                  Ngắt kết nối
+                <Button
+                  variant="outline"
+                  onClick={handleDisconnect}
+                  disabled={isDisconnecting}
+                >
+                  {isDisconnecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang ngắt kết nối...
+                    </>
+                  ) : (
+                    "Ngắt kết nối"
+                  )}
                 </Button>
               </div>
             </Card>
