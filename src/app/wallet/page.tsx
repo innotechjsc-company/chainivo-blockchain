@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
+import { UserService } from "@/api/services/user-service";
 
 // MetaMask types
 interface MetaMaskProvider {
@@ -87,6 +88,14 @@ export default function WalletConnectPage() {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
         console.log("Connected to MetaMask:", accounts[0]);
+        if (accounts[0]) {
+          let res = await UserService.updateWalletAddress({
+            walletAddress: accounts[0],
+          });
+          if (res.success) {
+            localStorage.setItem("walletAddress", accounts[0]);
+          }
+        }
       }
     } catch (err: any) {
       console.error("MetaMask connection error:", err);

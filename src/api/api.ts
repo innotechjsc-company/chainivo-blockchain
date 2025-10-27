@@ -43,19 +43,19 @@ export const API_ENDPOINTS = {
     REFRESH: "/api/auth/refresh",
     LOGOUT: "/api/auth/logout",
   },
-  
+
   PHASES: {
     LIST: "/api/digitalize/phases",
     DETAIL: (id: string) => `/api/digitalize/phases/${id}`,
     INVEST: "/api/digitalize/invest",
   },
-  
+
   INVESTOR: {
     STATS: (address: string) => `/api/digitalize/investor/${address}`,
     HISTORY: (address: string) => `/api/digitalize/investor/${address}/history`,
     PHASES: (address: string) => `/api/digitalize/investor/${address}/phases`,
   },
-  
+
   ANALYTICS: {
     OVERVIEW: "/api/digitalize/analytics/overview",
     PHASES: "/api/digitalize/analytics/phases",
@@ -63,33 +63,36 @@ export const API_ENDPOINTS = {
     NFTS: "/api/digitalize/analytics/nfts",
     STAKING: "/api/digitalize/analytics/staking",
   },
-  
+
   NFT: {
     LIST: "/api/digitalize/nfts",
     DETAIL: (id: string) => `/api/digitalize/nfts/${id}`,
     MINT: "/api/digitalize/nfts/mint",
     TRANSFER: "/api/digitalize/nfts/transfer",
   },
-  
+
   MYSTERY_BOX: {
     LIST: "/api/digitalize/mystery-boxes",
     OPEN: "/api/digitalize/mystery-boxes/open",
     PURCHASE: "/api/digitalize/mystery-boxes/purchase",
   },
-  
+
   STAKING: {
     POOLS: "/api/staking/pools",
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake",
     REWARDS: "/api/staking/rewards",
   },
-  
+
   AIRDROP: {
     CAMPAIGNS: "/api/digitalize/airdrop/campaigns",
     PARTICIPATE: "/api/digitalize/airdrop/participate",
     CLAIM: "/api/digitalize/airdrop/claim",
   },
-  
+  USER: {
+    UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+  },
+
   TEST_TOKEN: "/api/digitalize/test/token",
   UPDATE_TRANSACTION_STATUS: "/api/digitalize/update-transaction-status",
   UPDATE_PHASE_STATISTICS: "/api/digitalize/update-phase-statistics",
@@ -204,8 +207,13 @@ export class ApiService {
     return this.post(API_ENDPOINTS.UPDATE_PHASE_STATISTICS, data);
   }
 
-  static async getWalletBalances(address: string, network: string): Promise<ApiResponse<any>> {
-    return this.get(`${API_ENDPOINTS.GET_WALLET_BALANCES}?address=${address}&network=${network}`);
+  static async getWalletBalances(
+    address: string,
+    network: string
+  ): Promise<ApiResponse<any>> {
+    return this.get(
+      `${API_ENDPOINTS.GET_WALLET_BALANCES}?address=${address}&network=${network}`
+    );
   }
 
   static async executeTokenPurchase(data: {
