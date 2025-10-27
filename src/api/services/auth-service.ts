@@ -121,7 +121,7 @@ export class AuthService {
     }
   }
 
-  static async register(data: RegisterData): Promise<AuthResponse> {
+  static async register(data: RegisterData): Promise<any> {
     try {
       const response = await ApiService.post<AuthResponse["data"]>(
         API_ENDPOINTS.AUTH.REGISTER,
@@ -131,8 +131,6 @@ export class AuthService {
       if (response.success && response.data?.token) {
         return response as AuthResponse;
       }
-
-      throw new Error(response.message || "Đăng ký thất bại");
     } catch (error: any) {
       console.error("Register error:", error);
       return {

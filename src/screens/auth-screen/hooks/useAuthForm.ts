@@ -1,7 +1,16 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAppSelector, useAppDispatch, login as loginAction, register as registerAction, clearError as clearErrorAction } from "@/stores";
-import type { LoginCredentials, RegisterData } from "@/api/services/auth-service";
+import {
+  useAppSelector,
+  useAppDispatch,
+  login as loginAction,
+  register as registerAction,
+  clearError as clearErrorAction,
+} from "@/stores";
+import type {
+  LoginCredentials,
+  RegisterData,
+} from "@/api/services/auth-service";
 
 interface ValidationErrors {
   email?: string;
@@ -14,8 +23,10 @@ interface ValidationErrors {
 export const useAuthForm = (type: "login" | "register") => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { error: serverError, isLoading } = useAppSelector((state) => state.auth);
-  
+  const { error: serverError, isLoading } = useAppSelector(
+    (state) => state.auth
+  );
+
   const clearError = useCallback(() => {
     dispatch(clearErrorAction());
   }, [dispatch]);
@@ -28,7 +39,9 @@ export const useAuthForm = (type: "login" | "register") => {
     confirmPassword: "",
   });
 
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
 
   // Validate email
   const validateEmail = (email: string): string | undefined => {
@@ -61,7 +74,10 @@ export const useAuthForm = (type: "login" | "register") => {
   };
 
   // Validate confirm password
-  const validateConfirmPassword = (confirmPassword: string, password: string): string | undefined => {
+  const validateConfirmPassword = (
+    confirmPassword: string,
+    password: string
+  ): string | undefined => {
     if (!confirmPassword) return "Xác nhận mật khẩu là bắt buộc";
     if (confirmPassword !== password) return "Mật khẩu không khớp";
     return undefined;
@@ -76,7 +92,6 @@ export const useAuthForm = (type: "login" | "register") => {
 
     if (type === "register") {
       errors.username = validateUsername(formData.username);
-      errors.walletAddress = validateWalletAddress(formData.walletAddress);
       errors.confirmPassword = validateConfirmPassword(
         formData.confirmPassword,
         formData.password
@@ -90,30 +105,33 @@ export const useAuthForm = (type: "login" | "register") => {
   }, [formData, type]);
 
   // Handle field change
-  const handleChange = useCallback((field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear validation error for this field
-    setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
-    // Clear server error when user types
-    clearError();
-  }, [clearError]);
+  const handleChange = useCallback(
+    (field: keyof typeof formData, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      // Clear validation error for this field
+      setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
+      // Clear server error when user types
+      clearError();
+    },
+    [clearError]
+  );
 
   // Handle submit
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    (e: React.FormEvent, formData: any) => {
       // CRITICAL: Prevent default form submission behavior FIRST
       e.preventDefault();
       e.stopPropagation();
-      
-      console.log('[AUTH] Form submitted, starting validation...');
+
+      console.log("[AUTH] Form submitted, starting validation...");
 
       // Validate form before submitting
       if (!validateForm()) {
-        console.log('[AUTH] Validation failed');
+        console.log("[AUTH] Validation failed");
         return;
       }
 
-      console.log('[AUTH] Validation passed, starting async dispatch...');
+      console.log("[AUTH] Validation passed, starting async dispatch...");
 
       // Use setTimeout to ensure we're not blocking the event loop
       setTimeout(async () => {
@@ -123,33 +141,32 @@ export const useAuthForm = (type: "login" | "register") => {
               email: formData.email,
               password: formData.password,
             };
-            console.log('[AUTH] Dispatching login action...');
-            const result = await dispatch(loginAction(credentials)).unwrap();
-            console.log('[AUTH] Login result:', result);
-            // Only navigate if we have a valid result
+            debugger;
+            const result = await dispatch(
+              loginAction({
+                email: formData.email,
+                password: formData.password,
+              })
+            ).unwrap();
             if (result && result.token) {
-              console.log('[AUTH] Login successful, navigating to home...');
-              router.push("/");
+              router.push("/wallet");
             }
           } else {
             const registerPayload: RegisterData = {
               email: formData.email,
               password: formData.password,
               username: formData.username,
-              walletAddress: formData.walletAddress,
+              walletAddress: "",
             };
-            console.log('[AUTH] Dispatching register action...');
-            const result = await dispatch(registerAction(registerPayload)).unwrap();
-            console.log('[AUTH] Register result:', result);
-            // Only navigate if we have a valid result
-            if (result && result.token) {
-              console.log('[AUTH] Register successful, navigating to home...');
-              router.push("/");
-            }
+            const result = await dispatch(
+              registerAction(registerPayload)
+            ).unwrap();
+            router.push("/auth?tab=login");
+            alert("Bạn đã đăng ký thành công , vui lòng đăng nhập để tiếp tục");
           }
         } catch (error) {
           // Error is already in Redux state and will be displayed via serverError
-          console.log('[AUTH] Error caught:', error);
+          console.log("[AUTH] Error caught:", error);
         }
       }, 0);
     },

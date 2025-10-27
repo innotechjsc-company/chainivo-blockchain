@@ -18,21 +18,18 @@ export const LoginForm = () => {
   } = useAuthForm("login");
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.log('[LoginForm] onSubmit called');
-    handleSubmit(e);
+    console.log("[LoginForm] onSubmit called");
+    handleSubmit(e, formData);
     return false;
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6" noValidate action="javascript:void(0)">
-      {/* Server Error */}
-      {serverError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{serverError}</AlertDescription>
-        </Alert>
-      )}
-
+    <form
+      onSubmit={onSubmit}
+      className="space-y-6"
+      noValidate
+      action="javascript:void(0)"
+    >
       {/* Email Field */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -69,7 +66,9 @@ export const LoginForm = () => {
           />
         </div>
         {validationErrors.password && (
-          <p className="text-sm text-destructive">{validationErrors.password}</p>
+          <p className="text-sm text-destructive">
+            {validationErrors.password}
+          </p>
         )}
       </div>
 

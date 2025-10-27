@@ -1,5 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthService, type LoginCredentials, type RegisterData } from '@/api/services/auth-service';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  AuthService,
+  type LoginCredentials,
+  type RegisterData,
+} from "@/api/services/auth-service";
 
 interface AuthUser {
   id: string;
@@ -28,7 +32,7 @@ const initialState: AuthState = {
 
 // Async thunks
 export const login = createAsyncThunk(
-  'auth/login',
+  "auth/login",
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await AuthService.login(credentials);
@@ -40,47 +44,39 @@ export const login = createAsyncThunk(
         };
       }
 
-      return rejectWithValue(response.message || 'Đăng nhập thất bại');
+      return rejectWithValue(response.message || "Đăng nhập thất bại");
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Đăng nhập thất bại';
+        error instanceof Error ? error.message : "Đăng nhập thất bại";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const register = createAsyncThunk(
-  'auth/register',
+  "auth/register",
   async (data: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(data);
-
-      if (response.success && response.data?.user && response.data?.token) {
-        return {
-          user: response.data.user,
-          token: response.data.token,
-        };
-      }
-
-      return rejectWithValue(response.message || 'Đăng ký thất bại');
+      return response;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Đăng ký thất bại';
+        error instanceof Error ? error.message : "Đăng ký thất bại";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
-export const logout = createAsyncThunk('auth/logout', async () => {
+export const logout = createAsyncThunk("auth/logout", async () => {
   try {
     await AuthService.logout();
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error("Logout error:", error);
   }
 });
 
 export const refreshToken = createAsyncThunk(
-  'auth/refreshToken',
+  "auth/refreshToken",
   async (_, { rejectWithValue }) => {
     try {
       const success = await AuthService.refreshToken();
@@ -94,17 +90,17 @@ export const refreshToken = createAsyncThunk(
           };
         }
       }
-      return rejectWithValue('Failed to refresh token');
+      return rejectWithValue("Failed to refresh token");
     } catch (error) {
-      console.error('Refresh token error:', error);
-      return rejectWithValue('Failed to refresh token');
+      console.error("Refresh token error:", error);
+      return rejectWithValue("Failed to refresh token");
     }
   }
 );
 
 // Slice
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     setUser: (state, action: PayloadAction<AuthUser | null>) => {
@@ -152,8 +148,8 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(register.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = null;
+        state.token = null;
         state.isAuthenticated = true;
         state.isLoading = false;
         state.error = null;
