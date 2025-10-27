@@ -36,6 +36,9 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   const handleSignUp = () => {
     router.push("/auth?tab=register");
   };
+  const handleLogin = () => {
+    router.push("/auth?tab=login");
+  };
 
   // Compose UI from components
   return (
@@ -43,7 +46,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Logo />
-          
+
           <DesktopNav />
 
           {/* Actions */}
@@ -67,10 +70,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   <Wallet className="w-4 h-4 mr-2" />
                   Kết nối ví
                 </Button>
-                <UserMenu
-                  userProfile={userProfile}
-                  onSignOut={handleSignOut}
-                />
+                <UserMenu userProfile={userProfile} onSignOut={handleSignOut} />
               </>
             ) : (
               <>
@@ -85,7 +85,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                 <Button
                   variant="default"
                   className="hidden md:flex cursor-pointer"
-                  onClick={handleSignIn}
+                  onClick={handleLogin}
                 >
                   <LogIn className="w-4 h-4 mr-2" />
                   Đăng nhập

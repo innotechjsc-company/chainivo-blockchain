@@ -44,16 +44,16 @@ export class AuthService {
   static isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
-    
+
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const currentTime = Date.now() / 1000;
-      
+
       if (payload.exp && payload.exp < currentTime) {
         this.removeToken();
         return false;
       }
-      
+
       return true;
     } catch (error) {
       this.removeToken();
@@ -71,7 +71,7 @@ export class AuthService {
   } | null {
     const token = this.getToken();
     if (!token) return null;
-    
+
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       return {
@@ -94,12 +94,12 @@ export class AuthService {
         API_ENDPOINTS.AUTH.LOGIN,
         credentials
       );
-      
+
       if (response.success && response.data?.token) {
         this.setToken(response.data.token);
         return response as AuthResponse;
       }
-      
+
       throw new Error(response.message || "Đăng nhập thất bại");
     } catch (error: any) {
       console.error("Login error:", error);
@@ -127,12 +127,11 @@ export class AuthService {
         API_ENDPOINTS.AUTH.REGISTER,
         data
       );
-      
+
       if (response.success && response.data?.token) {
-        this.setToken(response.data.token);
         return response as AuthResponse;
       }
-      
+
       throw new Error(response.message || "Đăng ký thất bại");
     } catch (error: any) {
       console.error("Register error:", error);
@@ -169,12 +168,12 @@ export class AuthService {
       const response = await ApiService.post<{ token: string }>(
         API_ENDPOINTS.AUTH.REFRESH
       );
-      
+
       if (response.success && response.data) {
         this.setToken(response.data.token);
         return true;
       }
-      
+
       return false;
     } catch (error) {
       return false;
@@ -197,14 +196,14 @@ export class AuthService {
   static hasPermission(permission: string): boolean {
     const userInfo = this.getUserInfo();
     if (!userInfo) return false;
-    
+
     return userInfo.permissions.includes(permission);
   }
 
   static hasRole(role: string): boolean {
     const userInfo = this.getUserInfo();
     if (!userInfo) return false;
-    
+
     return userInfo.role === role;
   }
 }
