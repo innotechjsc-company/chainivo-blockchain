@@ -271,7 +271,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         description: `NFT from ${nftData.collection.name}`,
         image: nftData.image,
         attributes: [
-          { trait_type: "Rarity", value: nftData.rarity },
+          { trait_type: "Rarity", value: nftData?.rarity },
           { trait_type: "Collection", value: nftData.collection.name },
         ],
         collection: nftData.collection,
@@ -343,7 +343,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
       // Encode ERC-20 transfer data
       const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
 
-      // Request transaction
+      // Request transaction chuyển can cho admin
       await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [

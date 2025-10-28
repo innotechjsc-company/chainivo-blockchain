@@ -304,8 +304,8 @@ export default function AccountManagementPage() {
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {new Date(
-                                tx.transactions[0].timestamp
-                              ).toLocaleString("vi-VN")}
+                                tx.transactions?.[0]?.timestamp
+                              )?.toLocaleString("vi-VN")}
                             </div>
                           </div>
                         </div>
