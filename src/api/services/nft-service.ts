@@ -21,6 +21,8 @@ export interface NFT {
 }
 
 export interface MintNFTData {
+  toAddress: string;
+  tokenURI: string;
   name: string;
   description: string;
   image: string;
@@ -29,6 +31,12 @@ export interface MintNFTData {
     value: string;
   }>;
   walletAddress: string;
+  collection: {
+    name: string;
+  };
+  mysteryBoxId?: string;
+  mintOnBlockchain: boolean;
+  fromMysteryBox: boolean;
 }
 
 export interface TransferNFTData {

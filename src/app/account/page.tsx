@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Wallet, History, Settings, Upload } from "lucide-react";
+import { useAppSelector } from "@/stores";
 
 interface Profile {
   username: string;
@@ -23,6 +24,7 @@ export default function AccountManagementPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
+  const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     // Simulate loading user profile

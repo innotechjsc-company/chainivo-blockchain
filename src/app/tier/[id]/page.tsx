@@ -9,9 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppSelector } from "@/stores";
+import { NFT, useAppSelector } from "@/stores";
 import { toast } from "sonner";
-import { config } from "@/api/config";
+import { buildFrontendUrl, config } from "@/api/config";
 import {
   Crown,
   Star,
@@ -31,6 +31,7 @@ import {
   Wallet,
   AlertCircle,
 } from "lucide-react";
+import { NFTService } from "@/api/services";
 
 // MetaMask types
 interface MetaMaskProvider {
@@ -200,6 +201,10 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    console.log(tier);
+  }, [tier]);
+
   /**
    * Helper function to encode ERC-20 transfer data
    * Creates the data field for calling transfer(address,uint256) function on ERC-20 contract
@@ -248,6 +253,76 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
    * @param amount - Amount of CAN tokens to transfer
    * @returns Transaction hash
    */
+
+  const createNFTInDatabase = async (nftData: any) => {
+    try {
+      // Get authentication token
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      const response = await NFTService.mintNFT({
+        toAddress: user?.walletAddress as string,
+        tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`,
+        name: nftData.name,
+        description: `NFT from ${nftData.collection.name}`,
+        image: nftData.image,
+        attributes: [
+          { trait_type: "Rarity", value: nftData.rarity },
+          { trait_type: "Collection", value: nftData.collection.name },
+        ],
+        collection: nftData.collection,
+        walletAddress: user?.walletAddress as string,
+        mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+        fromMysteryBox: true,
+      });
+      console.log(response);
+      debugger;
+
+      // const response = await fetch(buildApiUrl(config.API_ENDPOINTS.NFT.MINT), {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify({
+      //     toAddress: walletAddress,
+      //     tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+      //       .toString(36)
+      //       .substr(2, 9)}`,
+      //     name: nftData.name,
+      //     description: `NFT from ${nftData.collection.name}`,
+      //     image: nftData.image,
+      //     attributes: [
+      //       { trait_type: "Rarity", value: nftData.rarity },
+      //       { trait_type: "Collection", value: nftData.collection.name },
+      //     ],
+      //     collection: nftData.collection,
+      //     creatorAddress: walletAddress,
+      //     mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+      //     fromMysteryBox: true,
+      //   }),
+      // });
+
+      // if (response.ok) {
+      //   const result = await response.json();
+      //   // NFT minted successfully
+      //   return result;
+      // } else {
+      //   const errorData = await response.json().catch(() => ({}));
+      //   throw new Error(
+      //     errorData.message || `Failed to mint NFT: ${response.status}`
+      //   );
+      // }
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+      throw error;
+    }
+  };
+
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
       if (!window.ethereum) {
@@ -268,17 +343,8 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
       // Encode ERC-20 transfer data
       const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
 
-      console.log("ERC-20 Transfer Transaction:", {
-        from: fromAddress,
-        tokenContract: CAN_TOKEN_CONTRACT,
-        to: DESTINATION_WALLET,
-        amount: amount,
-        amountWei: BigInt(Math.floor(amount * Math.pow(10, 18))).toString(),
-        data: data,
-      });
-
       // Request transaction
-      const txHash = await window.ethereum.request({
+      await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
@@ -291,7 +357,41 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         ],
       });
 
-      return txHash;
+      const rarities = ["common", "uncommon", "rare", "epic", "legendary"];
+
+      const getMembershipTierImage = (rarity: string) => {
+        switch (rarity.toLowerCase()) {
+          case "legendary":
+            return buildFrontendUrl("/images/membership/tier-5-diamond.png");
+          case "epic":
+            return buildFrontendUrl("/images/membership/tier-4-gold.png");
+          case "rare":
+            return buildFrontendUrl("/images/membership/tier-3-silver.png");
+          case "uncommon":
+            return buildFrontendUrl("/images/membership/tier-2-bronze.png");
+          case "common":
+          default:
+            return buildFrontendUrl("/images/membership/tier-1-common.png");
+        }
+      };
+
+      // Helper to get a random item from array
+      const getRandomItem = <T,>(arr: T[]): T =>
+        arr[Math.floor(Math.random() * arr.length)];
+      const randomRarity = getRandomItem(rarities);
+
+      const newNFT: NFT = {
+        _id: `nft_${Date.now()}`,
+        name: `${tier.name.charAt(0).toUpperCase() + tier.name.slice(1)} NFT`,
+        image: getMembershipTierImage(randomRarity),
+        rarity: randomRarity as "common" | "rare" | "epic" | "legendary",
+        collection: {
+          name: "Mystery Box Collection",
+        },
+      };
+
+      const result = await createNFTInDatabase(newNFT);
+      return result;
     } catch (error: any) {
       console.error("Transaction error:", error);
 
@@ -348,10 +448,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
 
       const txHash = await createTransaction(walletAddress, totalPrice);
 
-      toast.success(`Giao dịch thành công! Hash: ${txHash.slice(0, 10)}...`, {
-        id: "purchase",
-        duration: 10000,
-      });
+      toast.success(`Giao dịch thành công!`);
 
       // Reset form
       setQuantity(1);

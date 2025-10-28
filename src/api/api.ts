@@ -67,7 +67,7 @@ export const API_ENDPOINTS = {
   NFT: {
     LIST: "/api/digitalize/nfts",
     DETAIL: (id: string) => `/api/digitalize/nfts/${id}`,
-    MINT: "/api/digitalize/nfts/mint",
+    MINT: "/api/nft/mint",
     TRANSFER: "/api/digitalize/nfts/transfer",
   },
 
