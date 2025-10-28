@@ -52,7 +52,14 @@ export class StakingService {
   }
 
   static async getRewards(walletAddress: string): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.STAKING.REWARDS}?address=${walletAddress}`);
+    return ApiService.get(
+      `${API_ENDPOINTS.STAKING.REWARDS}?address=${walletAddress}`
+    );
+  }
+  static async getStakesByOwner(
+    walletAddress: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(walletAddress)}`);
   }
 }
 

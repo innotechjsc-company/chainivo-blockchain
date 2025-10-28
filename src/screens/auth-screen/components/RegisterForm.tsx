@@ -18,21 +18,17 @@ export const RegisterForm = () => {
   } = useAuthForm("register");
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.log('[RegisterForm] onSubmit called');
-    handleSubmit(e);
+    handleSubmit(e, formData as any);
     return false;
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6" noValidate action="javascript:void(0)">
-      {/* Server Error */}
-      {serverError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{serverError}</AlertDescription>
-        </Alert>
-      )}
-
+    <form
+      onSubmit={onSubmit}
+      className="space-y-6"
+      noValidate
+      action="javascript:void(0)"
+    >
       {/* Username Field */}
       <div className="space-y-2">
         <Label htmlFor="username">Tên người dùng</Label>
@@ -49,7 +45,9 @@ export const RegisterForm = () => {
           />
         </div>
         {validationErrors.username && (
-          <p className="text-sm text-destructive">{validationErrors.username}</p>
+          <p className="text-sm text-destructive">
+            {validationErrors.username}
+          </p>
         )}
       </div>
 
@@ -73,28 +71,6 @@ export const RegisterForm = () => {
         )}
       </div>
 
-      {/* Wallet Address Field */}
-      <div className="space-y-2">
-        <Label htmlFor="walletAddress">Địa chỉ ví</Label>
-        <div className="relative">
-          <Wallet className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-          <Input
-            id="walletAddress"
-            type="text"
-            placeholder="0x..."
-            className="pl-10"
-            value={formData.walletAddress}
-            onChange={(e) => handleChange("walletAddress", e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
-        {validationErrors.walletAddress && (
-          <p className="text-sm text-destructive">
-            {validationErrors.walletAddress}
-          </p>
-        )}
-      </div>
-
       {/* Password Field */}
       <div className="space-y-2">
         <Label htmlFor="password">Mật khẩu</Label>
@@ -111,7 +87,9 @@ export const RegisterForm = () => {
           />
         </div>
         {validationErrors.password && (
-          <p className="text-sm text-destructive">{validationErrors.password}</p>
+          <p className="text-sm text-destructive">
+            {validationErrors.password}
+          </p>
         )}
       </div>
 
@@ -138,7 +116,11 @@ export const RegisterForm = () => {
       </div>
 
       {/* Submit Button */}
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full cursor-pointer"
+        disabled={isLoading}
+      >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
