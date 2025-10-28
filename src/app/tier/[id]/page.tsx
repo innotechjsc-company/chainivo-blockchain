@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAppSelector } from "@/stores";
 import { toast } from "sonner";
+import { config } from "@/api/config";
 import {
   Crown,
   Star,
@@ -171,7 +172,9 @@ interface TierDetailPageProps {
   }>;
 }
 
-// Destination wallet address
+// CAN Token contract address (for ERC-20 transfers)
+const CAN_TOKEN_CONTRACT = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
+// Destination wallet address (where tokens will be sent)
 const DESTINATION_WALLET = "0x7c4767673cc6024365e08f2af4369b04701a5fed";
 
 export default function TierDetailPage({ params }: TierDetailPageProps) {
@@ -197,7 +200,54 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Function to create transaction
+  /**
+   * Helper function to encode ERC-20 transfer data
+   * Creates the data field for calling transfer(address,uint256) function on ERC-20 contract
+   * @param toAddress - Destination wallet address
+   * @param amount - Amount of tokens to transfer (in token units, not wei)
+   * @returns Encoded data string starting with 0x
+   */
+  const encodeERC20Transfer = (toAddress: string, amount: number): string => {
+    // Validate inputs
+    if (!toAddress || !toAddress.startsWith("0x") || toAddress.length !== 42) {
+      throw new Error("Invalid destination address");
+    }
+
+    if (amount <= 0 || !isFinite(amount)) {
+      throw new Error("Invalid amount");
+    }
+
+    // Helper function to encode address (remove 0x and pad to 64 chars)
+    const encodeAddress = (address: string): string => {
+      return address.slice(2).toLowerCase().padStart(64, "0");
+    };
+
+    // Helper function to encode uint256 (convert to hex and pad to 64 chars)
+    const encodeUint256 = (value: bigint): string => {
+      return value.toString(16).padStart(64, "0");
+    };
+
+    // Convert amount to wei (18 decimals) with proper rounding
+    const amountWei = BigInt(Math.floor(amount * Math.pow(10, 18)));
+
+    // ERC-20 transfer function selector (transfer(address,uint256))
+    const functionSelector = "a9059cbb";
+
+    // Encode parameters
+    const encodedTo = encodeAddress(toAddress);
+    const encodedAmount = encodeUint256(amountWei);
+
+    // Combine function selector with encoded parameters
+    return "0x" + functionSelector + encodedTo + encodedAmount;
+  };
+
+  /**
+   * Function to create ERC-20 token transfer transaction
+   * Sends CAN tokens from user's wallet to destination address
+   * @param fromAddress - Sender's wallet address
+   * @param amount - Amount of CAN tokens to transfer
+   * @returns Transaction hash
+   */
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
       if (!window.ethereum) {
@@ -206,9 +256,26 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         );
       }
 
-      // Convert amount to wei (18 decimals)
-      const amountWei = (amount * Math.pow(10, 18)).toString(16);
-      const amountHex = "0x" + amountWei.padStart(64, "0");
+      // Validate from address
+      if (
+        !fromAddress ||
+        !fromAddress.startsWith("0x") ||
+        fromAddress.length !== 42
+      ) {
+        throw new Error("Invalid sender address");
+      }
+
+      // Encode ERC-20 transfer data
+      const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
+
+      console.log("ERC-20 Transfer Transaction:", {
+        from: fromAddress,
+        tokenContract: CAN_TOKEN_CONTRACT,
+        to: DESTINATION_WALLET,
+        amount: amount,
+        amountWei: BigInt(Math.floor(amount * Math.pow(10, 18))).toString(),
+        data: data,
+      });
 
       // Request transaction
       const txHash = await window.ethereum.request({
@@ -216,17 +283,32 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         params: [
           {
             from: fromAddress,
-            to: DESTINATION_WALLET,
-            value: amountHex,
-            gas: "0x5208", // 21000 gas limit for simple transfer
+            to: CAN_TOKEN_CONTRACT, // Token contract address
+            value: "0x0", // No ETH value for ERC-20 transfer
+            data: data,
+            gas: "0xC350", // 50000 gas limit for ERC-20 transfer
           },
         ],
       });
 
       return txHash;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Transaction error:", error);
-      throw error;
+
+      // Handle specific error cases
+      if (error.code === 4001) {
+        throw new Error("Người dùng đã từ chối giao dịch");
+      } else if (error.code === -32603) {
+        throw new Error("Lỗi nội bộ. Vui lòng thử lại.");
+      } else if (error.message?.includes("insufficient funds")) {
+        throw new Error("Số dư không đủ để thực hiện giao dịch");
+      } else if (error.message?.includes("gas")) {
+        throw new Error("Lỗi gas. Vui lòng thử lại.");
+      } else if (error.message?.includes("Invalid")) {
+        throw new Error(error.message);
+      } else {
+        throw new Error(error.message || "Có lỗi xảy ra khi tạo giao dịch");
+      }
     }
   };
 
@@ -494,7 +576,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                     {tier.price} CAN
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    ≈ ${tier.usdPrice}
+                    ≈ ${tier.usdPrice} (CAN Token)
                   </div>
                 </div>
 
@@ -542,7 +624,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Phí giao dịch</span>
                     <span className="font-semibold text-green-500">
-                      Miễn phí
+                      Chỉ phí gas
                     </span>
                   </div>
                   <Separator />
@@ -608,8 +690,8 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                   </div>
                   {user?.walletAddress && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Đích: {DESTINATION_WALLET.slice(0, 6)}...
-                      {DESTINATION_WALLET.slice(-4)}
+                      Token: {CAN_TOKEN_CONTRACT.slice(0, 6)}...
+                      {CAN_TOKEN_CONTRACT.slice(-4)}
                     </div>
                   )}
                 </div>
