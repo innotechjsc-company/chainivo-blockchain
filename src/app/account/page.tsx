@@ -91,10 +91,14 @@ export default function AccountManagementPage() {
     router.push("/auth");
   };
 
-  const handleCopyAddress = () => {
-    const address = "0x1234567890abcdef1234567890abcdef12345678";
-    navigator.clipboard.writeText(address);
-    console.log("Address copied to clipboard");
+  const handleCopyAddress = async () => {
+    try {
+      const address = user?.walletAddress || "";
+      if (!address) return;
+      await navigator.clipboard.writeText(address);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
   };
 
   const getRecentMetaMaskTransactions = async () => {
@@ -261,6 +265,7 @@ export default function AccountManagementPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="text-xs cursor-pointer"
                         onClick={handleCopyAddress}
                       >
                         Sao chép
