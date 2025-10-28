@@ -50,6 +50,9 @@ export class NFTService {
   static async getNFTs(): Promise<ApiResponse<NFT[]>> {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
+  static async getNFTsByOwner(address: string): Promise<ApiResponse<NFT[]>> {
+    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.OWNER(address));
+  }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));

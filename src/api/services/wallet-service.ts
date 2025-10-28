@@ -30,22 +30,33 @@ export interface TokenPurchaseData {
 }
 
 export class WalletService {
-  static async getWalletBalances(address: string, network: string): Promise<ApiResponse<WalletBalances>> {
-    return ApiService.get<WalletBalances>(
-      `${API_ENDPOINTS.GET_WALLET_BALANCES}?address=${address}&network=${network}`
-    );
-  }
-
   static async updateTransactionStatus(data: {
     transactionHash: string;
     status: string;
     blockchainTxHash?: string;
   }): Promise<ApiResponse<TransactionStatus>> {
-    return ApiService.post<TransactionStatus>(API_ENDPOINTS.UPDATE_TRANSACTION_STATUS, data);
+    return ApiService.post<TransactionStatus>(
+      API_ENDPOINTS.UPDATE_TRANSACTION_STATUS,
+      data
+    );
   }
 
-  static async executeTokenPurchase(data: TokenPurchaseData): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.EXECUTE_TOKEN_PURCHASE, data);
+  static async getWalletUsdtBalances(
+    address: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.get(
+      `${API_ENDPOINTS.GET_WALLET_USDT_BALANCE}/${address}`
+    );
+  }
+  static async getWalletPolBalances(
+    address: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.GET_WALLET_POL_BALANCE}/${address}`);
+  }
+  static async getWalletCanBalances(
+    address: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.GET_WALLET_CAN_BALANCE}/${address}`);
   }
 }
 

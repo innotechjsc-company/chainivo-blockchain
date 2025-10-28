@@ -69,6 +69,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/api/digitalize/nfts/${id}`,
     MINT: "/api/nft/mint",
     TRANSFER: "/api/digitalize/nfts/transfer",
+    OWNER: (address: string) => `/api/nft/owner/${address}`,
   },
 
   MYSTERY_BOX: {
@@ -82,6 +83,8 @@ export const API_ENDPOINTS = {
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake",
     REWARDS: "/api/staking/rewards",
+    GETBYOWNER: (address: string) =>
+      `/api/staking/user/stakes?walletAddress=${address}`,
   },
 
   AIRDROP: {
@@ -92,7 +95,9 @@ export const API_ENDPOINTS = {
   USER: {
     UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
   },
-
+  GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
+  GET_WALLET_POL_BALANCE: "/api/digitalize/token/pol-balance",
+  GET_WALLET_CAN_BALANCE: "/api/digitalize/token/can-balance",
   TEST_TOKEN: "/api/digitalize/test/token",
   UPDATE_TRANSACTION_STATUS: "/api/digitalize/update-transaction-status",
   UPDATE_PHASE_STATISTICS: "/api/digitalize/update-phase-statistics",
