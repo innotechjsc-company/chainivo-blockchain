@@ -63,7 +63,6 @@ export default function WalletConnectPage() {
   // Initialize wallet address from user if available
   useEffect(() => {
     if (user?.walletAddress) {
-      debugger;
       setWalletAddress(user.walletAddress);
       setConnected("metamask");
       console.log("Initialized wallet from Redux user:", user.walletAddress);
@@ -74,16 +73,11 @@ export default function WalletConnectPage() {
     if (localStorage.getItem("isConnectedToWallet") === "true") {
       setConnected("metamask");
       setWalletAddress(localStorage.getItem("walletAddress"));
-    }
-  }, [localStorage.getItem("isConnectedToWallet")]);
-
-  useEffect(() => {
-    if (localStorage.getItem("isConnectedToWallet") === "true") {
-      setConnected("metamask");
     } else {
       setConnected("");
+      setWalletAddress(null);
     }
-  }, []);
+  }, [localStorage.getItem("isConnectedToWallet")]);
 
   // Check if MetaMask is installed and set up listeners
   useEffect(() => {
@@ -97,6 +91,7 @@ export default function WalletConnectPage() {
           setConnected(null);
           setWalletAddress(null);
           setError(null);
+
           localStorage.removeItem("walletAddress");
         } else if (connected === "metamask") {
           // User switched accounts
@@ -144,21 +139,26 @@ export default function WalletConnectPage() {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-
+      debugger;
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
+        debugger;
         localStorage.setItem("isConnectedToWallet", "true");
+        debugger;
         if (accounts?.length > 1) {
           setError("Bạn chỉ kết nối được 1 ví cho mỗi lần kết nối");
           setConnected("");
+
           setWalletAddress("");
 
           return;
         }
         if (user?.walletAddress && user?.walletAddress !== accounts[0]) {
+          debugger;
           setError("Ví hiện tại đã được kết nối với tài khoản");
           setConnected(null);
+
           setWalletAddress(null);
           return;
         }
@@ -178,12 +178,14 @@ export default function WalletConnectPage() {
               localStorage.setItem("walletAddress", accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
             } else {
+              debugger;
               setError(
                 res?.error
                   ? "Ví đã được kết nối với tài khoản khác"
                   : "Lỗi kết nối MetaMask"
               );
               setConnected(null);
+
               setWalletAddress(null);
             }
           } catch (err) {
@@ -238,6 +240,7 @@ export default function WalletConnectPage() {
 
     // Clear local state regardless of API success
     setConnected(null);
+
     setWalletAddress(null);
     setError(null);
 
@@ -250,6 +253,7 @@ export default function WalletConnectPage() {
       await connectToMetaMask();
     } else {
       setConnected(walletId);
+
       console.log(
         `Connected to ${wallets.find((w) => w.id === walletId)?.name}`
       );
@@ -262,6 +266,7 @@ export default function WalletConnectPage() {
     } else {
       // For other wallets, just clear local state
       setConnected(null);
+
       setWalletAddress(null);
       setError(null);
       console.log("Wallet disconnected");
