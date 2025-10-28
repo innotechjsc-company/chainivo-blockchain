@@ -68,7 +68,9 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   onClick={() => router.push("/wallet")}
                 >
                   <Wallet className="w-4 h-4 mr-2" />
-                  Kết nối ví
+                  {localStorage.getItem("isConnectedToWallet") === "true"
+                    ? "Đã kết nối ví"
+                    : "Kết nối ví"}
                 </Button>
                 <UserMenu userProfile={userProfile} onSignOut={handleSignOut} />
               </>

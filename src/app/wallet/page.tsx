@@ -62,23 +62,28 @@ export default function WalletConnectPage() {
 
   // Initialize wallet address from user if available
   useEffect(() => {
-    console.log("User from Redux:", user);
-    debugger;
     if (user?.walletAddress) {
+      debugger;
       setWalletAddress(user.walletAddress);
       setConnected("metamask");
       console.log("Initialized wallet from Redux user:", user.walletAddress);
-    } else {
-      // Check localStorage as fallback
-      const storedWalletAddress = localStorage.getItem("walletAddress");
-      if (storedWalletAddress) {
-        setWalletAddress(storedWalletAddress);
-        setConnected("metamask");
-        // Update Redux store with localStorage value
-        dispatch(updateAuthProfile({ walletAddress: storedWalletAddress }));
-      }
     }
-  }, [user, dispatch]);
+  }, [user]);
+
+  useEffect(() => {
+    if (localStorage.getItem("isConnectedToWallet") === "true") {
+      setConnected("metamask");
+      setWalletAddress(localStorage.getItem("walletAddress"));
+    }
+  }, [localStorage.getItem("isConnectedToWallet")]);
+
+  useEffect(() => {
+    if (localStorage.getItem("isConnectedToWallet") === "true") {
+      setConnected("metamask");
+    } else {
+      setConnected("");
+    }
+  }, []);
 
   // Check if MetaMask is installed and set up listeners
   useEffect(() => {
@@ -93,12 +98,10 @@ export default function WalletConnectPage() {
           setWalletAddress(null);
           setError(null);
           localStorage.removeItem("walletAddress");
-          console.log("MetaMask disconnected externally");
         } else if (connected === "metamask") {
           // User switched accounts
           setWalletAddress(accounts[0]);
           localStorage.setItem("walletAddress", accounts[0]);
-          console.log("MetaMask account switched to:", accounts[0]);
         }
       };
 
@@ -145,22 +148,43 @@ export default function WalletConnectPage() {
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
+        localStorage.setItem("isConnectedToWallet", "true");
+        if (accounts?.length > 1) {
+          setError("Bạn chỉ kết nối được 1 ví cho mỗi lần kết nối");
+          setConnected("");
+          setWalletAddress("");
+
+          return;
+        }
+        if (user?.walletAddress && user?.walletAddress !== accounts[0]) {
+          setError("Ví hiện tại đã được kết nối với tài khoản");
+          setConnected(null);
+          setWalletAddress(null);
+          return;
+        }
 
         // Always update Redux store and backend if wallet address is different
-        if (accounts[0] && user?.walletAddress !== accounts[0]) {
+        if (
+          accounts[0] &&
+          user?.walletAddress !== accounts[0] &&
+          !localStorage.getItem("walletAddress")
+        ) {
           try {
             let res = await UserService.updateWalletAddress({
               walletAddress: accounts[0],
             });
+            debugger;
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
-              localStorage.setItem("walletAddress", accounts[0]);
             } else {
-              console.error(
-                "Failed to update wallet address in backend:",
-                res.message
+              setError(
+                res?.error
+                  ? "Ví đã được kết nối với tài khoản khác"
+                  : "Lỗi kết nối MetaMask"
               );
+              setConnected(null);
+              setWalletAddress(null);
             }
           } catch (err) {
             console.error("Error updating wallet address:", err);
@@ -169,7 +193,6 @@ export default function WalletConnectPage() {
           // If wallet address is the same, still update local state
           localStorage.setItem("walletAddress", accounts[0]);
           dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
-          console.log("Wallet address synced with Redux store:", accounts[0]);
         }
       }
     } catch (err: any) {
@@ -207,6 +230,7 @@ export default function WalletConnectPage() {
         ],
       });
       console.log("MetaMask permissions revoked");
+      localStorage.removeItem("isConnectedToWallet");
     } catch (err: any) {
       // If revokePermissions is not supported, just log the error
       console.log("MetaMask revoke permissions not supported or failed:", err);
@@ -219,24 +243,6 @@ export default function WalletConnectPage() {
 
     // Clear localStorage
     localStorage.removeItem("walletAddress");
-
-    // Update backend and Redux store
-    try {
-      await UserService.updateWalletAddress({
-        walletAddress: "",
-      });
-      console.log("Wallet address cleared from backend");
-      // Update Redux store
-      dispatch(updateAuthProfile({ walletAddress: "" }));
-      console.log("Wallet address cleared from Redux store");
-    } catch (err) {
-      console.error("Failed to clear wallet address from backend:", err);
-      // Still update Redux store even if backend fails
-      dispatch(updateAuthProfile({ walletAddress: "" }));
-      console.log("Wallet address cleared from Redux store (backend failed)");
-    } finally {
-      setIsDisconnecting(false);
-    }
   };
 
   const handleConnect = async (walletId: string) => {
@@ -306,7 +312,7 @@ export default function WalletConnectPage() {
             </Card>
           )}
 
-          {connected && (
+          {connected && connected.length > 0 && (
             <Card className="p-6 glass mb-8 border-2 border-primary">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
