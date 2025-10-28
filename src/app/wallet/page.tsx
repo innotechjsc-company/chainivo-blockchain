@@ -60,24 +60,42 @@ export default function WalletConnectPage() {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
 
-  // Initialize wallet address from user if available
+  // Initialize wallet address from user if available (display only, no auto-connect)
   useEffect(() => {
     if (user?.walletAddress) {
       setWalletAddress(user.walletAddress);
-      setConnected("metamask");
-      console.log("Initialized wallet from Redux user:", user.walletAddress);
+      // Don't auto-connect, just show the saved wallet address
+      console.log(
+        "Found saved wallet address from Redux user:",
+        user.walletAddress
+      );
     }
   }, [user]);
 
+  // Check for saved wallet connection status and verify with MetaMask
   useEffect(() => {
-    if (localStorage.getItem("isConnectedToWallet") === "true") {
-      setConnected("metamask");
-      setWalletAddress(localStorage.getItem("walletAddress"));
-    } else {
-      setConnected("");
-      setWalletAddress(null);
-    }
-  }, [localStorage.getItem("isConnectedToWallet")]);
+    const checkSavedConnection = async () => {
+      const savedWalletAddress = localStorage.getItem("walletAddress");
+      const isConnectedToWallet =
+        localStorage.getItem("isConnectedToWallet") === "true";
+
+      if (isConnectedToWallet && savedWalletAddress) {
+        // Show saved wallet address and try to verify with MetaMask
+        setWalletAddress(savedWalletAddress);
+        console.log("Found saved wallet connection:", savedWalletAddress);
+
+        // Try to verify with MetaMask if available
+        if (typeof window !== "undefined" && window.ethereum?.isMetaMask) {
+          await verifyMetaMaskConnection();
+        }
+      } else {
+        setConnected(null);
+        setWalletAddress(null);
+      }
+    };
+
+    checkSavedConnection();
+  }, []);
 
   // Check if MetaMask is installed and set up listeners
   useEffect(() => {
@@ -122,6 +140,49 @@ export default function WalletConnectPage() {
     }
   }, [connected]);
 
+  // Verify existing MetaMask connection
+  const verifyMetaMaskConnection = async () => {
+    if (!window.ethereum?.isMetaMask) {
+      setError(
+        "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
+      );
+      return false;
+    }
+
+    try {
+      // Check if we can get accounts without requesting permission
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+
+      if (accounts.length > 0) {
+        const currentAccount = accounts[0];
+        const savedAddress = localStorage.getItem("walletAddress");
+
+        if (
+          savedAddress &&
+          currentAccount.toLowerCase() === savedAddress.toLowerCase()
+        ) {
+          // Same account, auto-connect
+          setWalletAddress(currentAccount);
+          setConnected("metamask");
+          return true;
+        } else if (savedAddress) {
+          // Different account, need to reconnect
+          setError("Ví đã thay đổi. Vui lòng kết nối lại.");
+          setWalletAddress(null);
+          setConnected(null);
+          return false;
+        }
+      }
+
+      return false;
+    } catch (err) {
+      console.error("Error verifying MetaMask connection:", err);
+      return false;
+    }
+  };
+
   // MetaMask connection function
   const connectToMetaMask = async () => {
     if (!window.ethereum?.isMetaMask) {
@@ -133,37 +194,40 @@ export default function WalletConnectPage() {
 
     setIsLoading(true);
     setError(null);
+    // Clear any previous connection state when retrying
+    setConnected(null);
+    setWalletAddress(null);
 
     try {
       // Request account access
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-      debugger;
+
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
-        debugger;
+
         localStorage.setItem("isConnectedToWallet", "true");
-        debugger;
+
         if (accounts?.length > 1) {
           setError("Bạn chỉ kết nối được 1 ví cho mỗi lần kết nối");
-          setConnected("");
+          setConnected(null);
+          await disconnectFromMetaMask();
 
-          setWalletAddress("");
-
+          setWalletAddress(null);
+          setIsLoading(false);
           return;
         }
         if (user?.walletAddress && user?.walletAddress !== accounts[0]) {
-          debugger;
           setError("Ví hiện tại đã được kết nối với tài khoản");
-          setConnected(null);
+          await disconnectFromMetaMask();
 
+          setConnected(null);
           setWalletAddress(null);
+          setIsLoading(false);
           return;
         }
-
-        // Always update Redux store and backend if wallet address is different
         if (
           accounts[0] &&
           user?.walletAddress !== accounts[0] &&
@@ -173,23 +237,28 @@ export default function WalletConnectPage() {
             let res = await UserService.updateWalletAddress({
               walletAddress: accounts[0],
             });
-            debugger;
+
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
             } else {
-              debugger;
+              await disconnectFromMetaMask();
+
               setError(
                 res?.error
                   ? "Ví đã được kết nối với tài khoản khác"
                   : "Lỗi kết nối MetaMask"
               );
-              setConnected(null);
 
+              setConnected(null);
               setWalletAddress(null);
+              setIsLoading(false);
             }
           } catch (err) {
-            console.error("Error updating wallet address:", err);
+            setError("Lỗi cập nhật địa chỉ ví");
+            setConnected(null);
+            setWalletAddress(null);
+            setIsLoading(false);
           }
         } else if (accounts[0]) {
           // If wallet address is the same, still update local state
@@ -299,12 +368,6 @@ export default function WalletConnectPage() {
                   Đang đăng nhập với:{" "}
                   <span className="font-semibold">{user.username}</span>
                 </p>
-                {user.walletAddress && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ví hiện tại: {user.walletAddress.slice(0, 6)}...
-                    {user.walletAddress.slice(-4)}
-                  </p>
-                )}
               </div>
             )}
           </div>
@@ -344,14 +407,7 @@ export default function WalletConnectPage() {
                   onClick={handleDisconnect}
                   disabled={isDisconnecting}
                 >
-                  {isDisconnecting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Đang ngắt kết nối...
-                    </>
-                  ) : (
-                    "Ngắt kết nối"
-                  )}
+                  Ngắt kết nối
                 </Button>
               </div>
             </Card>
@@ -363,13 +419,15 @@ export default function WalletConnectPage() {
                 key={wallet.id}
                 className={`p-6 glass transition-all ${
                   connected === wallet.id
-                    ? "opacity-50"
+                    ? "opacity-50 cursor-not-allowed"
                     : isLoading
                     ? "opacity-50 cursor-not-allowed"
                     : "cursor-pointer hover:scale-105"
                 }`}
                 onClick={() =>
-                  !connected && !isLoading && handleConnect(wallet.id)
+                  !isLoading &&
+                  connected !== wallet.id &&
+                  handleConnect(wallet.id)
                 }
               >
                 <div className="flex items-center gap-4">

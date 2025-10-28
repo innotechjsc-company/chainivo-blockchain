@@ -231,12 +231,7 @@ export const useAuthForm = (type: "login" | "register") => {
                 setIsConnectingWallet(true);
 
                 try {
-                  // Try to connect to MetaMask with the stored wallet address
-                  const metaMaskConnected = await connectToMetaMask(
-                    result.user.walletAddress
-                  );
-
-                  if (metaMaskConnected) {
+                  if (result.user.walletAddress) {
                     console.log(
                       "MetaMask connected successfully, redirecting to home"
                     );
