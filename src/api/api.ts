@@ -78,6 +78,12 @@ export const API_ENDPOINTS = {
     PURCHASE: "/api/digitalize/mystery-boxes/purchase",
   },
 
+  RANK: {
+    LIST: "/api/ranks",
+    MY_RANK: "/api/ranks/user/:userId",
+    BUY: "/api/ranks/buy",
+  },
+
   STAKING: {
     POOLS: "/api/staking/pools",
     STAKE: "/api/staking/stake",
