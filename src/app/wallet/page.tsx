@@ -219,15 +219,7 @@ export default function WalletConnectPage() {
           setIsLoading(false);
           return;
         }
-        if (user?.walletAddress && user?.walletAddress !== accounts[0]) {
-          setError("Ví hiện tại đã được kết nối với tài khoản");
-          await disconnectFromMetaMask();
 
-          setConnected(null);
-          setWalletAddress(null);
-          setIsLoading(false);
-          return;
-        }
         if (
           accounts[0] &&
           user?.walletAddress !== accounts[0] &&
