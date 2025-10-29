@@ -8,6 +8,7 @@ import { Sparkles, Zap } from "lucide-react";
 import { CreateStakingCoinRequest } from "@/types/Staking";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import { useAppSelector } from "@/stores";
+import { buildFrontendUrl, config } from "@/api/config";
 
 interface CoinStakingFormProps {
   userBalance: number;
@@ -63,14 +64,9 @@ export const CoinStakingForm = ({
     }
 
     try {
-      await onStake({
-        amountStaked: stakeAmount,
-        apy,
-        lockPeriod: 3650, // 10 years
-      });
-      setAmount("");
+      await createTransaction(user?.walletAddress as string, stakeAmount);
     } catch (error) {
-      // Error handling is done in the hook
+      console.error(error);
     }
   };
 
@@ -84,12 +80,94 @@ export const CoinStakingForm = ({
       );
     }
   };
+  const encodeERC20Transfer = (toAddress: string, amount: number): string => {
+    // Validate inputs
+    if (!toAddress || !toAddress.startsWith("0x") || toAddress.length !== 42) {
+      throw new Error("Invalid destination address");
+    }
+
+    if (amount <= 0 || !isFinite(amount)) {
+      throw new Error("Invalid amount");
+    }
+
+    // Helper function to encode address (remove 0x and pad to 64 chars)
+    const encodeAddress = (address: string): string => {
+      return address.slice(2).toLowerCase().padStart(64, "0");
+    };
+
+    // Helper function to encode uint256 (convert to hex and pad to 64 chars)
+    const encodeUint256 = (value: bigint): string => {
+      return value.toString(16).padStart(64, "0");
+    };
+
+    // Convert amount to wei (18 decimals) with proper rounding
+    const amountWei = BigInt(Math.floor(amount * Math.pow(10, 18)));
+
+    // ERC-20 transfer function selector (transfer(address,uint256))
+    const functionSelector = "a9059cbb";
+
+    // Encode parameters
+    const encodedTo = encodeAddress(toAddress);
+    const encodedAmount = encodeUint256(amountWei);
+
+    // Combine function selector with encoded parameters
+    return "0x" + functionSelector + encodedTo + encodedAmount;
+  };
+  const createTransaction = async (fromAddress: string, amount: number) => {
+    try {
+      if (!window.ethereum) {
+        throw new Error(
+          "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
+        );
+      }
+
+      // Validate from address
+      if (!fromAddress) {
+        throw new Error("Invalid sender address");
+      }
+      const CAN_TOKEN_CONTRACT = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
+      // Destination wallet address (where tokens will be sent)
+      const DESTINATION_WALLET = "0x7c4767673cc6024365e08f2af4369b04701a5fed";
+      // Encode ERC-20 transfer data
+      const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
+
+      // Request transaction chuyển can cho admin
+      let result = await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: fromAddress,
+            to: CAN_TOKEN_CONTRACT, // Token contract address
+            value: "0x0", // No ETH value for ERC-20 transfer
+            data: data,
+            gas: "0xC350", // 50000 gas limit for ERC-20 transfer
+          },
+        ],
+      });
+      debugger;
+      await getAllCanBalance();
+    } catch (error) {
+      if ((error as any).code === 4001) {
+        alert("Người dùng đã từ chối giao dịch");
+      } else if ((error as any).code === -32603) {
+        alert("Lỗi nội bộ. Vui lòng thử lại.");
+      } else if ((error as any).message?.includes("insufficient funds")) {
+        alert("Số dư không đủ để thực hiện giao dịch");
+      } else if ((error as any).message?.includes("gas")) {
+        alert("Lỗi gas. Vui lòng thử lại.");
+      } else if ((error as any).message?.includes("Invalid")) {
+        alert((error as any).message);
+      } else {
+        alert((error as any).message || "Có lỗi xảy ra khi tạo giao dịch");
+      }
+    }
+  };
 
   useEffect(() => {
     getAllCanBalance();
   }, []);
 
-  const stakeAmount = parseFormattedNumber(amount);
+  const stakeAmount = parseFormattedNumber(amount as unknown as string);
   const isValidAmount = stakeAmount > 0 && stakeAmount <= userCanBalance;
   const isExceedBalance = stakeAmount > userCanBalance && stakeAmount > 0;
 
