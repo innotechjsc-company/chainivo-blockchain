@@ -25,15 +25,40 @@ export const CoinStakingForm = ({
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
   const [userCanBalance, setUserCanBalance] = useState<number>(0);
+
+  // Hàm format số với dấu phẩy
+  const formatNumberWithCommas = (value: string): string => {
+    // Loại bỏ tất cả ký tự không phải số
+    const numericValue = value.replace(/[^0-9]/g, "");
+
+    // Chuyển đổi thành số và format với dấu phẩy
+    if (numericValue === "") return "";
+
+    const number = parseInt(numericValue, 10);
+    return number.toLocaleString("vi-VN");
+  };
+
+  // Hàm parse số từ string đã format
+  const parseFormattedNumber = (value: string): number => {
+    const numericValue = value.replace(/[^0-9]/g, "");
+    return numericValue === "" ? 0 : parseInt(numericValue, 10);
+  };
+
+  // Hàm xử lý thay đổi input
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    const formattedValue = formatNumberWithCommas(inputValue);
+    setAmount(formattedValue);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const stakeAmount = parseFloat(amount);
+    const stakeAmount = parseFormattedNumber(amount);
     if (!stakeAmount || stakeAmount <= 0) {
       return;
     }
 
-    if (stakeAmount > userBalance) {
+    if (stakeAmount > userCanBalance) {
       return;
     }
 
@@ -64,8 +89,9 @@ export const CoinStakingForm = ({
     getAllCanBalance();
   }, []);
 
-  const isValidAmount =
-    amount && parseFloat(amount) > 0 && parseFloat(amount) <= userBalance;
+  const stakeAmount = parseFormattedNumber(amount);
+  const isValidAmount = stakeAmount > 0 && stakeAmount <= userCanBalance;
+  const isExceedBalance = stakeAmount > userCanBalance && stakeAmount > 0;
 
   return (
     <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
@@ -110,14 +136,21 @@ export const CoinStakingForm = ({
             </Label>
             <Input
               id="amount"
-              type="number"
+              type="text"
               placeholder="Nhập số lượng CAN"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="text-lg h-12"
-              min="0"
-              max={userBalance}
+              onChange={handleAmountChange}
+              className={`text-lg h-12 ${
+                isExceedBalance ? "border-red-500 focus:border-red-500" : ""
+              }`}
             />
+            {isExceedBalance && (
+              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                <span className="text-red-500">⚠️</span>
+                Số CAN trong tài khoản không đủ. Số dư khả dụng:{" "}
+                {userCanBalance.toLocaleString()} CAN
+              </p>
+            )}
           </div>
 
           {isValidAmount && (
@@ -132,21 +165,19 @@ export const CoinStakingForm = ({
                 <div>
                   <p className="text-xs text-muted-foreground">7 ngày</p>
                   <p className="text-sm font-bold text-green-500">
-                    {((parseFloat(amount) * apy * 7) / (365 * 100)).toFixed(2)}{" "}
-                    CAN
+                    {((stakeAmount * apy * 7) / (365 * 100)).toFixed(2)} CAN
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">30 ngày</p>
                   <p className="text-sm font-bold text-green-500">
-                    {((parseFloat(amount) * apy * 30) / (365 * 100)).toFixed(2)}{" "}
-                    CAN
+                    {((stakeAmount * apy * 30) / (365 * 100)).toFixed(2)} CAN
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">365 ngày</p>
                   <p className="text-sm font-bold text-green-500">
-                    {((parseFloat(amount) * apy) / 100).toFixed(2)} CAN
+                    {((stakeAmount * apy) / 100).toFixed(2)} CAN
                   </p>
                 </div>
               </div>
