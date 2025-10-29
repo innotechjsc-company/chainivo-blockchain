@@ -2,58 +2,7 @@
 
 @layer base {
   :root {
-    /* Deep navy blockchain theme - Light mode */
-    --background: 0 0% 98%;
-    --foreground: 229 47% 8%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 229 47% 8%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 229 47% 8%;
-
-    /* Electric cyan primary */
-    --primary: 189 100% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    /* Violet secondary */
-    --secondary: 267 75% 60%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 229 25% 85%;
-    --muted-foreground: 229 20% 35%;
-
-    /* Purple accent */
-    --accent: 267 75% 55%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 229 30% 82%;
-    --input: 229 30% 82%;
-    --ring: 189 100% 50%;
-
-    --radius: 0.75rem;
-
-    --chart-1: 189 100% 50%;
-    --chart-2: 267 75% 60%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 229 47% 8%;
-    --sidebar-primary: 189 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 229 30% 90%;
-    --sidebar-accent-foreground: 229 47% 8%;
-    --sidebar-border: 229 30% 82%;
-    --sidebar-ring: 189 100% 50%;
-  }
-
-  .dark {
-    /* Deep navy blockchain theme - Dark mode */
+    /* Deep navy blockchain theme - Dark mode (now default) */
     --background: 229 47% 8%;
     --foreground: 200 100% 95%;
 
@@ -85,6 +34,8 @@
     --input: 229 30% 18%;
     --ring: 189 100% 50%;
 
+    --radius: 0.75rem;
+
     --chart-1: 189 100% 50%;
     --chart-2: 267 75% 60%;
     --chart-3: 30 80% 55%;
@@ -98,6 +49,55 @@
     --sidebar-accent: 229 30% 18%;
     --sidebar-accent-foreground: 200 100% 95%;
     --sidebar-border: 229 30% 18%;
+    --sidebar-ring: 189 100% 50%;
+  }
+
+  .light {
+    /* Deep navy blockchain theme - Light mode (now alternative) */
+    --background: 0 0% 98%;
+    --foreground: 229 47% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 229 47% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 229 47% 8%;
+
+    /* Electric cyan primary */
+    --primary: 189 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Violet secondary */
+    --secondary: 267 75% 60%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 229 25% 85%;
+    --muted-foreground: 229 20% 35%;
+
+    /* Purple accent */
+    --accent: 267 75% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 229 30% 82%;
+    --input: 229 30% 82%;
+    --ring: 189 100% 50%;
+
+    --chart-1: 189 100% 50%;
+    --chart-2: 267 75% 60%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 229 47% 8%;
+    --sidebar-primary: 189 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 229 30% 90%;
+    --sidebar-accent-foreground: 229 47% 8%;
+    --sidebar-border: 229 30% 82%;
     --sidebar-ring: 189 100% 50%;
   }
 }
