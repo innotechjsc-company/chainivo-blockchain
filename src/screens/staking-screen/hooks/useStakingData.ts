@@ -10,6 +10,7 @@ import {
   StakingPool,
 } from "@/types/Staking";
 import StakingService from "@/api/services/staking-service";
+import { toast } from "sonner";
 
 /**
  * Custom hook để quản lý dữ liệu staking
@@ -119,9 +120,7 @@ export const useStakingData = () => {
       (userInfo?.id as string) ?? ""
     );
     if (response?.success) {
-      setStakingMyPools(response?.data?.stakes as StakingPool[]);
-    } else {
-      setStakingMyPools([]);
+      toast.success("Nhận thưởng thành công!");
     }
   };
 

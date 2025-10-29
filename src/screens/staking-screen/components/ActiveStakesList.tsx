@@ -111,7 +111,6 @@ export const ActiveStakesList = ({
               const name = (pool as any).poolId?.name ?? "Gói stake";
               const apy = (pool as any).poolId?.apy ?? 0;
               const totalStaked = (pool as any).amount ?? 0;
-
               const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
               const stakedAt = (pool as any).stakedAt as string;
 
@@ -150,6 +149,9 @@ export const ActiveStakesList = ({
                         <span className="text-muted-foreground">
                           Phần thưởng{" "}
                         </span>
+                        <p className="font-medium">
+                          {(totalStaked * apy) / 100} CAN
+                        </p>
                       </div>
                       <CountdownTimer
                         startAt={stakedAt}

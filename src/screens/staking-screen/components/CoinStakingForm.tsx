@@ -279,6 +279,7 @@ export const CoinStakingForm = ({
                   : ""
               }`}
             />
+
             {isExceedBalance && (
               <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                 <span className="text-red-500">⚠️</span>
@@ -296,6 +297,12 @@ export const CoinStakingForm = ({
               <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                 <span className="text-red-500">⚠️</span>
                 Số lượng stake tối đa là {selectedPoolData?.maxStake} CAN
+              </p>
+            )}
+            {isValidAmount && selectedPoolData && (
+              <p className="text-green-600 text-sm mt-2">
+                Tổng thưởng dự kiến:{" "}
+                {((stakeAmount * selectedPoolData.apy) / 100).toFixed(2)} CAN
               </p>
             )}
           </div>
