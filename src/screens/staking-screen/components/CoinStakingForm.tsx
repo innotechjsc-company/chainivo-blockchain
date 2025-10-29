@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Zap } from "lucide-react";
-import { CreateStakingCoinRequest } from "@/types/staking";
+import { CreateStakingCoinRequest } from "@/types/Staking";
+import { API_ENDPOINTS, ApiService } from "@/api/api";
+import { useAppSelector } from "@/stores";
 
 interface CoinStakingFormProps {
   userBalance: number;
@@ -20,8 +22,9 @@ export const CoinStakingForm = ({
   loading = false,
   apy = 10,
 }: CoinStakingFormProps) => {
+  const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
-
+  const [userCanBalance, setUserCanBalance] = useState<number>(0);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -45,6 +48,21 @@ export const CoinStakingForm = ({
       // Error handling is done in the hook
     }
   };
+
+  const getAllCanBalance = async () => {
+    const response = await ApiService.get(
+      `${API_ENDPOINTS.GET_WALLET_CAN_BALANCE}/${user?.walletAddress as string}`
+    );
+    if (response?.success) {
+      setUserCanBalance(
+        Number((response?.data as any)?.balance as number) ?? 0
+      );
+    }
+  };
+
+  useEffect(() => {
+    getAllCanBalance();
+  }, []);
 
   const isValidAmount =
     amount && parseFloat(amount) > 0 && parseFloat(amount) <= userBalance;
@@ -80,7 +98,7 @@ export const CoinStakingForm = ({
               Số dư khả dụng
             </span>
             <span className="text-xl font-bold">
-              {userBalance.toLocaleString()} CAN
+              {userCanBalance.toLocaleString()} CAN
             </span>
           </div>
         </div>
