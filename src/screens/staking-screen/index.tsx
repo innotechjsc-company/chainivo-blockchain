@@ -48,6 +48,8 @@ export const StakingScreen = () => {
     updateNFTStake,
     calculateRewards,
     calculateDaysPassed,
+    stakingMyPools,
+    fetchStakingData,
   } = useStakingData();
 
   const {
@@ -119,17 +121,6 @@ export const StakingScreen = () => {
       // Error handling is done in the hook
     }
   };
-
-  const getStakingPools = async () => {
-    const response = await StakingService.getStakesByOwner(
-      userInfo?.walletAddress as string
-    );
-    debugger;
-  };
-
-  useEffect(() => {
-    getStakingPools();
-  }, []);
 
   // Redirect to auth if not authenticated
   useEffect(() => {
@@ -240,6 +231,7 @@ export const StakingScreen = () => {
                 onStake={handleCoinStake}
                 loading={actionLoading}
                 apy={stakingConfig?.coinAPY}
+                fetchStakingData={fetchStakingData}
               />
 
               <ActiveStakesList
@@ -249,6 +241,7 @@ export const StakingScreen = () => {
                 onCancel={handleCancel}
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
+                stakingMyPools={stakingMyPools}
               />
             </div>
           </TabsContent>
@@ -270,6 +263,7 @@ export const StakingScreen = () => {
                 onCancel={handleCancel}
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
+                stakingMyPools={stakingMyPools}
               />
             </div>
           </TabsContent>

@@ -7,7 +7,9 @@ import {
   StakingStats,
   AvailableNFT,
   StakingConfig,
-} from "@/types/staking";
+  StakingPool,
+} from "@/types/Staking";
+import StakingService from "@/api/services/staking-service";
 
 /**
  * Custom hook để quản lý dữ liệu staking
@@ -25,7 +27,8 @@ export const useStakingData = () => {
   const [stakingConfig, setStakingConfig] = useState<StakingConfig | null>(
     null
   );
-
+  const [stakingMyPools, setStakingMyPools] = useState<StakingPool[]>([]);
+  const userInfo = useAppSelector((state) => state.auth.user);
   // Fetch staking data
   const fetchStakingData = async () => {
     setLoading(true);
@@ -99,6 +102,32 @@ export const useStakingData = () => {
       setLoading(false);
     }
   };
+
+  const getStakingPools = async () => {
+    const response = await StakingService.getStakesByOwner(
+      (userInfo?.id as string) ?? ""
+    );
+    if (response?.success) {
+      setStakingMyPools(response?.data?.stakes as StakingPool[]);
+    } else {
+      setStakingMyPools([]);
+    }
+  };
+
+  const getClaimRewardsData = async () => {
+    const response = await StakingService.getStakesByOwner(
+      (userInfo?.id as string) ?? ""
+    );
+    if (response?.success) {
+      setStakingMyPools(response?.data?.stakes as StakingPool[]);
+    } else {
+      setStakingMyPools([]);
+    }
+  };
+
+  useEffect(() => {
+    getStakingPools();
+  }, []);
 
   // Refresh data - không hiển thị loading khi refresh
   const refreshData = async () => {
@@ -289,5 +318,7 @@ export const useStakingData = () => {
     // Helpers
     calculateRewards,
     calculateDaysPassed,
+    stakingMyPools,
+    fetchStakingData,
   };
 };

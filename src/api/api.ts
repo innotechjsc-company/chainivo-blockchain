@@ -88,7 +88,7 @@ export const API_ENDPOINTS = {
     POOL_DETAIL: "/api/staking/pools/:id",
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake/:id",
-    REWARDS: "/api/staking/claim-rewards/:id",
+    REWARDS: "/api/staking/claim/:id",
     GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 

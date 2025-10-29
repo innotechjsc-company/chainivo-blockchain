@@ -24,6 +24,7 @@ interface CoinStakingFormProps {
   onStake: (request: CreateStakingCoinRequest) => Promise<void>;
   loading?: boolean;
   apy?: number;
+  fetchStakingData: () => Promise<void>;
 }
 
 export const CoinStakingForm = ({
@@ -31,6 +32,7 @@ export const CoinStakingForm = ({
   onStake,
   loading = false,
   apy = 10,
+  fetchStakingData,
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -147,6 +149,9 @@ export const CoinStakingForm = ({
         });
         if (createStake.success) {
           toast.success("Giao dịch stake thành công");
+          await fetchStakingData();
+          setAmount("");
+          setSelectedPool("");
         } else {
           toast.error("Giao dịch stake thất bại");
         }
