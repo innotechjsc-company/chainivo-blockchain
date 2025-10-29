@@ -115,12 +115,15 @@ export const useStakingData = () => {
     }
   };
 
-  const getClaimRewardsData = async () => {
-    const response = await StakingService.getStakesByOwner(
-      (userInfo?.id as string) ?? ""
-    );
+  const getClaimRewardsData = async (stakeId: string) => {
+    const response = await StakingService.getRewards(stakeId);
     if (response?.success) {
+      await getStakingPools();
       toast.success("Nhận thưởng thành công!");
+      return response?.data;
+    } else {
+      toast.error("Lỗi nhận thưởng!");
+      return [];
     }
   };
 
@@ -319,5 +322,6 @@ export const useStakingData = () => {
     calculateDaysPassed,
     stakingMyPools,
     fetchStakingData,
+    getClaimRewardsData,
   };
 };

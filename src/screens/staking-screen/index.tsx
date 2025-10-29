@@ -50,6 +50,7 @@ export const StakingScreen = () => {
     calculateDaysPassed,
     stakingMyPools,
     fetchStakingData,
+    getClaimRewardsData,
   } = useStakingData();
 
   const {
@@ -242,6 +243,7 @@ export const StakingScreen = () => {
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
                 stakingMyPools={stakingMyPools}
+                getClaimRewardsData={getClaimRewardsData}
               />
             </div>
           </TabsContent>
@@ -264,6 +266,7 @@ export const StakingScreen = () => {
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
                 stakingMyPools={stakingMyPools}
+                getClaimRewardsData={getClaimRewardsData}
               />
             </div>
           </TabsContent>

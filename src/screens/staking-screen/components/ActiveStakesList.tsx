@@ -69,6 +69,7 @@ interface ActiveStakesListProps {
   calculateRewards: (amount: number, apy: number, daysPassed: number) => number;
   calculateDaysPassed: (stakedAt: string) => number;
   stakingMyPools: StakingPool[];
+  getClaimRewardsData: (stakeId: string) => Promise<any>;
 }
 
 export const ActiveStakesList = ({
@@ -79,6 +80,7 @@ export const ActiveStakesList = ({
   calculateRewards,
   calculateDaysPassed,
   stakingMyPools,
+  getClaimRewardsData,
 }: ActiveStakesListProps) => {
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
@@ -113,7 +115,7 @@ export const ActiveStakesList = ({
               const totalStaked = (pool as any).amount ?? 0;
               const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
               const stakedAt = (pool as any).stakedAt as string;
-
+              const id = (pool as any)._id || (pool as any).id;
               return (
                 <Card
                   key={key}
@@ -157,6 +159,25 @@ export const ActiveStakesList = ({
                         startAt={stakedAt}
                         lockDays={Number(lockPeriod) || 0}
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <Button
+                        variant="default"
+                        onClick={() => getClaimRewardsData(id)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Gift className="h-4 w-4" />
+                        Nhận thưởng
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => onCancel(key as string, "coin")}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Huỷ Staking
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
