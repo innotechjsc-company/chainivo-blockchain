@@ -14,6 +14,8 @@ import { NFTStakingForm } from "./components/NFTStakingForm";
 import { ActiveStakesList } from "./components/ActiveStakesList";
 import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { API_ENDPOINTS, ApiService } from "@/api/api";
+import StakingService from "@/api/services/staking-service";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -27,6 +29,8 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
  */
 export const StakingScreen = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
+
+  const userInfo = useAppSelector((state) => state.auth.user);
 
   // Custom hooks
   const {
@@ -115,6 +119,17 @@ export const StakingScreen = () => {
       // Error handling is done in the hook
     }
   };
+
+  const getStakingPools = async () => {
+    const response = await StakingService.getStakesByOwner(
+      userInfo?.walletAddress as string
+    );
+    debugger;
+  };
+
+  useEffect(() => {
+    getStakingPools();
+  }, []);
 
   // Redirect to auth if not authenticated
   useEffect(() => {

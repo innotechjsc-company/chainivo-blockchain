@@ -89,7 +89,7 @@ export const API_ENDPOINTS = {
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake/:id",
     REWARDS: "/api/staking/claim-rewards/:id",
-    GETBYOWNER: (address: string) => `/api/staking/user-stakes/${address}`,
+    GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 
   AIRDROP: {
