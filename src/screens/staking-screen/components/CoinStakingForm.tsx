@@ -18,6 +18,7 @@ import { useAppSelector } from "@/stores";
 import { buildFrontendUrl, config } from "@/api/config";
 import { toast } from "sonner";
 import { StakingService } from "@/api/services";
+import { TransferService } from "@/services";
 interface CoinStakingFormProps {
   userBalance: number;
   onStake: (request: CreateStakingCoinRequest) => Promise<void>;
@@ -120,39 +121,7 @@ export const CoinStakingForm = ({
       setTakePools((response?.data as any)?.pools);
     }
   };
-  const encodeERC20Transfer = (toAddress: string, amount: number): string => {
-    // Validate inputs
-    if (!toAddress || !toAddress.startsWith("0x") || toAddress.length !== 42) {
-      throw new Error("Invalid destination address");
-    }
 
-    if (amount <= 0 || !isFinite(amount)) {
-      throw new Error("Invalid amount");
-    }
-
-    // Helper function to encode address (remove 0x and pad to 64 chars)
-    const encodeAddress = (address: string): string => {
-      return address.slice(2).toLowerCase().padStart(64, "0");
-    };
-
-    // Helper function to encode uint256 (convert to hex and pad to 64 chars)
-    const encodeUint256 = (value: bigint): string => {
-      return value.toString(16).padStart(64, "0");
-    };
-
-    // Convert amount to wei (18 decimals) with proper rounding
-    const amountWei = BigInt(Math.floor(amount * Math.pow(10, 18)));
-
-    // ERC-20 transfer function selector (transfer(address,uint256))
-    const functionSelector = "a9059cbb";
-
-    // Encode parameters
-    const encodedTo = encodeAddress(toAddress);
-    const encodedAmount = encodeUint256(amountWei);
-
-    // Combine function selector with encoded parameters
-    return "0x" + functionSelector + encodedTo + encodedAmount;
-  };
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
       if (!window.ethereum) {
@@ -165,104 +134,22 @@ export const CoinStakingForm = ({
       if (!fromAddress) {
         throw new Error("Invalid sender address");
       }
-      const web3Module = await import("web3");
-      const web3 = new web3Module.default(window.ethereum);
-
-      const canTokenABI = [
-        {
-          name: "balanceOf",
-          type: "function" as const,
-          inputs: [
-            { internalType: "address", name: "account", type: "address" },
-          ],
-          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-          stateMutability: "view" as const,
-        },
-        {
-          name: "transfer",
-          type: "function" as const,
-          inputs: [
-            { internalType: "address", name: "to", type: "address" },
-            { internalType: "uint256", name: "amount", type: "uint256" },
-          ],
-          outputs: [{ internalType: "bool", name: "", type: "bool" }],
-          stateMutability: "nonpayable" as const,
-        },
-      ];
-
-      // Get CAN token address from config
-      const canTokenAddress = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
-      const adminWalletAddress = config.WALLET_ADDRESSES.ADMIN;
-
-      const canTokenContract = new web3.eth.Contract(
-        canTokenABI,
-        canTokenAddress
-      );
-      const canBalance = await canTokenContract.methods
-        .balanceOf(user?.walletAddress)
-        .call();
-      const requiredAmount = web3.utils.toWei(stakeAmount.toString(), "ether");
-
-      console.log(
-        `💰 CAN Balance: ${web3.utils.fromWei(canBalance as any, "ether")} CAN`
-      );
-
-      if (BigInt(canBalance as any) < BigInt(requiredAmount)) {
-        throw new Error(
-          `Insufficient CAN balance. Required: ${stakeAmount} CAN, Available: ${web3.utils.fromWei(
-            canBalance as any,
-            "ether"
-          )} CAN`
-        );
-      }
-
-      // Get current gas price and increase ~50% for faster confirmation
-      const currentGasPrice = await web3.eth.getGasPrice(); // wei (string | bigint depending on web3 version)
-      const currentGasPriceBigInt =
-        typeof currentGasPrice === "bigint"
-          ? currentGasPrice
-          : BigInt(currentGasPrice);
-      const optimizedGasPriceBigInt =
-        (currentGasPriceBigInt * BigInt(150)) / BigInt(100); // +50%
-      const gasPrice = optimizedGasPriceBigInt.toString(); // wei (decimal string)
-      const gasLimit = 150000; // reasonable limit for ERC-20 transfer
-      debugger;
-      const transferResult = await canTokenContract.methods
-        .transfer(adminWalletAddress, requiredAmount)
-        .send({
-          from: user?.walletAddress,
-          gas: gasLimit.toString(),
-          gasPrice: gasPrice,
-        });
-
-      console.log(
-        `🔗 Transfer Transaction Hash: ${transferResult.transactionHash}`
-      );
-      if (transferResult) {
-        console.log(selectedPoolData);
-        console.log(user?.walletAddress);
-        console.log(stakeAmount);
-        console.log(userCanBalance);
-
-        // Normalize potential BigInt fields from web3 result
-        const normalizedBlockNumber =
-          typeof (transferResult as any).blockNumber === "bigint"
-            ? (transferResult as any).blockNumber.toString()
-            : String((transferResult as any).blockNumber ?? "");
-
-        const createStake = await StakingService.stake({
+      let res = await TransferService.sendCanTransfer({
+        fromAddress,
+        amountCan: amount,
+      });
+      if (res.transactionHash) {
+        let createStake = await StakingService.stake({
           poolId: selectedPoolData?._id,
           amount: stakeAmount,
-          walletAddress: adminWalletAddress,
-          transactionHash: transferResult.transactionHash as string,
-          blockNumber: normalizedBlockNumber,
+          walletAddress: user?.walletAddress as string,
+          transactionHash: res.rawReceipt.transactionHash,
         });
-        console.log(createStake);
-        debugger;
-        toast.success("Giao dịch thành công");
-        setTimeout(async () => {
-          await getAllCanBalance();
-        }, 1000);
+        if (createStake.success) {
+          toast.success("Giao dịch stake thành công");
+        } else {
+          toast.error("Giao dịch stake thất bại");
+        }
       }
     } catch (error) {
       if ((error as any).code === 4001) {

@@ -10,3 +10,5 @@ export type {
   ToastPosition,
   PromiseToastOptions,
 } from "./ToastService";
+
+export { default as TransferService } from "./TransferService";
