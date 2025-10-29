@@ -4,12 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sparkles, Zap } from "lucide-react";
 import { CreateStakingCoinRequest } from "@/types/Staking";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import { useAppSelector } from "@/stores";
 import { buildFrontendUrl, config } from "@/api/config";
-
+import { toast } from "sonner";
+import { StakingService } from "@/api/services";
 interface CoinStakingFormProps {
   userBalance: number;
   onStake: (request: CreateStakingCoinRequest) => Promise<void>;
@@ -26,6 +34,8 @@ export const CoinStakingForm = ({
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
   const [userCanBalance, setUserCanBalance] = useState<number>(0);
+  const [takePools, setTakePools] = useState<any[]>([]);
+  const [selectedPool, setSelectedPool] = useState<string>("");
 
   // Hàm format số với dấu phẩy
   const formatNumberWithCommas = (value: string): string => {
@@ -54,13 +64,36 @@ export const CoinStakingForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!selectedPool) {
+      toast.error("Vui lòng chọn pool staking");
+      return;
+    }
+
     const stakeAmount = parseFormattedNumber(amount);
     if (!stakeAmount || stakeAmount <= 0) {
+      toast.error("Vui lòng nhập số lượng CAN hợp lệ");
       return;
     }
 
     if (stakeAmount > userCanBalance) {
+      toast.error("Số CAN trong tài khoản không đủ");
       return;
+    }
+
+    // Kiểm tra min/max stake
+    if (selectedPoolData) {
+      if (stakeAmount < selectedPoolData.minStake) {
+        toast.error(
+          `Số lượng stake tối thiểu là ${selectedPoolData.minStake} CAN`
+        );
+        return;
+      }
+      if (stakeAmount > selectedPoolData.maxStake) {
+        toast.error(
+          `Số lượng stake tối đa là ${selectedPoolData.maxStake} CAN`
+        );
+        return;
+      }
     }
 
     try {
@@ -78,6 +111,13 @@ export const CoinStakingForm = ({
       setUserCanBalance(
         Number((response?.data as any)?.balance as number) ?? 0
       );
+    }
+  };
+
+  const getStakingPools = async () => {
+    const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
+    if (response?.success) {
+      setTakePools((response?.data as any)?.pools);
     }
   };
   const encodeERC20Transfer = (toAddress: string, amount: number): string => {
@@ -125,56 +165,150 @@ export const CoinStakingForm = ({
       if (!fromAddress) {
         throw new Error("Invalid sender address");
       }
-      const CAN_TOKEN_CONTRACT = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
-      // Destination wallet address (where tokens will be sent)
-      const DESTINATION_WALLET = "0x7c4767673cc6024365e08f2af4369b04701a5fed";
-      // Encode ERC-20 transfer data
-      const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
+      const web3Module = await import("web3");
+      const web3 = new web3Module.default(window.ethereum);
 
-      // Request transaction chuyển can cho admin
-      let result = await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [
-          {
-            from: fromAddress,
-            to: CAN_TOKEN_CONTRACT, // Token contract address
-            value: "0x0", // No ETH value for ERC-20 transfer
-            data: data,
-            gas: "0xC350", // 50000 gas limit for ERC-20 transfer
-          },
-        ],
-      });
+      const canTokenABI = [
+        {
+          name: "balanceOf",
+          type: "function" as const,
+          inputs: [
+            { internalType: "address", name: "account", type: "address" },
+          ],
+          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+          stateMutability: "view" as const,
+        },
+        {
+          name: "transfer",
+          type: "function" as const,
+          inputs: [
+            { internalType: "address", name: "to", type: "address" },
+            { internalType: "uint256", name: "amount", type: "uint256" },
+          ],
+          outputs: [{ internalType: "bool", name: "", type: "bool" }],
+          stateMutability: "nonpayable" as const,
+        },
+      ];
 
-      // Nếu có result (transaction hash), chờ 1.5 giây rồi cập nhật balance
-      if (result) {
-        console.log("Transaction successful:", result);
+      // Get CAN token address from config
+      const canTokenAddress = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
+      const adminWalletAddress = config.WALLET_ADDRESSES.ADMIN;
+
+      const canTokenContract = new web3.eth.Contract(
+        canTokenABI,
+        canTokenAddress
+      );
+      const canBalance = await canTokenContract.methods
+        .balanceOf(user?.walletAddress)
+        .call();
+      const requiredAmount = web3.utils.toWei(stakeAmount.toString(), "ether");
+
+      console.log(
+        `💰 CAN Balance: ${web3.utils.fromWei(canBalance as any, "ether")} CAN`
+      );
+
+      if (BigInt(canBalance as any) < BigInt(requiredAmount)) {
+        throw new Error(
+          `Insufficient CAN balance. Required: ${stakeAmount} CAN, Available: ${web3.utils.fromWei(
+            canBalance as any,
+            "ether"
+          )} CAN`
+        );
+      }
+
+      // Get current gas price and increase ~50% for faster confirmation
+      const currentGasPrice = await web3.eth.getGasPrice(); // wei (string | bigint depending on web3 version)
+      const currentGasPriceBigInt =
+        typeof currentGasPrice === "bigint"
+          ? currentGasPrice
+          : BigInt(currentGasPrice);
+      const optimizedGasPriceBigInt =
+        (currentGasPriceBigInt * BigInt(150)) / BigInt(100); // +50%
+      const gasPrice = optimizedGasPriceBigInt.toString(); // wei (decimal string)
+      const gasLimit = 150000; // reasonable limit for ERC-20 transfer
+      debugger;
+      const transferResult = await canTokenContract.methods
+        .transfer(adminWalletAddress, requiredAmount)
+        .send({
+          from: user?.walletAddress,
+          gas: gasLimit.toString(),
+          gasPrice: gasPrice,
+        });
+
+      console.log(
+        `🔗 Transfer Transaction Hash: ${transferResult.transactionHash}`
+      );
+      if (transferResult) {
+        console.log(selectedPoolData);
+        console.log(user?.walletAddress);
+        console.log(stakeAmount);
+        console.log(userCanBalance);
+
+        // Normalize potential BigInt fields from web3 result
+        const normalizedBlockNumber =
+          typeof (transferResult as any).blockNumber === "bigint"
+            ? (transferResult as any).blockNumber.toString()
+            : String((transferResult as any).blockNumber ?? "");
+
+        const createStake = await StakingService.stake({
+          poolId: selectedPoolData?._id,
+          amount: stakeAmount,
+          walletAddress: adminWalletAddress,
+          transactionHash: transferResult.transactionHash as string,
+          blockNumber: normalizedBlockNumber,
+        });
+        console.log(createStake);
+        debugger;
+        toast.success("Giao dịch thành công");
         setTimeout(async () => {
           await getAllCanBalance();
-        }, 1000); // Delay 1.5 giây để blockchain xử lý transaction
+        }, 1000);
       }
     } catch (error) {
       if ((error as any).code === 4001) {
-        alert("Người dùng đã từ chối giao dịch");
+        toast.error("Người dùng đã từ chối giao dịch");
       } else if ((error as any).code === -32603) {
-        alert("Lỗi nội bộ. Vui lòng thử lại.");
+        toast.error("Lỗi nội bộ. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("insufficient funds")) {
-        alert("Số dư không đủ để thực hiện giao dịch");
+        toast.error("Số dư không đủ để thực hiện giao dịch");
       } else if ((error as any).message?.includes("gas")) {
-        alert("Lỗi gas. Vui lòng thử lại.");
+        toast.error("Lỗi gas. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("Invalid")) {
-        alert((error as any).message);
+        toast.error((error as any).message);
       } else {
-        alert((error as any).message || "Có lỗi xảy ra khi tạo giao dịch");
+        toast.error(
+          (error as any).message || "Có lỗi xảy ra khi tạo giao dịch"
+        );
       }
     }
   };
 
   useEffect(() => {
     getAllCanBalance();
+    getStakingPools();
   }, []);
 
   const stakeAmount = parseFormattedNumber(amount as unknown as string);
-  const isValidAmount = stakeAmount > 0 && stakeAmount <= userCanBalance;
+
+  // Lấy thông tin pool đã chọn
+  const selectedPoolData = takePools.find((pool) => pool._id === selectedPool);
+  const currentApy = selectedPoolData?.apy || apy;
+
+  // Validation cho min/max stake
+  const isBelowMinStake =
+    selectedPoolData &&
+    stakeAmount > 0 &&
+    stakeAmount < selectedPoolData.minStake;
+  const isAboveMaxStake =
+    selectedPoolData && stakeAmount > selectedPoolData.maxStake;
+  const isInvalidStakeAmount = isBelowMinStake || isAboveMaxStake;
+
+  const isValidAmount =
+    stakeAmount > 0 &&
+    stakeAmount <= userCanBalance &&
+    selectedPool &&
+    selectedPoolData &&
+    !isInvalidStakeAmount;
   const isExceedBalance = stakeAmount > userCanBalance && stakeAmount > 0;
 
   return (
@@ -196,7 +330,7 @@ export const CoinStakingForm = ({
             Stake CAN Token
           </h3>
           <p className="text-white/90 drop-shadow-lg">
-            APY {apy}% - Nhận thưởng liên tục
+            APY {currentApy}% - Nhận thưởng liên tục
           </p>
         </div>
       </div>
@@ -215,8 +349,31 @@ export const CoinStakingForm = ({
 
         <form onSubmit={handleSubmit} className="staking-form space-y-4">
           <div>
+            <Label htmlFor="pool" className="text-sm font-medium mb-2 block">
+              Chọn gói Stake
+            </Label>
+            <Select value={selectedPool} onValueChange={setSelectedPool}>
+              <SelectTrigger className="w-full h-12 text-lg">
+                <SelectValue placeholder="Chọn pool staking" />
+              </SelectTrigger>
+              <SelectContent>
+                {takePools.map((pool) => (
+                  <SelectItem key={pool?._id} value={pool?._id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{pool.name}</span>
+                      {/* <span className="text-sm text-muted-foreground">
+                        APY: {pool.apy}% | Min: {pool.minStakeAmount} CAN
+                      </span> */}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label htmlFor="amount" className="text-sm font-medium mb-2 block">
-              Số lượng CAN muốn stake
+              Số lượng CAN stake
             </Label>
             <Input
               id="amount"
@@ -225,7 +382,9 @@ export const CoinStakingForm = ({
               value={amount}
               onChange={handleAmountChange}
               className={`text-lg h-12 ${
-                isExceedBalance ? "border-red-500 focus:border-red-500" : ""
+                isExceedBalance || isInvalidStakeAmount
+                  ? "border-red-500 focus:border-red-500"
+                  : ""
               }`}
             />
             {isExceedBalance && (
@@ -235,33 +394,67 @@ export const CoinStakingForm = ({
                 {userCanBalance.toLocaleString()} CAN
               </p>
             )}
+            {isBelowMinStake && (
+              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                <span className="text-red-500">⚠️</span>
+                Số lượng stake tối thiểu là {selectedPoolData?.minStake} CAN
+              </p>
+            )}
+            {isAboveMaxStake && (
+              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                <span className="text-red-500">⚠️</span>
+                Số lượng stake tối đa là {selectedPoolData?.maxStake} CAN
+              </p>
+            )}
           </div>
 
-          {isValidAmount && (
+          {selectedPoolData && (
             <div className="p-4 bg-green-500/10 rounded-lg space-y-2 border border-green-500/20 animate-fade-in">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-4 w-4 text-green-500" />
                 <span className="text-sm font-medium text-green-500">
-                  Dự kiến phần thưởng
+                  Thông tin gói stake ({selectedPoolData.name})
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-xs text-muted-foreground">7 ngày</p>
+                  <p className="text-xs text-muted-foreground">
+                    Thời gian stake
+                  </p>
                   <p className="text-sm font-bold text-green-500">
-                    {((stakeAmount * apy * 7) / (365 * 100)).toFixed(2)} CAN
+                    {selectedPoolData.name === "Flexible Staking Pool"
+                      ? "Không giới hạn"
+                      : `${selectedPoolData.lockPeriod} ngày`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">30 ngày</p>
+                  <p className="text-xs text-muted-foreground">Total Stakers</p>
                   <p className="text-sm font-bold text-green-500">
-                    {((stakeAmount * apy * 30) / (365 * 100)).toFixed(2)} CAN
+                    {selectedPoolData.totalStakers}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">365 ngày</p>
+                  <p className="text-xs text-muted-foreground">Total Staked</p>
                   <p className="text-sm font-bold text-green-500">
-                    {((stakeAmount * apy) / 100).toFixed(2)} CAN
+                    {selectedPoolData.totalStaked}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Min Stake</p>
+                  <p className="text-sm font-bold text-green-500">
+                    {selectedPoolData.minStake} CAN
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Max Stake</p>
+                  <p className="text-sm font-bold text-green-500">
+                    {selectedPoolData.maxStake} CAN
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">APY</p>
+                  <p className="text-sm font-bold text-green-500">
+                    {selectedPoolData.apy}%
                   </p>
                 </div>
               </div>

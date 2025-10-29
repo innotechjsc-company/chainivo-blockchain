@@ -19,6 +19,7 @@ export interface StakeData {
   amount: number;
   walletAddress: string;
   transactionHash?: string;
+  blockNumber?: string;
 }
 
 export interface UnstakeData {
