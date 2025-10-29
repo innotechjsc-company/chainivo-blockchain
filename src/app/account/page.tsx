@@ -91,10 +91,14 @@ export default function AccountManagementPage() {
     router.push("/auth");
   };
 
-  const handleCopyAddress = () => {
-    const address = "0x1234567890abcdef1234567890abcdef12345678";
-    navigator.clipboard.writeText(address);
-    console.log("Address copied to clipboard");
+  const handleCopyAddress = async () => {
+    try {
+      const address = user?.walletAddress || "";
+      if (!address) return;
+      await navigator.clipboard.writeText(address);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
   };
 
   const getRecentMetaMaskTransactions = async () => {
@@ -106,20 +110,18 @@ export default function AccountManagementPage() {
         NFTService.getNFTsByOwner(user.walletAddress),
         StakingService.getStakesByOwner(user.walletAddress),
       ]);
-      console.log((nftsRes?.data as any)?.nfts ?? []);
-      console.log((rewardsRes?.data as any)?.stakes ?? []);
       let transactions = [];
-      let nfts = (nftsRes?.data as any)?.nfts?.sort(
+      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
         (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
       );
-      let stakes = (rewardsRes?.data as any)?.stakes?.sort(
+      debugger;
+      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
         (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
       );
       transactions.push(...nfts, ...stakes);
       setTransactions(transactions);
-      debugger;
     } catch (error) {
       console.error("Error fetching NFTs and rewards:", error);
       setTransactions([]);
@@ -261,6 +263,7 @@ export default function AccountManagementPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="text-xs cursor-pointer"
                         onClick={handleCopyAddress}
                       >
                         Sao chép
@@ -299,8 +302,8 @@ export default function AccountManagementPage() {
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {new Date(
-                                tx.transactions[0].timestamp
-                              ).toLocaleString("vi-VN")}
+                                tx.transactions?.[0]?.timestamp
+                              )?.toLocaleString("vi-VN")}
                             </div>
                           </div>
                         </div>

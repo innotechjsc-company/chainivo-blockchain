@@ -32,12 +32,17 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark')
-                } else {
+                if (localStorage.theme === 'light') {
                   document.documentElement.classList.remove('dark')
+                  document.documentElement.classList.add('light')
+                } else {
+                  document.documentElement.classList.remove('light')
+                  document.documentElement.classList.add('dark')
                 }
-              } catch (_) {}
+              } catch (_) {
+                document.documentElement.classList.remove('light')
+                document.documentElement.classList.add('dark')
+              }
             `,
           }}
         />
