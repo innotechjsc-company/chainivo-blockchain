@@ -89,7 +89,7 @@ export const API_ENDPOINTS = {
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake/:id",
     REWARDS: "/api/staking/claim-rewards/:id",
-    GETBYOWNER: (address: string) => `/api/staking/user-stakes/${address}`,
+    GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 
   AIRDROP: {
@@ -99,6 +99,7 @@ export const API_ENDPOINTS = {
   },
   USER: {
     UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    UPDATE_USER_PROFILE: "/api/users/profile",
   },
   GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
   GET_WALLET_POL_BALANCE: "/api/digitalize/token/pol-balance",

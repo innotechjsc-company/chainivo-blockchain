@@ -176,7 +176,7 @@ interface TierDetailPageProps {
 // CAN Token contract address (for ERC-20 transfers)
 const CAN_TOKEN_CONTRACT = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
 // Destination wallet address (where tokens will be sent)
-const DESTINATION_WALLET = "0x7c4767673cc6024365e08f2af4369b04701a5fed";
+const DESTINATION_WALLET = config.WALLET_ADDRESSES.ADMIN;
 
 export default function TierDetailPage({ params }: TierDetailPageProps) {
   const router = useRouter();
