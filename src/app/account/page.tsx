@@ -38,6 +38,17 @@ export default function AccountManagementPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const user = useAppSelector((state) => state.auth.user);
 
+  // Settings tab states
+  const [email, setEmail] = useState(user?.email || "");
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   useEffect(() => {
     // Simulate loading user profile
     const timer = setTimeout(() => {
@@ -115,6 +126,82 @@ export default function AccountManagementPage() {
       toast.error("Co loi xay ra khi cap nhat thong tin");
     } finally {
       setUpdateLoading(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    try {
+      if (!email || email.trim() === "") {
+        toast.error("Email khong duoc de trong");
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error("Dinh dang email khong hop le");
+        return;
+      }
+
+      setEmailLoading(true);
+
+      const response = await UserService.updateUserProfile({
+        email: email.trim(),
+      });
+
+      if (response.success) {
+        toast.success("Cap nhat email thanh cong");
+        setIsEditingEmail(false);
+        // Update Redux store if needed
+        dispatch(updateProfile({ email: email.trim() }));
+      } else {
+        toast.error(response.error || "Cap nhat email that bai");
+      }
+    } catch (error) {
+      console.error("Error updating email:", error);
+      toast.error("Co loi xay ra khi cap nhat email");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    try {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        toast.error("Vui long dien day du thong tin");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast.error("Mat khau moi phai co it nhat 6 ky tu");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast.error("Mat khau xac nhan khong khop");
+        return;
+      }
+
+      setPasswordLoading(true);
+
+      const response = await UserService.updateUserProfile({
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      });
+
+      if (response.success) {
+        toast.success("Cap nhat mat khau thanh cong");
+        setIsEditingPassword(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(response.error || "Cap nhat mat khau that bai");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error("Co loi xay ra khi cap nhat mat khau");
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -379,45 +466,163 @@ export default function AccountManagementPage() {
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-4">Cài đặt</h3>
                 <div className="space-y-4">
+                  {/* Email Section */}
+                  <div className="p-4 glass rounded-lg">
+                    <div className="font-semibold mb-2">Email</div>
+                    {isEditingEmail ? (
+                      <div className="space-y-3">
+                        <Input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="Nhap email moi"
+                          disabled={emailLoading}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleUpdateEmail}
+                            disabled={emailLoading || !email}
+                          >
+                            {emailLoading ? "Dang luu..." : "Luu"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsEditingEmail(false);
+                              setEmail(user?.email || "");
+                            }}
+                            disabled={emailLoading}
+                          >
+                            Huy
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {user?.email || "Chua cap nhat"}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditingEmail(true)}
+                        >
+                          Thay doi
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Password Section */}
+                  <div className="p-4 glass rounded-lg">
+                    <div className="font-semibold mb-2">Mat khau</div>
+                    {isEditingPassword ? (
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="currentPassword" className="text-sm">
+                            Mat khau hien tai
+                          </Label>
+                          <Input
+                            id="currentPassword"
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Nhap mat khau hien tai"
+                            disabled={passwordLoading}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newPassword" className="text-sm">
+                            Mat khau moi
+                          </Label>
+                          <Input
+                            id="newPassword"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Nhap mat khau moi"
+                            disabled={passwordLoading}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="confirmPassword" className="text-sm">
+                            Xac nhan mat khau
+                          </Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Nhap lai mat khau moi"
+                            disabled={passwordLoading}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleUpdatePassword}
+                            disabled={
+                              passwordLoading ||
+                              !currentPassword ||
+                              !newPassword ||
+                              !confirmPassword
+                            }
+                          >
+                            {passwordLoading ? "Dang luu..." : "Luu"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsEditingPassword(false);
+                              setCurrentPassword("");
+                              setNewPassword("");
+                              setConfirmPassword("");
+                            }}
+                            disabled={passwordLoading}
+                          >
+                            Huy
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          ••••••••
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditingPassword(true)}
+                        >
+                          Thay doi
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2FA Section */}
                   <div className="flex items-center justify-between p-4 glass rounded-lg">
                     <div>
-                      <div className="font-semibold">Email</div>
+                      <div className="font-semibold">Xac thuc 2FA</div>
                       <div className="text-sm text-muted-foreground">
-                        user@example.com
+                        Chua bat
                       </div>
                     </div>
                     <Button variant="outline" size="sm">
-                      Thay đổi
+                      Bat
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Mật khẩu</div>
-                      <div className="text-sm text-muted-foreground">
-                        ••••••••
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Thay đổi
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Xác thực 2FA</div>
-                      <div className="text-sm text-muted-foreground">
-                        Chưa bật
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Bật
-                    </Button>
-                  </div>
-
+                  {/* Sign Out Section */}
                   <div className="p-4 glass rounded-lg">
                     <Button variant="destructive" onClick={handleSignOut}>
-                      Đăng xuất
+                      Dang xuat
                     </Button>
                   </div>
                 </div>
