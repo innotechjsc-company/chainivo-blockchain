@@ -9,11 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Wallet, History, Settings, Upload } from "lucide-react";
-import { useAppSelector } from "@/stores";
+import { useAppSelector, useAppDispatch } from "@/stores";
+import { updateProfile } from "@/stores/authSlice";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
+import { UserService } from "@/api/services/user-service";
 import { buildBlockchainUrl } from "@/api/config";
+import { toast } from "sonner";
 
 interface Profile {
   username: string;
@@ -25,9 +28,11 @@ interface Profile {
 
 export default function AccountManagementPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
+  const [updateLoading, setUpdateLoading] = useState(false);
   const [canBalance, setCanBalance] = useState(0);
   const [txLoading, setTxLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -73,16 +78,43 @@ export default function AccountManagementPage() {
 
   const handleUpdateProfile = async () => {
     try {
-      // Mock update profile
-      console.log("Updating profile with username:", username);
+      // Validation
+      if (!username || username.trim() === "") {
+        toast.error("Ten nguoi dung khong duoc de trong");
+        return;
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (username.trim().length < 3) {
+        toast.error("Ten nguoi dung phai co it nhat 3 ky tu");
+        return;
+      }
 
-      setProfile((prev) => (prev ? { ...prev, username } : null));
-      console.log("Profile updated successfully");
+      setUpdateLoading(true);
+
+      // Goi API that
+      const response = await UserService.updateUserProfile({
+        
+        name: username.trim(),
+      });
+
+      if (response.success) {
+        // Update local component state
+        setProfile((prev) => (prev ? { ...prev, username: username.trim() } : null));
+
+        // Update Redux store (persisted automatically)
+        dispatch(updateProfile({ username: username.trim() }));
+
+        // Show success notification
+        toast.success("Cap nhat thong tin thanh cong");
+      } else {
+        // Show error notification
+        toast.error(response.error || "Cap nhat that bai");
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast.error("Co loi xay ra khi cap nhat thong tin");
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -202,9 +234,15 @@ export default function AccountManagementPage() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         className="mt-2"
+                        disabled={updateLoading}
                       />
                     </div>
-                    <Button onClick={handleUpdateProfile}>Cập nhật</Button>
+                    <Button
+                      onClick={handleUpdateProfile}
+                      disabled={updateLoading || !username || username.trim().length < 3}
+                    >
+                      {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
+                    </Button>
                   </div>
                 </div>
 
