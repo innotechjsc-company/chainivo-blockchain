@@ -43,7 +43,7 @@ export default function ComponentsExamplePage() {
           Comprehensive examples of components and API usage
         </p>
 
-        <div className="mt-6 flex gap-4">
+        <div className="mt-6 flex flex-wrap gap-4">
           <Button>
             <a href="/examples">Components Demo</a>
           </Button>
@@ -52,6 +52,9 @@ export default function ComponentsExamplePage() {
           </Button>
           <Button variant="outline">
             <a href="/examples/zustand-demo">Zustand Demo</a>
+          </Button>
+          <Button variant="outline">
+            <a href="/examples/toast-demo">Toast Demo</a>
           </Button>
         </div>
       </div>
