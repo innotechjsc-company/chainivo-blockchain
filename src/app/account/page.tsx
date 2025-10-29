@@ -110,20 +110,18 @@ export default function AccountManagementPage() {
         NFTService.getNFTsByOwner(user.walletAddress),
         StakingService.getStakesByOwner(user.walletAddress),
       ]);
-      console.log((nftsRes?.data as any)?.nfts ?? []);
-      console.log((rewardsRes?.data as any)?.stakes ?? []);
       let transactions = [];
-      let nfts = (nftsRes?.data as any)?.nfts?.sort(
+      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
         (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
       );
-      let stakes = (rewardsRes?.data as any)?.stakes?.sort(
+      debugger;
+      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
         (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
       );
       transactions.push(...nfts, ...stakes);
       setTransactions(transactions);
-      debugger;
     } catch (error) {
       console.error("Error fetching NFTs and rewards:", error);
       setTransactions([]);

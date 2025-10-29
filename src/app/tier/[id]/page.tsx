@@ -280,7 +280,6 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         fromMysteryBox: true,
       });
       console.log(response);
-      debugger;
 
       // const response = await fetch(buildApiUrl(config.API_ENDPOINTS.NFT.MINT), {
       //   method: "POST",
