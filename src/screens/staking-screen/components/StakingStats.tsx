@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { StakingStats as StakingStatsType } from "@/types/staking";
+import { StakingStats as StakingStatsType } from "@/types/Staking";
 import { Coins, Gift, Package, TrendingUp, ArrowUp, Zap } from "lucide-react";
 
 interface StakingStatsProps {

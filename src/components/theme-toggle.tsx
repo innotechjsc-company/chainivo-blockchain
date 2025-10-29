@@ -4,7 +4,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = React.useState(true);
+  const [isDark, setIsDark] = React.useState(false);
 
   React.useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark");
@@ -15,12 +15,10 @@ export function ThemeToggle() {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
     if (newIsDark) {
-      document.documentElement.classList.remove("light");
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
       localStorage.setItem("theme", "light");
     }
   };
@@ -72,3 +70,4 @@ export function ThemeToggle() {
     </Button>
   );
 }
+
