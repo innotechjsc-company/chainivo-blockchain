@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StakingCoin, StakingNFT } from "@/types/staking";
+import { StakingCoin, StakingNFT } from "@/types/Staking";
 import {
   TrendingUp,
   Clock,

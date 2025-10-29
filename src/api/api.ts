@@ -65,10 +65,9 @@ export const API_ENDPOINTS = {
   },
 
   NFT: {
-    LIST: "/api/digitalize/nfts",
-    DETAIL: (id: string) => `/api/digitalize/nfts/${id}`,
-    MINT: "/api/nft/mint",
-    TRANSFER: "/api/digitalize/nfts/transfer",
+    LIST: "/api/nft/marketplace/for-sale",
+    DETAIL: (id: string) => `/api/nft/${id}`,
+    TRANSFER: "/api/nft/marketplace/buy",
     OWNER: (address: string) => `/api/nft/owner/${address}`,
   },
 
@@ -86,11 +85,11 @@ export const API_ENDPOINTS = {
 
   STAKING: {
     POOLS: "/api/staking/pools",
+    POOL_DETAIL: "/api/staking/pools/:id",
     STAKE: "/api/staking/stake",
-    UNSTAKE: "/api/staking/unstake",
-    REWARDS: "/api/staking/rewards",
-    GETBYOWNER: (address: string) =>
-      `/api/staking/user/stakes?walletAddress=${address}`,
+    UNSTAKE: "/api/staking/unstake/:id",
+    REWARDS: "/api/staking/claim-rewards/:id",
+    GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 
   AIRDROP: {
@@ -100,6 +99,7 @@ export const API_ENDPOINTS = {
   },
   USER: {
     UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    UPDATE_USER_PROFILE: "/api/users/profile",
   },
   GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
   GET_WALLET_POL_BALANCE: "/api/digitalize/token/pol-balance",

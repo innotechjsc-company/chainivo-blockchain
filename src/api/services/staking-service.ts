@@ -19,6 +19,7 @@ export interface StakeData {
   amount: number;
   walletAddress: string;
   transactionHash?: string;
+  blockNumber?: string;
 }
 
 export interface UnstakeData {
@@ -56,10 +57,8 @@ export class StakingService {
       `${API_ENDPOINTS.STAKING.REWARDS}?address=${walletAddress}`
     );
   }
-  static async getStakesByOwner(
-    walletAddress: string
-  ): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(walletAddress)}`);
+  static async getStakesByOwner(usedId: string): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(usedId)}`);
   }
 }
 
