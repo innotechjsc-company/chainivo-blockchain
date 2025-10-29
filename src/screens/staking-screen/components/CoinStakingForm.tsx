@@ -144,8 +144,14 @@ export const CoinStakingForm = ({
           },
         ],
       });
-      debugger;
-      await getAllCanBalance();
+
+      // Nếu có result (transaction hash), chờ 1.5 giây rồi cập nhật balance
+      if (result) {
+        console.log("Transaction successful:", result);
+        setTimeout(async () => {
+          await getAllCanBalance();
+        }, 1000); // Delay 1.5 giây để blockchain xử lý transaction
+      }
     } catch (error) {
       if ((error as any).code === 4001) {
         alert("Người dùng đã từ chối giao dịch");
