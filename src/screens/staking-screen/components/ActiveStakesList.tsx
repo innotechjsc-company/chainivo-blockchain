@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StakingCoin, StakingNFT } from "@/types/staking";
+import { StakingCoin, StakingNFT, StakingPool } from "@/types/Staking";
 import {
   TrendingUp,
   Clock,
@@ -17,6 +17,50 @@ import {
   Package,
 } from "lucide-react";
 
+import { useEffect, useState } from "react";
+
+function CountdownTimer({
+  startAt,
+  lockDays,
+}: {
+  startAt: string;
+  lockDays: number;
+}) {
+  const [remaining, setRemaining] = useState<string>("");
+
+  useEffect(() => {
+    if (!startAt || !lockDays || lockDays <= 0) {
+      setRemaining("-");
+      return;
+    }
+    const startMs = new Date(startAt).getTime();
+    const endMs = startMs + lockDays * 24 * 60 * 60 * 1000;
+
+    const update = () => {
+      const now = Date.now();
+      const diff = Math.max(0, endMs - now);
+      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+      const hours = Math.floor(
+        (diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+      );
+      const mins = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+      const secs = Math.floor((diff % (60 * 1000)) / 1000);
+      setRemaining(`${days}d ${hours}h ${mins}m ${secs}s`);
+    };
+
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [startAt, lockDays]);
+
+  return (
+    <div className="p-3 bg-background/50 rounded-lg">
+      <span className="text-muted-foreground text-sm">Thời gian còn lại</span>
+      <p className="font-medium mt-1">{remaining}</p>
+    </div>
+  );
+}
+
 interface ActiveStakesListProps {
   coinStakes: StakingCoin[];
   nftStakes: StakingNFT[];
@@ -24,6 +68,9 @@ interface ActiveStakesListProps {
   onCancel: (stakeId: string, type: "coin" | "nft") => Promise<void>;
   calculateRewards: (amount: number, apy: number, daysPassed: number) => number;
   calculateDaysPassed: (stakedAt: string) => number;
+  stakingMyPools: StakingPool[];
+  getClaimRewardsData: (stakeId: string) => Promise<any>;
+  unStakeData: (stakeId: string) => Promise<any>;
 }
 
 export const ActiveStakesList = ({
@@ -33,6 +80,9 @@ export const ActiveStakesList = ({
   onCancel,
   calculateRewards,
   calculateDaysPassed,
+  stakingMyPools,
+  getClaimRewardsData,
+  unStakeData,
 }: ActiveStakesListProps) => {
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
@@ -51,7 +101,7 @@ export const ActiveStakesList = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="stakes-list-content space-y-4">
-          {activeCoinStakes.length === 0 ? (
+          {stakingMyPools.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
               <p className="text-muted-foreground">Chưa có lệnh stake nào</p>
@@ -60,68 +110,75 @@ export const ActiveStakesList = ({
               </p>
             </div>
           ) : (
-            activeCoinStakes.map((stake) => {
-              const daysPassed = calculateDaysPassed(stake.stakedAt);
-              const currentRewards = calculateRewards(
-                stake.amountStaked,
-                stake.apy,
-                daysPassed
-              );
-
+            stakingMyPools.map((pool) => {
+              const key = (pool as any)._id || (pool as any).id;
+              const name = (pool as any).poolId?.name ?? "Gói stake";
+              const apy = (pool as any).poolId?.apy ?? 0;
+              const totalStaked = (pool as any).amount ?? 0;
+              const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
+              const stakedAt = (pool as any).stakedAt as string;
+              const id = (pool as any)._id || (pool as any).id;
+              const rewards = (pool as any).earned ?? 0;
               return (
                 <Card
-                  key={stake.id}
-                  className="border-primary/20 bg-gradient-to-br h-full from-background to-primary/5 hover:scale-105 transition-transform"
+                  key={key}
+                  className="border-primary/20 bg-gradient-to-br from-background to-primary/5"
                 >
                   <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                          {stake.amountStaked.toLocaleString()} CAN
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <p className="text-lg font-bold truncate max-w-[14rem]">
+                          {name}
                         </p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1 whitespace-nowrap">
                           <TrendingUp className="h-3 w-3" />
-                          APY: {stake.apy}%
+                          APY: {apy}%
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-500 flex items-center gap-1">
-                          <Sparkles className="h-4 w-4" />+
-                          {currentRewards.toFixed(2)} CAN
+                      <div className="text-right min-w-0">
+                        <p className="text-sm text-muted-foreground whitespace-nowrap">
+                          Số Can stake
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Phần thưởng hiện tại
+                        <p className="text-xl font-bold truncate max-w-[10rem] ml-auto">
+                          {Number(totalStaked).toLocaleString()} CAN
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-background/50 rounded-lg">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          Đã stake
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
+                        <span className="text-muted-foreground block truncate">
+                          Thời gian stake
                         </span>
-                        <span className="font-medium">{daysPassed} ngày</span>
+                        <p className="font-medium truncate">
+                          {lockPeriod} ngày
+                        </p>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Bắt đầu:{" "}
-                        {new Date(stake.stakedAt).toLocaleDateString("vi-VN")}
+                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
+                        <span className="text-muted-foreground block truncate">
+                          Phần thưởng{" "}
+                        </span>
+                        <p className="font-medium truncate">{rewards} CAN</p>
                       </div>
+                      <CountdownTimer
+                        startAt={stakedAt}
+                        lockDays={Number(lockPeriod) || 0}
+                      />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 mt-2">
                       <Button
                         variant="default"
-                        onClick={() => onClaim(stake.id, "coin")}
-                        className="flex items-center gap-2"
+                        onClick={() => getClaimRewardsData(id)}
+                        className="flex items-center gap-2 cursor-pointer"
                       >
                         <Gift className="h-4 w-4" />
                         Nhận thưởng
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => onCancel(stake.id, "coin")}
-                        className="flex items-center gap-2"
+                        onClick={() => unStakeData(id)}
+                        className="flex items-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />
                         Huỷ Staking
@@ -135,102 +192,7 @@ export const ActiveStakesList = ({
         </CardContent>
       </Card>
 
-      {/* NFT Stakes */}
-      {/* <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            NFT Đang Stake
-          </CardTitle>
-          <CardDescription>
-            Phần thưởng đang tích lũy theo thời gian thực
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {activeNFTStakes.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground">Chưa có NFT stake nào</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Stake NFT để nhận phần thưởng cao hơn!
-              </p>
-            </div>
-          ) : (
-            activeNFTStakes.map((stake) => {
-              const daysPassed = calculateDaysPassed(stake.stakedAt);
-              const currentRewards = calculateRewards(
-                stake.nftValue,
-                stake.apy,
-                daysPassed
-              );
-
-              return (
-                <Card
-                  key={stake.id}
-                  className="border-primary/20 bg-gradient-to-br from-background to-primary/5 hover:scale-105 transition-transform"
-                >
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-lg">{stake.nftName}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Giá trị: {stake.nftValue.toLocaleString()} CAN
-                        </p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                          <TrendingUp className="h-3 w-3" />
-                          APY: {stake.apy}%
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-500 flex items-center gap-1">
-                          <Sparkles className="h-4 w-4" />+
-                          {currentRewards.toFixed(2)} CAN
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Phần thưởng hiện tại
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-background/50 rounded-lg">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          Đã stake
-                        </span>
-                        <span className="font-medium">{daysPassed} ngày</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Bắt đầu:{" "}
-                        {new Date(stake.stakedAt).toLocaleDateString("vi-VN")}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="default"
-                        onClick={() => onClaim(stake.id, "nft")}
-                        className="flex items-center gap-2"
-                      >
-                        <Gift className="h-4 w-4" />
-                        Nhận thưởng
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => onCancel(stake.id, "nft")}
-                        className="flex items-center gap-2"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Huỷ Staking
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </CardContent>
-      </Card> */}
+      {/* My Staking Pools */}
     </div>
   );
 };

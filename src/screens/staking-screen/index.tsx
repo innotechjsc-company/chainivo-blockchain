@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "@/stores";
 import { useStakingData } from "./hooks/useStakingData";
 import { useStakingActions } from "./hooks/useStakingActions";
@@ -14,6 +14,9 @@ import { NFTStakingForm } from "./components/NFTStakingForm";
 import { ActiveStakesList } from "./components/ActiveStakesList";
 import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { API_ENDPOINTS, ApiService } from "@/api/api";
+import StakingService from "@/api/services/staking-service";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -27,6 +30,7 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
  */
 export const StakingScreen = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
+  const userInfo = useAppSelector((state) => state.auth.user);
 
   // Custom hooks
   const {
@@ -44,6 +48,13 @@ export const StakingScreen = () => {
     updateNFTStake,
     calculateRewards,
     calculateDaysPassed,
+    stakingMyPools,
+    fetchStakingData,
+    getClaimRewardsData,
+    getStakingPools,
+    setIsLoading,
+    isLoading,
+    unStakeData,
   } = useStakingData();
 
   const {
@@ -190,7 +201,22 @@ export const StakingScreen = () => {
         </div>
 
         {/* Stats Overview - chỉ hiển thị khi có data */}
-        {stakingStats && <StakingStats stats={stakingStats} />}
+        {stakingMyPools?.length > 0 && (
+          <StakingStats
+            stats={{
+              totalCoinStaked: stakingMyPools.length,
+              totalCoinRewards: stakingMyPools.reduce(
+                (sum: number, item: any) =>
+                  sum + Number(item?.earnedRewards ?? 0),
+                0
+              ),
+              totalNFTValue: 0,
+              totalNFTRewards: 0,
+              totalActiveStakes: stakingMyPools.length,
+              averageAPY: 0,
+            }}
+          />
+        )}
 
         {/* Action Loading Indicator */}
         {actionLoading && (
@@ -199,6 +225,17 @@ export const StakingScreen = () => {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
               <span className="text-sm font-medium text-primary">
                 Đang xử lý...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="flex items-center gap-3 px-4 py-3 bg-background/90 rounded-lg border border-primary/20">
+              <Spinner className="h-6 w-6 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Đang xử lý giao dịch...
               </span>
             </div>
           </div>
@@ -225,6 +262,10 @@ export const StakingScreen = () => {
                 onStake={handleCoinStake}
                 loading={actionLoading}
                 apy={stakingConfig?.coinAPY}
+                fetchStakingData={fetchStakingData}
+                getStakingPoolsOnSuccess={getStakingPools}
+                setIsLoading={setIsLoading}
+                stakingMyPools={stakingMyPools}
               />
 
               <ActiveStakesList
@@ -234,6 +275,9 @@ export const StakingScreen = () => {
                 onCancel={handleCancel}
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
+                stakingMyPools={stakingMyPools}
+                getClaimRewardsData={getClaimRewardsData}
+                unStakeData={unStakeData}
               />
             </div>
           </TabsContent>
@@ -255,6 +299,9 @@ export const StakingScreen = () => {
                 onCancel={handleCancel}
                 calculateRewards={calculateRewards}
                 calculateDaysPassed={calculateDaysPassed}
+                stakingMyPools={stakingMyPools}
+                getClaimRewardsData={getClaimRewardsData}
+                unStakeData={unStakeData}
               />
             </div>
           </TabsContent>

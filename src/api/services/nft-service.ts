@@ -58,8 +58,8 @@ export class NFTService {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
 
-  static async mintNFT(data: MintNFTData): Promise<ApiResponse<NFT>> {
-    return ApiService.post<NFT>(API_ENDPOINTS.NFT.MINT, data);
+  static async allNFTInMarketplace(data: any): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.ALL, data);
   }
 
   static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
