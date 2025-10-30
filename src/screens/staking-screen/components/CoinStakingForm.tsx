@@ -24,6 +24,10 @@ interface CoinStakingFormProps {
   onStake: (request: CreateStakingCoinRequest) => Promise<void>;
   loading?: boolean;
   apy?: number;
+  fetchStakingData: () => Promise<void>;
+  getStakingPoolsOnSuccess: () => Promise<void>;
+  setIsLoading: (isLoading: boolean) => void;
+  stakingMyPools?: any[];
 }
 
 export const CoinStakingForm = ({
@@ -31,6 +35,10 @@ export const CoinStakingForm = ({
   onStake,
   loading = false,
   apy = 10,
+  fetchStakingData,
+  getStakingPoolsOnSuccess,
+  setIsLoading,
+  stakingMyPools = [],
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -124,7 +132,9 @@ export const CoinStakingForm = ({
 
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
+      setIsLoading(true);
       if (!window.ethereum) {
+        setIsLoading(false);
         throw new Error(
           "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
         );
@@ -132,7 +142,20 @@ export const CoinStakingForm = ({
 
       // Validate from address
       if (!fromAddress) {
+        setIsLoading(false);
         throw new Error("Invalid sender address");
+      }
+
+      // Kiểm tra đã stake gói này chưa
+      if (
+        stakingMyPools?.length > 0 &&
+        stakingMyPools?.some(
+          (item: any) => item?.poolId?._id === (selectedPoolData?._id as string)
+        )
+      ) {
+        toast.error("Bạn đã stake gói này");
+        setIsLoading(false);
+        return;
       }
       let res = await TransferService.sendCanTransfer({
         fromAddress,
@@ -147,26 +170,37 @@ export const CoinStakingForm = ({
         });
         if (createStake.success) {
           toast.success("Giao dịch stake thành công");
+          setTimeout(async () => {
+            await fetchStakingData();
+            await getStakingPoolsOnSuccess();
+            await getAllCanBalance();
+            setAmount("");
+            setSelectedPool("");
+            setIsLoading(false);
+          }, 1500);
         } else {
+          setIsLoading(false);
           toast.error("Giao dịch stake thất bại");
         }
       }
     } catch (error) {
       if ((error as any).code === 4001) {
+        setIsLoading(false);
         toast.error("Người dùng đã từ chối giao dịch");
       } else if ((error as any).code === -32603) {
+        setIsLoading(false);
         toast.error("Lỗi nội bộ. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("insufficient funds")) {
+        setIsLoading(false);
         toast.error("Số dư không đủ để thực hiện giao dịch");
       } else if ((error as any).message?.includes("gas")) {
+        setIsLoading(false);
         toast.error("Lỗi gas. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("Invalid")) {
+        setIsLoading(false);
         toast.error((error as any).message);
-      } else {
-        toast.error(
-          (error as any).message || "Có lỗi xảy ra khi tạo giao dịch"
-        );
       }
+      setIsLoading(false);
     }
   };
 
@@ -274,6 +308,7 @@ export const CoinStakingForm = ({
                   : ""
               }`}
             />
+
             {isExceedBalance && (
               <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                 <span className="text-red-500">⚠️</span>
@@ -291,6 +326,12 @@ export const CoinStakingForm = ({
               <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                 <span className="text-red-500">⚠️</span>
                 Số lượng stake tối đa là {selectedPoolData?.maxStake} CAN
+              </p>
+            )}
+            {isValidAmount && selectedPoolData && (
+              <p className="text-green-600 text-sm mt-2">
+                Tổng thưởng dự kiến:{" "}
+                {((stakeAmount * selectedPoolData.apy) / 100).toFixed(2)} CAN
               </p>
             )}
           </div>
@@ -351,7 +392,7 @@ export const CoinStakingForm = ({
           <div className="staking-form-actions">
             <Button
               type="submit"
-              className="w-full h-12 text-lg"
+              className="w-full h-12 text-lg cursor-pointer"
               disabled={!isValidAmount || loading}
             >
               <Zap className="h-5 w-5 mr-2" />

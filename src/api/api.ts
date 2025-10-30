@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
   },
 
   NFT: {
+    ALL: "/api/nft/marketplace/for-sale",
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
@@ -87,8 +88,8 @@ export const API_ENDPOINTS = {
     POOLS: "/api/staking/pools",
     POOL_DETAIL: "/api/staking/pools/:id",
     STAKE: "/api/staking/stake",
-    UNSTAKE: "/api/staking/unstake/:id",
-    REWARDS: "/api/staking/claim-rewards/:id",
+    UNSTAKE: "/api/staking/unstake",
+    REWARDS: "/api/staking/claim",
     GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 

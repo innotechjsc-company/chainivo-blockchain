@@ -48,14 +48,12 @@ export class StakingService {
     return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, data);
   }
 
-  static async unstake(data: UnstakeData): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.STAKING.UNSTAKE, data);
+  static async unstake(id: string): Promise<ApiResponse<any>> {
+    return ApiService.post(`${API_ENDPOINTS.STAKING.UNSTAKE}/${id}`);
   }
 
-  static async getRewards(walletAddress: string): Promise<ApiResponse<any>> {
-    return ApiService.get(
-      `${API_ENDPOINTS.STAKING.REWARDS}?address=${walletAddress}`
-    );
+  static async getRewards(id: string): Promise<ApiResponse<any>> {
+    return ApiService.post(`${API_ENDPOINTS.STAKING.REWARDS}/${id}`);
   }
   static async getStakesByOwner(usedId: string): Promise<ApiResponse<any>> {
     return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(usedId)}`);
