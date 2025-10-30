@@ -45,9 +45,9 @@ export const API_ENDPOINTS = {
   },
 
   PHASES: {
-    LIST: "/api/digitalize/phases",
-    DETAIL: (id: string) => `/api/digitalize/phases/${id}`,
-    INVEST: "/api/digitalize/invest",
+    LIST: "/api/token-sale/phases",
+    DETAIL: (id: string) => `/api/token-sale/phases/${id}`,
+    INVEST: "/api/token-sale/invest",
   },
 
   INVESTOR: {

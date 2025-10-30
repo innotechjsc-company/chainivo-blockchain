@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -26,93 +26,62 @@ import {
   Rocket,
 } from "lucide-react";
 import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransactionFeed";
+import { useInvestmentPhasesById, useInvestmentPhases } from "@/screens/investments-screen/hooks";
 
-const phasesData = [
-  {
-    id: 1,
-    name: "Giai đoạn 1",
-    status: "completed",
-    price: 0.05,
-    totalCoins: 10000000,
-    soldCoins: 10000000,
-    progress: 100,
-    bonus: 20,
-    color: "from-green-500 to-emerald-600",
-    description:
-      "Giai đoạn đầu tiên với giá ưu đãi nhất cho những nhà đầu tư tiên phong. Đây là cơ hội vàng để sở hữu CAN token với mức giá thấp nhất và bonus cao nhất.",
+// Helper function de lay color gradient theo phaseId
+const getPhaseColor = (phaseId: number): string => {
+  const colors = [
+    "from-green-500 to-emerald-600",
+    "from-blue-500 to-cyan-600",
+    "from-purple-500 to-pink-600",
+    "from-orange-500 to-red-600",
+  ];
+  return colors[(phaseId - 1) % colors.length] || colors[0];
+};
+
+// Thong tin bo sung cho cac phase (chua co tu API)
+const phaseExtraInfo: Record<number, { highlights: string[]; benefits: string[] }> = {
+  1: {
     highlights: [
-      "ROI tiềm năng lên đến 300%",
-      "Vesting 6 tháng với unlock hàng tháng",
-      "Staking APY đặc biệt 50%",
+      "ROI tiem nang len den 300%",
+      "Vesting 6 thang voi unlock hang thang",
+      "Staking APY dac biet 50%",
     ],
     benefits: [
-      "Giá thấp nhất trong toàn bộ dự án",
-      "Bonus cao nhất 20%",
-      "Ưu tiên whitelist cho NFT drops",
+      "Gia thap nhat trong toan bo du an",
+      "Bonus cao nhat",
+      "Uu tien whitelist cho NFT drops",
       "Early bird rewards",
     ],
   },
-  {
-    id: 2,
-    name: "Giai đoạn 2",
-    status: "active",
-    price: 0.08,
-    totalCoins: 15000000,
-    soldCoins: 8750000,
-    progress: 58,
-    bonus: 15,
-    color: "from-blue-500 to-cyan-600",
-    description:
-      "Giai đoạn hiện tại đang mở với mức giá hấp dẫn. Vẫn còn bonus 15% và nhiều quyền lợi đặc biệt cho nhà đầu tư. Đừng bỏ lỡ cơ hội này!",
-    highlights: ["ROI tiềm năng 200%+", "Vesting 5 tháng", "Staking APY 40%"],
+  2: {
+    highlights: ["ROI tiem nang 200%+", "Vesting 5 thang", "Staking APY 40%"],
     benefits: [
-      "Giá ưu đãi so với các phase sau",
-      "Bonus 15% tokens",
-      "Access vào các sự kiện VIP",
+      "Gia uu dai so voi cac phase sau",
+      "Bonus tokens",
+      "Access vao cac su kien VIP",
       "Voting rights trong governance",
     ],
   },
-  {
-    id: 3,
-    name: "Giai đoạn 3",
-    status: "locked",
-    price: 0.12,
-    totalCoins: 20000000,
-    soldCoins: 0,
-    progress: 0,
-    bonus: 10,
-    color: "from-purple-500 to-pink-600",
-    description:
-      "Giai đoạn 3 sắp mở với pool lớn hơn và vẫn có bonus hấp dẫn. Thích hợp cho những ai muốn đầu tư với quy mô lớn hơn.",
-    highlights: ["ROI tiềm năng 150%", "Vesting 4 tháng", "Staking APY 35%"],
+  3: {
+    highlights: ["ROI tiem nang 150%", "Vesting 4 thang", "Staking APY 35%"],
     benefits: [
-      "Vẫn còn bonus 10%",
-      "Staking rewards cao hơn",
+      "Van con bonus",
+      "Staking rewards cao hon",
       "Partner benefits",
       "Premium support",
     ],
   },
-  {
-    id: 4,
-    name: "Giai đoạn 4",
-    status: "locked",
-    price: 0.15,
-    totalCoins: 25000000,
-    soldCoins: 0,
-    progress: 0,
-    bonus: 5,
-    color: "from-orange-500 to-red-600",
-    description:
-      "Giai đoạn cuối cùng trước khi listing, với giá gần bằng giá niêm yết. Vẫn còn bonus 5% cho những nhà đầu tư muốn tham gia trước khi token ra thị trường.",
-    highlights: ["ROI tiềm năng 100%", "Vesting 3 tháng", "Staking APY 30%"],
+  4: {
+    highlights: ["ROI tiem nang 100%", "Vesting 3 thang", "Staking APY 30%"],
     benefits: [
-      "Bonus cuối cùng 5%",
-      "Giá gần listing",
+      "Bonus cuoi cung",
+      "Gia gan listing",
       "Liquidity provider rewards",
       "Exclusive merchandise",
     ],
   },
-];
+};
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -122,21 +91,16 @@ interface PhaseDetailPageProps {
 
 export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [investAmount, setInvestAmount] = useState<string>("100");
 
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
-  const phase = phasesData.find((p) => p?.id === Number(resolvedParams?.id));
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+  // Fetch phase detail bang hook
+  const { phase, loading, error } = useInvestmentPhasesById(resolvedParams.id);
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Fetch tat ca phases cho phan "Cac giai doan khac"
+  const { phases: allPhases } = useInvestmentPhases();
 
   if (loading) {
     return (
@@ -146,13 +110,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
     );
   }
 
-  if (!phase) {
+  if (error || !phase) {
     return (
       <div className="min-h-screen flex flex-col">
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">
-              Không tìm thấy giai đoạn
+              {error || "Không tìm thấy giai đoạn"}
             </h1>
             <Button onClick={() => router.push("/investments")}>
               Quay lại
@@ -166,7 +130,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const calculateTokens = () => {
     const amount = parseFloat(investAmount) || 0;
     const tokens = amount / phase.price;
-    const bonusTokens = (tokens * phase.bonus) / 100;
+    const bonus = phase.bonusPercentage || 0;
+    const bonusTokens = (tokens * bonus) / 100;
     return {
       baseTokens: tokens.toFixed(2),
       bonusTokens: bonusTokens.toFixed(2),
@@ -175,6 +140,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   };
 
   const { baseTokens, bonusTokens, totalTokens } = calculateTokens();
+  const phaseColor = getPhaseColor(phase.phaseId);
+  const extraInfo = phaseExtraInfo[phase.phaseId] || phaseExtraInfo[1];
+  const bonus = phase.bonusPercentage || 0;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -183,7 +151,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         <section className="relative py-24 overflow-hidden">
           <div className="absolute inset-0 opacity-30 bg-gradient-to-br from-primary/20 to-secondary/20" />
           <div
-            className={`absolute inset-0 bg-gradient-to-br ${phase.color} opacity-90`}
+            className={`absolute inset-0 bg-gradient-to-br ${phaseColor} opacity-90`}
           ></div>
 
           <div className="container mx-auto px-4 relative z-10">
@@ -212,7 +180,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                         Đang mở - Đầu tư ngay
                       </>
                     )}
-                    {phase.status === "locked" && (
+                    {phase.status === "upcoming" && (
                       <>
                         <Lock className="w-5 h-5 mr-2 inline" />
                         Sắp mở
@@ -245,7 +213,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <Target className="w-5 h-5" />
                       <span className="text-sm opacity-90">Tiến độ bán</span>
                     </div>
-                    <div className="text-4xl font-bold">{phase.progress}%</div>
+                    <div className="text-4xl font-bold">{phase.percentSold}%</div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-2">
@@ -253,7 +221,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <span className="text-sm opacity-90">Bonus</span>
                     </div>
                     <div className="text-4xl font-bold text-green-300">
-                      +{phase.bonus}%
+                      +{bonus}%
                     </div>
                   </div>
                   <div className="text-center">
@@ -262,7 +230,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <span className="text-sm opacity-90">Còn lại</span>
                     </div>
                     <div className="text-4xl font-bold">
-                      {((phase.totalCoins - phase.soldCoins) / 1000000).toFixed(
+                      {((phase.totalTokens - phase.soldTokens) / 1000000).toFixed(
                         1
                       )}
                       M
@@ -272,62 +240,63 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Đã bán: {phase.soldCoins.toLocaleString()} CAN</span>
-                    <span>Tổng: {phase.totalCoins.toLocaleString()} CAN</span>
+                    <span>Đã bán: {phase.soldTokens.toLocaleString()} CAN</span>
+                    <span>Tổng: {phase.totalTokens.toLocaleString()} CAN</span>
                   </div>
-                  <Progress value={phase.progress} className="h-3 bg-white/20">
+                  <Progress value={phase.percentSold} className="h-3 bg-white/20">
                     <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500 animate-glow" />
                   </Progress>
                   <p className="text-xs text-center opacity-80">
                     {phase.status === "active" &&
-                      `Còn ${(100 - phase.progress).toFixed(
+                      `Còn ${(100 - phase.percentSold).toFixed(
                         0
                       )}% slot - Đầu tư ngay!`}
                     {phase.status === "completed" && "Giai đoạn đã kết thúc"}
-                    {phase.status === "locked" && "Sắp mở trong thời gian tới"}
+                    {phase.status === "upcoming" && "Sắp mở trong thời gian tới"}
                   </p>
                 </div>
               </div>
 
               {/* Comparison with Previous Phase */}
-              {phase.id > 1 && (
-                <div
-                  className="mt-8 glass rounded-xl p-6 border border-white/20 backdrop-blur-lg animate-fade-in"
-                  style={{ animationDelay: "0.3s" }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <BarChart3 className="w-6 h-6 text-yellow-300" />
-                      <div>
-                        <p className="text-sm opacity-80">
-                          So với Giai đoạn {phase.id - 1}
-                        </p>
-                        <p className="text-lg font-semibold">
-                          Giá tăng $
-                          {(
-                            phase.price - phasesData[phase.id - 2].price
-                          ).toFixed(3)}
-                          <span className="text-red-300 ml-2">
-                            (+
-                            {(
-                              ((phase.price - phasesData[phase.id - 2].price) /
-                                phasesData[phase.id - 2].price) *
-                              100
-                            ).toFixed(0)}
-                            %)
-                          </span>
+              {phase.phaseId > 1 && (() => {
+                const prevPhase = allPhases.find(p => p.phaseId === phase.phaseId - 1);
+                if (!prevPhase) return null;
+
+                const prevBonus = prevPhase.bonusPercentage || 0;
+                const priceDiff = phase.price - prevPhase.price;
+                const priceIncrease = ((priceDiff / prevPhase.price) * 100).toFixed(0);
+                const bonusDecrease = prevBonus - bonus;
+
+                return (
+                  <div
+                    className="mt-8 glass rounded-xl p-6 border border-white/20 backdrop-blur-lg animate-fade-in"
+                    style={{ animationDelay: "0.3s" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <BarChart3 className="w-6 h-6 text-yellow-300" />
+                        <div>
+                          <p className="text-sm opacity-80">
+                            So với Giai đoạn {phase.phaseId - 1}
+                          </p>
+                          <p className="text-lg font-semibold">
+                            Giá tăng ${priceDiff.toFixed(3)}
+                            <span className="text-red-300 ml-2">
+                              (+{priceIncrease}%)
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm opacity-80">Bonus giảm</p>
+                        <p className="text-lg font-semibold text-orange-300">
+                          -{bonusDecrease}%
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm opacity-80">Bonus giảm</p>
-                      <p className="text-lg font-semibold text-orange-300">
-                        -{phasesData[phase.id - 2].bonus - phase.bonus}%
-                      </p>
-                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         </section>
@@ -363,7 +332,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-secondary">
-                    +{phase.bonus}%
+                    +{bonus}%
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Extra tokens
@@ -382,7 +351,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-accent">
-                    {((phase.totalCoins - phase.soldCoins) / 1000000).toFixed(
+                    {((phase.totalTokens - phase.soldTokens) / 1000000).toFixed(
                       1
                     )}
                     M
@@ -404,7 +373,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold gradient-text">
-                    {100 + phase.bonus + (5 - phase.id) * 20}%
+                    {100 + bonus + (5 - phase.phaseId) * 20}%
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Estimated
@@ -430,7 +399,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                {phase.highlights.map((highlight, index) => (
+                {extraInfo.highlights.map((highlight, index) => (
                   <Card
                     key={index}
                     className="glass border-primary/30 hover:scale-105 transition-all animate-fade-in"
@@ -511,7 +480,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Bonus +{phase.bonus}%:
+                        Bonus +{bonus}%:
                       </span>
                       <span className="font-bold text-secondary">
                         +{bonusTokens} CAN
@@ -566,7 +535,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-4">
-                    {phase.benefits.map((benefit, index) => (
+                    {extraInfo.benefits.map((benefit, index) => (
                       <li
                         key={index}
                         className="flex items-start gap-3 p-3 rounded-lg hover:bg-secondary/5 transition-colors animate-fade-in"
@@ -598,7 +567,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 className="animate-fade-in"
                 style={{ animationDelay: "0.2s" }}
               >
-                <LiveTransactionFeed phaseId={phase.id} limit={8} />
+                <LiveTransactionFeed phaseId={phase.phaseId} limit={8} />
               </div>
             </div>
           </div>
@@ -617,13 +586,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-              {phasesData.map((p, index) => (
+              {allPhases.map((p, index) => (
                 <Card
-                  key={p.id}
+                  key={p.phaseId}
                   className={`glass hover:scale-105 transition-all cursor-pointer ${
-                    p.id === phase.id ? "ring-2 ring-primary" : ""
+                    p.phaseId === phase.phaseId ? "ring-2 ring-primary" : ""
                   }`}
-                  onClick={() => router.push(`/phase/${p.id}`)}
+                  onClick={() => router.push(`/phase/${p.phaseId}`)}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <CardHeader>
@@ -635,17 +604,17 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       {p.status === "active" && (
                         <Clock className="w-5 h-5 text-primary animate-pulse" />
                       )}
-                      {p.status === "locked" && (
+                      {p.status === "upcoming" && (
                         <Lock className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
                     <Badge
-                      variant={p.id === phase.id ? "default" : "outline"}
+                      variant={p.phaseId === phase.phaseId ? "default" : "outline"}
                       className="w-fit"
                     >
                       {p.status === "completed" && "Đã đóng"}
                       {p.status === "active" && "Đang mở"}
-                      {p.status === "locked" && "Sắp mở"}
+                      {p.status === "upcoming" && "Sắp mở"}
                     </Badge>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -656,20 +625,20 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Bonus:</span>
                       <span className="font-bold text-secondary">
-                        +{p.bonus}%
+                        +{p.bonusPercentage || 0}%
                       </span>
                     </div>
-                    <Progress value={p.progress} className="h-2" />
+                    <Progress value={p.percentSold} className="h-2" />
                     <Button
-                      variant={p.id === phase.id ? "default" : "outline"}
+                      variant={p.phaseId === phase.phaseId ? "default" : "outline"}
                       size="sm"
                       className="w-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/phase/${p.id}`);
+                        router.push(`/phase/${p.phaseId}`);
                       }}
                     >
-                      {p.id === phase.id ? "Đang xem" : "Xem chi tiết"}
+                      {p.phaseId === phase.phaseId ? "Đang xem" : "Xem chi tiết"}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </CardContent>
@@ -697,10 +666,10 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               <Button
                 variant="ghost"
                 onClick={() => {
-                  const prevPhase = phasesData[phase.id - 2];
-                  if (prevPhase) router.push(`/phase/${prevPhase.id}`);
+                  const prevPhase = allPhases.find(p => p.phaseId === phase.phaseId - 1);
+                  if (prevPhase) router.push(`/phase/${prevPhase.phaseId}`);
                 }}
-                disabled={phase.id === 1}
+                disabled={phase.phaseId === 1}
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Giai đoạn trước
@@ -709,10 +678,10 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               <Button
                 variant="ghost"
                 onClick={() => {
-                  const nextPhase = phasesData[phase.id];
-                  if (nextPhase) router.push(`/phase/${nextPhase.id}`);
+                  const nextPhase = allPhases.find(p => p.phaseId === phase.phaseId + 1);
+                  if (nextPhase) router.push(`/phase/${nextPhase.phaseId}`);
                 }}
-                disabled={phase.id === 4}
+                disabled={phase.phaseId === allPhases.length}
               >
                 Giai đoạn tiếp theo
                 <ChevronRight className="w-4 h-4 ml-2" />
