@@ -116,44 +116,47 @@ export const ActiveStakesList = ({
               const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
               const stakedAt = (pool as any).stakedAt as string;
               const id = (pool as any)._id || (pool as any).id;
+              const rewards = (pool as any).claimedRewards ?? 0;
               return (
                 <Card
                   key={key}
                   className="border-primary/20 bg-gradient-to-br from-background to-primary/5"
                 >
                   <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-lg font-bold">{name}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <p className="text-lg font-bold truncate max-w-[14rem]">
+                          {name}
+                        </p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1 whitespace-nowrap">
                           <TrendingUp className="h-3 w-3" />
                           APY: {apy}%
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">
+                      <div className="text-right min-w-0">
+                        <p className="text-sm text-muted-foreground whitespace-nowrap">
                           Số Can stake
                         </p>
-                        <p className="text-xl font-bold">
+                        <p className="text-xl font-bold truncate max-w-[10rem] ml-auto">
                           {Number(totalStaked).toLocaleString()} CAN
                         </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 text-sm">
-                      <div className="p-3 bg-background/50 rounded-lg">
-                        <span className="text-muted-foreground">
+                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
+                        <span className="text-muted-foreground block truncate">
                           Thời gian stake
                         </span>
-                        <p className="font-medium">{lockPeriod} ngày</p>
+                        <p className="font-medium truncate">
+                          {lockPeriod} ngày
+                        </p>
                       </div>
-                      <div className="p-3 bg-background/50 rounded-lg">
-                        <span className="text-muted-foreground">
+                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
+                        <span className="text-muted-foreground block truncate">
                           Phần thưởng{" "}
                         </span>
-                        <p className="font-medium">
-                          {(totalStaked * apy) / 100} CAN
-                        </p>
+                        <p className="font-medium truncate">{rewards} CAN</p>
                       </div>
                       <CountdownTimer
                         startAt={stakedAt}

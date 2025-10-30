@@ -159,10 +159,11 @@ export const CoinStakingForm = ({
           setTimeout(async () => {
             await fetchStakingData();
             await getStakingPoolsOnSuccess();
+            await getAllCanBalance();
             setAmount("");
             setSelectedPool("");
             setIsLoading(false);
-          }, 1000);
+          }, 1500);
         } else {
           setIsLoading(false);
           toast.error("Giao dịch stake thất bại");
@@ -381,7 +382,7 @@ export const CoinStakingForm = ({
           <div className="staking-form-actions">
             <Button
               type="submit"
-              className="w-full h-12 text-lg"
+              className="w-full h-12 text-lg cursor-pointer"
               disabled={!isValidAmount || loading}
             >
               <Zap className="h-5 w-5 mr-2" />

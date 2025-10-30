@@ -19,6 +19,7 @@ export const useStakingData = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Staking data
   const [coinStakes, setCoinStakes] = useState<StakingCoin[]>([]);
@@ -103,7 +104,6 @@ export const useStakingData = () => {
       setLoading(false);
     }
   };
-
   const getStakingPools = async () => {
     const response = await StakingService.getStakesByOwner(
       (userInfo?.id as string) ?? ""
@@ -114,14 +114,16 @@ export const useStakingData = () => {
       setStakingMyPools([]);
     }
   };
-
   const getClaimRewardsData = async (stakeId: string) => {
+    setIsLoading(true);
     const response = await StakingService.getRewards(stakeId);
     if (response?.success) {
       await getStakingPools();
+      setIsLoading(false);
       toast.success("Nhận thưởng thành công!");
       return response?.data;
     } else {
+      setIsLoading(false);
       toast.error("Lỗi nhận thưởng!");
       return [];
     }
@@ -324,5 +326,7 @@ export const useStakingData = () => {
     fetchStakingData,
     getClaimRewardsData,
     getStakingPools,
+    setIsLoading,
+    isLoading,
   };
 };

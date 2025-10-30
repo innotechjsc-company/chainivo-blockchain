@@ -30,7 +30,6 @@ import { Spinner } from "@/components/ui/spinner";
  */
 export const StakingScreen = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
-  const [isLoading, setIsLoading] = useState(false);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   // Custom hooks
@@ -53,6 +52,8 @@ export const StakingScreen = () => {
     fetchStakingData,
     getClaimRewardsData,
     getStakingPools,
+    setIsLoading,
+    isLoading,
   } = useStakingData();
 
   const {
