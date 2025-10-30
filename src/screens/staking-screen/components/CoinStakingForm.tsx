@@ -25,6 +25,8 @@ interface CoinStakingFormProps {
   loading?: boolean;
   apy?: number;
   fetchStakingData: () => Promise<void>;
+  getStakingPoolsOnSuccess: () => Promise<void>;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
 export const CoinStakingForm = ({
@@ -33,6 +35,8 @@ export const CoinStakingForm = ({
   loading = false,
   apy = 10,
   fetchStakingData,
+  getStakingPoolsOnSuccess,
+  setIsLoading,
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -126,7 +130,9 @@ export const CoinStakingForm = ({
 
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
+      setIsLoading(true);
       if (!window.ethereum) {
+        setIsLoading(false);
         throw new Error(
           "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
         );
@@ -134,6 +140,7 @@ export const CoinStakingForm = ({
 
       // Validate from address
       if (!fromAddress) {
+        setIsLoading(false);
         throw new Error("Invalid sender address");
       }
       let res = await TransferService.sendCanTransfer({
@@ -149,25 +156,36 @@ export const CoinStakingForm = ({
         });
         if (createStake.success) {
           toast.success("Giao dịch stake thành công");
-          await fetchStakingData();
-          setAmount("");
-          setSelectedPool("");
+          setTimeout(async () => {
+            await fetchStakingData();
+            await getStakingPoolsOnSuccess();
+            setAmount("");
+            setSelectedPool("");
+            setIsLoading(false);
+          }, 1000);
         } else {
+          setIsLoading(false);
           toast.error("Giao dịch stake thất bại");
         }
       }
     } catch (error) {
       if ((error as any).code === 4001) {
+        setIsLoading(false);
         toast.error("Người dùng đã từ chối giao dịch");
       } else if ((error as any).code === -32603) {
+        setIsLoading(false);
         toast.error("Lỗi nội bộ. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("insufficient funds")) {
+        setIsLoading(false);
         toast.error("Số dư không đủ để thực hiện giao dịch");
       } else if ((error as any).message?.includes("gas")) {
+        setIsLoading(false);
         toast.error("Lỗi gas. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("Invalid")) {
+        setIsLoading(false);
         toast.error((error as any).message);
       } else {
+        setIsLoading(false);
         toast.error(
           (error as any).message || "Có lỗi xảy ra khi tạo giao dịch"
         );

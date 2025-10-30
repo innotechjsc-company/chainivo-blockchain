@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "@/stores";
 import { useStakingData } from "./hooks/useStakingData";
 import { useStakingActions } from "./hooks/useStakingActions";
@@ -16,6 +16,7 @@ import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import StakingService from "@/api/services/staking-service";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -29,7 +30,7 @@ import StakingService from "@/api/services/staking-service";
  */
 export const StakingScreen = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
-
+  const [isLoading, setIsLoading] = useState(false);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   // Custom hooks
@@ -51,6 +52,7 @@ export const StakingScreen = () => {
     stakingMyPools,
     fetchStakingData,
     getClaimRewardsData,
+    getStakingPools,
   } = useStakingData();
 
   const {
@@ -211,6 +213,17 @@ export const StakingScreen = () => {
           </div>
         )}
 
+        {isLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="flex items-center gap-3 px-4 py-3 bg-background/90 rounded-lg border border-primary/20">
+              <Spinner className="h-6 w-6 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Đang xử lý giao dịch...
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <Tabs defaultValue="coin" className="space-y-8">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12">
@@ -233,6 +246,8 @@ export const StakingScreen = () => {
                 loading={actionLoading}
                 apy={stakingConfig?.coinAPY}
                 fetchStakingData={fetchStakingData}
+                getStakingPoolsOnSuccess={getStakingPools}
+                setIsLoading={setIsLoading}
               />
 
               <ActiveStakesList

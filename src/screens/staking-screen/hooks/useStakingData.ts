@@ -323,5 +323,6 @@ export const useStakingData = () => {
     stakingMyPools,
     fetchStakingData,
     getClaimRewardsData,
+    getStakingPools,
   };
 };
