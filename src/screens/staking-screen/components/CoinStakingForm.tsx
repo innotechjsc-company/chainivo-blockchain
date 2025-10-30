@@ -27,6 +27,7 @@ interface CoinStakingFormProps {
   fetchStakingData: () => Promise<void>;
   getStakingPoolsOnSuccess: () => Promise<void>;
   setIsLoading: (isLoading: boolean) => void;
+  stakingMyPools?: any[];
 }
 
 export const CoinStakingForm = ({
@@ -37,6 +38,7 @@ export const CoinStakingForm = ({
   fetchStakingData,
   getStakingPoolsOnSuccess,
   setIsLoading,
+  stakingMyPools = [],
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -143,6 +145,18 @@ export const CoinStakingForm = ({
         setIsLoading(false);
         throw new Error("Invalid sender address");
       }
+
+      // Kiểm tra đã stake gói này chưa
+      if (
+        stakingMyPools?.length > 0 &&
+        stakingMyPools?.some(
+          (item: any) => item?.poolId?._id === (selectedPoolData?._id as string)
+        )
+      ) {
+        toast.error("Bạn đã stake gói này");
+        setIsLoading(false);
+        return;
+      }
       let res = await TransferService.sendCanTransfer({
         fromAddress,
         amountCan: amount,
@@ -185,12 +199,8 @@ export const CoinStakingForm = ({
       } else if ((error as any).message?.includes("Invalid")) {
         setIsLoading(false);
         toast.error((error as any).message);
-      } else {
-        setIsLoading(false);
-        toast.error(
-          (error as any).message || "Có lỗi xảy ra khi tạo giao dịch"
-        );
       }
+      setIsLoading(false);
     }
   };
 

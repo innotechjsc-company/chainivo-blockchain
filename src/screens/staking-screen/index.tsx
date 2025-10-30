@@ -249,6 +249,7 @@ export const StakingScreen = () => {
                 fetchStakingData={fetchStakingData}
                 getStakingPoolsOnSuccess={getStakingPools}
                 setIsLoading={setIsLoading}
+                stakingMyPools={stakingMyPools}
               />
 
               <ActiveStakesList
