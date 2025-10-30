@@ -39,10 +39,6 @@ export default function AccountManagementPage() {
   const user = useAppSelector((state) => state.auth.user);
 
   // Settings tab states
-  const [email, setEmail] = useState(user?.email || "");
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [emailLoading, setEmailLoading] = useState(false);
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -122,46 +118,6 @@ export default function AccountManagementPage() {
     }
   };
 
-  const handleUpdateEmail = async () => {
-    try {
-      if (!email || email.trim() === "") {
-        toast.error("Email không được để trống");
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        toast.error("Định dạng email không hợp lệ");
-        return;
-      }
-
-      setEmailLoading(true);
-
-      // TODO: Backend chua ho tro update email (khong nam trong whitelist)
-      // const response = await UserService.updateUserProfile({
-      //   email: email.trim(),
-      // });
-
-      // if (response.success) {
-      //   toast.success("Cập nhật email thành công");
-      //   setIsEditingEmail(false);
-      //   // Update Redux store if needed
-      //   dispatch(updateProfile({ email: email.trim() }));
-      // } else {
-      //   toast.error(response.error || "Cập nhật email thất bại");
-      // }
-
-      // Tam thoi chi hien thi thong bao
-      toast.error("Chức năng cập nhật email tạm thời chưa khả dụng");
-      setIsEditingEmail(false);
-    } catch (error) {
-      console.error("Error updating email:", error);
-      toast.error("Có lỗi xảy ra khi cập nhật email");
-    } finally {
-      setEmailLoading(false);
-    }
-  };
-
   const handleUpdatePassword = async () => {
     try {
       if (!currentPassword || !newPassword || !confirmPassword) {
@@ -221,8 +177,10 @@ export default function AccountManagementPage() {
       const address = user?.walletAddress || "";
       if (!address) return;
       await navigator.clipboard.writeText(address);
+      toast.success("Đã sao chép địa chỉ")
     } catch (err) {
       console.error("Failed to copy address:", err);
+      toast.error("Sao chép địa chỉ thất bại")
     }
   };
 
@@ -475,50 +433,11 @@ export default function AccountManagementPage() {
                   {/* Email Section */}
                   <div className="p-4 glass rounded-lg">
                     <div className="font-semibold mb-2">Email</div>
-                    {isEditingEmail ? (
-                      <div className="space-y-3">
-                        <Input
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Nhập email mới"
-                          disabled={emailLoading}
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={handleUpdateEmail}
-                            disabled={emailLoading || !email}
-                          >
-                            {emailLoading ? "Đang lưu..." : "Lưu"}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setIsEditingEmail(false);
-                              setEmail(user?.email || "");
-                            }}
-                            disabled={emailLoading}
-                          >
-                            Hủy
-                          </Button>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {user?.email || "Chưa cập nhật"}
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
-                          {user?.email || "Chua cap nhat"}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsEditingEmail(true)}
-                        >
-                          Thay đổi
-                        </Button>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* Password Section */}
