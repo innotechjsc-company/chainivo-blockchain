@@ -91,39 +91,32 @@ export default function AccountManagementPage() {
     try {
       // Validation
       if (!username || username.trim() === "") {
-        toast.error("Ten nguoi dung khong duoc de trong");
+        toast.error("Tên người dùng không được để trống");
         return;
       }
 
       if (username.trim().length < 3) {
-        toast.error("Ten nguoi dung phai co it nhat 3 ky tu");
+        toast.error("Tên người dùng phải có ít nhất 3 ký tự");
         return;
       }
 
       setUpdateLoading(true);
 
-      // Goi API that
+      // Goi API update profile
       const response = await UserService.updateUserProfile({
-        
         name: username.trim(),
       });
 
       if (response.success) {
-        // Update local component state
         setProfile((prev) => (prev ? { ...prev, username: username.trim() } : null));
-
-        // Update Redux store (persisted automatically)
         dispatch(updateProfile({ username: username.trim() }));
-
-        // Show success notification
-        toast.success("Cap nhat thong tin thanh cong");
+        toast.success("Cập nhật thông tin thành công");
       } else {
-        // Show error notification
-        toast.error(response.error || "Cap nhat that bai");
+        toast.error(response.error || "Cập nhật thất bại");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Co loi xay ra khi cap nhat thong tin");
+      toast.error("Có lỗi xảy ra khi cập nhật thông tin");
     } finally {
       setUpdateLoading(false);
     }
@@ -132,33 +125,38 @@ export default function AccountManagementPage() {
   const handleUpdateEmail = async () => {
     try {
       if (!email || email.trim() === "") {
-        toast.error("Email khong duoc de trong");
+        toast.error("Email không được để trống");
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        toast.error("Dinh dang email khong hop le");
+        toast.error("Định dạng email không hợp lệ");
         return;
       }
 
       setEmailLoading(true);
 
-      const response = await UserService.updateUserProfile({
-        email: email.trim(),
-      });
+      // TODO: Backend chua ho tro update email (khong nam trong whitelist)
+      // const response = await UserService.updateUserProfile({
+      //   email: email.trim(),
+      // });
 
-      if (response.success) {
-        toast.success("Cap nhat email thanh cong");
-        setIsEditingEmail(false);
-        // Update Redux store if needed
-        dispatch(updateProfile({ email: email.trim() }));
-      } else {
-        toast.error(response.error || "Cap nhat email that bai");
-      }
+      // if (response.success) {
+      //   toast.success("Cập nhật email thành công");
+      //   setIsEditingEmail(false);
+      //   // Update Redux store if needed
+      //   dispatch(updateProfile({ email: email.trim() }));
+      // } else {
+      //   toast.error(response.error || "Cập nhật email thất bại");
+      // }
+
+      // Tam thoi chi hien thi thong bao
+      toast.error("Chức năng cập nhật email tạm thời chưa khả dụng");
+      setIsEditingEmail(false);
     } catch (error) {
       console.error("Error updating email:", error);
-      toast.error("Co loi xay ra khi cap nhat email");
+      toast.error("Có lỗi xảy ra khi cập nhật email");
     } finally {
       setEmailLoading(false);
     }
@@ -167,39 +165,47 @@ export default function AccountManagementPage() {
   const handleUpdatePassword = async () => {
     try {
       if (!currentPassword || !newPassword || !confirmPassword) {
-        toast.error("Vui long dien day du thong tin");
+        toast.error("Vui lòng điền đầy đủ thông tin");
         return;
       }
 
       if (newPassword.length < 6) {
-        toast.error("Mat khau moi phai co it nhat 6 ky tu");
+        toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        toast.error("Mat khau xac nhan khong khop");
+        toast.error("Mật khẩu xác nhận không khớp");
         return;
       }
 
       setPasswordLoading(true);
 
-      const response = await UserService.updateUserProfile({
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-      });
+      // TODO: Backend chua ho tro update password (khong nam trong whitelist)
+      // const response = await UserService.updateUserProfile({
+      //   currentPassword: currentPassword,
+      //   newPassword: newPassword,
+      // });
 
-      if (response.success) {
-        toast.success("Cap nhat mat khau thanh cong");
-        setIsEditingPassword(false);
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        toast.error(response.error || "Cap nhat mat khau that bai");
-      }
+      // if (response.success) {
+      //   toast.success("Cập nhật mật khẩu thành công");
+      //   setIsEditingPassword(false);
+      //   setCurrentPassword("");
+      //   setNewPassword("");
+      //   setConfirmPassword("");
+      // } else {
+      //   toast.error(response.error || "Cập nhật mật khẩu thất bại");
+      // }
+
+      // Tam thoi chi hien thi thong bao
+      toast.error("Chức năng cập nhật mật khẩu tạm thời chưa khả dụng");
+      setIsEditingPassword(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error) {
-      console.error("Error updating password:", error);
-      toast.error("Co loi xay ra khi cap nhat mat khau");
+      console.error("Có lỗi xảy ra khi cập nhật mật khẩu:", error);
+      toast.error("Có lỗi xảy ra khi cập nhật mật khẩu");
     } finally {
       setPasswordLoading(false);
     }
@@ -475,7 +481,7 @@ export default function AccountManagementPage() {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Nhap email moi"
+                          placeholder="Nhập email mới"
                           disabled={emailLoading}
                         />
                         <div className="flex gap-2">
@@ -484,7 +490,7 @@ export default function AccountManagementPage() {
                             onClick={handleUpdateEmail}
                             disabled={emailLoading || !email}
                           >
-                            {emailLoading ? "Dang luu..." : "Luu"}
+                            {emailLoading ? "Đang lưu..." : "Lưu"}
                           </Button>
                           <Button
                             variant="outline"
@@ -495,7 +501,7 @@ export default function AccountManagementPage() {
                             }}
                             disabled={emailLoading}
                           >
-                            Huy
+                            Hủy
                           </Button>
                         </div>
                       </div>
@@ -509,7 +515,7 @@ export default function AccountManagementPage() {
                           size="sm"
                           onClick={() => setIsEditingEmail(true)}
                         >
-                          Thay doi
+                          Thay đổi
                         </Button>
                       </div>
                     )}
@@ -517,47 +523,47 @@ export default function AccountManagementPage() {
 
                   {/* Password Section */}
                   <div className="p-4 glass rounded-lg">
-                    <div className="font-semibold mb-2">Mat khau</div>
+                    <div className="font-semibold mb-2">Mật khẩu</div>
                     {isEditingPassword ? (
                       <div className="space-y-3">
                         <div>
                           <Label htmlFor="currentPassword" className="text-sm">
-                            Mat khau hien tai
+                            Mật khẩu hiện tại
                           </Label>
                           <Input
                             id="currentPassword"
                             type="password"
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="Nhap mat khau hien tai"
+                            placeholder="Nhập mật khẩu hiện tại"
                             disabled={passwordLoading}
                             className="mt-1"
                           />
                         </div>
                         <div>
                           <Label htmlFor="newPassword" className="text-sm">
-                            Mat khau moi
+                            Mật khẩu mới
                           </Label>
                           <Input
                             id="newPassword"
                             type="password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Nhap mat khau moi"
+                            placeholder="Nhập mật khẩu mới"
                             disabled={passwordLoading}
                             className="mt-1"
                           />
                         </div>
                         <div>
                           <Label htmlFor="confirmPassword" className="text-sm">
-                            Xac nhan mat khau
+                            Xác nhận mật khẩu
                           </Label>
                           <Input
                             id="confirmPassword"
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Nhap lai mat khau moi"
+                            placeholder="Nhập lại mật khẩu mới"
                             disabled={passwordLoading}
                             className="mt-1"
                           />
@@ -573,7 +579,7 @@ export default function AccountManagementPage() {
                               !confirmPassword
                             }
                           >
-                            {passwordLoading ? "Dang luu..." : "Luu"}
+                            {passwordLoading ? "Đang lưu..." : "Lưu"}
                           </Button>
                           <Button
                             variant="outline"
@@ -586,7 +592,7 @@ export default function AccountManagementPage() {
                             }}
                             disabled={passwordLoading}
                           >
-                            Huy
+                            Hủy
                           </Button>
                         </div>
                       </div>
@@ -600,7 +606,7 @@ export default function AccountManagementPage() {
                           size="sm"
                           onClick={() => setIsEditingPassword(true)}
                         >
-                          Thay doi
+                          Thay đổi
                         </Button>
                       </div>
                     )}
@@ -609,20 +615,20 @@ export default function AccountManagementPage() {
                   {/* 2FA Section */}
                   <div className="flex items-center justify-between p-4 glass rounded-lg">
                     <div>
-                      <div className="font-semibold">Xac thuc 2FA</div>
+                      <div className="font-semibold">Xác thực 2FA</div>
                       <div className="text-sm text-muted-foreground">
-                        Chua bat
+                        Chưa bật
                       </div>
                     </div>
                     <Button variant="outline" size="sm">
-                      Bat
+                      Bật
                     </Button>
                   </div>
 
                   {/* Sign Out Section */}
                   <div className="p-4 glass rounded-lg">
                     <Button variant="destructive" onClick={handleSignOut}>
-                      Dang xuat
+                      Đăng xuất
                     </Button>
                   </div>
                 </div>
