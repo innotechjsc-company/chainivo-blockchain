@@ -48,8 +48,8 @@ export class StakingService {
     return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, data);
   }
 
-  static async unstake(data: UnstakeData): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.STAKING.UNSTAKE, data);
+  static async unstake(id: string): Promise<ApiResponse<any>> {
+    return ApiService.post(`${API_ENDPOINTS.STAKING.UNSTAKE}/${id}`);
   }
 
   static async getRewards(id: string): Promise<ApiResponse<any>> {

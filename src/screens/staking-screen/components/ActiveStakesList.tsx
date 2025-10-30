@@ -70,6 +70,7 @@ interface ActiveStakesListProps {
   calculateDaysPassed: (stakedAt: string) => number;
   stakingMyPools: StakingPool[];
   getClaimRewardsData: (stakeId: string) => Promise<any>;
+  unStakeData: (stakeId: string) => Promise<any>;
 }
 
 export const ActiveStakesList = ({
@@ -81,6 +82,7 @@ export const ActiveStakesList = ({
   calculateDaysPassed,
   stakingMyPools,
   getClaimRewardsData,
+  unStakeData,
 }: ActiveStakesListProps) => {
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
@@ -116,7 +118,7 @@ export const ActiveStakesList = ({
               const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
               const stakedAt = (pool as any).stakedAt as string;
               const id = (pool as any)._id || (pool as any).id;
-              const rewards = (pool as any).claimedRewards ?? 0;
+              const rewards = (pool as any).earned ?? 0;
               return (
                 <Card
                   key={key}
@@ -175,7 +177,7 @@ export const ActiveStakesList = ({
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => onCancel(key as string, "coin")}
+                        onClick={() => unStakeData(id)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />

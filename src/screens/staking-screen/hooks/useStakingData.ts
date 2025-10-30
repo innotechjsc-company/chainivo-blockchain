@@ -128,6 +128,20 @@ export const useStakingData = () => {
       return [];
     }
   };
+  const unStakeData = async (stakeId: string) => {
+    setIsLoading(true);
+    const response = await StakingService.unstake(stakeId);
+    if (response?.success) {
+      await getStakingPools();
+      setIsLoading(false);
+      toast.success("Huỷ stake thành công!");
+      return response?.data;
+    } else {
+      setIsLoading(false);
+      toast.error("Lỗi huỷ stake!");
+      return [];
+    }
+  };
 
   useEffect(() => {
     getStakingPools();
@@ -328,5 +342,6 @@ export const useStakingData = () => {
     getStakingPools,
     setIsLoading,
     isLoading,
+    unStakeData,
   };
 };

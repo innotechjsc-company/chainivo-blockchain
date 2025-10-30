@@ -54,6 +54,7 @@ export const StakingScreen = () => {
     getStakingPools,
     setIsLoading,
     isLoading,
+    unStakeData,
   } = useStakingData();
 
   const {
@@ -200,7 +201,22 @@ export const StakingScreen = () => {
         </div>
 
         {/* Stats Overview - chỉ hiển thị khi có data */}
-        {stakingStats && <StakingStats stats={stakingStats} />}
+        {stakingMyPools?.length > 0 && (
+          <StakingStats
+            stats={{
+              totalCoinStaked: stakingMyPools.length,
+              totalCoinRewards: stakingMyPools.reduce(
+                (sum: number, item: any) =>
+                  sum + Number(item?.earnedRewards ?? 0),
+                0
+              ),
+              totalNFTValue: 0,
+              totalNFTRewards: 0,
+              totalActiveStakes: stakingMyPools.length,
+              averageAPY: 0,
+            }}
+          />
+        )}
 
         {/* Action Loading Indicator */}
         {actionLoading && (
@@ -261,6 +277,7 @@ export const StakingScreen = () => {
                 calculateDaysPassed={calculateDaysPassed}
                 stakingMyPools={stakingMyPools}
                 getClaimRewardsData={getClaimRewardsData}
+                unStakeData={unStakeData}
               />
             </div>
           </TabsContent>
@@ -284,6 +301,7 @@ export const StakingScreen = () => {
                 calculateDaysPassed={calculateDaysPassed}
                 stakingMyPools={stakingMyPools}
                 getClaimRewardsData={getClaimRewardsData}
+                unStakeData={unStakeData}
               />
             </div>
           </TabsContent>
