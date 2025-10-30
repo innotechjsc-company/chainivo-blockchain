@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
   },
 
   NFT: {
+    ALL: "/api/nft/marketplace/for-sale",
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
