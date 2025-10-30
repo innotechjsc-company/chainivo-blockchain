@@ -58,7 +58,7 @@ export class NFTService {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
 
-  static async allNFTInMarketplace(data: any): Promise<ApiResponse<NFT>> {
+  static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.ALL, data);
   }
 

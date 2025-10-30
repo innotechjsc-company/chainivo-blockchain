@@ -19,6 +19,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
   });
 
   const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const [otherNFTsData, setOtherNFTsData] = useState<any[]>([]);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   const fetchUserNFTs = async () => {
@@ -31,7 +32,17 @@ export const useNFTFilters = (nfts: NFT[]) => {
       toast.error(response.message);
     }
   };
+
+  const fetchOtherNFTs = async () => {
+    const response = await NFTService.allNFTInMarketplace();
+    if (response.success) {
+      setOtherNFTsData((response.data as any).nfts || []);
+    } else {
+      toast.error(response.message);
+    }
+  };
   useEffect(() => {
+    fetchOtherNFTs();
     fetchUserNFTs();
   }, []);
 
@@ -87,5 +98,6 @@ export const useNFTFilters = (nfts: NFT[]) => {
     hasActiveFilters,
     fetchUserNFTs,
     userNFTs,
+    otherNFTsData,
   };
 };
