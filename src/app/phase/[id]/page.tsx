@@ -32,6 +32,9 @@ import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransa
 import PhaseService, { Phase } from "@/api/services/phase-service";
 import TransferService, { TransferParams } from "@/services/TransferService";
 import { useAuth } from "@/components/header/hooks/useAuth";
+import { config } from "@/api/config";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "@/services/ToastService";
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -147,30 +150,56 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         amount: parseFloat(investAmount) ?? 0,
       };
       const response = await TransferService.sendUSDCTransfer(params);
-      debugger;
+
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        setBuyLoading(false);
-
         const investment = await PhaseService.createInvestment({
           phaseId: phase.id,
           transactionHash: response?.transactionHash,
         });
+
         if (investment.success) {
+          setBuyLoading(false);
           setIsInvestmentConfirmed(response);
           setIsConfirmOpen(false);
         } else {
-          // TODO: Show error message
+          setBuyLoading(false);
           console.error(
             "Error investing:",
             investment.error || "Failed to invest"
           );
+          toast.error("Đã có lỗi xảy ra, vui lòng thử lại sau vài phút");
         }
       }
     } catch (error: any) {
       setBuyLoading(false);
       console.error("Error investing:", error?.message || error);
       // TODO: Có thể thêm toast notification để hiển thị lỗi
+    }
+  };
+
+  // Helpers for gas/fee formatting
+  const formatFromWei = (wei: string, decimals = 18) => {
+    try {
+      const value = BigInt(wei || "0");
+      const base = BigInt(10) ** BigInt(decimals);
+      const whole = value / base;
+      const frac = (value % base).toString().padStart(decimals, "0");
+      return `${whole}.${frac}`.replace(/\.0+$/, "");
+    } catch {
+      return "0";
+    }
+  };
+
+  const formatGweiFromWei = (wei: string) => {
+    try {
+      const value = BigInt(wei || "0");
+      const base = BigInt(1_000_000_000); // 1e9
+      const whole = value / base;
+      const frac = (value % base).toString().padStart(9, "0");
+      return `${whole}.${frac}`.replace(/\.0+$/, "");
+    } catch {
+      return "0";
     }
   };
 
@@ -443,18 +472,25 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     className="w-full"
                     size="lg"
                     variant={phase.status === "active" ? "default" : "outline"}
-                    disabled={phase.status !== "active"}
+                    disabled={phase.status !== "active" || buyLoading}
                     onClick={() => {
                       if (phase.status === "active") {
                         setIsConfirmOpen(true);
                       }
                     }}
                   >
-                    {phase.status === "active"
-                      ? "Đầu tư ngay"
-                      : phase.status === "completed"
-                      ? "Đã đóng"
-                      : "Sắp mở"}
+                    {buyLoading && phase.status === "active" ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Spinner className="size-4" />
+                        Đang xử lý...
+                      </span>
+                    ) : phase.status === "active" ? (
+                      "Đầu tư ngay"
+                    ) : phase.status === "completed" ? (
+                      "Đã đóng"
+                    ) : (
+                      "Sắp mở"
+                    )}
                   </Button>
 
                   <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
@@ -494,6 +530,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                           Hủy
                         </Button>
                         <Button
+                          disabled={buyLoading}
                           onClick={() => {
                             console.log(
                               `Confirm investing ${investAmount} USD into ${phase.name}`
@@ -502,7 +539,14 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                             setIsConfirmOpen(false);
                           }}
                         >
-                          Xác nhận
+                          {buyLoading ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner className="size-4" />
+                              Đang xử lý...
+                            </span>
+                          ) : (
+                            "Xác nhận"
+                          )}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -526,6 +570,96 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
           </div>
         </section>
       </main>
+
+      {/* Success Dialog */}
+      <Dialog
+        open={Boolean(isInvestmentConfirmed)}
+        onOpenChange={(open) => {
+          if (!open) setIsInvestmentConfirmed(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đầu tư thành công</DialogTitle>
+            <DialogDescription>
+              Giao dịch của bạn đã được gửi lên mạng lưới. Vui lòng kiểm tra
+              giao dịch
+            </DialogDescription>
+          </DialogHeader>
+
+          {(() => {
+            const tx: any = isInvestmentConfirmed;
+            const usdcAmount = parseFloat(tx?.amount || investAmount || "0");
+            const canReceived = phase?.pricePerToken
+              ? (usdcAmount * Number(phase.pricePerToken)).toFixed(2)
+              : "0";
+            const gasPriceWei = String(
+              tx?.gasPrice || tx?.rawReceipt?.effectiveGasPrice || "0"
+            );
+            const gasPriceGwei = formatGweiFromWei(gasPriceWei);
+            const gasUsed = BigInt(String(tx?.rawReceipt?.gasUsed || "0"));
+            const feeWei = (gasUsed * BigInt(gasPriceWei || "0")).toString();
+            const feePOL = formatFromWei(feeWei, 18);
+            const nativeSymbol = "POL"; // Polygon Amoy native token
+            const txHash = tx?.transactionHash;
+            const explorerUrl = txHash
+              ? config.BLOCKCHAIN_EXPLORER.TRANSACTION(txHash)
+              : "";
+
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Đã gửi</span>
+                  <span className="font-medium">{usdcAmount} USDC</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nhận được</span>
+                  <span className="font-semibold">{canReceived} CAN</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gas price</span>
+                  <span className="font-medium">{gasPriceGwei} Gwei</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Phí ước tính</span>
+                  <span className="font-medium">
+                    {feePOL} {nativeSymbol}
+                  </span>
+                </div>
+                {txHash && (
+                  <div className="pt-2 border-t">
+                    <a
+                      className="text-primary underline break-all"
+                      href={explorerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Xem chi tiết giao dịch trên Polygonscan
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <DialogFooter>
+            <Button onClick={() => setIsInvestmentConfirmed(null)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {buyLoading && (
+        <div className="fixed inset-0 z-[1000] bg-black/30 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-background/80 border rounded-lg p-6 flex items-center gap-3">
+            <Spinner className="size-6" />
+            <div>
+              <div className="font-semibold">Đang xử lý giao dịch...</div>
+              <div className="text-sm text-muted-foreground">
+                Vui lòng đợi trong giây lát
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
