@@ -10,6 +10,7 @@ import {
   StakingPool,
 } from "@/types/Staking";
 import StakingService from "@/api/services/staking-service";
+import { ApiService } from "@/api/api";
 import { toast } from "sonner";
 
 /**
@@ -105,15 +106,18 @@ export const useStakingData = () => {
     }
   };
   const getStakingPools = async () => {
-    const response = await StakingService.getStakesByOwner(
+    const response = await StakingService.getUserStakes(
       (userInfo?.id as string) ?? ""
     );
+    
     if (response?.success) {
       setStakingMyPools(response?.data?.stakes as StakingPool[]);
     } else {
       setStakingMyPools([]);
     }
+
   };
+
   const getClaimRewardsData = async (stakeId: string) => {
     setIsLoading(true);
     const response = await StakingService.getRewards(stakeId);
@@ -308,6 +312,35 @@ export const useStakingData = () => {
     );
   };
 
+  // Status management functions
+  const addPendingStake = (stakeData: any) => {
+    const pendingStake = {
+      id: `temp-${Date.now()}`,
+      status: "pending",
+      canUnstake: true,
+      earned: 0,
+      pendingRewards: 0,
+      daysRemaining: 0,
+      daysSinceStaked: 0,
+      stakedAt: new Date().toISOString(),
+      ...stakeData,
+    };
+    setStakingMyPools((prev) => [pendingStake, ...prev]);
+    return pendingStake.id;
+  };
+
+  const updateStakeStatus = (id: string, updates: any) => {
+    setStakingMyPools((prev) =>
+      prev.map((stake: any) =>
+        stake.id === id ? { ...stake, ...updates } : stake
+      )
+    );
+  };
+
+  const removeStake = (id: string) => {
+    setStakingMyPools((prev) => prev.filter((stake: any) => stake.id !== id));
+  };
+
   // Effects
   useEffect(() => {
     // Fetch data ngay khi component mount - không phụ thuộc vào authentication cho mock data
@@ -343,5 +376,10 @@ export const useStakingData = () => {
     setIsLoading,
     isLoading,
     unStakeData,
+
+    // Status management
+    addPendingStake,
+    updateStakeStatus,
+    removeStake,
   };
 };

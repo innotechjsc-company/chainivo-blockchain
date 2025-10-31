@@ -53,10 +53,10 @@ export class StakingService {
   }
 
   static async getRewards(id: string): Promise<ApiResponse<any>> {
-    return ApiService.post(`${API_ENDPOINTS.STAKING.REWARDS}/${id}`);
+    return ApiService.post(`${API_ENDPOINTS.STAKING.CLAIM}/${id}`);
   }
-  static async getStakesByOwner(usedId: string): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(usedId)}`);
+  static async getUserStakes(usedId: string): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.STAKING.USER_STAKES(usedId)}`);
   }
 }
 
