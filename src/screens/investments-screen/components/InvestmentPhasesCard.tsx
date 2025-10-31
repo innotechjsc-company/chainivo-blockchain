@@ -15,12 +15,15 @@ interface InvestmentPhasesCardProps {
 }
 
 export const InvestmentPhasesCard = ({
-  phases,
-  isLoading,
-  error,
+  phases: phasesProps,
+  isLoading: isLoadingProps,
+  error: errorProps,
 }: InvestmentPhasesCardProps) => {
   const router = useRouter();
-  const { phases, loading, error } = useInvestmentPhases();
+
+  const phases = phasesProps || [];
+  const isLoading = isLoadingProps || false;
+  const error = errorProps || null;
 
   return (
     <section id="invest" className="py-20 relative">
@@ -32,7 +35,7 @@ export const InvestmentPhasesCard = ({
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
           </p>
-          {loading && (
+          {isLoading && (
             <p className="text-sm text-muted-foreground mt-2">
               Đang tải dữ liệu...
             </p>

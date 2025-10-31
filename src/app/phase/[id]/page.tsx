@@ -3,6 +3,14 @@
 import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,6 +30,8 @@ import {
 } from "lucide-react";
 import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransactionFeed";
 import PhaseService, { Phase } from "@/api/services/phase-service";
+import TransferService from "@/services/TransferService";
+import { useAuth } from "@/components/header/hooks/useAuth";
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -35,7 +45,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [phase, setPhase] = useState<Phase | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [investAmount, setInvestAmount] = useState<string>("100");
-
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [buyLoading, setBuyLoading] = useState(false);
+  const { user } = useAuth();
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
   useEffect(() => {
@@ -123,6 +135,44 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
       : phase.status === "completed"
       ? "from-green-500 to-emerald-600"
       : "from-purple-500 to-pink-600";
+
+  const handleInvest = async () => {
+    if (!phase || buyLoading || !user?.walletAddress) return;
+    setBuyLoading(true);
+
+    try {
+      debugger;
+      const response = await TransferService.sendCanTransfer({
+        fromAddress: user?.walletAddress ?? "",
+        amountCan: parseFloat(investAmount) ?? 0,
+        token: "USDT",
+      });
+
+      // Nếu có transactionHash thì coi như thành công
+      if (response?.transactionHash) {
+        setBuyLoading(false);
+
+        const investment = await PhaseService.createInvestment({
+          phaseId: phase.id,
+          transactionHash: response?.transactionHash,
+        });
+        if (investment.success) {
+          // TODO: Show success message
+          debugger;
+        } else {
+          // TODO: Show error message
+          console.error(
+            "Error investing:",
+            investment.error || "Failed to invest"
+          );
+        }
+      }
+    } catch (error: any) {
+      setBuyLoading(false);
+      console.error("Error investing:", error?.message || error);
+      // TODO: Có thể thêm toast notification để hiển thị lỗi
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -396,10 +446,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     disabled={phase.status !== "active"}
                     onClick={() => {
                       if (phase.status === "active") {
-                        // Handle investment logic here
-                        console.log(
-                          `Investing ${investAmount} USD into ${phase.name}`
-                        );
+                        setIsConfirmOpen(true);
                       }
                     }}
                   >
@@ -409,6 +456,57 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       ? "Đã đóng"
                       : "Sắp mở"}
                   </Button>
+
+                  <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Xác nhận đầu tư</DialogTitle>
+                        <DialogDescription>
+                          Bạn có chắc muốn đầu tư {investAmount} USD vào giai
+                          đoạn {phase.name}?
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Số tiền:</span>
+                          <span className="font-medium">
+                            {investAmount} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Giá mỗi token:</span>
+                          <span className="font-medium">
+                            {phase.pricePerToken} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Tổng token nhận:</span>
+                          <span className="font-semibold">
+                            {totalTokens} CAN
+                          </span>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsConfirmOpen(false)}
+                        >
+                          Hủy
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            console.log(
+                              `Confirm investing ${investAmount} USD into ${phase.name}`
+                            );
+                            handleInvest();
+                            setIsConfirmOpen(false);
+                          }}
+                        >
+                          Xác nhận
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Shield className="w-4 h-4" />

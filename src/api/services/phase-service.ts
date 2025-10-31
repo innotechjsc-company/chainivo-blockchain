@@ -62,14 +62,14 @@ export class PhaseService {
     return ApiService.getPhaseDetail(id);
   }
 
-  static async createInvestment(data: InvestmentData): Promise<ApiResponse<InvestmentResponse>> {
+  static async createInvestment(data: {
+    phaseId: string;
+    transactionHash: string;
+  }): Promise<ApiResponse<any>> {
     // Use unified buy-token endpoint from ApiService
     const payload = {
       phaseId: data.phaseId,
-      amount: data.amount,
-      walletAddress: data.walletAddress,
-      paymentMethod: data.paymentMethod,
-      investorEmail: data.investorEmail,
+      transactionHash: data.transactionHash,
     };
     return ApiService.buyToken(payload);
   }

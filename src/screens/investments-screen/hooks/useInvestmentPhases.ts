@@ -15,8 +15,8 @@ export const useInvestmentPhases = () => {
       if (!isMounted) return;
       const phasesData = (res as any)?.data?.phases as Phase[];
       if (res.success && Array.isArray(phasesData)) {
-        // sort phases by phaseId
-        setPhases(phasesData.sort((a: Phase, b: Phase) => a.phaseId - b.phaseId));
+        // sort phases by startDate
+        setPhases(phasesData.sort((a: Phase, b: Phase) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
       } else {
         setError(res.error || "Failed to load phases");
       }

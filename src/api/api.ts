@@ -164,11 +164,8 @@ export class ApiService {
   }
 
   static async buyToken(data: {
-    phaseId: number;
-    amount: number;
-    walletAddress: string;
-    paymentMethod?: string;
-    investorEmail?: string;
+    phaseId: string;
+    transactionHash: string;
   }): Promise<ApiResponse<any>> {
     return this.post(API_ENDPOINTS.INVESTMENT.BUY_TOKEN, data);
   }
