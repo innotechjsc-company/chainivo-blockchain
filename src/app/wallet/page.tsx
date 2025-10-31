@@ -230,7 +230,6 @@ export default function WalletConnectPage() {
               userId: user?.id as unknown as string,
             });
             console.log("res", res);
-            debugger;
 
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);

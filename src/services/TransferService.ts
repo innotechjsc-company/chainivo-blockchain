@@ -88,8 +88,10 @@ export default class TransferService {
       gasLimit = 150000,
       gasBoostPercent = 50,
     } = params;
-    const toAddress = params.toAddressData ?? config.WALLET_ADDRESSES.ADMIN;
-
+    const toAddress = params.toAddressData
+      ? params.toAddressData
+      : config.WALLET_ADDRESSES.ADMIN;
+    debugger;
     const web3 = await this.getWeb3();
     const tokenAddress = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
     const contract = this.getTokenContract(web3, tokenAddress);
