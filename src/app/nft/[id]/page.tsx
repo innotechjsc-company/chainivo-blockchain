@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   DollarSign,
   TrendingDown,
+  Eye,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -45,59 +46,23 @@ const rarityColors = {
   Divine: "bg-red-500/20 text-red-300",
 };
 
-// Financial data for other NFTs
-const revenueData = [
-  { month: "T1", revenue: 45000, expenses: 32000, profit: 13000 },
-  { month: "T2", revenue: 52000, expenses: 35000, profit: 17000 },
-  { month: "T3", revenue: 48000, expenses: 33000, profit: 15000 },
-  { month: "T4", revenue: 61000, expenses: 38000, profit: 23000 },
-  { month: "T5", revenue: 58000, expenses: 36000, profit: 22000 },
-  { month: "T6", revenue: 67000, expenses: 40000, profit: 27000 },
-];
-
-const performanceData = [
-  { month: "T1", roi: 12.5 },
-  { month: "T2", roi: 15.8 },
-  { month: "T3", roi: 14.2 },
-  { month: "T4", roi: 18.9 },
-  { month: "T5", roi: 17.6 },
-  { month: "T6", roi: 21.3 },
-];
-
 // Chart configuration for shadcn/ui
-const chartConfig = {
-  revenue: {
-    label: "Doanh thu",
-    color: "hsl(var(--primary))",
-  },
-  profit: {
-    label: "Lợi nhuận",
-    color: "hsl(var(--secondary))",
-  },
-  roi: {
-    label: "ROI %",
-    color: "hsl(var(--primary))",
-  },
-};
 
-interface NFTDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default function NFTDetailPage({ params }: NFTDetailPageProps) {
+export default function NFTDetailPage() {
   const router = useRouter();
+  const params = useParams();
+
   const [loading, setLoading] = useState(true);
-  const [nftData, setNftData] = useState<NFT | null>(null);
-  const resolvedParams = use(params);
-  const id = resolvedParams?.id;
+  const [nftData, setNftData] = useState<any>(null);
+  const id = params?.id as string;
+  const type = params?.type as "tier" | "other";
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     NFTService.getNFTById(id)
       .then((res) => {
+        debugger;
         if (res.success && res.data) setNftData(res.data);
         else setNftData(null);
       })
@@ -125,6 +90,25 @@ export default function NFTDetailPage({ params }: NFTDetailPageProps) {
       </div>
     );
   }
+
+  // Helper function to format address with truncation
+  const formatAddress = (address: any) => {
+    if (!address) return "-";
+    let addr: string = "";
+    if (
+      typeof address === "object" &&
+      address !== null &&
+      "address" in address
+    ) {
+      addr = String(address.address || "");
+    } else if (typeof address === "string") {
+      addr = address;
+    } else {
+      return "-";
+    }
+    if (!addr || addr.length <= 10) return addr || "-";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,32 +138,28 @@ export default function NFTDetailPage({ params }: NFTDetailPageProps) {
                 </div>
               )}
             </div>
-            <div className="glass rounded-xl p-4 flex flex-col gap-2">
-              <div>
-                <span className="text-xs text-muted-foreground">ID NFT:</span>{" "}
-                <span className="font-mono">
-                  {nftData.tokenId ?? "Không rõ"}
-                </span>
+            <div className="glass rounded-xl p-4 grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  {nftData.stats?.favorites
+                    ? Number(nftData.stats.favorites)
+                    : 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Yêu thích</div>
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Tạo lúc:</span>{" "}
-                {(() => {
-                  try {
-                    return new Date(nftData.createdAt).toLocaleString();
-                  } catch {
-                    return "Không rõ";
-                  }
-                })()}
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  {nftData.stats?.views ? Number(nftData.stats.views) : 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Lượt xem</div>
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Cập nhật:</span>{" "}
-                {(() => {
-                  try {
-                    return new Date(nftData.updatedAt).toLocaleString();
-                  } catch {
-                    return "Không rõ";
-                  }
-                })()}
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  {nftData.stats?.totalSales
+                    ? Number(nftData.stats.totalSales)
+                    : 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Sở hữu</div>
               </div>
             </div>
           </div>
@@ -237,14 +217,40 @@ export default function NFTDetailPage({ params }: NFTDetailPageProps) {
               <div className="mt-2 text-xs">
                 {nftData.isForSale ? "Đang mở bán" : "Không còn bán"}
               </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  className="flex-1 gap-2 mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
+                  {type === "other" ? "Mua ngay" : "Mint on Blockchain"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
             {/* Attributes */}
             {Array.isArray(nftData.attributes) &&
               nftData.attributes.length > 0 && (
                 <div className="glass rounded-xl p-4">
                   <h3 className="text-lg font-semibold mb-2">Thuộc tính NFT</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {nftData.attributes.map((attr, idx) => (
+                  <div
+                    className="grid gap-3"
+                    style={{
+                      gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`,
+                    }}
+                  >
+                    {nftData.attributes.map((attr: any, idx: number) => (
                       <div
                         key={idx}
                         className="bg-muted/20 rounded-lg p-3 text-center"
@@ -258,6 +264,55 @@ export default function NFTDetailPage({ params }: NFTDetailPageProps) {
                   </div>
                 </div>
               )}
+
+            <div className="glass rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-4">Lịch sử giao dịch</h3>
+              <div className="space-y-3">
+                {Array.isArray(nftData.transactions) &&
+                nftData.transactions.length > 0 ? (
+                  nftData.transactions.map((item: any, index: number) => {
+                    debugger;
+                    const fromAddress = formatAddress(item.from);
+                    const addressDisplay = item.from
+                      ? fromAddress
+                      : formatAddress(item.transactionHash);
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <div>
+                            <div className="font-semibold text-base">
+                              {item.event || item.type || "Không rõ"}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {addressDisplay}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-semibold text-base">
+                            {item.amount || ""} {item.currency || ""}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(
+                              item.date || item.timestamp || "-"
+                            ).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    Không có lịch sử giao dịch
+                  </div>
+                )}
+              </div>
+            </div>
             {/* Metadata (if exists) */}
             {nftData.metadata && (
               <div className="glass rounded-xl p-4">

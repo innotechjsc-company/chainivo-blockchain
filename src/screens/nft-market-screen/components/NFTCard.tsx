@@ -60,7 +60,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft/${nft.tokenId}`)}
+        onClick={() => router.push(`/nft/${nft.tokenId}?type=${type}`)}
         style={{
           backgroundImage: `url('${nftImage}')`,
           backgroundSize: "cover",
@@ -173,7 +173,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             className="flex-1 gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.tokenId}`);
+              router.push(`/nft/${nft.tokenId}?type=${type}`);
             }}
           >
             {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
@@ -184,7 +184,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.tokenId}`);
+              router.push(`/nft/${nft.tokenId}?type=${type}`);
             }}
           >
             <Eye className="w-4 h-4" />
