@@ -9,11 +9,9 @@ import {
 interface AuthUser {
   id: string;
   email: string;
-  username: string;
+  name: string;
   walletAddress: string;
   role: string;
-  permissions: string[];
-  _verified?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -46,11 +44,9 @@ export const login = createAsyncThunk(
         const authUser: AuthUser = {
           id: response.user.id,
           email: response.user.email,
-          username: response.user.username || "",
+          name: response.user.name || "",
           walletAddress: response.user.walletAddress || "",
           role: response.user.role || "user",
-          permissions: response.user.permissions || [],
-          _verified: response.user._verified,
           createdAt: response.user.createdAt,
           updatedAt: response.user.updatedAt,
         };

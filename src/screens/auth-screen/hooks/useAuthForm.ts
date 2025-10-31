@@ -31,7 +31,7 @@ declare global {
 interface ValidationErrors {
   email?: string;
   password?: string;
-  username?: string;
+  name?: string;
   walletAddress?: string;
   confirmPassword?: string;
 }
@@ -50,7 +50,7 @@ export const useAuthForm = (type: "login" | "register") => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    username: "",
+    name: "",
     walletAddress: "",
     confirmPassword: "",
   });
@@ -76,10 +76,10 @@ export const useAuthForm = (type: "login" | "register") => {
     return undefined;
   };
 
-  // Validate username
-  const validateUsername = (username: string): string | undefined => {
-    if (!username) return "Tên người dùng là bắt buộc";
-    if (username.length < 3) return "Tên người dùng phải có ít nhất 3 ký tự";
+  // Validate name
+  const validateName = (name: string): string | undefined => {
+    if (!name) return "Tên người dùng là bắt buộc";
+    if (name.length < 3) return "Tên người dùng phải có ít nhất 3 ký tự";
     return undefined;
   };
 
@@ -109,7 +109,7 @@ export const useAuthForm = (type: "login" | "register") => {
     errors.password = validatePassword(formData.password);
 
     if (type === "register") {
-      errors.username = validateUsername(formData.username);
+      errors.name = validateName(formData.name);
       errors.confirmPassword = validateConfirmPassword(
         formData.confirmPassword,
         formData.password
@@ -203,7 +203,7 @@ export const useAuthForm = (type: "login" | "register") => {
           const registerPayload: RegisterData = {
             email: formData.email,
             password: formData.password,
-            username: formData.username,
+            name: formData.name,
           };
           const result = await dispatch(
             registerAction(registerPayload)
@@ -223,7 +223,7 @@ export const useAuthForm = (type: "login" | "register") => {
     [
       formData.email,
       formData.password,
-      formData.username,
+      formData.name,
       type,
       validateForm,
       dispatch,

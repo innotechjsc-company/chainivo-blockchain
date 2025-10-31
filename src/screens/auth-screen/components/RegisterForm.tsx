@@ -36,23 +36,21 @@ export const RegisterForm = () => {
 
       {/* Username Field */}
       <div className="space-y-2">
-        <Label htmlFor="username">Tên người dùng</Label>
+        <Label htmlFor="name">Tên người dùng</Label>
         <div className="relative">
           <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
           <Input
-            id="username"
+            id="name"
             type="text"
             placeholder="Nhập tên người dùng"
             className="pl-10"
-            value={formData.username}
-            onChange={(e) => handleChange("username", e.target.value)}
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
             disabled={isLoading}
           />
         </div>
-        {validationErrors.username && (
-          <p className="text-sm text-destructive">
-            {validationErrors.username}
-          </p>
+        {validationErrors.name && (
+          <p className="text-sm text-destructive">{validationErrors.name}</p>
         )}
       </div>
 

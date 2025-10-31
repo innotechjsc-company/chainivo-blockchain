@@ -30,33 +30,26 @@ export interface TokenPurchaseData {
 }
 
 export class WalletService {
-  static async updateTransactionStatus(data: {
-    transactionHash: string;
-    status: string;
-    blockchainTxHash?: string;
-  }): Promise<ApiResponse<TransactionStatus>> {
-    return ApiService.post<TransactionStatus>(
-      API_ENDPOINTS.UPDATE_TRANSACTION_STATUS,
-      data
-    );
-  }
-
   static async getWalletUsdtBalances(
     address: string
   ): Promise<ApiResponse<any>> {
     return ApiService.get(
-      `${API_ENDPOINTS.GET_WALLET_USDT_BALANCE}/${address}`
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=USDT`
     );
   }
   static async getWalletPolBalances(
     address: string
   ): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.GET_WALLET_POL_BALANCE}/${address}`);
+    return ApiService.get(
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=POL`
+    );
   }
   static async getWalletCanBalances(
     address: string
   ): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.GET_WALLET_CAN_BALANCE}/${address}`);
+    return ApiService.get(
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=CAN`
+    );
   }
 }
 

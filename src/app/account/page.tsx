@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,9 @@ import { useAppSelector } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
-import { buildBlockchainUrl } from "@/api/config";
 
 interface Profile {
-  username: string;
+  name: string;
   avatar_url: string | null;
   can_balance: number;
   membership_tier: string;
@@ -38,14 +37,14 @@ export default function AccountManagementPage() {
     const timer = setTimeout(() => {
       // Mock profile data
       const mockProfile: Profile = {
-        username: user?.username as string,
+        name: user?.name as string,
         avatar_url: null,
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
       };
       setProfile(mockProfile);
-      setUsername(mockProfile.username);
+      setUsername(mockProfile.name);
       setLoading(false);
     }, 1000);
 
@@ -60,7 +59,7 @@ export default function AccountManagementPage() {
           user.walletAddress
         );
         if (response?.success) {
-          const raw = Number(response.data.balance);
+          const raw = Number((response.data as any)?.can as number);
           setCanBalance(Number.isFinite(raw) ? Math.round(raw) : 0);
         }
       } catch (error) {
@@ -69,7 +68,7 @@ export default function AccountManagementPage() {
     };
 
     fetchCanBalance();
-  }, [user?.walletAddress]);
+  }, []);
 
   const handleUpdateProfile = async () => {
     try {
@@ -195,10 +194,10 @@ export default function AccountManagementPage() {
                   </Avatar>
                   <div className="flex-1">
                     <div className="mb-4">
-                      <Label htmlFor="username">Tên người dùng</Label>
+                      <Label htmlFor="name">Tên người dùng</Label>
                       <Input
-                        id="username"
-                        value={username}
+                        id="name"
+                        value={user?.name || ""}
                         onChange={(e) => setUsername(e.target.value)}
                         className="mt-2"
                       />
