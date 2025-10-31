@@ -51,7 +51,7 @@ export class NFTService {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
   static async getNFTsByOwner(address: string): Promise<ApiResponse<NFT[]>> {
-    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.OWNER(address));
+    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.OWNER);
   }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
@@ -65,11 +65,12 @@ export class NFTService {
   static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.TRANSFER, data);
   }
-  static async pushComment(
-    id: string,
-    data: { comment: string; userAddress: string }
-  ): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.NFT.COMMENTS(id), data);
+  static async pushComment(data: {
+    nftId: string;
+    content: string;
+    replyTo?: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.COMMENTS, data);
   }
 }
 
