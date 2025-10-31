@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StakingCoin, StakingNFT, StakingPool } from "@/types/Staking";
+import { StakingCoin, StakingNFT, StakingPool } from "@/types/staking";
 import {
   TrendingUp,
   Clock,

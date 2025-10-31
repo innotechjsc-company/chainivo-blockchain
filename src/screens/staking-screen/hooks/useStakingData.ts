@@ -8,7 +8,7 @@ import {
   AvailableNFT,
   StakingConfig,
   StakingPool,
-} from "@/types/Staking";
+} from "@/types/staking";
 import StakingService from "@/api/services/staking-service";
 import { ApiService } from "@/api/api";
 import { toast } from "sonner";
