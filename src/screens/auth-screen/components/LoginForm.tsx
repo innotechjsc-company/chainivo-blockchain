@@ -17,19 +17,23 @@ export const LoginForm = () => {
     handleSubmit,
   } = useAuthForm("login");
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.log("[LoginForm] onSubmit called");
-    handleSubmit(e, formData);
-    return false;
+  const onLoginClick = () => {
+    handleSubmit({
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    } as any);
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="space-y-6"
-      noValidate
-      action="javascript:void(0)"
-    >
+    <div className="space-y-6">
+      {/* Server Error Alert */}
+      {serverError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{serverError}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Email Field */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -84,7 +88,12 @@ export const LoginForm = () => {
       </div>
 
       {/* Submit Button */}
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="button"
+        className="w-full"
+        disabled={isLoading}
+        onClick={onLoginClick}
+      >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -94,6 +103,6 @@ export const LoginForm = () => {
           "Đăng nhập"
         )}
       </Button>
-    </form>
+    </div>
   );
 };
