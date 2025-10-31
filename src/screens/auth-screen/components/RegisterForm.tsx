@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock, User, Wallet, Loader2, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, Loader2, AlertCircle } from "lucide-react";
 import { useAuthForm } from "../hooks/useAuthForm";
 
 export const RegisterForm = () => {
@@ -17,18 +17,23 @@ export const RegisterForm = () => {
     handleSubmit,
   } = useAuthForm("register");
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    handleSubmit(e, formData as any);
-    return false;
+  const onRegisterClick = () => {
+    handleSubmit({
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    } as any);
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="space-y-6"
-      noValidate
-      action="javascript:void(0)"
-    >
+    <div className="space-y-6">
+      {/* Server Error Alert */}
+      {serverError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{serverError}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Username Field */}
       <div className="space-y-2">
         <Label htmlFor="username">Tên người dùng</Label>
@@ -117,9 +122,10 @@ export const RegisterForm = () => {
 
       {/* Submit Button */}
       <Button
-        type="submit"
+        type="button"
         className="w-full cursor-pointer"
         disabled={isLoading}
+        onClick={onRegisterClick}
       >
         {isLoading ? (
           <>
@@ -142,6 +148,6 @@ export const RegisterForm = () => {
           Chính sách bảo mật
         </a>
       </p>
-    </form>
+    </div>
   );
 };
