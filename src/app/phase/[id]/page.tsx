@@ -46,6 +46,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [investAmount, setInvestAmount] = useState<string>("100");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isInvestmentConfirmed, setIsInvestmentConfirmed] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const { user } = useAuth();
   // Unwrap the params Promise using React.use()
@@ -141,14 +142,12 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
     setBuyLoading(true);
 
     try {
-      const params: TransferParams = {
+      const params: any = {
         fromAddress: user?.walletAddress ?? "",
         amount: parseFloat(investAmount) ?? 0,
-        tokenType: "USDC",
       };
-      const response = await TransferService.transferToken(params);
+      const response = await TransferService.sendUSDCTransfer(params);
       debugger;
-
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
         setBuyLoading(false);
@@ -158,8 +157,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
           transactionHash: response?.transactionHash,
         });
         if (investment.success) {
-          // TODO: Show success message
-          debugger;
+          setIsInvestmentConfirmed(response);
+          setIsConfirmOpen(false);
         } else {
           // TODO: Show error message
           console.error(
