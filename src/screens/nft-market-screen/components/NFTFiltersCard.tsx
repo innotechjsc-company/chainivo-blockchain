@@ -69,9 +69,9 @@ export const NFTFiltersCard = ({
             {/* Type Filter */}
             <div>
               <label className="text-sm font-semibold mb-3 block">
-                Loại NFT
+                Tìm kiếm NFT
               </label>
-              <ToggleGroup
+              {/* <ToggleGroup
                 type="single"
                 value={filters.type}
                 onValueChange={(value) =>
@@ -97,7 +97,7 @@ export const NFTFiltersCard = ({
                 >
                   NFT Khác
                 </ToggleGroupItem>
-              </ToggleGroup>
+              </ToggleGroup> */}
             </div>
 
             {/* Rarity Filter */}

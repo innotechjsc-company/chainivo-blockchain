@@ -26,6 +26,7 @@ const rarityColors = {
 export const NFTCard = ({ nft, type }: NFTCardProps) => {
   const router = useRouter();
   const isOtherNFT = nft.type === "other";
+
   const progressPercentage =
     isOtherNFT && nft.sharesSold && nft.totalShares
       ? (nft.sharesSold / nft.totalShares) * 100
@@ -46,10 +47,6 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
     return "/nft-box.jpg";
   };
 
-  useEffect(() => {
-    console.log(type);
-  }, [type]);
-
   const nftImage = getNFTImage(nft);
 
   const formatAddress = (address?: string) => {
@@ -64,7 +61,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft/${nft.tokenId}?type=${type}`)}
+        onClick={() => router.push(`/nft/${nft.id}?type=${type}`)}
         style={{
           backgroundImage: `url('${nftImage}')`,
           backgroundSize: "cover",
@@ -91,11 +88,12 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
           size="icon"
           className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm hover:bg-background"
         >
-          {isOtherNFT ? (
+          {/* {isOtherNFT ? (
             <ShoppingBag className="w-4 h-4" />
           ) : (
             <Heart className="w-4 h-4" />
-          )}
+          )} */}
+          <Heart className="w-4 h-4" />
         </Button>
       </div>
 
@@ -116,53 +114,11 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
           <span className="font-mono ">{nft?.description}</span>
         </div>
 
-        {/* {isOtherNFT ? (
-          <>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Giá trị tổng</span>
-                <span className="font-bold text-primary">{nft.totalValue}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Giá/cổ phần</span>
-                <span className="font-semibold">{nft.pricePerShare}</span>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Tiến trình bán</span>
-                  <span>
-                    {nft.sharesSold}/{nft.totalShares} cổ phần
-                  </span>
-                </div>
-                <Progress value={progressPercentage} className="h-2" />
-                <div className="text-xs text-primary font-semibold">
-                  {progressPercentage.toFixed(1)}% đã bán
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                <div className="text-xs text-muted-foreground">Lượt mua</div>
-                <div className="text-sm font-semibold flex items-center gap-1">
-                  <ShoppingBag className="w-3 h-3" />
-                  {nft.purchases}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-xs text-muted-foreground">Giá</div>
-              <div className="text-xl font-bold text-primary">{nft.price}</div>
-            </div>
-          </div>
-        )} */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-xs text-muted-foreground">Giá</div>
             <div className="text-xl font-bold text-primary">
-              {nft?.price?.amount ?? "Thương lượng"}{" "}
+              {nft?.price ?? "Thương lượng"}
             </div>
           </div>
         </div>
@@ -174,7 +130,8 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             className="flex-1 gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.tokenId}?type=${type}`);
+
+              router.push(`/nft/${nft.id}?type=${type}`);
             }}
           >
             {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
@@ -185,7 +142,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.tokenId}?type=${type}`);
+              router.push(`/nft/${nft.id}?type=${type}`);
             }}
           >
             <Eye className="w-4 h-4" />
