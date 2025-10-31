@@ -38,6 +38,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { NFT, NFTService } from "@/api/services/nft-service";
+import { TransferService } from "@/services";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -53,13 +54,18 @@ const rarityColors = {
 export default function NFTDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [nftData, setNftData] = useState<any>(null);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<any[]>([]);
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [buyLoading, setBuyLoading] = useState(false);
   const id = params?.id as string;
-  const type = params?.type as "tier" | "other";
+  const type = (searchParams?.get("type") || params?.type) as
+    | "tier"
+    | "other"
+    | undefined;
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
@@ -67,8 +73,6 @@ export default function NFTDetailPage() {
     setLoading(true);
     NFTService.getNFTById(id)
       .then((res) => {
-        debugger;
-
         if (res.success && res.data) setNftData(res.data);
         else setNftData(null);
       })
@@ -116,24 +120,65 @@ export default function NFTDetailPage() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  const handlePostComment = () => {
-    if (!commentText.trim()) return;
+  const handlePostComment = async () => {
+    if (!commentText.trim() || !id || commentLoading) return;
 
-    const newComment = {
-      id: Date.now().toString(),
-      text: commentText,
-      author: user?.walletAddress || "Anonymous",
-      timestamp: new Date().toISOString(),
-    };
+    setCommentLoading(true);
+    try {
+      const response = await NFTService.pushComment(nftData?.tokenId, {
+        comment: commentText,
+        userAddress: user?.walletAddress ?? "",
+      });
 
-    setComments([...comments, newComment]);
-    setCommentText("");
-    // TODO: Call API to save comment
+      if (response.success) {
+        // Clear input
+        setCommentText("");
+
+        // Refresh NFT data to get updated comments
+        const refreshResponse = await NFTService.getNFTById(id);
+        if (refreshResponse.success && refreshResponse.data) {
+          setNftData(refreshResponse.data);
+        }
+      } else {
+        // Handle error - you can add toast notification here
+        console.error("Failed to post comment:", response.message);
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+    } finally {
+      setCommentLoading(false);
+    }
   };
 
   const userAddress = user?.walletAddress
     ? formatAddress(user.walletAddress)
     : "Anonymous";
+
+  const handleBuyNFT = async () => {
+    if (!nftData || buyLoading) return;
+
+    setBuyLoading(true);
+    try {
+      const response = await TransferService.sendCanTransfer({
+        fromAddress: user?.walletAddress ?? "",
+        toAddressData: nftData?.creator?.address ?? "",
+        amountCan: Number(nftData?.currentPrice?.amount) ?? 0,
+      });
+
+      // Nếu có transactionHash thì coi như thành công
+      if (response?.transactionHash) {
+        setBuyLoading(false);
+        // TODO: Có thể thêm toast notification hoặc refresh data
+      } else {
+        setBuyLoading(false);
+        console.error("Failed to buy NFT: No transaction hash");
+      }
+    } catch (error: any) {
+      setBuyLoading(false);
+      console.error("Error buying NFT:", error?.message || error);
+      // TODO: Có thể thêm toast notification để hiển thị lỗi
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,12 +287,28 @@ export default function NFTDetailPage() {
                   className="flex-1 gap-2 mt-2"
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (type === "other") {
+                      handleBuyNFT();
+                    } else {
+                    }
                   }}
+                  disabled={buyLoading}
                 >
                   {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-                  {type === "other" ? "Mua ngay" : "Mint on Blockchain"}
+                  {buyLoading
+                    ? "Đang xử lý..."
+                    : type === "other"
+                    ? "Mua ngay"
+                    : "Mint on Blockchain"}
                 </Button>
               </div>
+              {buyLoading && (
+                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-sm text-blue-400 text-center">
+                    Giao dịch đang xử lý...
+                  </p>
+                </div>
+              )}
             </div>
             {/* Attributes */}
             {Array.isArray(nftData.attributes) &&
@@ -281,7 +342,6 @@ export default function NFTDetailPage() {
                 {Array.isArray(nftData.transactions) &&
                 nftData.transactions.length > 0 ? (
                   nftData.transactions.map((item: any, index: number) => {
-                    debugger;
                     const fromAddress = formatAddress(item.from);
                     const addressDisplay = item.from
                       ? fromAddress
@@ -350,30 +410,56 @@ export default function NFTDetailPage() {
 
           {/* Comments List - Scrollable */}
           <div className="flex-1 overflow-y-auto pr-2 mb-4 min-h-0">
-            {comments.length > 0 ? (
+            {Array.isArray(nftData?.comments) && nftData.comments.length > 0 ? (
               <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="border-b border-border/50 pb-4 last:border-0"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-sm font-mono">
-                            {comment.author}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(comment.timestamp).toLocaleString()}
-                          </span>
+                {nftData.comments.map((comment: any, index: number) => {
+                  const commentText =
+                    comment.text || comment.content || comment.message || "";
+                  const commentAuthor =
+                    comment.author ||
+                    comment.user?.walletAddress ||
+                    comment.user?.address ||
+                    comment.user?.username ||
+                    "Anonymous";
+                  const commentDate =
+                    comment.timestamp ||
+                    comment.createdAt ||
+                    comment.created_at ||
+                    comment.date;
+
+                  return (
+                    <div
+                      key={comment.id || comment._id || index}
+                      className="border-b border-border/50 pb-4 last:border-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-sm font-mono">
+                              {formatAddress(commentAuthor)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {commentDate
+                                ? (() => {
+                                    try {
+                                      return new Date(
+                                        commentDate
+                                      ).toLocaleString();
+                                    } catch {
+                                      return commentDate;
+                                    }
+                                  })()
+                                : ""}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
+                            {commentText}
+                          </p>
                         </div>
-                        <p className="text-sm text-foreground whitespace-pre-wrap">
-                          {comment.text}
-                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-8">
@@ -387,21 +473,22 @@ export default function NFTDetailPage() {
               placeholder="Add a comment..."
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              className="min-h-[100px] resize-none border-border/50 mb-3 bg-white text-black placeholder:text-gray-400"
+              disabled={commentLoading}
+              className="min-h-[100px] resize-none border-border/50 mb-3 bg-white text-black placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
             />
 
             {/* Commenting as and Post Button */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Commenting as:{" "}
+                Bình luận dưới tên:
                 <span className="font-mono">{user?.username}</span>
               </div>
               <Button
                 onClick={handlePostComment}
-                disabled={!commentText.trim()}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2"
+                disabled={!commentText.trim() || commentLoading}
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Post Comment
+                {commentLoading ? "Đang gửi..." : "Gửi"}
               </Button>
             </div>
           </div>

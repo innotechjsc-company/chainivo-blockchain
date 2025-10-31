@@ -70,6 +70,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
     OWNER: (address: string) => `/api/nft/owner/${address}`,
+    COMMENTS: (id: string) => `api/nft/${id}/comment`,
   },
 
   MYSTERY_BOX: {

@@ -71,7 +71,7 @@ export default class TransferService {
 
   static async sendCanTransfer(params: {
     fromAddress: string;
-    toAddress?: string; // default admin address
+    toAddressData?: string; // default admin address
     amountCan: number;
     gasLimit?: number;
     gasBoostPercent?: number;
@@ -84,10 +84,11 @@ export default class TransferService {
     const {
       fromAddress,
       amountCan,
+      toAddressData,
       gasLimit = 150000,
       gasBoostPercent = 50,
     } = params;
-    const toAddress = params.toAddress ?? config.WALLET_ADDRESSES.ADMIN;
+    const toAddress = params.toAddressData ?? config.WALLET_ADDRESSES.ADMIN;
 
     const web3 = await this.getWeb3();
     const tokenAddress = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;

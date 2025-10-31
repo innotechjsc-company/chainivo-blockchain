@@ -65,6 +65,12 @@ export class NFTService {
   static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.TRANSFER, data);
   }
+  static async pushComment(
+    id: string,
+    data: { comment: string; userAddress: string }
+  ): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.COMMENTS(id), data);
+  }
 }
 
 export default NFTService;

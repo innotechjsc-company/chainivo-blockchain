@@ -46,6 +46,10 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
     return "/nft-box.jpg";
   };
 
+  useEffect(() => {
+    console.log(type);
+  }, [type]);
+
   const nftImage = getNFTImage(nft);
 
   const formatAddress = (address?: string) => {
