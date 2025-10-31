@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAppSelector } from "@/stores";
 
 interface UserProfile {
   username: string;
@@ -12,25 +13,36 @@ export const useUserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Lấy thông tin từ Redux store
+  const authUser = useAppSelector((state) => state.auth.user);
+  const walletBalance = useAppSelector((state) => state.wallet.wallet?.balance || 0);
+  const totalInvested = useAppSelector((state) => state.investment.totalValue || 0);
+  const isAuthLoading = useAppSelector((state) => state.auth.isLoading);
+  const isWalletLoading = useAppSelector((state) => state.wallet.isLoading);
+  const isInvestmentLoading = useAppSelector((state) => state.investment.isLoading);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Mock data for demonstration
-        // TODO: Replace with actual API call
-        const mockProfile: UserProfile = {
-          username: "Nguyễn Văn A",
-          can_balance: 125000,
-          total_invested: 5000,
-          membership_tier: "gold",
+        // Kiểm tra nếu user đã đăng nhập
+        if (!authUser) {
+          setError("User not authenticated");
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        // Tạo profile từ Redux store
+        const userProfile: UserProfile = {
+          username: authUser.username || authUser.email,
+          can_balance: walletBalance,
+          total_invested: totalInvested,
+          membership_tier: authUser.role || "bronze", // Default tier
         };
-
-        // Simulate loading delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setProfile(mockProfile);
+        setProfile(userProfile);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch user profile"
@@ -41,7 +53,11 @@ export const useUserProfile = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [authUser, walletBalance, totalInvested]);
 
-  return { profile, loading, error };
+  return { 
+    profile, 
+    loading: loading || isAuthLoading || isWalletLoading || isInvestmentLoading, 
+    error 
+  };
 };

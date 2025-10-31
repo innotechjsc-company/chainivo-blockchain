@@ -137,9 +137,9 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl animate-[pulse_8s_ease-in-out_infinite]"></div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Title - Compact */}
-        <div className="text-center mb-4 animate-fade-in">
+      {/* <div className="container mx-auto px-4 relative z-10"> */}
+      {/* Title - Compact */}
+      {/* <div className="text-center mb-4 animate-fade-in">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 animate-[fade-in_0.6s_ease-out]">
             <span className="gradient-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-[gradient_3s_ease_infinite]">
               Đầu tư CAN TOKEN
@@ -148,17 +148,17 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto animate-[fade-in_0.8s_ease-out]">
             Nền tảng đầu tư blockchain an toàn, minh bạch và sinh lời cao
           </p>
-        </div>
+        </div> */}
 
-        {/* Main Grid - Reversed */}
-        <div className="grid lg:grid-cols-3 gap-3 mb-3">
-          {/* Current Phase Progress - LEFT SIDE */}
-          <Card className="glass p-4 hover:shadow-xl hover:shadow-primary/20 transition-all duration-500 border border-primary/30 animate-[fade-in_1s_ease-out] relative overflow-hidden group hover:scale-[1.02]">
-            {/* Animated glow on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl group-hover:animate-[pulse_2s_ease-in-out_infinite]"></div>
+      {/* Main Grid - Reversed */}
+      {/* <div className="grid lg:grid-cols-3 gap-3 mb-3"> */}
+      {/* Current Phase Progress - LEFT SIDE */}
+      {/* <Card className="glass p-4 hover:shadow-xl hover:shadow-primary/20 transition-all duration-500 border border-primary/30 animate-[fade-in_1s_ease-out] relative overflow-hidden group hover:scale-[1.02]"> */}
+      {/* Animated glow on hover */}
+      {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div> */}
+      {/* <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl group-hover:animate-[pulse_2s_ease-in-out_infinite]"></div> */}
 
-            <div className="relative z-10">
+      {/* <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold gradient-text">
                   Phase hiện tại
@@ -204,11 +204,11 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                   </Button>
                 </div>
               )}
-            </div>
-          </Card>
+            </div> */}
+      {/* </Card> */}
 
-          {/* Chart Section - RIGHT SIDE */}
-          <Card className="lg:col-span-2 glass p-3 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-[fade-in_1s_ease-out_0.2s] hover:scale-[1.01] group">
+      {/* Chart Section - RIGHT SIDE */}
+      {/* <Card className="lg:col-span-2 glass p-3 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-[fade-in_1s_ease-out_0.2s] hover:scale-[1.01] group">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold gradient-text">
                 Tăng trưởng người mua & Giá token
@@ -282,11 +282,11 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                 />
               </LineChart>
             </ChartContainer>
-          </Card>
-        </div>
+          </Card> */}
+      {/* </div> */}
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {/* Key Metrics Grid */}
+      {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Card className="glass p-2.5 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:scale-105 animate-[fade-in_1s_ease-out_0.4s] group cursor-pointer">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors duration-300 group-hover:scale-110">
@@ -350,8 +350,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
               </div>
             </div>
           </Card>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
     </section>
   );
 };

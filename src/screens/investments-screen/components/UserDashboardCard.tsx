@@ -111,7 +111,7 @@ export const UserDashboardCard = ({
           <p className="text-foreground/60">Dashboard của bạn</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-4 max-w-5xl mx-auto justify-center">
           {/* CAN Balance Card */}
           <Card className="glass border-primary/30 hover:border-primary/60 transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -145,7 +145,7 @@ export const UserDashboardCard = ({
           </Card>
 
           {/* Membership Tier Card */}
-          <Card className="glass border-accent/30 hover:border-accent/60 transition-all hover:scale-105">
+          {/* <Card className="glass border-accent/30 hover:border-accent/60 transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-foreground/80">
                 Hạng thành viên
@@ -166,7 +166,7 @@ export const UserDashboardCard = ({
                 <p className="text-xs text-muted-foreground">Tier level</p>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Status Card */}
           <Card className="glass border-primary/30 hover:border-primary/60 transition-all hover:scale-105">

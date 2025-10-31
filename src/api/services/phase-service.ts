@@ -2,16 +2,23 @@ import { ApiService, API_ENDPOINTS } from "../api";
 import type { ApiResponse } from "../api";
 
 export interface Phase {
-  id: number;
+  phaseId: number;
   name: string;
-  tokenPrice: number;
+  description?: string;
+  price: number;
   totalTokens: number;
   soldTokens: number;
+  availableTokens: number;
+  percentSold: number;
+  percentRemaining: number;
+  status: string;
   startDate: string;
   endDate: string;
-  status: string;
-  minInvestment: number;
-  maxInvestment: number;
+  minBuyAmount: number;
+  maxBuyAmount: number;
+  totalInvestors: number;
+  totalRaised: number;
+  isWhitelistRequired: boolean;
   bonusPercentage?: number;
 }
 
@@ -30,9 +37,21 @@ export interface InvestmentResponse {
   investmentId: string;
 }
 
+export interface PhasesResponse {
+  phases: Phase[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalPhases: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
 export class PhaseService {
-  static async getPhases(): Promise<ApiResponse<Phase[]>> {
-    return ApiService.get<Phase[]>(API_ENDPOINTS.PHASES.LIST);
+  static async getPhases(): Promise<ApiResponse<PhasesResponse>> {
+    return ApiService.get<PhasesResponse>(API_ENDPOINTS.PHASES.LIST);
   }
 
   static async getPhaseById(id: string): Promise<ApiResponse<Phase>> {
