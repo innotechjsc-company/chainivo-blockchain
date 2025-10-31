@@ -3,6 +3,7 @@ import {
   AuthService,
   type LoginCredentials,
   type RegisterData,
+  type RegisterResponse,
 } from "@/api/services/auth-service";
 
 interface AuthUser {
@@ -12,6 +13,9 @@ interface AuthUser {
   walletAddress: string;
   role: string;
   permissions: string[];
+  _verified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthState {
@@ -37,14 +41,27 @@ export const login = createAsyncThunk(
     try {
       const response = await AuthService.login(credentials);
 
-      if (response.success && response.data?.user && response.data?.token) {
+      if (response.token && response.user) {
+        // Map Payload CMS user to AuthUser
+        const authUser: AuthUser = {
+          id: response.user.id,
+          email: response.user.email,
+          username: response.user.username || "",
+          walletAddress: response.user.walletAddress || "",
+          role: response.user.role || "user",
+          permissions: response.user.permissions || [],
+          _verified: response.user._verified,
+          createdAt: response.user.createdAt,
+          updatedAt: response.user.updatedAt,
+        };
+
         return {
-          user: response.data.user,
-          token: response.data.token,
+          user: authUser,
+          token: response.token,
         };
       }
 
-      return rejectWithValue(response.message || "Đăng nhập thất bại");
+      return rejectWithValue("Đăng nhập thất bại");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Đăng nhập thất bại";
@@ -58,7 +75,18 @@ export const register = createAsyncThunk(
   async (data: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(data);
-      return response;
+
+      // Registration successful - no token returned from register endpoint
+      if (response.doc && response.doc.email) {
+        console.log("Registration successful, user needs to login");
+        return {
+          success: true,
+          message: response.message,
+          email: response.doc.email,
+        };
+      }
+
+      return rejectWithValue("Đăng ký thất bại");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Đăng ký thất bại";

@@ -9,8 +9,11 @@ export interface User {
   username: string;
   avatar?: string;
   walletAddress?: string;
-  createdAt: Date;
-  verified: boolean;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+  _verified: boolean;
+  role?: string;
+  permissions?: string[];
 }
 
 // Kiểu dữ liệu Wallet

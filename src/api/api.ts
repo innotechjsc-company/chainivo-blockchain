@@ -30,6 +30,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("jwt_token");
+      localStorage.removeItem("jwt_exp");
+      localStorage.removeItem("user_info");
       window.location.href = "/auth?tab=login";
     }
     return Promise.reject(error);
@@ -70,6 +72,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
     OWNER: (address: string) => `/api/nft/owner/${address}`,
+    COMMENTS: (id: string) => `api/nft/${id}/comment`,
   },
 
   MYSTERY_BOX: {
@@ -99,7 +102,7 @@ export const API_ENDPOINTS = {
     CLAIM: "/api/digitalize/airdrop/claim",
   },
   USER: {
-    UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    UPDATE_WALLET_ADDRESS: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
   GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
@@ -135,11 +138,21 @@ export class ApiService {
   static async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     try {
       const response = await api.post(endpoint, data);
+
+      // Handle Payload CMS direct response format (for auth endpoints)
+      if (response.data && !("success" in response.data)) {
+        return {
+          success: true,
+          data: response.data,
+        };
+      }
+
       return response.data;
     } catch (error: any) {
       return {
         success: false,
         error: error.response?.data?.error || error.message,
+        message: error.response?.data?.message || error.message,
       };
     }
   }

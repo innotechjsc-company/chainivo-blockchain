@@ -8,24 +8,41 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  username: string;
-  walletAddress: string;
+  username?: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  doc: {
+    id: string;
+    email: string;
+    createdAt: string;
+    updatedAt: string;
+    role?: string;
+    isEmailVerified?: boolean;
+    isKYCVerified?: boolean;
+    isWalletVerified?: boolean;
+    isActive?: boolean;
+    username?: string;
+    walletAddress?: string;
+  };
 }
 
 export interface AuthResponse {
-  success: boolean;
-  data: {
-    token: string;
-    user: {
-      id: string;
-      email: string;
-      username: string;
-      walletAddress: string;
-      role: string;
-      permissions: string[];
-    };
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    _verified: boolean;
+    createdAt: string;
+    updatedAt: string;
+    username?: string;
+    walletAddress?: string;
+    role?: string;
+    permissions?: string[];
   };
-  message?: string;
+  token: string;
+  exp: number;
 }
 
 export class AuthService {
@@ -33,12 +50,21 @@ export class AuthService {
     return localStorage.getItem("jwt_token");
   }
 
-  static setToken(token: string): void {
+  static setToken(token: string, exp?: number): void {
     localStorage.setItem("jwt_token", token);
+    if (exp) {
+      localStorage.setItem("jwt_exp", exp.toString());
+    }
   }
 
   static removeToken(): void {
     localStorage.removeItem("jwt_token");
+    localStorage.removeItem("jwt_exp");
+  }
+
+  static getTokenExpiration(): number | null {
+    const exp = localStorage.getItem("jwt_exp");
+    return exp ? parseInt(exp, 10) : null;
   }
 
   static isAuthenticated(): boolean {
@@ -46,12 +72,22 @@ export class AuthService {
     if (!token) return false;
 
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
+      // Check stored expiration first
+      const storedExp = this.getTokenExpiration();
       const currentTime = Date.now() / 1000;
 
-      if (payload.exp && payload.exp < currentTime) {
+      if (storedExp && storedExp < currentTime) {
         this.removeToken();
         return false;
+      }
+
+      // Fallback to JWT payload if no stored exp
+      if (!storedExp) {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.exp && payload.exp < currentTime) {
+          this.removeToken();
+          return false;
+        }
       }
 
       return true;
@@ -68,7 +104,21 @@ export class AuthService {
     walletAddress: string;
     role: string;
     permissions: string[];
+    _verified?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
   } | null {
+    // Get user info from localStorage (stored during login)
+    const userStr = localStorage.getItem("user_info");
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch (error) {
+        console.error("Failed to parse stored user info:", error);
+      }
+    }
+
+    // Fallback to token parsing
     const token = this.getToken();
     if (!token) return null;
 
@@ -81,6 +131,9 @@ export class AuthService {
         walletAddress: payload.walletAddress || "",
         role: payload.role || "user",
         permissions: payload.permissions || [],
+        _verified: payload._verified,
+        createdAt: payload.createdAt,
+        updatedAt: payload.updatedAt,
       };
     } catch (error) {
       console.error("Failed to parse user info from token:", error);
@@ -88,66 +141,76 @@ export class AuthService {
     }
   }
 
+  static setUserInfo(user: any): void {
+    localStorage.setItem("user_info", JSON.stringify(user));
+  }
+
+  static removeUserInfo(): void {
+    localStorage.removeItem("user_info");
+  }
+
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await ApiService.post<AuthResponse["data"]>(
+      const response = await ApiService.post<AuthResponse>(
         API_ENDPOINTS.AUTH.LOGIN,
         credentials
       );
 
-      if (response.success && response.data?.token) {
-        this.setToken(response.data.token);
-        return response as AuthResponse;
+      // Handle new Payload CMS response format
+      if (response.data) {
+        const authData = response.data as AuthResponse;
+
+        if (authData.token && authData.user) {
+          // Store token with expiration
+          this.setToken(authData.token, authData.exp);
+
+          // Store user info with all fields
+          const userInfo = {
+            id: authData.user.id,
+            email: authData.user.email,
+            username: authData.user.username || "",
+            walletAddress: authData.user.walletAddress || "",
+            role: authData.user.role || "user",
+            permissions: authData.user.permissions || [],
+            _verified: authData.user._verified,
+            createdAt: authData.user.createdAt,
+            updatedAt: authData.user.updatedAt,
+          };
+          this.setUserInfo(userInfo);
+
+          return authData;
+        }
       }
 
-      throw new Error(response.message || "Đăng nhập thất bại");
+      throw new Error("Đăng nhập thất bại");
     } catch (error: any) {
       console.error("Login error:", error);
-      return {
-        success: false,
-        data: {
-          token: "",
-          user: {
-            id: "",
-            email: "",
-            username: "",
-            walletAddress: "",
-            role: "",
-            permissions: [],
-          },
-        },
-        message: error.message || "Đăng nhập thất bại",
-      };
+      throw error;
     }
   }
 
-  static async register(data: RegisterData): Promise<any> {
+  static async register(data: RegisterData): Promise<RegisterResponse> {
     try {
-      const response = await ApiService.post<AuthResponse["data"]>(
+      const response = await ApiService.post<RegisterResponse>(
         API_ENDPOINTS.AUTH.REGISTER,
         data
       );
 
-      if (response.success && response.data?.token) {
-        return response as AuthResponse;
+      // Handle Payload CMS response format for register
+      if (response.data) {
+        const registerData = response.data as RegisterResponse;
+
+        if (registerData.doc && registerData.doc.email) {
+          // Registration successful - user needs to login separately
+          console.log("User registered successfully:", registerData.doc.email);
+          return registerData;
+        }
       }
+
+      throw new Error("Đăng ký thất bại");
     } catch (error: any) {
       console.error("Register error:", error);
-      return {
-        success: false,
-        data: {
-          token: "",
-          user: {
-            id: "",
-            email: "",
-            username: "",
-            walletAddress: "",
-            role: "",
-            permissions: [],
-          },
-        },
-        message: error.message || "Đăng ký thất bại",
-      };
+      throw error;
     }
   }
 
@@ -158,6 +221,7 @@ export class AuthService {
       console.error("Logout error:", error);
     } finally {
       this.removeToken();
+      this.removeUserInfo();
     }
   }
 
