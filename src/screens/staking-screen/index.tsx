@@ -30,7 +30,6 @@ import { Spinner } from "@/components/ui/spinner";
  */
 export const StakingScreen = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
-  const userInfo = useAppSelector((state) => state.auth.user);
 
   // Custom hooks
   const {
