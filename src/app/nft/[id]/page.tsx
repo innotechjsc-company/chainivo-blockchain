@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAppSelector } from "@/stores";
 import {
   ArrowLeft,
   Heart,
@@ -54,8 +56,11 @@ export default function NFTDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [nftData, setNftData] = useState<any>(null);
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<any[]>([]);
   const id = params?.id as string;
   const type = params?.type as "tier" | "other";
+  const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     if (!id) return;
@@ -63,6 +68,7 @@ export default function NFTDetailPage() {
     NFTService.getNFTById(id)
       .then((res) => {
         debugger;
+
         if (res.success && res.data) setNftData(res.data);
         else setNftData(null);
       })
@@ -110,6 +116,25 @@ export default function NFTDetailPage() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const handlePostComment = () => {
+    if (!commentText.trim()) return;
+
+    const newComment = {
+      id: Date.now().toString(),
+      text: commentText,
+      author: user?.walletAddress || "Anonymous",
+      timestamp: new Date().toISOString(),
+    };
+
+    setComments([...comments, newComment]);
+    setCommentText("");
+    // TODO: Call API to save comment
+  };
+
+  const userAddress = user?.walletAddress
+    ? formatAddress(user.walletAddress)
+    : "Anonymous";
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -126,17 +151,16 @@ export default function NFTDetailPage() {
           {/* Image section */}
           <div className="space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
-              {nftData.image ? (
-                <img
-                  src={nftData.image}
-                  alt={nftData.name ?? "NFT"}
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  No image
-                </div>
-              )}
+              <img
+                src={nftData.image || "/nft-box.jpg"}
+                alt={nftData.name ?? "NFT"}
+                className="object-cover w-full h-full"
+                onError={(e) => {
+                  // Fallback nếu cả ảnh mặc định cũng lỗi
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/nft-box.jpg";
+                }}
+              />
             </div>
             <div className="glass rounded-xl p-4 grid grid-cols-3 gap-4">
               <div className="text-center">
@@ -206,13 +230,8 @@ export default function NFTDetailPage() {
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
-                {nftData.price !== undefined && nftData.price !== null ? (
-                  `${nftData.price} ETH`
-                ) : (
-                  <span className="text-lg italic text-gray-400">
-                    Chưa niêm yết
-                  </span>
-                )}
+                {nftData?.currentPrice?.amount ?? 0}{" "}
+                {nftData?.currentPrice?.currency ?? ""}
               </div>
               <div className="mt-2 text-xs">
                 {nftData.isForSale ? "Đang mở bán" : "Không còn bán"}
@@ -227,15 +246,6 @@ export default function NFTDetailPage() {
                 >
                   {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
                   {type === "other" ? "Mua ngay" : "Mint on Blockchain"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <Eye className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -328,6 +338,72 @@ export default function NFTDetailPage() {
                 </pre>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Comments Section */}
+        <div
+          className="glass rounded-xl p-6 mt-12 flex flex-col"
+          style={{ height: "600px" }}
+        >
+          <h2 className="text-2xl font-bold mb-6">Comments</h2>
+
+          {/* Comments List - Scrollable */}
+          <div className="flex-1 overflow-y-auto pr-2 mb-4 min-h-0">
+            {comments.length > 0 ? (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="border-b border-border/50 pb-4 last:border-0"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-sm font-mono">
+                            {comment.author}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {comment.text}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                No comments yet. Be the first to comment!
+              </div>
+            )}
+          </div>
+          {/* Comment Input */}
+          <div className="mb-4">
+            <Textarea
+              placeholder="Add a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              className="min-h-[100px] resize-none border-border/50 mb-3 bg-white text-black placeholder:text-gray-400"
+            />
+
+            {/* Commenting as and Post Button */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Commenting as:{" "}
+                <span className="font-mono">{user?.username}</span>
+              </div>
+              <Button
+                onClick={handlePostComment}
+                disabled={!commentText.trim()}
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2"
+              >
+                Post Comment
+              </Button>
+            </div>
           </div>
         </div>
       </main>
