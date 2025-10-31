@@ -6,7 +6,7 @@ export class UserService {
     walletAddress: string;
     userId: string;
   }): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.USER.UPDATE_WALLET_ADDRESS, data);
+    return ApiService.post(API_ENDPOINTS.USER.CONNECT_WALLET, data);
   }
 
   static async updateUserProfile(data: any): Promise<ApiResponse<any>> {
