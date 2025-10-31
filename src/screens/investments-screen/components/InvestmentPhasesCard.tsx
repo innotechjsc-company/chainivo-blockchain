@@ -20,6 +20,7 @@ export const InvestmentPhasesCard = ({
   error,
 }: InvestmentPhasesCardProps) => {
   const router = useRouter();
+  const { phases, loading, error } = useInvestmentPhases();
 
   return (
     <section id="invest" className="py-20 relative">
@@ -31,6 +32,11 @@ export const InvestmentPhasesCard = ({
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
           </p>
+          {loading && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Đang tải dữ liệu...
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

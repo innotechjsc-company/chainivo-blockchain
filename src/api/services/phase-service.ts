@@ -10,6 +10,9 @@ export interface Phase {
   pricePerToken: number;
   totalTokens: number;
   soldTokens: number;
+  availableTokens: number;
+  percentSold: number;
+  percentRemaining: number;
   startDate: string;
   endDate: string;
   status: string;
@@ -35,6 +38,18 @@ export interface InvestmentResponse {
   tokensAllocated: number;
   status: string;
   investmentId: string;
+}
+
+export interface PhasesResponse {
+  phases: Phase[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalPhases: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export class PhaseService {

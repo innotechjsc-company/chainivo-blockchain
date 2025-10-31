@@ -188,9 +188,7 @@ export default function AccountManagementPage() {
                   <Avatar className="w-24 h-24">
                     <AvatarImage src={profile?.avatar_url || ""} />
                     <AvatarFallback className="text-2xl">
-                      {username && username.length > 0
-                        ? username[0]?.toUpperCase()
-                        : "U"}
+                      {username?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">

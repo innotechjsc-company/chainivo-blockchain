@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -76,13 +76,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
     );
   }
 
-  if (!phase) {
+  if (error || !phase) {
     return (
       <div className="min-h-screen flex flex-col">
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">
-              Không tìm thấy giai đoạn
+              {error || "Không tìm thấy giai đoạn"}
             </h1>
             {error && (
               <p className="text-sm text-muted-foreground mb-4">{error}</p>
@@ -160,7 +160,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                         Đang mở - Đầu tư ngay
                       </>
                     )}
-                    {phase.status === "locked" && (
+                    {phase.status === "upcoming" && (
                       <>
                         <Lock className="w-5 h-5 mr-2 inline" />
                         Sắp mở
@@ -222,7 +222,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                         0
                       )}% slot - Đầu tư ngay!`}
                     {phase.status === "completed" && "Giai đoạn đã kết thúc"}
-                    {phase.status === "locked" && "Sắp mở trong thời gian tới"}
+                    {phase.status === "upcoming" &&
+                      "Sắp mở trong thời gian tới"}
                   </p>
                 </div>
               </div>
