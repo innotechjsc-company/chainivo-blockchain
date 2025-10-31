@@ -71,8 +71,8 @@ export const API_ENDPOINTS = {
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
-    OWNER: (address: string) => `/api/nft/owner/${address}`,
-    COMMENTS: (id: string) => `api/nft/${id}/comment`,
+    OWNER: `/api/nft/my-nft`,
+    COMMENTS: `/api/nft/comment`,
   },
 
   MYSTERY_BOX: {
@@ -89,7 +89,7 @@ export const API_ENDPOINTS = {
 
   STAKING: {
     POOLS: "/api/staking/pools",
-    POOL_DETAIL: "/api/staking/pools/:id",
+    POOL_DETAIL: "/api/staking/:id",
     STAKE: "/api/staking/stake",
     UNSTAKE: "/api/staking/unstake",
     REWARDS: "/api/staking/claim",
@@ -105,9 +105,8 @@ export const API_ENDPOINTS = {
     UPDATE_WALLET_ADDRESS: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
-  GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
-  GET_WALLET_POL_BALANCE: "/api/digitalize/token/pol-balance",
-  GET_WALLET_CAN_BALANCE: "/api/digitalize/token/can-balance",
+  GET_WALLET_BALANCE: "/api/balance/get-balance",
+
   TEST_TOKEN: "/api/digitalize/test/token",
   UPDATE_TRANSACTION_STATUS: "/api/digitalize/update-transaction-status",
   UPDATE_PHASE_STATISTICS: "/api/digitalize/update-phase-statistics",
