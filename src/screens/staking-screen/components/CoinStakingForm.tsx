@@ -114,17 +114,18 @@ export const CoinStakingForm = ({
 
   const getAllCanBalance = async () => {
     const response = await ApiService.get(
-      `${API_ENDPOINTS.GET_WALLET_CAN_BALANCE}/${user?.walletAddress as string}`
+      `${API_ENDPOINTS.GET_WALLET_BALANCE}/${
+        user?.walletAddress as string
+      }?token=CAN`
     );
     if (response?.success) {
-      setUserCanBalance(
-        Number((response?.data as any)?.balance as number) ?? 0
-      );
+      setUserCanBalance(Number((response?.data as any)?.can as number) ?? 0);
     }
   };
 
   const getStakingPools = async () => {
     const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
+    debugger;
     if (response?.success) {
       setTakePools((response?.data as any)?.pools);
     }
@@ -212,7 +213,9 @@ export const CoinStakingForm = ({
   const stakeAmount = parseFormattedNumber(amount as unknown as string);
 
   // Lấy thông tin pool đã chọn
-  const selectedPoolData = takePools.find((pool) => pool._id === selectedPool);
+  const selectedPoolData = takePools.find(
+    (pool) => String(pool?._id ?? pool?.id) === selectedPool
+  );
   const currentApy = selectedPoolData?.apy || apy;
 
   // Validation cho min/max stake
@@ -278,16 +281,19 @@ export const CoinStakingForm = ({
                 <SelectValue placeholder="Chọn pool staking" />
               </SelectTrigger>
               <SelectContent>
-                {takePools.map((pool) => (
-                  <SelectItem key={pool?._id} value={pool?._id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{pool.name}</span>
-                      {/* <span className="text-sm text-muted-foreground">
+                {takePools.map((pool, idx) => {
+                  const optionId = String(pool?._id ?? pool?.id ?? idx);
+                  return (
+                    <SelectItem key={optionId} value={optionId}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{pool.name}</span>
+                        {/* <span className="text-sm text-muted-foreground">
                         APY: {pool.apy}% | Min: {pool.minStakeAmount} CAN
                       </span> */}
-                    </div>
-                  </SelectItem>
-                ))}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
