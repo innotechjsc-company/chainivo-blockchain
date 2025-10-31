@@ -175,7 +175,7 @@ export default class TransferService {
     // 2. Kiểm tra số dư token của người gửi
     const balanceWei = await contract.methods.balanceOf(fromAddress).call();
     const requiredWei = this.toWei(web3, String(amount));
-
+debugger
     if (BigInt(balanceWei) < BigInt(requiredWei)) {
       const availableBalance = this.fromWei(web3, balanceWei);
       throw new Error(

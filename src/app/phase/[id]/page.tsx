@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransactionFeed";
 import PhaseService, { Phase } from "@/api/services/phase-service";
-import TransferService from "@/services/TransferService";
+import TransferService, { TransferParams } from "@/services/TransferService";
 import { useAuth } from "@/components/header/hooks/useAuth";
 
 interface PhaseDetailPageProps {
@@ -141,12 +141,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
     setBuyLoading(true);
 
     try {
-      debugger;
-      const response = await TransferService.sendCanTransfer({
+      const params: TransferParams = {
         fromAddress: user?.walletAddress ?? "",
-        amountCan: parseFloat(investAmount) ?? 0,
-        token: "USDT",
-      });
+        amount: parseFloat(investAmount) ?? 0,
+        tokenType: "USDC",
+      };
+      const response = await TransferService.transferToken(params);
+      debugger;
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
