@@ -37,7 +37,10 @@ export const NFTGridCard = ({
             className="animate-fade-in"
             style={{ animationDelay: `${index * 0.05}s` }}
           >
-            <NFTCard nft={nft} />
+            <NFTCard
+              nft={nft}
+              type={title === "NFT của tôi" ? "tier" : "other"}
+            />
           </div>
         ))}
       </div>

@@ -115,7 +115,6 @@ export default function AccountManagementPage() {
         (a: any, b: any) =>
           new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
       );
-      debugger;
       let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
         (a: any, b: any) =>
           new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()

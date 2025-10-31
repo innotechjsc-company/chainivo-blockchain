@@ -47,56 +47,6 @@ export const useAuthForm = (type: "login" | "register") => {
     dispatch(clearErrorAction());
   }, [dispatch]);
 
-  // Function to connect to MetaMask automatically
-  const connectToMetaMask = useCallback(
-    async (walletAddress: string) => {
-      if (typeof window === "undefined" || !window.ethereum?.isMetaMask) {
-        console.log("MetaMask not available");
-        return false;
-      }
-
-      try {
-        // Request account access
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-
-        if (accounts.length > 0) {
-          const connectedAddress = accounts[0];
-
-          // Check if the connected address matches the user's wallet address
-          if (connectedAddress.toLowerCase() === walletAddress.toLowerCase()) {
-            // Update Redux store
-            dispatch(updateAuthProfile({ walletAddress: connectedAddress }));
-
-            // Update localStorage
-            localStorage.setItem("isConnectedToWallet", "true");
-
-            // Update backend (optional - sync with server)
-            try {
-              console.log("Wallet address synced with backend");
-            } catch (err) {
-              console.error("Failed to sync wallet address with backend:", err);
-              // Don't fail the connection if backend update fails
-            }
-
-            return true;
-          } else {
-            console.log("MetaMask address doesn't match user's wallet address");
-            console.log("Connected:", connectedAddress);
-            console.log("Expected:", walletAddress);
-            return false;
-          }
-        }
-        return false;
-      } catch (err: any) {
-        console.error("MetaMask connection error:", err);
-        return false;
-      }
-    },
-    [dispatch]
-  );
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",

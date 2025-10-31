@@ -44,74 +44,48 @@ export const API_ENDPOINTS = {
     REGISTER: "/api/users",
     REFRESH: "/api/users/refresh",
     LOGOUT: "/api/users/logout",
+    WITH_AUTH: "/api/with-auth",
   },
 
-  PHASES: {
-    LIST: "/api/digitalize/phases",
-    DETAIL: (id: string) => `/api/digitalize/phases/${id}`,
-    INVEST: "/api/digitalize/invest",
-  },
-
-  INVESTOR: {
-    STATS: (address: string) => `/api/digitalize/investor/${address}`,
-    HISTORY: (address: string) => `/api/digitalize/investor/${address}/history`,
-    PHASES: (address: string) => `/api/digitalize/investor/${address}/phases`,
-  },
-
-  ANALYTICS: {
-    OVERVIEW: "/api/digitalize/analytics/overview",
-    PHASES: "/api/digitalize/analytics/phases",
-    INVESTORS: "/api/digitalize/analytics/investors",
-    NFTS: "/api/digitalize/analytics/nfts",
-    STAKING: "/api/digitalize/analytics/staking",
+  INVESTMENT: {
+    PHASES: "/api/investment/phases",
+    PHASE_DETAIL: (id: string) => `/api/investment/phases/${id}`,
+    BUY_TOKEN: "/api/investment/buy-token",
   },
 
   NFT: {
-    ALL: "/api/nft/marketplace/for-sale",
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
-    TRANSFER: "/api/nft/marketplace/buy",
-    OWNER: (address: string) => `/api/nft/owner/${address}`,
-  },
-
-  MYSTERY_BOX: {
-    LIST: "/api/digitalize/mystery-boxes",
-    OPEN: "/api/digitalize/mystery-boxes/open",
-    PURCHASE: "/api/digitalize/mystery-boxes/purchase",
-  },
-
-  RANK: {
-    LIST: "/api/ranks",
-    MY_RANK: "/api/ranks/user/:userId",
-    BUY: "/api/ranks/buy",
+    BUY: "/api/nft/marketplace/buy",
+    MY_NFT: "/api/nft/my-nft",
+    LIKE: "/api/nft/like",
+    UNLIKE: "/api/nft/unlike",
+    COMMENT: "/api/nft/comment",
   },
 
   STAKING: {
     POOLS: "/api/staking/pools",
-    POOL_DETAIL: "/api/staking/pools/:id",
+    POOL_DETAIL: (id: string) => `/api/staking/${id}`,
     STAKE: "/api/staking/stake",
-    UNSTAKE: "/api/staking/unstake",
-    REWARDS: "/api/staking/claim",
-    GETBYOWNER: (userId: string) => `/api/staking/user-stakes/${userId}`,
+    UNSTAKE: (stakeId: string) => `/api/staking/unstake/${stakeId}`,
+    CLAIM: (stakeId: string) => `/api/staking/claim/${stakeId}`,
+    USER_STAKES: (userId: string) => `/api/staking/user-stakes/${userId}`,
   },
 
   AIRDROP: {
-    CAMPAIGNS: "/api/digitalize/airdrop/campaigns",
-    PARTICIPATE: "/api/digitalize/airdrop/participate",
-    CLAIM: "/api/digitalize/airdrop/claim",
+    LIST: "/api/airdrop/list",
+    CLAIM: (id: string) => `/api/airdrop/claim/${id}`,
   },
+
+  BALANCE: {
+    GET_BALANCE: (walletAddress: string) =>
+      `/api/balance/get-balance/${walletAddress}`,
+  },
+
   USER: {
-    UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
-  GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
-  GET_WALLET_POL_BALANCE: "/api/digitalize/token/pol-balance",
-  GET_WALLET_CAN_BALANCE: "/api/digitalize/token/can-balance",
-  TEST_TOKEN: "/api/digitalize/test/token",
-  UPDATE_TRANSACTION_STATUS: "/api/digitalize/update-transaction-status",
-  UPDATE_PHASE_STATISTICS: "/api/digitalize/update-phase-statistics",
-  GET_WALLET_BALANCES: "/api/digitalize/wallet-balances",
-  EXECUTE_TOKEN_PURCHASE: "/api/digitalize/execute-purchase",
 } as const;
 
 export interface ApiResponse<T = any> {
@@ -180,74 +154,86 @@ export class ApiService {
     }
   }
 
-  static async getTestToken(): Promise<ApiResponse<{ token: string }>> {
-    return this.get(API_ENDPOINTS.TEST_TOKEN);
-  }
-
   static async getPhases(): Promise<ApiResponse<any>> {
-    return this.get(API_ENDPOINTS.PHASES.LIST);
+    return this.get(API_ENDPOINTS.INVESTMENT.PHASES);
   }
 
-  static async createInvestment(data: {
+  static async getPhaseDetail(id: string): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.INVESTMENT.PHASE_DETAIL(id));
+  }
+
+  static async buyToken(data: {
     phaseId: number;
     amount: number;
     walletAddress: string;
   }): Promise<ApiResponse<any>> {
-    const backendData = {
-      phaseId: data.phaseId,
-      investmentAmount: data.amount,
-      investorAddress: data.walletAddress,
-      paymentMethod: "USDT",
-      paymentAmount: data.amount,
-      paymentCurrency: "USD",
-      investorEmail: "",
-      status: "pending",
-    };
-    return this.post(API_ENDPOINTS.PHASES.INVEST, backendData);
+    return this.post(API_ENDPOINTS.INVESTMENT.BUY_TOKEN, data);
   }
 
-  static async getInvestorStats(address: string): Promise<ApiResponse<any>> {
-    return this.get(API_ENDPOINTS.INVESTOR.STATS(address));
-  }
-
-  static async getAnalyticsOverview(): Promise<ApiResponse<any>> {
-    return this.get(API_ENDPOINTS.ANALYTICS.OVERVIEW);
-  }
-
-  static async updateTransactionStatus(data: {
-    transactionHash: string;
-    status: string;
-    blockchainTxHash?: string;
-  }): Promise<ApiResponse<any>> {
-    return this.post(API_ENDPOINTS.UPDATE_TRANSACTION_STATUS, data);
-  }
-
-  static async updatePhaseStatistics(data: {
-    phaseId: number;
-    tokensSold: number;
-    amountRaised: number;
-    transactionHash: string;
-  }): Promise<ApiResponse<any>> {
-    return this.post(API_ENDPOINTS.UPDATE_PHASE_STATISTICS, data);
-  }
-
-  static async getWalletBalances(
-    address: string,
-    network: string
+  static async getWalletBalance(
+    walletAddress: string
   ): Promise<ApiResponse<any>> {
-    return this.get(
-      `${API_ENDPOINTS.GET_WALLET_BALANCES}?address=${address}&network=${network}`
-    );
+    return this.get(API_ENDPOINTS.BALANCE.GET_BALANCE(walletAddress));
   }
 
-  static async executeTokenPurchase(data: {
-    phaseId: number;
-    amount: number;
-    walletAddress: string;
-    network: string;
-    usdtTransactionHash?: string;
-  }): Promise<ApiResponse<any>> {
-    return this.post(API_ENDPOINTS.EXECUTE_TOKEN_PURCHASE, data);
+  static async getNFTList(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.NFT.LIST);
+  }
+
+  static async getNFTDetail(id: string): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.NFT.DETAIL(id));
+  }
+
+  static async buyNFT(data: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.NFT.BUY, data);
+  }
+
+  static async getMyNFTs(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.NFT.MY_NFT);
+  }
+
+  static async likeNFT(data: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.NFT.LIKE, data);
+  }
+
+  static async unlikeNFT(data: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.NFT.UNLIKE, data);
+  }
+
+  static async commentNFT(data: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.NFT.COMMENT, data);
+  }
+
+  static async getStakingPools(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.STAKING.POOLS);
+  }
+
+  static async getStakingPoolDetail(id: string): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.STAKING.POOL_DETAIL(id));
+  }
+
+  static async stake(data: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.STAKING.STAKE, data);
+  }
+
+  static async unstake(stakeId: string, data?: any): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.STAKING.UNSTAKE(stakeId), data);
+  }
+
+  static async claimStakingRewards(stakeId: string): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.STAKING.CLAIM(stakeId));
+  }
+
+  static async getUserStakes(userId: string): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.STAKING.USER_STAKES(userId));
+  }
+
+  static async getAirdropList(): Promise<ApiResponse<any>> {
+    return this.get(API_ENDPOINTS.AIRDROP.LIST);
+  }
+
+  static async claimAirdrop(id: string): Promise<ApiResponse<any>> {
+    return this.post(API_ENDPOINTS.AIRDROP.CLAIM(id));
   }
 }
 

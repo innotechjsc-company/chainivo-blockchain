@@ -1,9 +1,13 @@
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const getEnvValue = (devKey: string, prodKey: string, fallback: string): string => {
-  console.log('environment', isDevelopment);
+const getEnvValue = (
+  devKey: string,
+  prodKey: string,
+  fallback: string
+): string => {
+  console.log("environment", isDevelopment);
   if (isDevelopment) {
-    console.log('devKey', process.env[devKey]);
+    console.log("devKey", process.env[devKey]);
     return process.env[devKey] || fallback;
   } else if (!isDevelopment) {
     return process.env[prodKey] || fallback;
@@ -128,9 +132,12 @@ export const config = {
   },
 
   WALLET_ADDRESSES: {
-    CAN_CONTRACT: process.env.CAN_CONTRACT || "0x5b54896A3F8d144E02DcEEa05668C4a4EDe83c4F",
-    ADMIN: process.env.ADMIN_WALLET || "0x7C4767673CC6024365E08F2Af4369b04701a5FeD",
-    USDT_CONTRACT: process.env.USDT_CONTRACT || "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+    CAN_CONTRACT:
+      process.env.CAN_CONTRACT || "0x5b54896A3F8d144E02DcEEa05668C4a4EDe83c4F",
+    ADMIN:
+      process.env.ADMIN_WALLET || "0x7C4767673CC6024365E08F2Af4369b04701a5FeD",
+    USDT_CONTRACT:
+      process.env.USDT_CONTRACT || "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
   },
 
   STORAGE_KEYS: {
