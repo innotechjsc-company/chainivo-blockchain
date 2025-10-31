@@ -88,11 +88,12 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
           size="icon"
           className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm hover:bg-background"
         >
-          {isOtherNFT ? (
+          {/* {isOtherNFT ? (
             <ShoppingBag className="w-4 h-4" />
           ) : (
             <Heart className="w-4 h-4" />
-          )}
+          )} */}
+          <Heart className="w-4 h-4" />
         </Button>
       </div>
 
