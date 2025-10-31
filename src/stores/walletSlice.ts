@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Wallet, Transaction } from './types';
+import { Wallet, Transaction, WalletBalance } from './types';
 
 interface WalletState {
   wallet: Wallet | null;
@@ -98,14 +98,24 @@ const walletSlice = createSlice({
   name: 'wallet',
   initialState,
   reducers: {
+    setWalletBalance: (state, action: PayloadAction<string>) => {
+      state.wallet = {
+        address: action.payload,
+      };
+    },
     disconnectWallet: (state) => {
       state.wallet = null;
       state.transactions = [];
       state.error = null;
     },
-    updateBalance: (state, action: PayloadAction<number>) => {
+    updateBalance: (state, action: PayloadAction<WalletBalance>) => {
       if (state.wallet) {
-        state.wallet.balance = action.payload;
+        state.wallet.balance = {
+          token: action.payload.token || "ALL",
+          can: action.payload.can || 0,
+          usdt: action.payload.usdt || 0,
+          pol: action.payload.pol || 0,
+        };
       }
     },
     addTransaction: (state, action: PayloadAction<Transaction>) => {
@@ -157,7 +167,12 @@ const walletSlice = createSlice({
       .addCase(sendCrypto.fulfilled, (state, action) => {
         state.transactions = [action.payload.transaction, ...state.transactions];
         if (state.wallet) {
-          state.wallet.balance -= action.payload.amount;
+          if(state.wallet.balance){
+            state.wallet.balance = {
+            ...state.wallet.balance,
+            can: state.wallet.balance.can - action.payload.amount,
+          };
+        }
         }
         state.isLoading = false;
         state.error = null;
@@ -169,6 +184,6 @@ const walletSlice = createSlice({
   },
 });
 
-export const { disconnectWallet, updateBalance, addTransaction, clearError } =
+export const { disconnectWallet, updateBalance, addTransaction, clearError, setWalletBalance } =
   walletSlice.actions;
 export default walletSlice.reducer;

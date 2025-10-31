@@ -24,7 +24,11 @@ export default function InvestmentsScreen() {
     loading: statsLoading,
     error: statsError,
   } = useBlockchainStats();
-  const { phases } = useInvestmentPhases();
+  const {
+    phases,
+    isLoading: phasesLoading,
+    error: phasesError,
+  } = useInvestmentPhases();
   const {
     transactions,
     loading: transactionsLoading,
@@ -47,7 +51,6 @@ export default function InvestmentsScreen() {
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
         {/* Investment Hero with Charts & Metrics */}
-        {/* TODO: Add InvestmentHero component */}
         <InvestmentHero />
 
         {/* User Dashboard */}
@@ -58,7 +61,11 @@ export default function InvestmentsScreen() {
         />
 
         {/* Investment Phases */}
-        <InvestmentPhasesCard phases={phases} />
+        <InvestmentPhasesCard
+          phases={phases}
+          isLoading={phasesLoading}
+          error={phasesError}
+        />
 
         {/* Transaction History */}
         <TransactionHistoryCard

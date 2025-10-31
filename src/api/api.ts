@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { config } from "./config";
+import { Phase } from "./services/phase-service";
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -154,11 +155,11 @@ export class ApiService {
     }
   }
 
-  static async getPhases(): Promise<ApiResponse<any>> {
+  static async getPhases(): Promise<ApiResponse<Phase[]>> {
     return this.get(API_ENDPOINTS.INVESTMENT.PHASES);
   }
 
-  static async getPhaseDetail(id: string): Promise<ApiResponse<any>> {
+  static async getPhaseDetail(id: string): Promise<ApiResponse<Phase>> {
     return this.get(API_ENDPOINTS.INVESTMENT.PHASE_DETAIL(id));
   }
 
@@ -166,6 +167,8 @@ export class ApiService {
     phaseId: number;
     amount: number;
     walletAddress: string;
+    paymentMethod?: string;
+    investorEmail?: string;
   }): Promise<ApiResponse<any>> {
     return this.post(API_ENDPOINTS.INVESTMENT.BUY_TOKEN, data);
   }

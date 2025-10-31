@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { UserService } from "@/api/services/user-service";
 import { useAppSelector, useAppDispatch, updateAuthProfile } from "@/stores";
+import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
 
 // MetaMask types
 interface MetaMaskProvider {
@@ -230,11 +231,12 @@ export default function WalletConnectPage() {
               userId: user?.id as unknown as string,
             });
             console.log("res", res);
-            debugger;
 
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+              // update wallet to redux
+              dispatch(setWalletBalance(accounts[0]));
             } else {
               await disconnectFromMetaMask();
 
@@ -258,6 +260,7 @@ export default function WalletConnectPage() {
           // If wallet address is the same, still update local state
           localStorage.setItem("walletAddress", accounts[0]);
           dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+          // update wallet to redux
         }
       }
     } catch (err: any) {

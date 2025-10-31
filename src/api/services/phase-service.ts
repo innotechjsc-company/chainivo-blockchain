@@ -1,18 +1,25 @@
-import { ApiService, API_ENDPOINTS } from "../api";
+import { ApiService } from "../api";
 import type { ApiResponse } from "../api";
 
 export interface Phase {
-  id: number;
+  createdAt: string;
+  updatedAt: string;
+  phaseId: number;
   name: string;
-  tokenPrice: number;
+  description: string;
+  pricePerToken: number;
   totalTokens: number;
   soldTokens: number;
   startDate: string;
   endDate: string;
   status: string;
-  minInvestment: number;
-  maxInvestment: number;
-  bonusPercentage?: number;
+  minBuyAmount: number;
+  maxBuyAmount: number;
+  totalInvestors: number;
+  totalRaised: number;
+  isWhitelistRequired: boolean;
+  whitelistAddresses: string[];
+  id: string;
 }
 
 export interface InvestmentData {
@@ -32,35 +39,26 @@ export interface InvestmentResponse {
 
 export class PhaseService {
   static async getPhases(): Promise<ApiResponse<Phase[]>> {
-    return ApiService.get<Phase[]>(API_ENDPOINTS.PHASES.LIST);
+    // Delegates to ApiService endpoint mapping for investment phases
+    return ApiService.getPhases();
   }
 
   static async getPhaseById(id: string): Promise<ApiResponse<Phase>> {
-    return ApiService.get<Phase>(API_ENDPOINTS.PHASES.DETAIL(id));
+    return ApiService.getPhaseDetail(id);
   }
 
   static async createInvestment(data: InvestmentData): Promise<ApiResponse<InvestmentResponse>> {
-    const backendData = {
+    // Use unified buy-token endpoint from ApiService
+    const payload = {
       phaseId: data.phaseId,
-      investmentAmount: data.amount,
-      investorAddress: data.walletAddress,
-      paymentMethod: data.paymentMethod || "USDT",
-      paymentAmount: data.amount,
-      paymentCurrency: "USD",
-      investorEmail: data.investorEmail || "",
-      status: "pending",
+      amount: data.amount,
+      walletAddress: data.walletAddress,
+      paymentMethod: data.paymentMethod,
+      investorEmail: data.investorEmail,
     };
-    return ApiService.post<InvestmentResponse>(API_ENDPOINTS.PHASES.INVEST, backendData);
+    return ApiService.buyToken(payload);
   }
 
-  static async updatePhaseStatistics(data: {
-    phaseId: number;
-    tokensSold: number;
-    amountRaised: number;
-    transactionHash: string;
-  }): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.UPDATE_PHASE_STATISTICS, data);
-  }
 }
 
 export default PhaseService;
