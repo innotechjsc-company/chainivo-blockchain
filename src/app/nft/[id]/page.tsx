@@ -38,8 +38,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { NFT, NFTService } from "@/api/services/nft-service";
-import { TransferService } from "@/services";
-import { config } from "@/api/config";
+import { toast, TransferService } from "@/services";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -88,6 +88,10 @@ export default function NFTDetailPage() {
     if (response.success) setComments(response.data.comments);
     else setComments([]);
   };
+
+  useEffect(() => {
+    getComments();
+  }, [id]);
 
   useEffect(() => {
     getComments();
@@ -228,28 +232,20 @@ export default function NFTDetailPage() {
                 }}
               />
             </div>
-            <div className="glass rounded-xl p-4 grid grid-cols-3 gap-4">
+            <div className="glass rounded-xl p-4 grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold">
-                  {nftData.stats?.favorites
-                    ? Number(nftData.stats.favorites)
-                    : 0}
+                <div className="text-2xl font-bold">{nftData.likesCount}</div>
+                <div className="text-xs text-muted-foreground">
+                  Lượt yêu thích
                 </div>
-                <div className="text-xs text-muted-foreground">Yêu thích</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">
-                  {nftData.stats?.views ? Number(nftData.stats.views) : 0}
+                  {nftData.commentsCount}
                 </div>
-                <div className="text-xs text-muted-foreground">Lượt xem</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">
-                  {nftData.stats?.totalSales
-                    ? Number(nftData.stats.totalSales)
-                    : 0}
+                <div className="text-xs text-muted-foreground">
+                  lượt bình luận
                 </div>
-                <div className="text-xs text-muted-foreground">Sở hữu</div>
               </div>
             </div>
           </div>
@@ -266,29 +262,9 @@ export default function NFTDetailPage() {
               <div className="flex flex-wrap gap-4">
                 <div>
                   <span className="text-xs text-muted-foreground">
-                    Người tạo:{" "}
-                  </span>
-                  <span className="font-mono">
-                    {nftData.creator
-                      ? typeof nftData.creator === "object" &&
-                        nftData.creator !== null
-                        ? (nftData.creator as any).address ?? "Không rõ"
-                        : nftData.creator
-                      : "Không rõ"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">
                     Chủ sở hữu:{" "}
                   </span>
-                  <span className="font-mono">
-                    {nftData.owner
-                      ? typeof nftData.owner === "object" &&
-                        nftData.owner !== null
-                        ? (nftData.owner as any).address ?? "Không rõ"
-                        : nftData.owner
-                      : "Không rõ"}
-                  </span>
+                  <span className="font-mono">{nftData.owner.email}</span>
                 </div>
               </div>
             </div>
@@ -296,8 +272,14 @@ export default function NFTDetailPage() {
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
-                {nftData?.currentPrice?.amount ?? 0}{" "}
-                {nftData?.currentPrice?.currency ?? ""}
+                {(() => {
+                  const raw = (nftData as any)?.price;
+                  const n =
+                    typeof raw === "string" ? parseFloat(raw) : Number(raw);
+                  const safe = Number.isFinite(n) ? n : 0;
+                  return safe.toLocaleString("vi-VN");
+                })()}{" "}
+                {TOKEN_DEAULT_CURRENCY}
               </div>
               <div className="mt-2 text-xs">
                 {nftData.isForSale ? "Đang mở bán" : "Không còn bán"}
@@ -305,10 +287,14 @@ export default function NFTDetailPage() {
               <div className="flex gap-2">
                 <Button
                   variant="default"
-                  className="flex-1 gap-2 mt-2"
+                  className="flex-1 gap-2 mt-2 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleBuyNFT();
+                    if (type === "other") {
+                      handleBuyNFT();
+                    } else {
+                      toast.success("Bạn đã sở hữu NFT này");
+                    }
                   }}
                   disabled={buyLoading}
                 >
@@ -317,7 +303,7 @@ export default function NFTDetailPage() {
                     ? "Đang xử lý..."
                     : type === "other"
                     ? "Mua ngay"
-                    : "Mint on Blockchain"}
+                    : "Đã sở hữu"}
                 </Button>
               </div>
               {buyLoading && (
@@ -354,53 +340,6 @@ export default function NFTDetailPage() {
                 </div>
               )}
 
-            <div className="glass rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-4">Lịch sử giao dịch</h3>
-              <div className="space-y-3">
-                {Array.isArray(nftData.transactions) &&
-                nftData.transactions.length > 0 ? (
-                  nftData.transactions.map((item: any, index: number) => {
-                    const fromAddress = formatAddress(item.from);
-                    const addressDisplay = item.from
-                      ? fromAddress
-                      : formatAddress(item.transactionHash);
-
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <div>
-                            <div className="font-semibold text-base">
-                              {item.event || item.type || "Không rõ"}
-                            </div>
-                            <div className="text-xs text-muted-foreground font-mono">
-                              {addressDisplay}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-semibold text-base">
-                            {item.amount || ""} {item.currency || ""}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(
-                              item.date || item.timestamp || "-"
-                            ).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center text-muted-foreground py-4">
-                    Không có lịch sử giao dịch
-                  </div>
-                )}
-              </div>
-            </div>
             {/* Metadata (if exists) */}
             {nftData.metadata && (
               <div className="glass rounded-xl p-4">
