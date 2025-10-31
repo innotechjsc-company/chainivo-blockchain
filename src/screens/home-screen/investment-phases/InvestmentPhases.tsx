@@ -12,7 +12,7 @@ export const InvestmentPhases = () => {
 
   // Helper function de format so
   const formatNumber = (num: number): string => {
-    return num.toLocaleString('en-US');
+    return num.toLocaleString("en-US");
   };
 
   return (
@@ -32,7 +32,9 @@ export const InvestmentPhases = () => {
           )}
         </div>
 
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${phases.length} gap-6`}>
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${phases.length} gap-6`}
+        >
           {phases.map((phase, index) => {
             return (
               <Card
@@ -75,16 +77,22 @@ export const InvestmentPhases = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Giá bán:</span>
                         <span className="font-bold text-primary">
-                          {`${phase.price.toFixed(2)} USD`}
+                          {/* {`${phase.price.toFixed(2)} USD`} */}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tổng coin:</span>
-                        <span className="font-semibold">{formatNumber(phase.totalTokens)}</span>
+                        <span className="text-muted-foreground">
+                          Tổng coin:
+                        </span>
+                        <span className="font-semibold">
+                          {formatNumber(phase.totalTokens)}
+                        </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Đã bán:</span>
-                        <span className="font-semibold">{formatNumber(phase.soldTokens)}</span>
+                        <span className="font-semibold">
+                          {formatNumber(phase.soldTokens)}
+                        </span>
                       </div>
                     </div>
 
@@ -101,14 +109,18 @@ export const InvestmentPhases = () => {
                     {phase.bonusPercentage && phase.bonusPercentage > 0 && (
                       <div className="flex items-center justify-center space-x-2 bg-secondary/20 text-secondary px-4 py-2 rounded-lg">
                         <TrendingUp className="w-4 h-4" />
-                        <span className="font-semibold">+{phase.bonusPercentage}% Bonus</span>
+                        <span className="font-semibold">
+                          +{phase.bonusPercentage}% Bonus
+                        </span>
                       </div>
                     )}
 
                     {/* Action Buttons */}
                     <div className="space-y-2">
                       <Button className="w-full" variant="outline" asChild>
-                        <Link href={`/phase/${phase.phaseId}`}>Xem chi tiết</Link>
+                        <Link href={`/phase/${phase.phaseId}`}>
+                          Xem chi tiết
+                        </Link>
                       </Button>
                       <Button
                         className="w-full"

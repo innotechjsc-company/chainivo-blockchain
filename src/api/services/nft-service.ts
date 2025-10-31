@@ -51,7 +51,7 @@ export class NFTService {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
   static async getNFTsByOwner(address: string): Promise<ApiResponse<NFT[]>> {
-    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.OWNER);
+    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.MY_NFT);
   }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
@@ -59,18 +59,28 @@ export class NFTService {
   }
 
   static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
-    return ApiService.get<NFT>(API_ENDPOINTS.NFT.ALL, data);
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.LIST, data);
   }
 
-  static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.NFT.TRANSFER, data);
+  static async transferNFT(data: {
+    nftId: string;
+    transactionHash: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.BUY, data);
   }
   static async pushComment(data: {
-    nftId: string;
-    content: string;
-    replyTo?: string;
+    nftId: any;
+    content: any;
+    replyTo?: any;
   }): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.NFT.COMMENTS, data);
+    return ApiService.post(API_ENDPOINTS.NFT.COMMENT, data);
+  }
+
+  static async getComment(nftId: string): Promise<ApiResponse<any>> {
+    return ApiService.get(`${API_ENDPOINTS.NFT.COMMENT}?nftId=${nftId}`);
+  }
+  static async likeNft(nftId: string): Promise<ApiResponse<any>> {
+    return ApiService.post(`${API_ENDPOINTS.NFT.LIKE}`, { nftId });
   }
 }
 
