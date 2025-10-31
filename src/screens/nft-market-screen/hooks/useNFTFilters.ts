@@ -35,6 +35,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
 
   const fetchOtherNFTs = async () => {
     const response = await NFTService.allNFTInMarketplace();
+
     if (response.success) {
       setOtherNFTsData((response.data as any).nfts || []);
     } else {

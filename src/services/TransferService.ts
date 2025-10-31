@@ -75,11 +75,13 @@ export default class TransferService {
     amountCan: number;
     gasLimit?: number;
     gasBoostPercent?: number;
+    token?: string;
   }): Promise<{
     transactionHash: string;
     blockNumber: string;
     recipient: string;
     rawReceipt: any;
+    token?: string; // USDT or CAN
   }> {
     const {
       fromAddress,
@@ -87,16 +89,20 @@ export default class TransferService {
       toAddressData,
       gasLimit = 150000,
       gasBoostPercent = 50,
+      token,
     } = params;
-    const toAddress = params.toAddressData ?? config.WALLET_ADDRESSES.ADMIN;
+    const toAddress = params.toAddressData
+      ? params.toAddressData
+      : config.WALLET_ADDRESSES.ADMIN;
 
     const web3 = await this.getWeb3();
-    const tokenAddress = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
+    const tokenAddress = token === "USDT" ? config.WALLET_ADDRESSES.USDT_CONTRACT : config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
     const contract = this.getTokenContract(web3, tokenAddress);
 
     // Balance check
     const canBalanceWei = await contract.methods.balanceOf(fromAddress).call();
     const requiredWei = this.toWei(web3, String(amountCan));
+    debugger
     if (BigInt(canBalanceWei) < BigInt(requiredWei)) {
       throw new Error(
         `Insufficient CAN balance. Required: ${amountCan} CAN, Available: ${this.fromWei(

@@ -1,24 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  TrendingUp,
-  Users,
-  DollarSign,
-  Target,
-  ArrowRight,
-  Rocket,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useRouter } from "next/navigation";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 
 interface BlockchainData {
   total_can_supply: number;

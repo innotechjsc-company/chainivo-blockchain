@@ -1,59 +1,32 @@
-import { useState } from "react";
-
-interface InvestmentPhase {
-  id: number;
-  name: string;
-  status: "completed" | "active" | "locked";
-  price: string;
-  totalCoins: string;
-  soldCoins: string;
-  progress: number;
-  bonus: string;
-}
+import { useEffect, useState } from "react";
+import { PhaseService, type Phase } from "@/api/services/phase-service";
 
 export const useInvestmentPhases = () => {
-  const [phases] = useState<InvestmentPhase[]>([
-    {
-      id: 1,
-      name: "Giai đoạn 1",
-      status: "completed",
-      price: "0.05 USD",
-      totalCoins: "10,000,000",
-      soldCoins: "10,000,000",
-      progress: 100,
-      bonus: "+20% Bonus",
-    },
-    {
-      id: 2,
-      name: "Giai đoạn 2",
-      status: "active",
-      price: "0.08 USD",
-      totalCoins: "15,000,000",
-      soldCoins: "8,750,000",
-      progress: 58,
-      bonus: "+15% Bonus",
-    },
-    {
-      id: 3,
-      name: "Giai đoạn 3",
-      status: "locked",
-      price: "0.12 USD",
-      totalCoins: "20,000,000",
-      soldCoins: "0",
-      progress: 0,
-      bonus: "+10% Bonus",
-    },
-    {
-      id: 4,
-      name: "Giai đoạn 4",
-      status: "locked",
-      price: "0.15 USD",
-      totalCoins: "25,000,000",
-      soldCoins: "0",
-      progress: 0,
-      bonus: "+5% Bonus",
-    },
-  ]);
+  const [phases, setPhases] = useState<Phase[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return { phases };
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      const res = await PhaseService.getPhases();
+      if (!isMounted) return;
+      const phasesData = (res as any)?.data?.phases as Phase[];
+      if (res.success && Array.isArray(phasesData)) {
+        // sort phases by startDate
+        setPhases(phasesData.sort((a: Phase, b: Phase) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
+      } else {
+        setError(res.error || "Failed to load phases");
+      }
+      setIsLoading(false);
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { phases, isLoading, error };
 };

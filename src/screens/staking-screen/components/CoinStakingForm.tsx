@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sparkles, Zap } from "lucide-react";
-import { CreateStakingCoinRequest } from "@/types/Staking";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import { useAppSelector } from "@/stores";
 import { buildFrontendUrl, config } from "@/api/config";
@@ -21,7 +20,7 @@ import { StakingService } from "@/api/services";
 import { TransferService } from "@/services";
 interface CoinStakingFormProps {
   userBalance: number;
-  onStake: (request: CreateStakingCoinRequest) => Promise<void>;
+  onStake: (request: any) => Promise<void>;
   loading?: boolean;
   apy?: number;
   fetchStakingData: () => Promise<void>;
@@ -114,9 +113,8 @@ export const CoinStakingForm = ({
 
   const getAllCanBalance = async () => {
     const response = await ApiService.get(
-      `${API_ENDPOINTS.GET_WALLET_BALANCE}/${
-        user?.walletAddress as string
-      }?token=CAN`
+      API_ENDPOINTS.BALANCE.GET_BALANCE(user?.walletAddress as string) +
+        "?token=CAN"
     );
     if (response?.success) {
       setUserCanBalance(Number((response?.data as any)?.can as number) ?? 0);
@@ -125,7 +123,7 @@ export const CoinStakingForm = ({
 
   const getStakingPools = async () => {
     const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
-    debugger;
+
     if (response?.success) {
       setTakePools((response?.data as any)?.pools);
     }

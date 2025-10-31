@@ -39,6 +39,7 @@ import {
 } from "recharts";
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { TransferService } from "@/services";
+import { config } from "@/api/config";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -53,6 +54,7 @@ const rarityColors = {
 
 export default function NFTDetailPage() {
   const router = useRouter();
+  const navigate = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -60,6 +62,7 @@ export default function NFTDetailPage() {
   const [nftData, setNftData] = useState<any>(null);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const id = params?.id as string;
   const type = (searchParams?.get("type") || params?.type) as
@@ -78,6 +81,16 @@ export default function NFTDetailPage() {
       })
       .catch(() => setNftData(null))
       .finally(() => setLoading(false));
+  }, [id]);
+
+  const getComments = async () => {
+    const response = await NFTService.getComment(id);
+    if (response.success) setComments(response.data.comments);
+    else setComments([]);
+  };
+
+  useEffect(() => {
+    getComments();
   }, [id]);
 
   if (loading) {
@@ -125,9 +138,10 @@ export default function NFTDetailPage() {
 
     setCommentLoading(true);
     try {
-      const response = await NFTService.pushComment(nftData?.tokenId, {
-        comment: commentText,
-        userAddress: user?.walletAddress ?? "",
+      const response = await NFTService.pushComment({
+        nftId: nftData?.id,
+        content: commentText,
+        replyTo: null,
       });
 
       if (response.success) {
@@ -138,6 +152,7 @@ export default function NFTDetailPage() {
         const refreshResponse = await NFTService.getNFTById(id);
         if (refreshResponse.success && refreshResponse.data) {
           setNftData(refreshResponse.data);
+          await getComments();
         }
       } else {
         // Handle error - you can add toast notification here
@@ -156,18 +171,24 @@ export default function NFTDetailPage() {
 
   const handleBuyNFT = async () => {
     if (!nftData || buyLoading) return;
-
     setBuyLoading(true);
+
     try {
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
-        toAddressData: nftData?.creator?.address ?? "",
-        amountCan: Number(nftData?.currentPrice?.amount) ?? 0,
+        // toAddressData: nftData?.creator?.address ?? "",
+        amountCan: Number(nftData?.price) ?? 0,
       });
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
         setBuyLoading(false);
+
+        await NFTService.transferNFT({
+          nftId: nftData?.id,
+          transactionHash: response?.transactionHash,
+        });
+        router.push("/nftmarket");
         // TODO: Có thể thêm toast notification hoặc refresh data
       } else {
         setBuyLoading(false);
@@ -287,10 +308,7 @@ export default function NFTDetailPage() {
                   className="flex-1 gap-2 mt-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (type === "other") {
-                      handleBuyNFT();
-                    } else {
-                    }
+                    handleBuyNFT();
                   }}
                   disabled={buyLoading}
                 >
@@ -410,23 +428,17 @@ export default function NFTDetailPage() {
 
           {/* Comments List - Scrollable */}
           <div className="flex-1 overflow-y-auto pr-2 mb-4 min-h-0">
-            {Array.isArray(nftData?.comments) && nftData.comments.length > 0 ? (
+            {Array.isArray(comments) && comments.length > 0 ? (
               <div className="space-y-4">
-                {nftData.comments.map((comment: any, index: number) => {
+                {comments.map((comment: any, index: number) => {
                   const commentText =
                     comment.text || comment.content || comment.message || "";
-                  const commentAuthor =
-                    comment.author ||
-                    comment.user?.walletAddress ||
-                    comment.user?.address ||
-                    comment.user?.username ||
-                    "Anonymous";
+                  const commentAuthor = comment.user.email ?? "";
                   const commentDate =
                     comment.timestamp ||
                     comment.createdAt ||
                     comment.created_at ||
                     comment.date;
-
                   return (
                     <div
                       key={comment.id || comment._id || index}
@@ -453,7 +465,7 @@ export default function NFTDetailPage() {
                             </span>
                           </div>
                           <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {commentText}
+                            {comment?.content}
                           </p>
                         </div>
                       </div>
@@ -480,8 +492,8 @@ export default function NFTDetailPage() {
             {/* Commenting as and Post Button */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Bình luận dưới tên:
-                <span className="font-mono">{user?.username}</span>
+                Bình luận dưới tên:{" "}
+                <span className="font-mono">{user?.email}</span>
               </div>
               <Button
                 onClick={handlePostComment}
