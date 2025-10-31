@@ -165,6 +165,8 @@ export const CoinStakingForm = ({
       if (res.transactionHash) {
         let createStake = await StakingService.stake({
           poolId: selectedPoolData?._id,
+          amount: stakeAmount,
+          walletAddress: user?.walletAddress as string,
           transactionHash: res.rawReceipt.transactionHash,
         });
         if (createStake.success) {
