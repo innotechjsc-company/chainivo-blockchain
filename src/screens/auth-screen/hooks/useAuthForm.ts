@@ -186,7 +186,7 @@ export const useAuthForm = (type: "login" | "register") => {
 
   // Handle submit
   const handleSubmit = useCallback(
-    (e: React.FormEvent, formData: any) => {
+    async (e: React.FormEvent) => {
       // CRITICAL: Prevent default form submission behavior FIRST
       e.preventDefault();
       e.stopPropagation();
@@ -201,79 +201,85 @@ export const useAuthForm = (type: "login" | "register") => {
 
       console.log("[AUTH] Validation passed, starting async dispatch...");
 
-      // Use setTimeout to ensure we're not blocking the event loop
-      setTimeout(async () => {
-        try {
-          if (type === "login") {
-            const credentials: LoginCredentials = {
+      try {
+        if (type === "login") {
+          const result = await dispatch(
+            loginAction({
               email: formData.email,
               password: formData.password,
-            };
-            const result = await dispatch(
-              loginAction({
-                email: formData.email,
-                password: formData.password,
-              })
-            ).unwrap();
+            })
+          ).unwrap();
 
-            if (result && result.token) {
-              console.log("Login successful, checking wallet address...");
-              console.log("User data:", result.user);
+          if (result && result.token) {
+            console.log("Login successful, checking wallet address...");
+            console.log("User data:", result.user);
 
-              // Check if user has wallet address
-              if (result.user?.walletAddress) {
-                console.log(
-                  "User has wallet address:",
-                  result.user.walletAddress
-                );
+            // Check if user has wallet address
+            if (result.user?.walletAddress) {
+              console.log(
+                "User has wallet address:",
+                result.user.walletAddress
+              );
 
-                // Set loading state for wallet connection
-                setIsConnectingWallet(true);
+              // Set loading state for wallet connection
+              setIsConnectingWallet(true);
 
-                try {
-                  if (result.user.walletAddress) {
-                    console.log(
-                      "MetaMask connected successfully, redirecting to home"
-                    );
-                    router.push("/");
-                  } else {
-                    console.log(
-                      "MetaMask connection failed, redirecting to wallet page"
-                    );
-                    router.push("/wallet");
-                  }
-                } catch (error) {
-                  console.error("Error connecting to MetaMask:", error);
+              try {
+                if (result.user.walletAddress) {
+                  console.log(
+                    "MetaMask connected successfully, redirecting to home"
+                  );
+                  router.push("/");
+                } else {
+                  console.log(
+                    "MetaMask connection failed, redirecting to wallet page"
+                  );
                   router.push("/wallet");
-                } finally {
-                  setIsConnectingWallet(false);
                 }
-              } else {
-                console.log(
-                  "User has no wallet address, redirecting to wallet page"
-                );
+              } catch (error) {
+                console.error("Error connecting to MetaMask:", error);
                 router.push("/wallet");
+              } finally {
+                setIsConnectingWallet(false);
               }
+            } else {
+              console.log(
+                "User has no wallet address, redirecting to wallet page"
+              );
+              router.push("/wallet");
             }
-          } else {
-            const registerPayload: RegisterData = {
-              email: formData.email,
-              password: formData.password,
-              username: formData.username,
-              walletAddress: "",
-            };
-            const result = await dispatch(
-              registerAction(registerPayload)
-            ).unwrap();
+          }
+        } else {
+          const registerPayload: RegisterData = {
+            email: formData.email,
+            password: formData.password,
+            username: formData.username,
+          };
+          const result = await dispatch(
+            registerAction(registerPayload)
+          ).unwrap();
+
+          // Registration successful - redirect to login page
+          if (result && result.success) {
+            console.log("Registration successful, redirecting to login");
             router.push("/auth?tab=login");
           }
-        } catch (error) {
-          // Error is already in Redux state and will be displayed via serverError
-          console.log("[AUTH] Error caught:", error);
         }
-      }, 0);
+      } catch (error) {
+        // Error is already in Redux state and will be displayed via serverError
+        console.log("[AUTH] Error caught:", error);
+      }
     },
-    [formData, type, validateForm, dispatch, router]
+    [
+      formData.email,
+      formData.password,
+      formData.username,
+      type,
+      validateForm,
+      dispatch,
+      router,
+      setIsConnectingWallet,
+    ]
   );
 
   return {
