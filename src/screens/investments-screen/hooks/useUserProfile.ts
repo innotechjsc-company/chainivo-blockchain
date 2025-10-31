@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAppSelector } from "@/stores";
+import { useAppSelector, WalletBalance } from "@/stores";
 
 interface UserProfile {
   username: string;
@@ -38,7 +38,7 @@ export const useUserProfile = () => {
         // Tạo profile từ Redux store
         const userProfile: UserProfile = {
           username: authUser.username || authUser.email,
-          can_balance: walletBalance,
+          can_balance: (walletBalance as WalletBalance)?.can || 0,
           total_invested: totalInvested,
           membership_tier: authUser.role || "bronze", // Default tier
         };

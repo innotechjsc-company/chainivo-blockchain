@@ -8,7 +8,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  username?: string;
+  name?: string;
 }
 
 export interface RegisterResponse {
@@ -36,10 +36,9 @@ export interface AuthResponse {
     _verified: boolean;
     createdAt: string;
     updatedAt: string;
-    username?: string;
+    name?: string;
     walletAddress?: string;
     role?: string;
-    permissions?: string[];
   };
   token: string;
   exp: number;
@@ -100,11 +99,9 @@ export class AuthService {
   static getUserInfo(): {
     id: string;
     email: string;
-    username: string;
+    name: string;
     walletAddress: string;
     role: string;
-    permissions: string[];
-    _verified?: boolean;
     createdAt?: string;
     updatedAt?: string;
   } | null {
@@ -127,11 +124,9 @@ export class AuthService {
       return {
         id: payload.userId || payload.id,
         email: payload.email || "",
-        username: payload.username || "",
+        name: payload.name || "",
         walletAddress: payload.walletAddress || "",
         role: payload.role || "user",
-        permissions: payload.permissions || [],
-        _verified: payload._verified,
         createdAt: payload.createdAt,
         updatedAt: payload.updatedAt,
       };
@@ -168,11 +163,9 @@ export class AuthService {
           const userInfo = {
             id: authData.user.id,
             email: authData.user.email,
-            username: authData.user.username || "",
+            name: authData.user.name || "",
             walletAddress: authData.user.walletAddress || "",
             role: authData.user.role || "user",
-            permissions: authData.user.permissions || [],
-            _verified: authData.user._verified,
             createdAt: authData.user.createdAt,
             updatedAt: authData.user.updatedAt,
           };
@@ -222,6 +215,9 @@ export class AuthService {
     } finally {
       this.removeToken();
       this.removeUserInfo();
+      // Clear wallet-related data on logout
+      localStorage.removeItem("walletAddress");
+      localStorage.removeItem("isConnectedToWallet");
     }
   }
 
@@ -240,26 +236,6 @@ export class AuthService {
     } catch (error) {
       return false;
     }
-  }
-
-  static async getTestToken(): Promise<string | null> {
-    try {
-      const response = await ApiService.getTestToken();
-      if (response.success && response.data) {
-        this.setToken(response.data.token);
-        return response.data.token;
-      }
-      return null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  static hasPermission(permission: string): boolean {
-    const userInfo = this.getUserInfo();
-    if (!userInfo) return false;
-
-    return userInfo.permissions.includes(permission);
   }
 
   static hasRole(role: string): boolean {

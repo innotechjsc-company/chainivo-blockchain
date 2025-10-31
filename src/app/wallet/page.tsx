@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { UserService } from "@/api/services/user-service";
 import { useAppSelector, useAppDispatch, updateAuthProfile } from "@/stores";
+import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
 
 // MetaMask types
 interface MetaMaskProvider {
@@ -71,6 +72,30 @@ export default function WalletConnectPage() {
       );
     }
   }, [user]);
+
+  // Clear wallet state when user changes (logout/login different account)
+  useEffect(() => {
+    // Get saved user ID from localStorage to detect user changes
+    const savedUserId = localStorage.getItem("currentUserId");
+
+    if (user?.id && savedUserId !== user.id) {
+      // User has changed, clear wallet connection state
+      console.log("User changed, clearing wallet connection state");
+      setConnected(null);
+      setWalletAddress(null);
+      setError(null);
+
+      // Update saved user ID
+      localStorage.setItem("currentUserId", user.id);
+    } else if (!user?.id && savedUserId) {
+      // User logged out
+      console.log("User logged out, clearing wallet connection state");
+      setConnected(null);
+      setWalletAddress(null);
+      setError(null);
+      localStorage.removeItem("currentUserId");
+    }
+  }, [user?.id]);
 
   // Check for saved wallet connection status and verify with MetaMask
   useEffect(() => {
@@ -230,11 +255,12 @@ export default function WalletConnectPage() {
               userId: user?.id as unknown as string,
             });
             console.log("res", res);
-            debugger;
 
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+              // update wallet to redux
+              dispatch(setWalletBalance(accounts[0]));
             } else {
               await disconnectFromMetaMask();
 
@@ -258,6 +284,7 @@ export default function WalletConnectPage() {
           // If wallet address is the same, still update local state
           localStorage.setItem("walletAddress", accounts[0]);
           dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
+          // update wallet to redux
         }
       }
     } catch (err: any) {
@@ -360,7 +387,7 @@ export default function WalletConnectPage() {
               <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
                   Đang đăng nhập với:{" "}
-                  <span className="font-semibold">{user.username}</span>
+                  <span className="font-semibold">{user.name}</span>
                 </p>
               </div>
             )}

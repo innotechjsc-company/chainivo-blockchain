@@ -16,11 +16,18 @@ export interface User {
   permissions?: string[];
 }
 
+export interface WalletBalance {
+  token?: string;
+  can: number;
+  usdt: number;
+  pol: number;
+}
+
 // Kiểu dữ liệu Wallet
 export interface Wallet {
   address: string;
-  balance: number;
-  currency: string;
+  balance?: WalletBalance;
+  currency?: string;
 }
 
 export interface Transaction {

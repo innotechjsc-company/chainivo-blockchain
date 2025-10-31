@@ -129,7 +129,7 @@ export const CoinStakingForm = ({
 
   const getStakingPools = async () => {
     const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
-    // debugger;
+
     if (response?.success) {
       setTakePools((response?.data as any)?.pools);
     }
