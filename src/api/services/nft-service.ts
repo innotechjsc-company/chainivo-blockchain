@@ -58,12 +58,18 @@ export class NFTService {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
 
-  static async allNFTInMarketplace(data: any): Promise<ApiResponse<NFT>> {
+  static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.ALL, data);
   }
 
   static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.TRANSFER, data);
+  }
+  static async pushComment(
+    id: string,
+    data: { comment: string; userAddress: string }
+  ): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.COMMENTS(id), data);
   }
 }
 

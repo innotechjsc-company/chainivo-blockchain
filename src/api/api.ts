@@ -72,6 +72,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
     OWNER: (address: string) => `/api/nft/owner/${address}`,
+    COMMENTS: (id: string) => `api/nft/${id}/comment`,
   },
 
   MYSTERY_BOX: {
@@ -101,7 +102,7 @@ export const API_ENDPOINTS = {
     CLAIM: "/api/digitalize/airdrop/claim",
   },
   USER: {
-    UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    UPDATE_WALLET_ADDRESS: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
   GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",

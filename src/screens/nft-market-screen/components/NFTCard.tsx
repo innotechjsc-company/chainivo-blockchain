@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Eye, Heart, ShoppingBag } from "lucide-react";
+import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import { NFT } from "../hooks";
 import { useEffect } from "react";
 
 interface NFTCardProps {
   nft: any;
+  type: "tier" | "other";
 }
 
 const rarityColors = {
@@ -22,7 +23,7 @@ const rarityColors = {
   Divine: "bg-red-500/20 text-red-300",
 };
 
-export const NFTCard = ({ nft }: NFTCardProps) => {
+export const NFTCard = ({ nft, type }: NFTCardProps) => {
   const router = useRouter();
   const isOtherNFT = nft.type === "other";
   const progressPercentage =
@@ -45,14 +46,25 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
     return "/nft-box.jpg";
   };
 
+  useEffect(() => {
+    console.log(type);
+  }, [type]);
+
   const nftImage = getNFTImage(nft);
+
+  const formatAddress = (address?: string) => {
+    if (!address) return "";
+    const start = address.slice(0, 6);
+    const end = address.slice(-4);
+    return `${start}***${end}`;
+  };
 
   return (
     <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft/${nft.id}`)}
+        onClick={() => router.push(`/nft/${nft.tokenId}?type=${type}`)}
         style={{
           backgroundImage: `url('${nftImage}')`,
           backgroundSize: "cover",
@@ -95,10 +107,14 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
           <div className="text-xs text-muted-foreground mb-3">
             Người bán:{" "}
             <span className="font-mono text-foreground">
-              {nft?.owner?.address}
+              {formatAddress(nft?.owner?.address)}
             </span>
           </div>
         )}
+
+        <div className="text-xs text-muted-foreground mb-3">
+          <span className="font-mono ">{nft?.description}</span>
+        </div>
 
         {/* {isOtherNFT ? (
           <>
@@ -161,18 +177,18 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
             className="flex-1 gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              // Handle buy action
+              router.push(`/nft/${nft.tokenId}?type=${type}`);
             }}
           >
-            <ShoppingCart className="w-4 h-4" />
-            {isOtherNFT ? "Mua cổ phần" : "Mua ngay"}
+            {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
+            {type === "other" ? "Mua ngay" : "Mint on Blockchain"}
           </Button>
           <Button
             variant="outline"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.id}`);
+              router.push(`/nft/${nft.tokenId}?type=${type}`);
             }}
           >
             <Eye className="w-4 h-4" />

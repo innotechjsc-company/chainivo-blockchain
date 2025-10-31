@@ -16,6 +16,7 @@ export default function NFTMarketScreen() {
     hasActiveFilters,
     fetchUserNFTs,
     userNFTs,
+    otherNFTsData,
   } = useNFTFilters(nfts);
 
   // 2. Event handlers
@@ -56,10 +57,12 @@ export default function NFTMarketScreen() {
         {/* Other NFTs */}
         {filters.type !== "tier" && otherNFTs.length > 0 && (
           <>
-            <h2 className="text-2xl font-bold mb-6 gradient-text">NFT Khác</h2>
             <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">Đang bán</h3>
-              <NFTGridCard nfts={otherNFTs} title="" initialCount={6} />
+              <NFTGridCard
+                nfts={otherNFTsData}
+                title="NFT Khác"
+                initialCount={6}
+              />
             </div>
           </>
         )}
