@@ -71,8 +71,8 @@ export const API_ENDPOINTS = {
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
     TRANSFER: "/api/nft/marketplace/buy",
-    OWNER: (address: string) => `/api/nft/owner/${address}`,
-    COMMENTS: (id: string) => `api/nft/${id}/comment`,
+    OWNER: `/api/nft/my-nft`,
+    COMMENTS: `/api/nft/comment`,
   },
 
   MYSTERY_BOX: {
