@@ -203,7 +203,6 @@ export default function WalletConnectPage() {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
@@ -228,7 +227,10 @@ export default function WalletConnectPage() {
           try {
             let res = await UserService.updateWalletAddress({
               walletAddress: accounts[0],
+              userId: user?.id as unknown as string,
             });
+            console.log("res", res);
+            debugger;
 
             if (res.success) {
               localStorage.setItem("walletAddress", accounts[0]);

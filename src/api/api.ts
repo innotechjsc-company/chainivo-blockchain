@@ -102,7 +102,7 @@ export const API_ENDPOINTS = {
     CLAIM: "/api/digitalize/airdrop/claim",
   },
   USER: {
-    UPDATE_WALLET_ADDRESS: "/api/users/add-wallet",
+    UPDATE_WALLET_ADDRESS: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
   GET_WALLET_USDT_BALANCE: "/api/digitalize/token/usdt-balance",
