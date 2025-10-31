@@ -3,7 +3,7 @@ import { config } from "@/api/config";
 type Web3Type = any;
 type ContractType = any;
 
-// Các loại token được hỗ trợ
+// Các loại token được hỗ trợ //
 export type TokenType = "USDC" | "CAN" | "POL";
 
 // Thông tin chi tiết về kết quả giao dịch
@@ -230,7 +230,7 @@ export default class TransferService {
     // 2. Kiểm tra số dư token của người gửi
     const balanceWei = await contract.methods.balanceOf(fromAddress).call();
     const requiredWei = this.toWei(web3, String(amount));
-debugger
+    debugger;
     if (BigInt(balanceWei) < BigInt(requiredWei)) {
       const availableBalance = this.fromWei(web3, balanceWei);
       throw new Error(
