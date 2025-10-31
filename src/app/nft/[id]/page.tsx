@@ -264,7 +264,9 @@ export default function NFTDetailPage() {
                   <span className="text-xs text-muted-foreground">
                     Chủ sở hữu:{" "}
                   </span>
-                  <span className="font-mono">{nftData.owner.email}</span>
+                  <span className="font-mono">
+                    {nftData?.owner?.email ?? "Khách hàng"}
+                  </span>
                 </div>
               </div>
             </div>

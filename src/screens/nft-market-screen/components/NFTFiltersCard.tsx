@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ interface NFTFiltersCardProps {
   onFiltersChange: (filters: NFTFiltersState) => void;
   hasActiveFilters: boolean;
   onResetFilters: () => void;
+  onSearch?: (filters: Partial<NFTFiltersState>) => Promise<boolean> | void;
 }
 
 export const NFTFiltersCard = ({
@@ -21,20 +22,18 @@ export const NFTFiltersCard = ({
   onFiltersChange,
   hasActiveFilters,
   onResetFilters,
+  onSearch,
 }: NFTFiltersCardProps) => {
   const [showFilters, setShowFilters] = useState(true);
+  const [pendingRange, setPendingRange] = useState<[number, number]>(
+    filters.priceRange
+  );
 
   const rarityOptions = [
-    { value: "Common", label: "Common", color: "bg-gray-500/20 text-gray-300" },
-    { value: "Rare", label: "Rare", color: "bg-blue-500/20 text-blue-300" },
-    { value: "Epic", label: "Epic", color: "bg-purple-500/20 text-purple-300" },
-    {
-      value: "Legendary",
-      label: "Legendary",
-      color: "bg-yellow-500/20 text-yellow-300",
-    },
-    { value: "Mythic", label: "Mythic", color: "bg-pink-500/20 text-pink-300" },
-    { value: "Divine", label: "Divine", color: "bg-red-500/20 text-red-300" },
+    { label: "Thường", value: "1", color: "bg-gray-500/20 text-gray-300" },
+    { label: "Vàng", value: "2", color: "bg-yellow-500/20 text-yellow-300" },
+    { label: "Bạch kim", value: "3", color: "bg-blue-500/20 text-blue-300" },
+    { label: "Kim cương", value: "4", color: "bg-pink-500/20 text-pink-300" },
   ];
 
   const toggleRarity = (rarity: string) => {
@@ -42,7 +41,32 @@ export const NFTFiltersCard = ({
       ? filters.rarity.filter((r) => r !== rarity)
       : [...filters.rarity, rarity];
     onFiltersChange({ ...filters, rarity: newRarity });
+    onSearch && onSearch({ rarity: newRarity });
   };
+
+  const handlePriceChange = async (value: number[]) => {
+    const range = value as [number, number];
+
+    onFiltersChange({ ...filters, priceRange: range });
+    if (onSearch) {
+      try {
+        await onSearch({ priceRange: range });
+      } catch (e) {
+        // swallow to avoid breaking slider UX
+      }
+    }
+  };
+
+  useEffect(() => {
+    setPendingRange(filters.priceRange);
+  }, [filters.priceRange]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void handlePriceChange(pendingRange);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [pendingRange]);
 
   return (
     <div className="mb-8">
@@ -126,19 +150,18 @@ export const NFTFiltersCard = ({
             {/* Price Range Filter */}
             <div>
               <label className="text-sm font-semibold mb-3 block">
-                Khoảng giá: {filters.priceRange[0]} ETH -{" "}
-                {filters.priceRange[1]} ETH
+                Khoảng giá: {pendingRange[0]} CAN - {pendingRange[1]} CAN
               </label>
               <Slider
                 min={0}
-                max={10}
-                step={0.1}
-                value={filters.priceRange}
-                onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
-                    priceRange: value as [number, number],
-                  })
+                max={1000000}
+                step={1}
+                value={pendingRange}
+                onValueChange={(v) =>
+                  setPendingRange([
+                    Math.round((v as [number, number])[0]),
+                    Math.round((v as [number, number])[1]),
+                  ])
                 }
                 className="w-full"
               />

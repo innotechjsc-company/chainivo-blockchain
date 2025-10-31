@@ -161,12 +161,11 @@ export const CoinStakingForm = ({
         amountCan: amount,
       });
       if (res.transactionHash) {
-        let createStake = await StakingService.stake({
-          poolId: selectedPoolData?._id,
-          amount: stakeAmount,
-          walletAddress: user?.walletAddress as string,
-          transactionHash: res.rawReceipt.transactionHash,
-        });
+        let createStake = await StakingService.stake(
+          selectedPoolData?.id as string,
+          res.rawReceipt.transactionHash
+        );
+        debugger;
         if (createStake.success) {
           toast.success("Giao dịch stake thành công");
           setTimeout(async () => {
