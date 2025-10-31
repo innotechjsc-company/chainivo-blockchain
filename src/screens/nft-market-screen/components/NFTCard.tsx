@@ -117,7 +117,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
           <div>
             <div className="text-xs text-muted-foreground">Giá</div>
             <div className="text-xl font-bold text-primary">
-              {nft?.price?.amount ?? "Thương lượng"}{" "}
+              {nft?.price ?? "Thương lượng"}
             </div>
           </div>
         </div>

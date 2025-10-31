@@ -54,6 +54,7 @@ const rarityColors = {
 
 export default function NFTDetailPage() {
   const router = useRouter();
+  const navigate = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -151,7 +152,7 @@ export default function NFTDetailPage() {
         const refreshResponse = await NFTService.getNFTById(id);
         if (refreshResponse.success && refreshResponse.data) {
           setNftData(refreshResponse.data);
-          getComments();
+          await getComments();
         }
       } else {
         // Handle error - you can add toast notification here
@@ -171,7 +172,7 @@ export default function NFTDetailPage() {
   const handleBuyNFT = async () => {
     if (!nftData || buyLoading) return;
     setBuyLoading(true);
-    debugger;
+
     try {
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
@@ -182,11 +183,12 @@ export default function NFTDetailPage() {
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
         setBuyLoading(false);
-        debugger;
+
         await NFTService.transferNFT({
           nftId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
+        router.push("/nftmarket");
         // TODO: Có thể thêm toast notification hoặc refresh data
       } else {
         setBuyLoading(false);
@@ -490,8 +492,8 @@ export default function NFTDetailPage() {
             {/* Commenting as and Post Button */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Bình luận dưới tên:
-                <span className="font-mono">{user?.id}</span>
+                Bình luận dưới tên:{" "}
+                <span className="font-mono">{user?.email}</span>
               </div>
               <Button
                 onClick={handlePostComment}
