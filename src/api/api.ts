@@ -38,8 +38,8 @@ api.interceptors.response.use(
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: "/api/auth/login",
-    REGISTER: "/api/auth/register",
+    LOGIN: "/api/users/login",
+    REGISTER: "/api/users",
     REFRESH: "/api/auth/refresh",
     LOGOUT: "/api/auth/logout",
   },

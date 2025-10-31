@@ -18,7 +18,6 @@ export const LoginForm = () => {
   } = useAuthForm("login");
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.log("[LoginForm] onSubmit called");
     handleSubmit(e, formData);
     return false;
   };
