@@ -7,9 +7,10 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Eye, Heart, ShoppingBag } from "lucide-react";
 import { NFT } from "../hooks";
+import { useEffect } from "react";
 
 interface NFTCardProps {
-  nft: NFT;
+  nft: any;
 }
 
 const rarityColors = {
@@ -90,15 +91,16 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
       <CardContent className="p-4">
         <h3 className="text-lg font-bold mb-2 truncate">{nft.name}</h3>
 
-        {nft.seller && (
+        {nft?.owner?.address && (
           <div className="text-xs text-muted-foreground mb-3">
             Người bán:{" "}
-            <span className="font-mono text-foreground">{nft.seller}</span>
+            <span className="font-mono text-foreground">
+              {nft?.owner?.address}
+            </span>
           </div>
         )}
 
-        {isOtherNFT ? (
-          // Other NFT specific info
+        {/* {isOtherNFT ? (
           <>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
@@ -110,7 +112,6 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
                 <span className="font-semibold">{nft.pricePerShare}</span>
               </div>
 
-              {/* Progress Bar */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Tiến trình bán</span>
@@ -134,14 +135,24 @@ export const NFTCard = ({ nft }: NFTCardProps) => {
             </div>
           </>
         ) : (
-          // Tier NFT info
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-xs text-muted-foreground">Giá</div>
               <div className="text-xl font-bold text-primary">{nft.price}</div>
             </div>
           </div>
-        )}
+        )} */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-xs text-muted-foreground">Giá</div>
+            <div className="text-xl font-bold text-primary">
+              {nft?.marketplace?.price?.amount ?? "Thương lượng"}{" "}
+              {nft?.marketplace?.price?.amount
+                ? nft?.marketplace?.price?.currency
+                : ""}
+            </div>
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">

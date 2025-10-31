@@ -1,5 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { NFT } from "./useNFTData";
+import NFTService from "@/api/services/nft-service";
+import { useSelector } from "react-redux";
+import { useAppSelector } from "@/stores";
+import { toast } from "sonner";
 
 export interface NFTFiltersState {
   rarity: string[];
@@ -13,6 +17,23 @@ export const useNFTFilters = (nfts: NFT[]) => {
     priceRange: [0, 10],
     type: "all",
   });
+
+  const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const userInfo = useAppSelector((state) => state.auth.user);
+
+  const fetchUserNFTs = async () => {
+    const response = await NFTService.getNFTsByOwner(
+      userInfo?.walletAddress || ""
+    );
+    if (response.success) {
+      setUserNFTs((response.data as any).nfts || []);
+    } else {
+      toast.error(response.message);
+    }
+  };
+  useEffect(() => {
+    fetchUserNFTs();
+  }, []);
 
   const filteredNFTs = useMemo(() => {
     return nfts.filter((nft) => {
@@ -64,5 +85,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
     otherNFTs,
     resetFilters,
     hasActiveFilters,
+    fetchUserNFTs,
+    userNFTs,
   };
 };

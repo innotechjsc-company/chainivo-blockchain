@@ -7,7 +7,10 @@ import {
   StakingStats,
   AvailableNFT,
   StakingConfig,
-} from "@/types/staking";
+  StakingPool,
+} from "@/types/Staking";
+import StakingService from "@/api/services/staking-service";
+import { toast } from "sonner";
 
 /**
  * Custom hook để quản lý dữ liệu staking
@@ -16,6 +19,7 @@ export const useStakingData = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Staking data
   const [coinStakes, setCoinStakes] = useState<StakingCoin[]>([]);
@@ -25,7 +29,8 @@ export const useStakingData = () => {
   const [stakingConfig, setStakingConfig] = useState<StakingConfig | null>(
     null
   );
-
+  const [stakingMyPools, setStakingMyPools] = useState<StakingPool[]>([]);
+  const userInfo = useAppSelector((state) => state.auth.user);
   // Fetch staking data
   const fetchStakingData = async () => {
     setLoading(true);
@@ -99,6 +104,48 @@ export const useStakingData = () => {
       setLoading(false);
     }
   };
+  const getStakingPools = async () => {
+    const response = await StakingService.getStakesByOwner(
+      (userInfo?.id as string) ?? ""
+    );
+    if (response?.success) {
+      setStakingMyPools(response?.data?.stakes as StakingPool[]);
+    } else {
+      setStakingMyPools([]);
+    }
+  };
+  const getClaimRewardsData = async (stakeId: string) => {
+    setIsLoading(true);
+    const response = await StakingService.getRewards(stakeId);
+    if (response?.success) {
+      await getStakingPools();
+      setIsLoading(false);
+      toast.success("Nhận thưởng thành công!");
+      return response?.data;
+    } else {
+      setIsLoading(false);
+      toast.error("Lỗi nhận thưởng!");
+      return [];
+    }
+  };
+  const unStakeData = async (stakeId: string) => {
+    setIsLoading(true);
+    const response = await StakingService.unstake(stakeId);
+    if (response?.success) {
+      await getStakingPools();
+      setIsLoading(false);
+      toast.success("Huỷ stake thành công!");
+      return response?.data;
+    } else {
+      setIsLoading(false);
+      toast.error("Lỗi huỷ stake!");
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    getStakingPools();
+  }, []);
 
   // Refresh data - không hiển thị loading khi refresh
   const refreshData = async () => {
@@ -289,5 +336,12 @@ export const useStakingData = () => {
     // Helpers
     calculateRewards,
     calculateDaysPassed,
+    stakingMyPools,
+    fetchStakingData,
+    getClaimRewardsData,
+    getStakingPools,
+    setIsLoading,
+    isLoading,
+    unStakeData,
   };
 };

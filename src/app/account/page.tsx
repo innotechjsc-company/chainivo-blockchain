@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Wallet, History, Settings, Upload } from "lucide-react";
+import { useAppSelector } from "@/stores";
+import { WalletService } from "@/api/services/wallet-service";
+import { NFTService } from "@/api/services/nft-service";
+import { StakingService } from "@/api/services/staking-service";
+import { buildBlockchainUrl } from "@/api/config";
 
 interface Profile {
   username: string;
@@ -23,13 +28,17 @@ export default function AccountManagementPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
+  const [canBalance, setCanBalance] = useState(0);
+  const [txLoading, setTxLoading] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     // Simulate loading user profile
     const timer = setTimeout(() => {
       // Mock profile data
       const mockProfile: Profile = {
-        username: "CryptoUser123",
+        username: user?.username as string,
         avatar_url: null,
         can_balance: 12500,
         membership_tier: "gold",
@@ -42,6 +51,25 @@ export default function AccountManagementPage() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const fetchCanBalance = async () => {
+      try {
+        if (!user?.walletAddress) return;
+        const response = await WalletService.getWalletCanBalances(
+          user.walletAddress
+        );
+        if (response?.success) {
+          const raw = Number(response.data.balance);
+          setCanBalance(Number.isFinite(raw) ? Math.round(raw) : 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch CAN balance:", error);
+      }
+    };
+
+    fetchCanBalance();
+  }, [user?.walletAddress]);
 
   const handleUpdateProfile = async () => {
     try {
@@ -63,11 +91,49 @@ export default function AccountManagementPage() {
     router.push("/auth");
   };
 
-  const handleCopyAddress = () => {
-    const address = "0x1234567890abcdef1234567890abcdef12345678";
-    navigator.clipboard.writeText(address);
-    console.log("Address copied to clipboard");
+  const handleCopyAddress = async () => {
+    try {
+      const address = user?.walletAddress || "";
+      if (!address) return;
+      await navigator.clipboard.writeText(address);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
   };
+
+  const getRecentMetaMaskTransactions = async () => {
+    try {
+      if (!user?.walletAddress) return [] as any[];
+      setTxLoading(true);
+
+      const [nftsRes, rewardsRes] = await Promise.all([
+        NFTService.getNFTsByOwner(user.walletAddress),
+        StakingService.getStakesByOwner(user.walletAddress),
+      ]);
+      let transactions = [];
+      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
+        (a: any, b: any) =>
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
+      );
+      debugger;
+      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
+      );
+      transactions.push(...nfts, ...stakes);
+      setTransactions(transactions);
+    } catch (error) {
+      console.error("Error fetching NFTs and rewards:", error);
+      setTransactions([]);
+      return [] as any[];
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getRecentMetaMaskTransactions();
+  }, [user?.walletAddress]);
 
   if (loading) {
     return (
@@ -123,7 +189,9 @@ export default function AccountManagementPage() {
                   <Avatar className="w-24 h-24">
                     <AvatarImage src={profile?.avatar_url || ""} />
                     <AvatarFallback className="text-2xl">
-                      {username[0]?.toUpperCase() || "U"}
+                      {username && username.length > 0
+                        ? username[0]?.toUpperCase()
+                        : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
@@ -146,7 +214,7 @@ export default function AccountManagementPage() {
                       Số dư CAN
                     </div>
                     <div className="text-2xl font-bold gradient-text">
-                      {profile?.can_balance?.toLocaleString()} CAN
+                      {canBalance?.toLocaleString()} CAN
                     </div>
                   </div>
                   <div className="glass p-4 rounded-lg">
@@ -181,7 +249,7 @@ export default function AccountManagementPage() {
                     <div>
                       <div className="font-semibold">Số dư CAN</div>
                       <div className="text-2xl gradient-text font-bold">
-                        {profile?.can_balance?.toLocaleString()} CAN
+                        {canBalance?.toLocaleString()} CAN
                       </div>
                     </div>
                     <Button>Nạp tiền</Button>
@@ -192,11 +260,12 @@ export default function AccountManagementPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
-                        0x1234567890abcdef1234567890abcdef12345678
+                        {user?.walletAddress}{" "}
                       </code>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="text-xs cursor-pointer"
                         onClick={handleCopyAddress}
                       >
                         Sao chép
@@ -210,76 +279,61 @@ export default function AccountManagementPage() {
             <TabsContent value="history">
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-4">Lịch sử giao dịch</h3>
-                <div className="space-y-4">
-                  {/* Mock transaction history */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 glass rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                          <Wallet className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Mua NFT Gold Tier</div>
-                          <div className="text-sm text-muted-foreground">
-                            2 giờ trước
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-red-500">
-                          -0.8 ETH
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          $1,680
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 glass rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center">
-                          <Wallet className="w-5 h-5 text-secondary" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Nạp tiền CAN</div>
-                          <div className="text-sm text-muted-foreground">
-                            1 ngày trước
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-green-500">
-                          +5,000 CAN
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          $10,000
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 glass rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
-                          <Wallet className="w-5 h-5 text-accent" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Staking Rewards</div>
-                          <div className="text-sm text-muted-foreground">
-                            3 ngày trước
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-green-500">
-                          +250 CAN
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          $500
-                        </div>
-                      </div>
-                    </div>
+                {txLoading ? (
+                  <div className="text-sm text-muted-foreground">
+                    Đang tải giao dịch...
                   </div>
-                </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    Không có giao dịch.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx._id}
+                        className="flex items-center justify-between p-4 glass rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                            <Wallet className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <div className="font-semibold break-all">
+                              {tx.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(
+                                tx.transactions?.[0]?.timestamp
+                              )?.toLocaleString("vi-VN")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {/* <a
+                            className="text-sm text-blue-500 underline"
+                            href={buildBlockchainUrl("transaction", tx.hash)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Xem trên explorer
+                          </a> */}
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${
+                              tx.status?.toLowerCase?.() === "active"
+                                ? "bg-green-100 text-green-700 border-green-200"
+                                : tx.status?.toLowerCase?.() === "pending"
+                                ? "bg-yellow-100 text-orange-600 border-yellow-200"
+                                : "bg-orange-100 text-red-600 border-orange-200"
+                            }`}
+                          >
+                            {tx.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
             </TabsContent>
 

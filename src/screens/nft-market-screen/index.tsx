@@ -14,6 +14,8 @@ export default function NFTMarketScreen() {
     otherNFTs,
     resetFilters,
     hasActiveFilters,
+    fetchUserNFTs,
+    userNFTs,
   } = useNFTFilters(nfts);
 
   // 2. Event handlers
@@ -48,7 +50,7 @@ export default function NFTMarketScreen() {
 
         {/* Tier NFTs */}
         {filters.type !== "other" && tierNFTs.length > 0 && (
-          <NFTGridCard nfts={tierNFTs} title="NFT Hạng" initialCount={3} />
+          <NFTGridCard nfts={userNFTs} title="NFT của tôi" initialCount={3} />
         )}
 
         {/* Other NFTs */}

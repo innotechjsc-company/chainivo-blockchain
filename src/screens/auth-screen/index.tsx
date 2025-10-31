@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "./components/LoginForm";
 import { RegisterForm } from "./components/RegisterForm";
@@ -17,6 +23,8 @@ export const AuthScreen = () => {
     const tab = searchParams.get("tab");
     if (tab === "register") {
       setActiveTab("register");
+    } else {
+      setActiveTab("login");
     }
   }, [searchParams]);
 
@@ -48,10 +56,10 @@ export const AuthScreen = () => {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              {/* <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Đăng nhập</TabsTrigger>
                 <TabsTrigger value="register">Đăng ký</TabsTrigger>
-              </TabsList>
+              </TabsList> */}
 
               <TabsContent value="login">
                 <LoginForm />

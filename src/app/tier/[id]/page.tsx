@@ -9,6 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NFT, useAppSelector } from "@/stores";
+import { toast } from "sonner";
+import { buildFrontendUrl, config } from "@/api/config";
 import {
   Crown,
   Star,
@@ -24,7 +27,25 @@ import {
   Clock,
   Package,
   DollarSign,
+  Loader2,
+  Wallet,
+  AlertCircle,
 } from "lucide-react";
+import { NFTService } from "@/api/services";
+
+// MetaMask types
+interface MetaMaskProvider {
+  isMetaMask?: boolean;
+  request: (args: { method: string; params?: any[] }) => Promise<any>;
+  on: (event: string, handler: (...args: any[]) => void) => void;
+  removeListener: (event: string, handler: (...args: any[]) => void) => void;
+}
+
+declare global {
+  interface Window {
+    ethereum?: MetaMaskProvider;
+  }
+}
 
 const tierData = {
   bronze: {
@@ -152,10 +173,20 @@ interface TierDetailPageProps {
   }>;
 }
 
+// CAN Token contract address (for ERC-20 transfers)
+const CAN_TOKEN_CONTRACT = config.BLOCKCHAIN.CAN_TOKEN_ADDRESS;
+// Destination wallet address (where tokens will be sent)
+const DESTINATION_WALLET = config.WALLET_ADDRESSES.ADMIN;
+
 export default function TierDetailPage({ params }: TierDetailPageProps) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get user from Redux store
+  const { user } = useAppSelector((state) => state.auth);
 
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
@@ -170,13 +201,268 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const handlePurchase = () => {
-    // Handle purchase logic here
-    console.log(
-      `Purchasing ${quantity}x ${tier?.name} (${
-        tier ? tier.price * quantity : 0
-      } CAN)`
-    );
+  useEffect(() => {
+    console.log(tier);
+  }, [tier]);
+
+  /**
+   * Helper function to encode ERC-20 transfer data
+   * Creates the data field for calling transfer(address,uint256) function on ERC-20 contract
+   * @param toAddress - Destination wallet address
+   * @param amount - Amount of tokens to transfer (in token units, not wei)
+   * @returns Encoded data string starting with 0x
+   */
+  const encodeERC20Transfer = (toAddress: string, amount: number): string => {
+    // Validate inputs
+    if (!toAddress || !toAddress.startsWith("0x") || toAddress.length !== 42) {
+      throw new Error("Invalid destination address");
+    }
+
+    if (amount <= 0 || !isFinite(amount)) {
+      throw new Error("Invalid amount");
+    }
+
+    // Helper function to encode address (remove 0x and pad to 64 chars)
+    const encodeAddress = (address: string): string => {
+      return address.slice(2).toLowerCase().padStart(64, "0");
+    };
+
+    // Helper function to encode uint256 (convert to hex and pad to 64 chars)
+    const encodeUint256 = (value: bigint): string => {
+      return value.toString(16).padStart(64, "0");
+    };
+
+    // Convert amount to wei (18 decimals) with proper rounding
+    const amountWei = BigInt(Math.floor(amount * Math.pow(10, 18)));
+
+    // ERC-20 transfer function selector (transfer(address,uint256))
+    const functionSelector = "a9059cbb";
+
+    // Encode parameters
+    const encodedTo = encodeAddress(toAddress);
+    const encodedAmount = encodeUint256(amountWei);
+
+    // Combine function selector with encoded parameters
+    return "0x" + functionSelector + encodedTo + encodedAmount;
+  };
+
+  /**
+   * Function to create ERC-20 token transfer transaction
+   * Sends CAN tokens from user's wallet to destination address
+   * @param fromAddress - Sender's wallet address
+   * @param amount - Amount of CAN tokens to transfer
+   * @returns Transaction hash
+   */
+
+  const createNFTInDatabase = async (nftData: any) => {
+    try {
+      // Get authentication token
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      const response = await NFTService.mintNFT({
+        toAddress: user?.walletAddress as string,
+        tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`,
+        name: nftData.name,
+        description: `NFT from ${nftData.collection.name}`,
+        image: nftData.image,
+        attributes: [
+          { trait_type: "Rarity", value: nftData?.rarity },
+          { trait_type: "Collection", value: nftData.collection.name },
+        ],
+        collection: nftData.collection,
+        walletAddress: user?.walletAddress as string,
+        mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+        fromMysteryBox: true,
+      });
+      console.log(response);
+
+      // const response = await fetch(buildApiUrl(config.API_ENDPOINTS.NFT.MINT), {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify({
+      //     toAddress: walletAddress,
+      //     tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+      //       .toString(36)
+      //       .substr(2, 9)}`,
+      //     name: nftData.name,
+      //     description: `NFT from ${nftData.collection.name}`,
+      //     image: nftData.image,
+      //     attributes: [
+      //       { trait_type: "Rarity", value: nftData.rarity },
+      //       { trait_type: "Collection", value: nftData.collection.name },
+      //     ],
+      //     collection: nftData.collection,
+      //     creatorAddress: walletAddress,
+      //     mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+      //     fromMysteryBox: true,
+      //   }),
+      // });
+
+      // if (response.ok) {
+      //   const result = await response.json();
+      //   // NFT minted successfully
+      //   return result;
+      // } else {
+      //   const errorData = await response.json().catch(() => ({}));
+      //   throw new Error(
+      //     errorData.message || `Failed to mint NFT: ${response.status}`
+      //   );
+      // }
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+      throw error;
+    }
+  };
+
+  const createTransaction = async (fromAddress: string, amount: number) => {
+    try {
+      if (!window.ethereum) {
+        throw new Error(
+          "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
+        );
+      }
+
+      // Validate from address
+      if (
+        !fromAddress ||
+        !fromAddress.startsWith("0x") ||
+        fromAddress.length !== 42
+      ) {
+        throw new Error("Invalid sender address");
+      }
+
+      // Encode ERC-20 transfer data
+      const data = encodeERC20Transfer(DESTINATION_WALLET, amount);
+
+      // Request transaction chuyển can cho admin
+      await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: fromAddress,
+            to: CAN_TOKEN_CONTRACT, // Token contract address
+            value: "0x0", // No ETH value for ERC-20 transfer
+            data: data,
+            gas: "0xC350", // 50000 gas limit for ERC-20 transfer
+          },
+        ],
+      });
+
+      const rarities = ["common", "uncommon", "rare", "epic", "legendary"];
+
+      const getMembershipTierImage = (rarity: string) => {
+        switch (rarity.toLowerCase()) {
+          case "legendary":
+            return buildFrontendUrl("/images/membership/tier-5-diamond.png");
+          case "epic":
+            return buildFrontendUrl("/images/membership/tier-4-gold.png");
+          case "rare":
+            return buildFrontendUrl("/images/membership/tier-3-silver.png");
+          case "uncommon":
+            return buildFrontendUrl("/images/membership/tier-2-bronze.png");
+          case "common":
+          default:
+            return buildFrontendUrl("/images/membership/tier-1-common.png");
+        }
+      };
+
+      // Helper to get a random item from array
+      const getRandomItem = <T,>(arr: T[]): T =>
+        arr[Math.floor(Math.random() * arr.length)];
+      const randomRarity = getRandomItem(rarities);
+
+      const newNFT: NFT = {
+        _id: `nft_${Date.now()}`,
+        name: `${tier.name.charAt(0).toUpperCase() + tier.name.slice(1)} NFT`,
+        image: getMembershipTierImage(randomRarity),
+        rarity: randomRarity as "common" | "rare" | "epic" | "legendary",
+        collection: {
+          name: "Mystery Box Collection",
+        },
+      };
+
+      const result = await createNFTInDatabase(newNFT);
+      return result;
+    } catch (error: any) {
+      console.error("Transaction error:", error);
+
+      // Handle specific error cases
+      if (error.code === 4001) {
+        throw new Error("Người dùng đã từ chối giao dịch");
+      } else if (error.code === -32603) {
+        throw new Error("Lỗi nội bộ. Vui lòng thử lại.");
+      } else if (error.message?.includes("insufficient funds")) {
+        throw new Error("Số dư không đủ để thực hiện giao dịch");
+      } else if (error.message?.includes("gas")) {
+        throw new Error("Lỗi gas. Vui lòng thử lại.");
+      } else if (error.message?.includes("Invalid")) {
+        throw new Error(error.message);
+      } else {
+        throw new Error(error.message || "Có lỗi xảy ra khi tạo giao dịch");
+      }
+    }
+  };
+
+  const handlePurchase = async () => {
+    if (!tier) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Check if MetaMask is installed
+      if (!window.ethereum?.isMetaMask) {
+        throw new Error(
+          "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
+        );
+      }
+
+      // Check if user has wallet connected
+      if (!user?.walletAddress) {
+        throw new Error("Vui lòng kết nối ví trước khi mua hàng.");
+      }
+
+      // Request account access
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      if (accounts.length === 0) {
+        throw new Error("Không có ví nào được kết nối.");
+      }
+
+      const walletAddress = accounts[0];
+      const totalPrice = tier.price * quantity;
+
+      // Create transaction
+      toast.loading("Đang tạo giao dịch...", { id: "purchase" });
+
+      const txHash = await createTransaction(walletAddress, totalPrice);
+
+      toast.success(`Giao dịch thành công!`);
+
+      // Reset form
+      setQuantity(1);
+    } catch (error: any) {
+      console.error("Purchase error:", error);
+      setError(error.message);
+
+      if (error.code === 4001) {
+        toast.error("Người dùng đã từ chối giao dịch", { id: "purchase" });
+      } else {
+        toast.error(error.message, { id: "purchase" });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (loading) {
@@ -386,7 +672,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                     {tier.price} CAN
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    ≈ ${tier.usdPrice}
+                    ≈ ${tier.usdPrice} (CAN Token)
                   </div>
                 </div>
 
@@ -434,7 +720,7 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Phí giao dịch</span>
                     <span className="font-semibold text-green-500">
-                      Miễn phí
+                      Chỉ phí gas
                     </span>
                   </div>
                   <Separator />
@@ -451,24 +737,59 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
                   </div>
                 </div>
 
+                {/* Error Display */}
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">Lỗi</span>
+                    </div>
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                      {error}
+                    </p>
+                  </div>
+                )}
+
                 {/* Purchase Button */}
                 <Button
                   className="w-full h-12 text-lg font-semibold"
                   size="lg"
                   onClick={handlePurchase}
+                  disabled={isProcessing || !user?.walletAddress}
                 >
-                  <Package className="w-5 h-5 mr-2" />
-                  Mua ngay
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <Package className="w-5 h-5 mr-2" />
+                      Mua ngay
+                    </>
+                  )}
                 </Button>
 
-                {/* User balance info */}
+                {/* User wallet info */}
                 <div className="bg-muted/20 rounded-lg p-3 text-xs text-center">
-                  <div className="text-muted-foreground mb-1">
-                    Số dư CAN của bạn
+                  <div className="text-muted-foreground mb-1 flex items-center justify-center gap-1">
+                    <Wallet className="w-3 h-3" />
+                    Ví của bạn
                   </div>
                   <div className="text-lg font-bold text-primary">
-                    1,000 CAN
+                    {user?.walletAddress
+                      ? `${user.walletAddress.slice(
+                          0,
+                          6
+                        )}...${user.walletAddress.slice(-4)}`
+                      : "Chưa kết nối ví"}
                   </div>
+                  {user?.walletAddress && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Token: {CAN_TOKEN_CONTRACT.slice(0, 6)}...
+                      {CAN_TOKEN_CONTRACT.slice(-4)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Security badges */}

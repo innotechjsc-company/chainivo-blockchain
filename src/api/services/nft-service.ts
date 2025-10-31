@@ -21,6 +21,8 @@ export interface NFT {
 }
 
 export interface MintNFTData {
+  toAddress: string;
+  tokenURI: string;
   name: string;
   description: string;
   image: string;
@@ -29,6 +31,12 @@ export interface MintNFTData {
     value: string;
   }>;
   walletAddress: string;
+  collection: {
+    name: string;
+  };
+  mysteryBoxId?: string;
+  mintOnBlockchain: boolean;
+  fromMysteryBox: boolean;
 }
 
 export interface TransferNFTData {
@@ -42,13 +50,16 @@ export class NFTService {
   static async getNFTs(): Promise<ApiResponse<NFT[]>> {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
+  static async getNFTsByOwner(address: string): Promise<ApiResponse<NFT[]>> {
+    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.OWNER(address));
+  }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
 
-  static async mintNFT(data: MintNFTData): Promise<ApiResponse<NFT>> {
-    return ApiService.post<NFT>(API_ENDPOINTS.NFT.MINT, data);
+  static async allNFTInMarketplace(data: any): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.ALL, data);
   }
 
   static async transferNFT(data: TransferNFTData): Promise<ApiResponse<any>> {
