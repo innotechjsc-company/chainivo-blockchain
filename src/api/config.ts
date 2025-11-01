@@ -22,7 +22,7 @@ export const config = {
     "NEXT_PUBLIC_API_BASE_URL_DEV",
     "API_BASE_URL_PROD",
     // "https://chainivo.online"
-    "http://136.110.27.77:3001"
+    "http://localhost:3001"
   ),
 
   FRONTEND_BASE_URL: getEnvValue(
