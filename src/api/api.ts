@@ -80,6 +80,8 @@ export const API_ENDPOINTS = {
 
   MYSTERY_BOX: {
     LIST: "/api/mystery-box/list",
+    DETAIL: (id: string) => `/api/mystery-boxes/${id}`,
+    PURCHASE: "/api/mystery-box/purchase",
     OPEN: "/api/mystery-box/open",
   },
 
