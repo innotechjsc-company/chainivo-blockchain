@@ -33,17 +33,15 @@ export interface InvestorPhase {
 }
 
 export class InvestorService {
-  static async getInvestorStats(address: string): Promise<ApiResponse<InvestorStats>> {
-    return ApiService.get<InvestorStats>(API_ENDPOINTS.INVESTOR.STATS(address));
-  }
-
-  static async getInvestmentHistory(address: string): Promise<ApiResponse<InvestmentHistory[]>> {
-    return ApiService.get<InvestmentHistory[]>(API_ENDPOINTS.INVESTOR.HISTORY(address));
-  }
-
-  static async getInvestorPhases(address: string): Promise<ApiResponse<InvestorPhase[]>> {
-    return ApiService.get<InvestorPhase[]>(API_ENDPOINTS.INVESTOR.PHASES(address));
-  }
+  // static async getInvestorStats(address: string): Promise<ApiResponse<InvestorStats>> {
+  //   return ApiService.get<InvestorStats>(API_ENDPOINTS.INVESTOR.STATS(address));
+  // }
+  // static async getInvestmentHistory(address: string): Promise<ApiResponse<InvestmentHistory[]>> {
+  //   return ApiService.get<InvestmentHistory[]>(API_ENDPOINTS.INVESTOR.HISTORY(address));
+  // }
+  // static async getInvestorPhases(address: string): Promise<ApiResponse<InvestorPhase[]>> {
+  //   return ApiService.get<InvestorPhase[]>(API_ENDPOINTS.INVESTOR.PHASES(address));
+  // }
 }
 
 export default InvestorService;

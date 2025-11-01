@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useInvestmentPhases } from "@/screens/investments-screen/hooks";
 
 export const InvestmentPhases = () => {
-  const { phases, loading, error } = useInvestmentPhases();
+  const { phases, error } = useInvestmentPhases();
 
   // Helper function de format so
   const formatNumber = (num: number): string => {
@@ -25,11 +25,11 @@ export const InvestmentPhases = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
           </p>
-          {loading && (
+          {/* {loading && (
             <p className="text-sm text-muted-foreground mt-2">
               Đang tải dữ liệu...
             </p>
-          )}
+          )} */}
         </div>
 
         <div
@@ -106,14 +106,14 @@ export const InvestmentPhases = () => {
                     </div>
 
                     {/* Bonus Badge */}
-                    {phase.bonusPercentage && phase.bonusPercentage > 0 && (
+                    {/* {phase.bonusPercentage && phase.bonusPercentage > 0 && (
                       <div className="flex items-center justify-center space-x-2 bg-secondary/20 text-secondary px-4 py-2 rounded-lg">
                         <TrendingUp className="w-4 h-4" />
                         <span className="font-semibold">
                           +{phase.bonusPercentage}% Bonus
                         </span>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Action Buttons */}
                     <div className="space-y-2">
