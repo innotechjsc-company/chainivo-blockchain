@@ -44,9 +44,13 @@ export class MysteryBoxService {
     return ApiService.get<MysteryBox[]>(API_ENDPOINTS.MYSTERY_BOX.LIST);
   }
 
-  // static async purchaseBox(data: PurchaseBoxData): Promise<ApiResponse<any>> {
-  //   return ApiService.post(API_ENDPOINTS.MYSTERY_BOX.PURCHASE, data);
-  // }
+  static async getBoxDetail(id: string): Promise<ApiResponse<MysteryBox>> {
+    return ApiService.get<MysteryBox>(API_ENDPOINTS.MYSTERY_BOX.DETAIL(id));
+  }
+
+  static async purchaseBox(data: PurchaseBoxData): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.MYSTERY_BOX.PURCHASE, data);
+  }
 
   static async openBox(data: OpenBoxData): Promise<ApiResponse<BoxReward>> {
     return ApiService.post<BoxReward>(API_ENDPOINTS.MYSTERY_BOX.OPEN, data);
