@@ -135,6 +135,7 @@ export const useStakingData = () => {
   const unStakeData = async (stakeId: string) => {
     setIsLoading(true);
     const response = await StakingService.unstake(stakeId);
+    debugger;
     if (response?.success) {
       await getStakingPools();
       setIsLoading(false);

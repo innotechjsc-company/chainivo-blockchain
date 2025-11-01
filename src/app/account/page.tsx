@@ -306,14 +306,6 @@ export default function AccountManagementPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          {/* <a
-                            className="text-sm text-blue-500 underline"
-                            href={buildBlockchainUrl("transaction", tx.hash)}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Xem trên explorer
-                          </a> */}
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${
                               tx.status?.toLowerCase?.() === "active"

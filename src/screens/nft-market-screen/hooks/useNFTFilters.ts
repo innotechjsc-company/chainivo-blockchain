@@ -14,11 +14,12 @@ export interface NFTFiltersState {
 export const useNFTFilters = (nfts: NFT[]) => {
   const [filters, setFilters] = useState<NFTFiltersState>({
     rarity: [],
-    priceRange: [0, 10],
+    priceRange: [0, 10000],
     type: "all",
   });
 
   const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const [searchNFTs, setSearchNFTs] = useState<any[]>([]);
   const [otherNFTsData, setOtherNFTsData] = useState<any[]>([]);
   const userInfo = useAppSelector((state) => state.auth.user);
 
@@ -40,6 +41,30 @@ export const useNFTFilters = (nfts: NFT[]) => {
       setOtherNFTsData((response.data as any).nfts || []);
     } else {
       toast.error(response.message);
+    }
+  };
+
+  const searchMarketplace = async (
+    override?: Partial<NFTFiltersState>
+  ): Promise<boolean> => {
+    const f = { ...filters, ...(override || {}) };
+    const params: any = {
+      page: 1,
+      limit: 24,
+      minPrice: String(f.priceRange[0]),
+      maxPrice: String(f.priceRange[1]),
+      level: f.rarity.join(","),
+      type: f.type !== "all" ? f.type : undefined,
+      isActive: "true",
+    };
+    const response = await NFTService.allNFTInMarketplace(params);
+    if (response.success) {
+      const data: any = response.data as any;
+      setSearchNFTs(data?.nfts || data?.items || data || []);
+      return true;
+    } else {
+      toast.error(response.message);
+      return false;
     }
   };
   useEffect(() => {
@@ -78,15 +103,17 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const resetFilters = () => {
     setFilters({
       rarity: [],
-      priceRange: [0, 10],
+      priceRange: [0, 10000],
       type: "all",
     });
+    // Clear search results when resetting filters
+    setSearchNFTs([]);
   };
 
   const hasActiveFilters =
     filters.rarity.length > 0 ||
     filters.priceRange[0] !== 0 ||
-    filters.priceRange[1] !== 10 ||
+    filters.priceRange[1] !== 10000 ||
     filters.type !== "all";
 
   return {
@@ -100,5 +127,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
     fetchUserNFTs,
     userNFTs,
     otherNFTsData,
+    searchMarketplace,
+    searchNFTs,
   };
 };

@@ -149,8 +149,8 @@ export const CoinStakingForm = ({
       if (!fromAddress) {
         throw new Error("Invalid sender address");
       }
-
-      // Kiểm tra đã stake gói này chưa (chỉ check status active)
+      debugger;
+      // Kiểm tra đã stake gói này chưa
       if (
         stakingMyPools?.length > 0 &&
         stakingMyPools?.some(
@@ -185,23 +185,11 @@ export const CoinStakingForm = ({
       });
 
       if (res.transactionHash) {
-        // BƯỚC 3: Cập nhật sang status "processing"
-        updateStakeStatus(tempStakeId, {
-          status: "processing",
-          transactionHash: res.rawReceipt.transactionHash,
-        });
-        toast.info("Đang lưu thông tin stake...");
-
-        // BƯỚC 4: Gọi API backend
-        const stakePayload = {
-          poolId: selectedPoolData?._id,
-          amount: stakeAmount,
-          walletAddress: user?.walletAddress as string,
-          transactionHash: res.rawReceipt.transactionHash,
-        };
-
-        let createStake = await StakingService.stake(stakePayload);
-
+        let createStake = await StakingService.stake(
+          selectedPoolData?.id as string,
+          res.rawReceipt.transactionHash
+        );
+        // debugger;
         if (createStake.success) {
           // BƯỚC 5: Thành công - xóa temp stake và refresh để lấy data thật
           removeStake(tempStakeId);
