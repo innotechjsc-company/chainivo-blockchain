@@ -22,6 +22,7 @@ import {
   Award,
   Building2,
 } from "lucide-react";
+import AboutService from "@/api/services/about-service";
 
 /**
  * Custom hook để quản lý dữ liệu about us
@@ -30,6 +31,11 @@ import {
 export const useAboutData = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
+
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [leadersLoading, setLeadersLoading] = useState<boolean>(false);
+  const [leadersError, setLeadersError] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -37,34 +43,41 @@ export const useAboutData = () => {
     message: "",
   });
 
-  // Copy y hệt data từ component gốc
-  const leaders: Leader[] = [
-    {
-      name: "Nguyễn Văn A",
-      position: "CEO & Founder",
-      description: "15+ năm kinh nghiệm trong lĩnh vực blockchain và fintech",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1",
-    },
-    {
-      name: "Trần Thị B",
-      position: "CTO",
-      description: "Chuyên gia công nghệ blockchain với nhiều dự án thành công",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
-    },
-    {
-      name: "Lê Văn C",
-      position: "CFO",
-      description: "Chuyên gia tài chính với kinh nghiệm tại các tập đoàn lớn",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3",
-    },
-    {
-      name: "Phạm Thị D",
-      position: "CMO",
-      description: "Chuyên gia marketing với track record ấn tượng",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=4",
-    },
-  ];
+  
+  const fetchLeaders = async () => {
+    setLeadersLoading(true);
+    setLeadersError(null);
 
+    try {
+      const response = await AboutService.getLeaders();
+
+      // Server tra ve truc tiep pagination object, khong co wrapper success/data
+      if (response && (response as any).docs) {
+        const leadersData = (response as any).docs || [];
+        setLeaders(leadersData);
+      } else if (response.success && response.data) {
+        // Fallback cho truong hop co wrapper
+        const leadersData = (response.data as any).docs || [];
+        setLeaders(leadersData);
+      } else {
+        setLeadersError(response.error || response.message || 'Khong lay duoc danh sach leaders');
+        setLeaders([]);
+      }
+    } catch (error) {
+      setLeadersError('Loi ket noi den server');
+      setLeaders([]);
+      console.error('Error fetching leaders:', error);
+    } finally {
+      setLeadersLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchLeaders();
+  }, []);
+
+  // console.log('leaders', leaders);
+  // debugger;
   const partners: Partner[] = [
     { name: "Binance", type: "Exchange Partner" },
     { name: "Coinbase", type: "Investment Partner" },
@@ -167,6 +180,8 @@ export const useAboutData = () => {
   return {
     // Data
     leaders,
+    leadersLoading,
+    leadersError,
     partners,
     ecosystem,
     contactInfo,
@@ -176,5 +191,6 @@ export const useAboutData = () => {
     // Actions
     handleSubmit,
     updateFormData,
+    fetchLeaders, // expose de co the refetch neu can
   };
 };

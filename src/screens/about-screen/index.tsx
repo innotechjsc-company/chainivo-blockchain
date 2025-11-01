@@ -13,6 +13,7 @@ import {
   Zap,
   Rocket,
   Award,
+  Loader2,
 } from "lucide-react";
 
 // Components
@@ -34,6 +35,8 @@ export const AboutUsScreen = () => {
   // Custom hooks
   const {
     leaders,
+    leadersLoading,
+    leadersError,
     partners,
     ecosystem,
     contactInfo,
@@ -43,13 +46,16 @@ export const AboutUsScreen = () => {
     updateFormData,
   } = useAboutData();
 
-  // Copy y hệt logic từ component gốc
-  useEffect(() => {
-    if (!isAuthenticated) {
-      // TODO: Redirect to auth page
-      console.log("User not authenticated, redirecting to auth...");
-    }
-  }, [isAuthenticated]);
+  // // Copy y hệt logic từ component gốc
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     // TODO: Redirect to auth page
+  //     console.log("User not authenticated, redirecting to auth...");
+  //   }
+  // }, [isAuthenticated]);
+  console.log('leaders', leaders);
+  console.log('leadersLoading', leadersLoading);
+  debugger; 
 
   return (
     <div className="min-h-screen bg-background">
@@ -157,12 +163,19 @@ export const AboutUsScreen = () => {
                   Đội ngũ lãnh đạo
                 </h2>
                 <p className="text-muted-foreground">
-                  Những chuyên gia hàng đầu với kinh nghiệm dày dặn trong lĩnh
-                  vực công nghệ và tài chính
+                  Những chuyê 
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {leaders.map((leader, index) => (
+                {leadersLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : leadersError ? (
+                  <div className="flex justify-center items-center h-full">
+                    <p className="text-muted-foreground">{leadersError}</p>
+                  </div>
+                ) : leaders.map((leader, index) => (
                   <TeamCard key={index} leader={leader} index={index} />
                 ))}
               </div>
