@@ -54,6 +54,9 @@ export const StakingScreen = () => {
     setIsLoading,
     isLoading,
     unStakeData,
+    addPendingStake,
+    updateStakeStatus,
+    removeStake,
   } = useStakingData();
 
   const {
@@ -265,6 +268,9 @@ export const StakingScreen = () => {
                 getStakingPoolsOnSuccess={getStakingPools}
                 setIsLoading={setIsLoading}
                 stakingMyPools={stakingMyPools}
+                addPendingStake={addPendingStake}
+                updateStakeStatus={updateStakeStatus}
+                removeStake={removeStake}
               />
 
               <ActiveStakesList
