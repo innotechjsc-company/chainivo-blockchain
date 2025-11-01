@@ -1,72 +1,195 @@
 /**
- * Staking Model Types
+ * Staking Types
+ * TypeScript types for staking functionality
  */
 
-export type StakeStatus = "active" | "completed" | "cancelled";
+// ============= Staking Coin Types =============
 
-export interface IStakingPool {
-  // Basic Information
-  name: string;
-  description?: string;
-
-  // Pool Configuration
-  apy: number;
-  lockPeriod: number; // days, 0 for flexible pools
-  minStake: number;
-  maxStake: number;
-
-  // Pool Statistics
-  totalStaked: number;
-  totalStakers: number;
-  isActive: boolean;
-
-  // Contract Information
-  contractAddress?: string;
-  tokenAddress: string;
-
-  // Tier Information
-  tierLevel: number;
-  tierName: string;
-
-  // Timestamps
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IUserStake {
-  // User and Pool Information
+export interface StakingCoin {
+  id: string;
   userId: string;
-  poolId: string;
+  amountStaked: number;
+  rewards: number;
+  apy: number;
+  stakedAt: string;
+  lockedUntil: string;
+  status: "active" | "cancelled" | "completed";
+  createdAt: string;
+  updatedAt: string;
+}
 
-  // Stake Details
+export interface CreateStakingCoinRequest {
+  amountStaked: number;
+  apy?: number;
+  lockPeriod?: number; // in days
+}
+
+export interface StakingCoinResponse {
+  success: boolean;
+  data: StakingCoin;
+  message?: string;
+}
+
+// ============= Staking NFT Types =============
+
+export interface StakingNFT {
+  id: string;
+  userId: string;
+  nftId: string;
+  nftName: string;
+  nftValue: number;
+  nftImage?: string;
+  rewards: number;
+  apy: number;
+  stakedAt: string;
+  lockedUntil: string;
+  status: "active" | "cancelled" | "completed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStakingNFTRequest {
+  nftId: string;
+  nftName: string;
+  nftValue: number;
+  nftImage?: string;
+  apy?: number;
+  lockPeriod?: number; // in days
+}
+
+export interface StakingNFTResponse {
+  success: boolean;
+  data: StakingNFT;
+  message?: string;
+}
+
+// ============= Staking Stats Types =============
+
+export interface StakingStats {
+  totalCoinStaked: number;
+  totalCoinRewards: number;
+  totalNFTValue: number;
+  totalNFTRewards: number;
+  totalActiveStakes: number;
+  averageAPY: number;
+}
+
+export interface StakingStatsResponse {
+  success: boolean;
+  data: StakingStats;
+}
+
+// ============= Staking Actions Types =============
+
+export interface ClaimRewardsRequest {
+  stakeId: string;
+  type: "coin" | "nft";
+}
+
+export interface ClaimRewardsResponse {
+  success: boolean;
+  data: {
+    rewardsClaimed: number;
+    newBalance: number;
+  };
+  message?: string;
+}
+
+export interface CancelStakeRequest {
+  stakeId: string;
+  type: "coin" | "nft";
+}
+
+export interface CancelStakeResponse {
+  success: boolean;
+  data: {
+    amountReturned: number;
+    rewardsClaimed: number;
+    newBalance: number;
+  };
+  message?: string;
+}
+
+// ============= Available NFT Types =============
+
+export interface AvailableNFT {
+  id: string;
+  name: string;
+  value: number;
+  image?: string;
+  description?: string;
+  rarity?: "common" | "rare" | "epic" | "legendary";
+  collection?: string;
+}
+
+// ============= Staking Configuration Types =============
+
+export interface StakingConfig {
+  coinAPY: number;
+  nftAPY: number;
+  minStakeAmount: number;
+  maxStakeAmount: number;
+  lockPeriod: number; // in days
+  claimCooldown: number; // in hours
+}
+
+// ============= Staking History Types =============
+
+export interface StakingHistory {
+  id: string;
+  type: "coin" | "nft";
+  action: "stake" | "claim" | "cancel";
   amount: number;
-  stakedAt: Date;
-  lockUntil: Date;
-  isLocked: boolean;
+  rewards?: number;
+  timestamp: string;
+  status: "success" | "failed" | "pending";
+  txHash?: string;
+}
 
-  // Rewards
+export interface StakingHistoryResponse {
+  success: boolean;
+  data: StakingHistory[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ============= Reward Calculation Types =============
+
+export interface RewardCalculation {
+  stakeAmount: number;
+  apy: number;
+  daysPassed: number;
+  currentRewards: number;
+  projectedRewards: {
+    daily: number;
+    weekly: number;
+    monthly: number;
+    yearly: number;
+  };
+}
+
+// ============= Staking Pool Types =============
+
+export interface StakingPool {
+  id: string;
+  name: string;
+  type: "coin" | "nft";
+  apy: number;
+  totalStaked: number;
   totalRewards: number;
-  claimedRewards: number;
-  pendingRewards: number;
-
-  // Transaction Information
-  transactionHash?: string;
-  status: StakeStatus;
-  lastRewardCalculation: Date;
-
-  // Virtuals
-  totalEarned?: number;
-  remainingLockTime?: number;
-
-  // Instance Methods
-  calculatePendingRewards(): number;
-  canUnlock(): boolean;
+  participants: number;
+  status: "active" | "paused" | "closed";
+  minStakeAmount: number;
+  maxStakeAmount?: number;
+  lockPeriod: number;
+  description?: string;
 }
 
-export interface IStakingModels {
-  StakingPool: IStakingPool;
-  UserStake: IUserStake;
+export interface StakingPoolResponse {
+  success: boolean;
+  data: StakingPool[];
 }
-
-export type StakingPoolDocument = IStakingPool;
-export type UserStakeDocument = IUserStake;
