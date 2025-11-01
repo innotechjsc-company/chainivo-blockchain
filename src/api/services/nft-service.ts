@@ -82,6 +82,9 @@ export class NFTService {
   static async likeNft(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.post(`${API_ENDPOINTS.NFT.LIKE}`, { nftId });
   }
+  static async unlikeNft(nftId: string): Promise<ApiResponse<any>> {
+    return ApiService.post(`${API_ENDPOINTS.NFT.UNLIKE}`, { nftId });
+  }
 }
 
 export default NFTService;

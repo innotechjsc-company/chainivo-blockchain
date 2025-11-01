@@ -116,6 +116,7 @@ export const useStakingData = () => {
   };
   const getClaimRewardsData = async (stakeId: string) => {
     setIsLoading(true);
+    debugger;
     const response = await StakingService.getRewards(stakeId);
     if (response?.success) {
       await getStakingPools();
@@ -131,6 +132,7 @@ export const useStakingData = () => {
   const unStakeData = async (stakeId: string) => {
     setIsLoading(true);
     const response = await StakingService.unstake(stakeId);
+    debugger;
     if (response?.success) {
       await getStakingPools();
       setIsLoading(false);

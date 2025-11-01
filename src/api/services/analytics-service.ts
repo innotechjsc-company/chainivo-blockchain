@@ -60,25 +60,21 @@ export interface StakingAnalytics {
 }
 
 export class AnalyticsService {
-  static async getOverview(): Promise<ApiResponse<AnalyticsOverview>> {
-    return ApiService.get<AnalyticsOverview>(API_ENDPOINTS.ANALYTICS.OVERVIEW);
-  }
-
-  static async getPhaseAnalytics(): Promise<ApiResponse<PhaseAnalytics[]>> {
-    return ApiService.get<PhaseAnalytics[]>(API_ENDPOINTS.ANALYTICS.PHASES);
-  }
-
-  static async getInvestorAnalytics(): Promise<ApiResponse<InvestorAnalytics>> {
-    return ApiService.get<InvestorAnalytics>(API_ENDPOINTS.ANALYTICS.INVESTORS);
-  }
-
-  static async getNFTAnalytics(): Promise<ApiResponse<NFTAnalytics>> {
-    return ApiService.get<NFTAnalytics>(API_ENDPOINTS.ANALYTICS.NFTS);
-  }
-
-  static async getStakingAnalytics(): Promise<ApiResponse<StakingAnalytics>> {
-    return ApiService.get<StakingAnalytics>(API_ENDPOINTS.ANALYTICS.STAKING);
-  }
+  // static async getOverview(): Promise<ApiResponse<AnalyticsOverview>> {
+  //   return ApiService.get<AnalyticsOverview>(API_ENDPOINTS.ANALYTICS.OVERVIEW);
+  // }
+  // static async getPhaseAnalytics(): Promise<ApiResponse<PhaseAnalytics[]>> {
+  //   return ApiService.get<PhaseAnalytics[]>(API_ENDPOINTS.ANALYTICS.PHASES);
+  // }
+  // static async getInvestorAnalytics(): Promise<ApiResponse<InvestorAnalytics>> {
+  //   return ApiService.get<InvestorAnalytics>(API_ENDPOINTS.ANALYTICS.INVESTORS);
+  // }
+  // static async getNFTAnalytics(): Promise<ApiResponse<NFTAnalytics>> {
+  //   return ApiService.get<NFTAnalytics>(API_ENDPOINTS.ANALYTICS.NFTS);
+  // }
+  // static async getStakingAnalytics(): Promise<ApiResponse<StakingAnalytics>> {
+  //   return ApiService.get<StakingAnalytics>(API_ENDPOINTS.ANALYTICS.STAKING);
+  // }
 }
 
 export default AnalyticsService;

@@ -17,20 +17,11 @@ export default function NFTMarketScreen() {
     fetchUserNFTs,
     userNFTs,
     otherNFTsData,
+    otherNFTsAnalytics,
+    searchMarketplace,
+    searchNFTs,
   } = useNFTFilters(nfts);
 
-  // 2. Event handlers
-  const handleNFTPurchase = (nftId: string) => {
-    // TODO: Implement NFT purchase logic
-    console.log("Purchase NFT:", nftId);
-  };
-
-  const handleNFTView = (nftId: string) => {
-    // TODO: Implement NFT view logic
-    console.log("View NFT:", nftId);
-  };
-
-  // 3. Compose UI
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -39,6 +30,7 @@ export default function NFTMarketScreen() {
           stats={stats}
           volumeData={volumeData}
           priceData={priceData}
+          analytics={otherNFTsAnalytics}
         />
 
         {/* Filters */}
@@ -47,23 +39,36 @@ export default function NFTMarketScreen() {
           onFiltersChange={setFilters}
           hasActiveFilters={hasActiveFilters}
           onResetFilters={resetFilters}
+          onSearch={searchMarketplace}
         />
-
-        {/* Tier NFTs */}
-        {filters.type !== "other" && tierNFTs.length > 0 && (
-          <NFTGridCard nfts={userNFTs} title="NFT của tôi" initialCount={3} />
-        )}
-
-        {/* Other NFTs */}
-        {filters.type !== "tier" && otherNFTs.length > 0 && (
+        {searchNFTs.length > 0 ? (
+          <NFTGridCard
+            nfts={searchNFTs}
+            title="Kết quả tìm kiếm"
+            initialCount={3}
+          />
+        ) : (
           <>
-            <div className="mb-8">
+            {filters.type !== "other" && tierNFTs.length > 0 && (
               <NFTGridCard
-                nfts={otherNFTsData}
-                title="NFT Khác"
-                initialCount={6}
+                nfts={userNFTs}
+                title="NFT của tôi"
+                initialCount={3}
               />
-            </div>
+            )}
+
+            {/* Other NFTs */}
+            {filters.type !== "tier" && otherNFTs.length > 0 && (
+              <>
+                <div className="mb-8">
+                  <NFTGridCard
+                    nfts={otherNFTsData}
+                    title="NFT Khác"
+                    initialCount={6}
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 

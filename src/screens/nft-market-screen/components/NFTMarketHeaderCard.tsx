@@ -21,25 +21,27 @@ interface NFTMarketHeaderCardProps {
   stats: NFTStats;
   volumeData: ChartData[];
   priceData: ChartData[];
+  analytics?: any; // Analytics data from otherNFTsData
 }
 
 export const NFTMarketHeaderCard = ({
   stats,
   volumeData,
   priceData,
+  analytics,
 }: NFTMarketHeaderCardProps) => {
   const statItems = [
     {
       icon: Package,
       label: "Tổng NFT",
-      value: stats.totalNFTs,
+      value: analytics?.allNFT.toLocaleString(),
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: stats.activeUsers,
+      value: analytics?.allUserCount,
       trend: "+8.3%",
       trendUp: true,
     },
@@ -100,7 +102,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Khối lượng giao dịch</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {stats.volume}
+              {analytics?.allMoney.toLocaleString()}
             </div>
           </CardHeader>
           <CardContent className="pb-2">
@@ -132,7 +134,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {stats.averagePrice}
+              {analytics?.priceRange.toLocaleString()}
             </div>
           </CardHeader>
           <CardContent className="pb-2">

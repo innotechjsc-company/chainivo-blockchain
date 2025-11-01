@@ -177,3 +177,5 @@ export const buildBlockchainUrl = (
       return "";
   }
 };
+
+export const TOKEN_DEAULT_CURRENCY = "CAN";
