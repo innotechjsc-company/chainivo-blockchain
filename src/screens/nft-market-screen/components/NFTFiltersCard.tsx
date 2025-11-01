@@ -41,18 +41,20 @@ export const NFTFiltersCard = ({
       ? filters.rarity.filter((r) => r !== rarity)
       : [...filters.rarity, rarity];
     onFiltersChange({ ...filters, rarity: newRarity });
-    onSearch && onSearch({ rarity: newRarity });
+    // Removed automatic API call - only update local state
   };
 
-  const handlePriceChange = async (value: number[]) => {
-    const range = value as [number, number];
+  const handleApplyFilters = async () => {
+    // Update filters with pending price range
+    const updatedFilters = { ...filters, priceRange: pendingRange };
+    onFiltersChange(updatedFilters);
 
-    onFiltersChange({ ...filters, priceRange: range });
+    // Call API only when user clicks apply button
     if (onSearch) {
       try {
-        await onSearch({ priceRange: range });
+        await onSearch(updatedFilters);
       } catch (e) {
-        // swallow to avoid breaking slider UX
+        console.error("Error applying filters:", e);
       }
     }
   };
@@ -60,13 +62,6 @@ export const NFTFiltersCard = ({
   useEffect(() => {
     setPendingRange(filters.priceRange);
   }, [filters.priceRange]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      void handlePriceChange(pendingRange);
-    }, 2000);
-    return () => clearTimeout(t);
-  }, [pendingRange]);
 
   return (
     <div className="mb-8">
@@ -165,6 +160,17 @@ export const NFTFiltersCard = ({
                 }
                 className="w-full"
               />
+            </div>
+
+            {/* Apply Filters Button */}
+            <div className="pt-4 border-t border-border/50">
+              <Button
+                onClick={handleApplyFilters}
+                className="w-full cursor-pointer"
+                variant="default"
+              >
+                Áp dụng bộ lọc
+              </Button>
             </div>
           </CardContent>
         </Card>

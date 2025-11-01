@@ -103,15 +103,17 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const resetFilters = () => {
     setFilters({
       rarity: [],
-      priceRange: [0, 10],
+      priceRange: [0, 10000],
       type: "all",
     });
+    // Clear search results when resetting filters
+    setSearchNFTs([]);
   };
 
   const hasActiveFilters =
     filters.rarity.length > 0 ||
     filters.priceRange[0] !== 0 ||
-    filters.priceRange[1] !== 10 ||
+    filters.priceRange[1] !== 10000 ||
     filters.type !== "all";
 
   return {

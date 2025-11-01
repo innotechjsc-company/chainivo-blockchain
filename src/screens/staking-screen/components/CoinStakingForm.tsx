@@ -144,7 +144,7 @@ export const CoinStakingForm = ({
         setIsLoading(false);
         throw new Error("Invalid sender address");
       }
-
+      debugger;
       // Kiểm tra đã stake gói này chưa
       if (
         stakingMyPools?.length > 0 &&
