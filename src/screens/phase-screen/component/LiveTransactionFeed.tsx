@@ -144,7 +144,7 @@ export const LiveTransactionFeed = ({
           ))}
         </div>
 
-        <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/20">
+        {/* <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/20">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Tổng giao dịch hôm nay:</span>
             <Badge variant="outline" className="text-accent">
@@ -155,7 +155,7 @@ export const LiveTransactionFeed = ({
             <span className="text-sm text-muted-foreground">Số giao dịch:</span>
             <span className="text-sm font-medium">127</span>
           </div>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

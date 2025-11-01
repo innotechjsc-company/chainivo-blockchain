@@ -1,34 +1,32 @@
-import { useState, useEffect } from "react";
-import { ApiService } from "@/api/api";
-import type { Phase } from "@/api/services/phase-service";
+import { useEffect, useState } from "react";
+import { PhaseService, type Phase } from "@/api/services/phase-service";
 
 export const useInvestmentPhases = () => {
   const [phases, setPhases] = useState<Phase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPhases = async () => {
-      try {
-        setLoading(true);
-        const response = await ApiService.getPhases();
-
-        if (response.success && response.data && response.data.phases) {
-          setPhases(response.data.phases);
-          setError(null);
-        } else {
-          setError(response.error || response.message || "Khong lay duoc du lieu");
-        }
-      } catch (err) {
-        setError("Loi ket noi den server");
-        console.error("Error fetching phases:", err);
-      } finally {
-        setLoading(false);
+    let isMounted = true;
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      const res = await PhaseService.getPhases();
+      if (!isMounted) return;
+      const phasesData = (res as any)?.data?.phases as Phase[];
+      if (res.success && Array.isArray(phasesData)) {
+        // sort phases by startDate
+        setPhases(phasesData.sort((a: Phase, b: Phase) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
+      } else {
+        setError(res.error || "Failed to load phases");
       }
+      setIsLoading(false);
     };
-
-    fetchPhases();
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  return { phases, loading, error };
+  return { phases, isLoading, error };
 };

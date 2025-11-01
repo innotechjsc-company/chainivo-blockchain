@@ -180,7 +180,7 @@ export default function NFTDetailPage() {
     try {
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
-        toAddressData: nftData?.creator?.address ?? "",
+        // toAddressData: nftData?.creator?.address ?? "",
         amountCan: Number(nftData?.price) ?? 0,
       });
 

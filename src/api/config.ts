@@ -148,7 +148,7 @@ export const config = {
 
   DEFAULTS: {
     GAS_FEE: parseFloat(process.env.DEFAULT_GAS_FEE || "0.001"),
-    CURRENCY: process.env.DEFAULT_CURRENCY || "ETH",
+    CURRENCY: process.env.DEFAULT_CURRENCY || "CAN",
   },
 };
 

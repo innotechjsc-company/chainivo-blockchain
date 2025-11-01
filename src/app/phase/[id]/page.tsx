@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,76 +20,21 @@ import {
   Users,
   Clock,
   Shield,
-  Zap,
   ChevronLeft,
-  ChevronRight,
   Calculator,
   CheckCircle2,
   Lock,
   ArrowRight,
   Target,
   Sparkles,
-  Award,
-  BarChart3,
-  Rocket,
 } from "lucide-react";
 import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransactionFeed";
-import { useInvestmentPhasesById, useInvestmentPhases } from "@/screens/investments-screen/hooks";
-
-// Helper function de lay color gradient theo phaseId
-const getPhaseColor = (phaseId: number): string => {
-  const colors = [
-    "from-green-500 to-emerald-600",
-    "from-blue-500 to-cyan-600",
-    "from-purple-500 to-pink-600",
-    "from-orange-500 to-red-600",
-  ];
-  return colors[(phaseId - 1) % colors.length] || colors[0];
-};
-
-// Thong tin bo sung cho cac phase (chua co tu API)
-const phaseExtraInfo: Record<number, { highlights: string[]; benefits: string[] }> = {
-  1: {
-    highlights: [
-      "ROI tiem nang len den 300%",
-      "Vesting 6 thang voi unlock hang thang",
-      "Staking APY dac biet 50%",
-    ],
-    benefits: [
-      "Gia thap nhat trong toan bo du an",
-      "Bonus cao nhat",
-      "Uu tien whitelist cho NFT drops",
-      "Early bird rewards",
-    ],
-  },
-  2: {
-    highlights: ["ROI tiem nang 200%+", "Vesting 5 thang", "Staking APY 40%"],
-    benefits: [
-      "Gia uu dai so voi cac phase sau",
-      "Bonus tokens",
-      "Access vao cac su kien VIP",
-      "Voting rights trong governance",
-    ],
-  },
-  3: {
-    highlights: ["ROI tiem nang 150%", "Vesting 4 thang", "Staking APY 35%"],
-    benefits: [
-      "Van con bonus",
-      "Staking rewards cao hon",
-      "Partner benefits",
-      "Premium support",
-    ],
-  },
-  4: {
-    highlights: ["ROI tiem nang 100%", "Vesting 3 thang", "Staking APY 30%"],
-    benefits: [
-      "Bonus cuoi cung",
-      "Gia gan listing",
-      "Liquidity provider rewards",
-      "Exclusive merchandise",
-    ],
-  },
-};
+import PhaseService, { Phase } from "@/api/services/phase-service";
+import TransferService, { TransferParams } from "@/services/TransferService";
+import { useAuth } from "@/components/header/hooks/useAuth";
+import { config } from "@/api/config";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "@/services/ToastService";
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -91,16 +44,45 @@ interface PhaseDetailPageProps {
 
 export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [phase, setPhase] = useState<Phase | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [investAmount, setInvestAmount] = useState<string>("100");
-
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isInvestmentConfirmed, setIsInvestmentConfirmed] = useState<any>(null);
+  const [buyLoading, setBuyLoading] = useState(false);
+  const { user } = useAuth();
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
-
-  // Fetch phase detail bang hook
-  const { phase, loading, error } = useInvestmentPhasesById(resolvedParams.id);
-
-  // Fetch tat ca phases cho phan "Cac giai doan khac"
-  const { phases: allPhases } = useInvestmentPhases();
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchPhase() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await PhaseService.getPhaseById(String(resolvedParams?.id));
+        if (isMounted) {
+          if (res.success && res.data) {
+            setPhase(res.data);
+          } else {
+            setError(res.error || "Không thể tải dữ liệu giai đoạn");
+            setPhase(null);
+          }
+        }
+      } catch (e: any) {
+        if (isMounted) {
+          setError(e?.message || "Đã xảy ra lỗi");
+          setPhase(null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchPhase();
+    return () => {
+      isMounted = false;
+    };
+  }, [resolvedParams?.id]);
 
   if (loading) {
     return (
@@ -118,6 +100,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
             <h1 className="text-4xl font-bold mb-4">
               {error || "Không tìm thấy giai đoạn"}
             </h1>
+            {error && (
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            )}
             <Button onClick={() => router.push("/investments")}>
               Quay lại
             </Button>
@@ -129,20 +114,94 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
   const calculateTokens = () => {
     const amount = parseFloat(investAmount) || 0;
-    const tokens = amount / phase.price;
-    const bonus = phase.bonusPercentage || 0;
-    const bonusTokens = (tokens * bonus) / 100;
+    const tokens = amount * phase.pricePerToken;
     return {
       baseTokens: tokens.toFixed(2),
-      bonusTokens: bonusTokens.toFixed(2),
-      totalTokens: (tokens + bonusTokens).toFixed(2),
+      totalTokens: tokens.toFixed(2),
     };
   };
 
-  const { baseTokens, bonusTokens, totalTokens } = calculateTokens();
-  const phaseColor = getPhaseColor(phase.phaseId);
-  const extraInfo = phaseExtraInfo[phase.phaseId] || phaseExtraInfo[1];
-  const bonus = phase.bonusPercentage || 0;
+  const { baseTokens, totalTokens } = calculateTokens();
+
+  const totalTokensSupply = phase.totalTokens || 0;
+  const soldTokens = phase.soldTokens || 0;
+  const progressPercent =
+    totalTokensSupply > 0
+      ? Math.min(100, Math.max(0, (soldTokens / totalTokensSupply) * 100))
+      : 0;
+  const remainingMillions =
+    totalTokensSupply > 0
+      ? ((totalTokensSupply - soldTokens) / 1_000_000).toFixed(1)
+      : "0.0";
+  const gradientClass =
+    phase.status === "active"
+      ? "from-blue-500 to-cyan-600"
+      : phase.status === "completed"
+      ? "from-green-500 to-emerald-600"
+      : "from-purple-500 to-pink-600";
+
+  const handleInvest = async () => {
+    if (!phase || buyLoading || !user?.walletAddress) return;
+    setBuyLoading(true);
+
+    try {
+      const params: any = {
+        fromAddress: user?.walletAddress ?? "",
+        amount: parseFloat(investAmount) ?? 0,
+      };
+      const response = await TransferService.sendUSDCTransfer(params);
+
+      // Nếu có transactionHash thì coi như thành công
+      if (response?.transactionHash) {
+        const investment = await PhaseService.createInvestment({
+          phaseId: phase.id,
+          transactionHash: response?.transactionHash,
+        });
+
+        if (investment.success) {
+          setBuyLoading(false);
+          setIsInvestmentConfirmed(response);
+          setIsConfirmOpen(false);
+        } else {
+          setBuyLoading(false);
+          console.error(
+            "Error investing:",
+            investment.error || "Failed to invest"
+          );
+          toast.error("Đã có lỗi xảy ra, vui lòng thử lại sau vài phút");
+        }
+      }
+    } catch (error: any) {
+      setBuyLoading(false);
+      console.error("Error investing:", error?.message || error);
+      // TODO: Có thể thêm toast notification để hiển thị lỗi
+    }
+  };
+
+  // Helpers for gas/fee formatting
+  const formatFromWei = (wei: string, decimals = 18) => {
+    try {
+      const value = BigInt(wei || "0");
+      const base = BigInt(10) ** BigInt(decimals);
+      const whole = value / base;
+      const frac = (value % base).toString().padStart(decimals, "0");
+      return `${whole}.${frac}`.replace(/\.0+$/, "");
+    } catch {
+      return "0";
+    }
+  };
+
+  const formatGweiFromWei = (wei: string) => {
+    try {
+      const value = BigInt(wei || "0");
+      const base = BigInt(1_000_000_000); // 1e9
+      const whole = value / base;
+      const frac = (value % base).toString().padStart(9, "0");
+      return `${whole}.${frac}`.replace(/\.0+$/, "");
+    } catch {
+      return "0";
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -151,7 +210,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         <section className="relative py-24 overflow-hidden">
           <div className="absolute inset-0 opacity-30 bg-gradient-to-br from-primary/20 to-secondary/20" />
           <div
-            className={`absolute inset-0 bg-gradient-to-br ${phaseColor} opacity-90`}
+            className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-90`}
           ></div>
 
           <div className="container mx-auto px-4 relative z-10">
@@ -194,7 +253,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </h1>
 
                 <p className="text-2xl md:text-3xl mb-4 font-semibold">
-                  ${phase.price} / CAN Token
+                  ${phase.pricePerToken} / CAN Token
                 </p>
 
                 <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
@@ -213,15 +272,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <Target className="w-5 h-5" />
                       <span className="text-sm opacity-90">Tiến độ bán</span>
                     </div>
-                    <div className="text-4xl font-bold">{phase.percentSold}%</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <TrendingUp className="w-5 h-5" />
-                      <span className="text-sm opacity-90">Bonus</span>
-                    </div>
-                    <div className="text-4xl font-bold text-green-300">
-                      +{bonus}%
+                    <div className="text-4xl font-bold">
+                      {progressPercent.toFixed(0)}%
                     </div>
                   </div>
                   <div className="text-center">
@@ -230,73 +282,30 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <span className="text-sm opacity-90">Còn lại</span>
                     </div>
                     <div className="text-4xl font-bold">
-                      {((phase.totalTokens - phase.soldTokens) / 1000000).toFixed(
-                        1
-                      )}
-                      M
+                      {remainingMillions}M
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Đã bán: {phase.soldTokens.toLocaleString()} CAN</span>
-                    <span>Tổng: {phase.totalTokens.toLocaleString()} CAN</span>
+                    <span>Đã bán: {soldTokens.toLocaleString()} CAN</span>
+                    <span>Tổng: {totalTokensSupply.toLocaleString()} CAN</span>
                   </div>
-                  <Progress value={phase.percentSold} className="h-3 bg-white/20">
+                  <Progress value={progressPercent} className="h-3 bg-white/20">
                     <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500 animate-glow" />
                   </Progress>
                   <p className="text-xs text-center opacity-80">
                     {phase.status === "active" &&
-                      `Còn ${(100 - phase.percentSold).toFixed(
+                      `Còn ${(100 - progressPercent).toFixed(
                         0
                       )}% slot - Đầu tư ngay!`}
                     {phase.status === "completed" && "Giai đoạn đã kết thúc"}
-                    {phase.status === "upcoming" && "Sắp mở trong thời gian tới"}
+                    {phase.status === "upcoming" &&
+                      "Sắp mở trong thời gian tới"}
                   </p>
                 </div>
               </div>
-
-              {/* Comparison with Previous Phase */}
-              {phase.phaseId > 1 && (() => {
-                const prevPhase = allPhases.find(p => p.phaseId === phase.phaseId - 1);
-                if (!prevPhase) return null;
-
-                const prevBonus = prevPhase.bonusPercentage || 0;
-                const priceDiff = phase.price - prevPhase.price;
-                const priceIncrease = ((priceDiff / prevPhase.price) * 100).toFixed(0);
-                const bonusDecrease = prevBonus - bonus;
-
-                return (
-                  <div
-                    className="mt-8 glass rounded-xl p-6 border border-white/20 backdrop-blur-lg animate-fade-in"
-                    style={{ animationDelay: "0.3s" }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <BarChart3 className="w-6 h-6 text-yellow-300" />
-                        <div>
-                          <p className="text-sm opacity-80">
-                            So với Giai đoạn {phase.phaseId - 1}
-                          </p>
-                          <p className="text-lg font-semibold">
-                            Giá tăng ${priceDiff.toFixed(3)}
-                            <span className="text-red-300 ml-2">
-                              (+{priceIncrease}%)
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm opacity-80">Bonus giảm</p>
-                        <p className="text-lg font-semibold text-orange-300">
-                          -{bonusDecrease}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
           </div>
         </section>
@@ -313,7 +322,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold gradient-text">
-                    ${phase.price}
+                    ${phase.pricePerToken}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     USD per CAN
@@ -327,15 +336,15 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               >
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm text-muted-foreground">
-                    Bonus tokens
+                    Tổng nhà đầu tư
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-secondary">
-                    +{bonus}%
+                    {phase.totalInvestors?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Extra tokens
+                    Investors
                   </p>
                 </CardContent>
               </Card>
@@ -351,10 +360,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-accent">
-                    {((phase.totalTokens - phase.soldTokens) / 1000000).toFixed(
-                      1
-                    )}
-                    M
+                    {remainingMillions}M
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     CAN tokens
@@ -368,15 +374,15 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               >
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm text-muted-foreground">
-                    ROI tiềm năng
+                    Tổng vốn huy động
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold gradient-text">
-                    {100 + bonus + (5 - phase.phaseId) * 20}%
+                    ${phase.totalRaised?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Estimated
+                    USD raised
                   </p>
                 </CardContent>
               </Card>
@@ -384,7 +390,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
           </div>
         </section>
 
-        {/* Landing Page Style Description */}
+        {/* Description */}
         <section className="py-20 bg-gradient-to-b from-background via-primary/5 to-background">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
@@ -393,37 +399,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   Tại sao nên đầu tư {phase.name}?
                 </h2>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                  Khám phá những lợi ích vượt trội và cơ hội sinh lời cao từ
-                  giai đoạn này
+                  {phase.description}
                 </p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                {extraInfo.highlights.map((highlight, index) => (
-                  <Card
-                    key={index}
-                    className="glass border-primary/30 hover:scale-105 transition-all animate-fade-in"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4">
-                        {index === 0 && (
-                          <Rocket className="w-6 h-6 text-white" />
-                        )}
-                        {index === 1 && (
-                          <Clock className="w-6 h-6 text-white" />
-                        )}
-                        {index === 2 && (
-                          <Award className="w-6 h-6 text-white" />
-                        )}
-                      </div>
-                      <p className="font-semibold text-lg">{highlight}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Visual Investment Growth */}
               <div
                 className="relative rounded-2xl overflow-hidden animate-fade-in"
                 style={{ animationDelay: "0.3s" }}
@@ -432,10 +410,11 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   <div className="text-center">
                     <TrendingUp className="w-16 h-16 text-primary mx-auto mb-4" />
                     <h3 className="text-2xl font-bold mb-2">
-                      Tăng trưởng vượt bậc
+                      Thông tin giai đoạn
                     </h3>
                     <p className="text-muted-foreground">
-                      Dự án với roadmap rõ ràng và tiềm năng phát triển mạnh mẽ
+                      Bắt đầu: {new Date(phase.startDate).toLocaleString()} —
+                      Kết thúc: {new Date(phase.endDate).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -444,7 +423,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
           </div>
         </section>
 
-        {/* Investment Calculator & Benefits & Live Transactions */}
+        {/* Investment Calculator & Live Transactions */}
         <section className="py-16 bg-gradient-to-b from-background to-background/50">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -469,6 +448,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       placeholder="100"
                       min="0"
                     />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Giá mỗi token: ${phase.pricePerToken} / CAN
+                    </p>
                   </div>
 
                   <div className="space-y-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
@@ -477,14 +459,6 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                         Base tokens:
                       </span>
                       <span className="font-bold">{baseTokens} CAN</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Bonus +{bonus}%:
-                      </span>
-                      <span className="font-bold text-secondary">
-                        +{bonusTokens} CAN
-                      </span>
                     </div>
                     <div className="border-t border-primary/20 pt-3 flex justify-between">
                       <span className="font-semibold">Tổng nhận được:</span>
@@ -498,66 +472,89 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     className="w-full"
                     size="lg"
                     variant={phase.status === "active" ? "default" : "outline"}
-                    disabled={phase.status !== "active"}
+                    disabled={phase.status !== "active" || buyLoading}
                     onClick={() => {
                       if (phase.status === "active") {
-                        // Handle investment logic here
-                        console.log(
-                          `Investing ${investAmount} USD into ${phase.name}`
-                        );
+                        setIsConfirmOpen(true);
                       }
                     }}
                   >
-                    {phase.status === "active"
-                      ? "Đầu tư ngay"
-                      : phase.status === "completed"
-                      ? "Đã đóng"
-                      : "Sắp mở"}
+                    {buyLoading && phase.status === "active" ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Spinner className="size-4" />
+                        Đang xử lý...
+                      </span>
+                    ) : phase.status === "active" ? (
+                      "Đầu tư ngay"
+                    ) : phase.status === "completed" ? (
+                      "Đã đóng"
+                    ) : (
+                      "Sắp mở"
+                    )}
                   </Button>
+
+                  <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Xác nhận đầu tư</DialogTitle>
+                        <DialogDescription>
+                          Bạn có chắc muốn đầu tư {investAmount} USD vào giai
+                          đoạn {phase.name}?
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Số tiền:</span>
+                          <span className="font-medium">
+                            {investAmount} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Giá mỗi token:</span>
+                          <span className="font-medium">
+                            {phase.pricePerToken} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Tổng token nhận:</span>
+                          <span className="font-semibold">
+                            {totalTokens} CAN
+                          </span>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsConfirmOpen(false)}
+                        >
+                          Hủy
+                        </Button>
+                        <Button
+                          disabled={buyLoading}
+                          onClick={() => {
+                            console.log(
+                              `Confirm investing ${investAmount} USD into ${phase.name}`
+                            );
+                            handleInvest();
+                            setIsConfirmOpen(false);
+                          }}
+                        >
+                          {buyLoading ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner className="size-4" />
+                              Đang xử lý...
+                            </span>
+                          ) : (
+                            "Xác nhận"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Shield className="w-4 h-4" />
                     <span>Bảo mật bởi blockchain technology</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Benefits */}
-              <Card
-                className="glass border-secondary/40 animate-fade-in"
-                style={{ animationDelay: "0.1s" }}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5" />
-                    Lợi ích của {phase.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
-                    {extraInfo.benefits.map((benefit, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-secondary/5 transition-colors animate-fade-in"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-foreground/90">{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-6 p-4 rounded-lg bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20">
-                    <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
-                      <div>
-                        <h4 className="font-semibold mb-1">Bảo vệ 100%</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Mọi giao dịch được bảo vệ bởi smart contracts và có
-                          thể kiểm chứng trên blockchain
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -572,124 +569,97 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
             </div>
           </div>
         </section>
-
-        {/* All Phases Timeline */}
-        <section className="py-16 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold gradient-text mb-4">
-                Các giai đoạn khác
-              </h2>
-              <p className="text-muted-foreground">
-                Khám phá tất cả các phase và chọn thời điểm đầu tư phù hợp
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-              {allPhases.map((p, index) => (
-                <Card
-                  key={p.phaseId}
-                  className={`glass hover:scale-105 transition-all cursor-pointer ${
-                    p.phaseId === phase.phaseId ? "ring-2 ring-primary" : ""
-                  }`}
-                  onClick={() => router.push(`/phase/${p.phaseId}`)}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="text-lg">{p.name}</CardTitle>
-                      {p.status === "completed" && (
-                        <CheckCircle2 className="w-5 h-5 text-green-400" />
-                      )}
-                      {p.status === "active" && (
-                        <Clock className="w-5 h-5 text-primary animate-pulse" />
-                      )}
-                      {p.status === "upcoming" && (
-                        <Lock className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <Badge
-                      variant={p.phaseId === phase.phaseId ? "default" : "outline"}
-                      className="w-fit"
-                    >
-                      {p.status === "completed" && "Đã đóng"}
-                      {p.status === "active" && "Đang mở"}
-                      {p.status === "upcoming" && "Sắp mở"}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Giá:</span>
-                      <span className="font-bold">${p.price}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Bonus:</span>
-                      <span className="font-bold text-secondary">
-                        +{p.bonusPercentage || 0}%
-                      </span>
-                    </div>
-                    <Progress value={p.percentSold} className="h-2" />
-                    <Button
-                      variant={p.phaseId === phase.phaseId ? "default" : "outline"}
-                      size="sm"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/phase/${p.phaseId}`);
-                      }}
-                    >
-                      {p.phaseId === phase.phaseId ? "Đang xem" : "Xem chi tiết"}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => router.push("/investments")}
-              >
-                Xem tất cả thông tin đầu tư
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Navigation */}
-        <section className="py-8 bg-background border-t border-border/50">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center max-w-6xl mx-auto">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const prevPhase = allPhases.find(p => p.phaseId === phase.phaseId - 1);
-                  if (prevPhase) router.push(`/phase/${prevPhase.phaseId}`);
-                }}
-                disabled={phase.phaseId === 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Giai đoạn trước
-              </Button>
-
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const nextPhase = allPhases.find(p => p.phaseId === phase.phaseId + 1);
-                  if (nextPhase) router.push(`/phase/${nextPhase.phaseId}`);
-                }}
-                disabled={phase.phaseId === allPhases.length}
-              >
-                Giai đoạn tiếp theo
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
+
+      {/* Success Dialog */}
+      <Dialog
+        open={Boolean(isInvestmentConfirmed)}
+        onOpenChange={(open) => {
+          if (!open) setIsInvestmentConfirmed(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đầu tư thành công</DialogTitle>
+            <DialogDescription>
+              Giao dịch của bạn đã được gửi lên mạng lưới. Vui lòng kiểm tra
+              giao dịch
+            </DialogDescription>
+          </DialogHeader>
+
+          {(() => {
+            const tx: any = isInvestmentConfirmed;
+            const usdcAmount = parseFloat(tx?.amount || investAmount || "0");
+            const canReceived = phase?.pricePerToken
+              ? (usdcAmount * Number(phase.pricePerToken)).toFixed(2)
+              : "0";
+            const gasPriceWei = String(
+              tx?.gasPrice || tx?.rawReceipt?.effectiveGasPrice || "0"
+            );
+            const gasPriceGwei = formatGweiFromWei(gasPriceWei);
+            const gasUsed = BigInt(String(tx?.rawReceipt?.gasUsed || "0"));
+            const feeWei = (gasUsed * BigInt(gasPriceWei || "0")).toString();
+            const feePOL = formatFromWei(feeWei, 18);
+            const nativeSymbol = "POL"; // Polygon Amoy native token
+            const txHash = tx?.transactionHash;
+            const explorerUrl = txHash
+              ? config.BLOCKCHAIN_EXPLORER.TRANSACTION(txHash)
+              : "";
+
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Đã gửi</span>
+                  <span className="font-medium">{usdcAmount} USDC</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nhận được</span>
+                  <span className="font-semibold">{canReceived} CAN</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gas price</span>
+                  <span className="font-medium">{gasPriceGwei} Gwei</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Phí ước tính</span>
+                  <span className="font-medium">
+                    {feePOL} {nativeSymbol}
+                  </span>
+                </div>
+                {txHash && (
+                  <div className="pt-2 border-t">
+                    <a
+                      className="text-primary underline break-all"
+                      href={explorerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Xem chi tiết giao dịch trên Polygonscan
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <DialogFooter>
+            <Button onClick={() => setIsInvestmentConfirmed(null)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {buyLoading && (
+        <div className="fixed inset-0 z-[1000] bg-black/30 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-background/80 border rounded-lg p-6 flex items-center gap-3">
+            <Spinner className="size-6" />
+            <div>
+              <div className="font-semibold">Đang xử lý giao dịch...</div>
+              <div className="text-sm text-muted-foreground">
+                Vui lòng đợi trong giây lát
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

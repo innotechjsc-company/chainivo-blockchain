@@ -2,6 +2,10 @@ import { IUser } from "@/types";
 import { API_ENDPOINTS, ApiResponse, ApiService } from "../api";
 
 export class UserService {
+  static async getBalance(walletAddress: string): Promise<ApiResponse<any>> {
+    return ApiService.getWalletBalance(walletAddress);
+  }
+
   static async updateWalletAddress(data: {
     walletAddress: string;
     userId: string;

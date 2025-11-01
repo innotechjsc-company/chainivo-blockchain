@@ -5,16 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, TrendingUp, Lock, CheckCircle2 } from "lucide-react";
-import { useInvestmentPhases } from "../hooks";
+import { Clock, Lock, CheckCircle2 } from "lucide-react";
+import { Phase } from "@/api/services/phase-service";
 
-const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat('en-US').format(num);
-};
+interface InvestmentPhasesCardProps {
+  phases: Phase[];
+  isLoading: boolean;
+  error: string | null;
+}
 
-export const InvestmentPhasesCard = () => {
+export const InvestmentPhasesCard = ({
+  phases: phasesProps,
+  isLoading: isLoadingProps,
+  error: errorProps,
+}: InvestmentPhasesCardProps) => {
   const router = useRouter();
-  const { phases, loading, error } = useInvestmentPhases();
+
+  const phases = phasesProps || [];
+  const isLoading = isLoadingProps || false;
+  const error = errorProps || null;
 
   return (
     <section id="invest" className="py-20 relative">
@@ -26,18 +35,63 @@ export const InvestmentPhasesCard = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
           </p>
-          {loading && (
+          {isLoading && (
             <p className="text-sm text-muted-foreground mt-2">
               Đang tải dữ liệu...
             </p>
           )}
         </div>
 
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${phases.length} gap-6`}>
-          {phases.map((phase, index) => {
-            return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {isLoading &&
+            Array.from({ length: 4 }).map((_, index) => (
               <Card
-                key={phase.phaseId}
+                key={`skeleton-${index}`}
+                className="glass rounded-2xl p-6 relative overflow-hidden"
+              >
+                <div className="animate-pulse space-y-6">
+                  <div className="absolute top-4 right-4">
+                    <div className="h-5 w-20 bg-muted/40 rounded-full" />
+                  </div>
+
+                  <div className="space-y-4 mt-8">
+                    <div className="h-7 w-2/3 bg-muted/40 rounded" />
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-24 bg-muted/30 rounded" />
+                        <div className="h-4 w-20 bg-muted/40 rounded" />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-24 bg-muted/30 rounded" />
+                        <div className="h-4 w-16 bg-muted/40 rounded" />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-24 bg-muted/30 rounded" />
+                        <div className="h-4 w-16 bg-muted/40 rounded" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="h-3 w-16 bg-muted/30 rounded" />
+                        <div className="h-3 w-10 bg-muted/30 rounded" />
+                      </div>
+                      <div className="h-2 w-full bg-muted/30 rounded" />
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <div className="h-10 w-full bg-muted/30 rounded-md" />
+                      <div className="h-10 w-full bg-muted/30 rounded-md" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          {!isLoading &&
+            phases.map((phase, index) => (
+              <Card
+                key={phase.id}
                 className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
                   phase.status === "active"
                     ? "border-2 border-primary animate-glow"
@@ -75,16 +129,16 @@ export const InvestmentPhasesCard = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Giá bán:</span>
                       <span className="font-bold text-primary">
-                        {`${Number(phase.price).toFixed(2)} USD`}
+                        {phase.pricePerToken}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Tổng coin:</span>
-                      <span className="font-semibold">{formatNumber(phase.totalTokens)}</span>
+                      <span className="font-semibold">{phase.totalTokens}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Đã bán:</span>
-                      <span className="font-semibold">{formatNumber(phase.soldTokens)}</span>
+                      <span className="font-semibold">{phase.soldTokens}</span>
                     </div>
                   </div>
 
@@ -92,32 +146,41 @@ export const InvestmentPhasesCard = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Tiến độ</span>
-                      <span>{phase.percentSold}%</span>
+                      <span>
+                        {Math.round(
+                          (phase.totalTokens > 0
+                            ? (phase.soldTokens / phase.totalTokens) * 100
+                            : 0) as number
+                        )}
+                        %
+                      </span>
                     </div>
-                    <Progress value={phase.percentSold} className="h-2" />
+                    <Progress
+                      value={
+                        phase.totalTokens > 0
+                          ? (phase.soldTokens / phase.totalTokens) * 100
+                          : 0
+                      }
+                      className="h-2"
+                    />
                   </div>
-
-                  {/* Bonus Badge */}
-                  {phase.bonusPercentage && phase.bonusPercentage > 0 && (
-                    <div className="flex items-center justify-center space-x-2 bg-secondary/20 text-secondary px-4 py-2 rounded-lg">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="font-semibold">+{phase.bonusPercentage}% Bonus</span>
-                    </div>
-                  )}
 
                   {/* Action Buttons */}
                   <div className="space-y-2">
                     <Button
                       className="w-full"
                       variant="outline"
-                      onClick={() => router.push(`/phase/${phase.phaseId}`)}
+                      onClick={() => router.push(`/phase/${phase.id}`)}
                     >
                       Xem chi tiết
                     </Button>
                     <Button
                       className="w-full"
-                      variant={phase.status === "active" ? "default" : "outline"}
+                      variant={
+                        phase.status === "active" ? "default" : "outline"
+                      }
                       disabled={phase.status !== "active"}
+                      onClick={() => router.push(`/phase/${phase.id}`)}
                     >
                       {phase.status === "active"
                         ? "Đầu tư ngay"
@@ -128,8 +191,7 @@ export const InvestmentPhasesCard = () => {
                   </div>
                 </div>
               </Card>
-            );
-          })}
+            ))}
         </div>
 
         {/* Additional Info */}

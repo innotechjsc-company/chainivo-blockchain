@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Wallet, Menu, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,8 @@ import { NotificationDropdown } from "./components/NotificationDropdown";
 import { LanguageDropdown } from "./components/LanguageDropdown";
 import { UserMenu } from "./components/UserMenu";
 import { MobileMenu } from "./components/MobileMenu";
+import { UserService } from "@/api/services/user-service";
+import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
 
 interface HeaderProps {
   session?: any;
@@ -27,6 +30,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   // Local state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
 
   // Custom hooks for logic
   const { user, userProfile, handleSignOut, handleSignIn } = useAuth(onSignOut);
@@ -40,6 +44,39 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
     router.push("/auth?tab=login");
   };
 
+  const getBalance = async () => {
+    if (!user?.walletAddress) return;
+    try {
+      // update wallet to redux
+      dispatch(setWalletBalance(user?.walletAddress || ""));
+      const balance = await UserService.getBalance(user?.walletAddress || "");
+      if (balance?.success) {
+        const data = (balance as any)?.data;
+        const canAmount = Number(data?.can ?? 0);
+        const usdtAmount = Number(data?.usdt ?? 0);
+        const polAmount = Number(data?.pol ?? 0);
+        if (!Number.isNaN(canAmount)) {
+          dispatch(
+            updateBalance({
+              token: data?.token || "ALL",
+              can: canAmount,
+              usdt: usdtAmount,
+              pol: polAmount,
+            })
+          );
+          console.log("balance done!");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to get balance:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      getBalance();
+    }
+  }, [user]);
   // Compose UI from components
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] glass border-b border-border/50 backdrop-blur-xl">
