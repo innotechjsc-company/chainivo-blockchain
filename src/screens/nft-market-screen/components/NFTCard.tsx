@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import { NFT } from "../hooks";
-import { useEffect } from "react";
+import NFTService from "@/api/services/nft-service";
+import { useEffect, useState } from "react";
 
 interface NFTCardProps {
   nft: any;
@@ -26,7 +27,9 @@ const rarityColors = {
 export const NFTCard = ({ nft, type }: NFTCardProps) => {
   const router = useRouter();
   const isOtherNFT = nft.type === "other";
-
+  const [isLiked, setIsLiked] = useState<boolean>(
+    Boolean(nft?.isLike || nft?.isLiked)
+  );
   const progressPercentage =
     isOtherNFT && nft.sharesSold && nft.totalShares
       ? (nft.sharesSold / nft.totalShares) * 100
@@ -48,6 +51,60 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
   };
 
   const nftImage = getNFTImage(nft);
+
+  const refreshLikeState = async () => {
+    try {
+      const id = String(nft.id ?? nft._id ?? nft.tokenId);
+      const resp = await NFTService.getNFTById(id);
+      if (resp?.success && resp?.data) {
+        setIsLiked(
+          Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
+        );
+      }
+    } catch {}
+  };
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      let status = nft.isLike;
+      let response: any;
+      if (status) {
+        response = await NFTService.unlikeNft(
+          String(nft.id ?? nft._id ?? nft.tokenId)
+        );
+      } else {
+        response = await NFTService.likeNft(
+          String(nft.id ?? nft._id ?? nft.tokenId)
+        );
+      }
+
+      if (response.success) {
+        await refreshLikeState();
+      }
+      // Optionally, you could trigger a re-fetch or optimistic UI update here
+    } catch (err) {
+      console.error("Failed to like NFT", err);
+    }
+  };
+  const handleUnlike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      let response = await NFTService.unlikeNft(
+        String(nft.id ?? nft._id ?? nft.tokenId)
+      );
+      if (response.success) {
+        await refreshLikeState();
+      }
+      // Optionally, you could trigger a re-fetch or optimistic UI update here
+    } catch (err) {
+      console.error("Failed to like NFT", err);
+    }
+  };
+
+  useEffect(() => {
+    setIsLiked(Boolean(nft?.isLike || nft?.isLiked));
+  }, [nft]);
 
   const formatAddress = (address?: string) => {
     if (!address) return "";
@@ -86,14 +143,20 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm hover:bg-background"
+          className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
+          onClick={isLiked ? handleUnlike : handleLike}
         >
           {/* {isOtherNFT ? (
             <ShoppingBag className="w-4 h-4" />
-          ) : (
+          ) : (         
             <Heart className="w-4 h-4" />
           )} */}
-          <Heart className="w-4 h-4" />
+          <Heart
+            className={`w-4 h-4`}
+            fill={isLiked ? "currentColor" : "none"}
+            color={isLiked ? "#ec4899" : undefined}
+            stroke={isLiked ? "#ec4899" : "white"}
+          />
         </Button>
       </div>
 
@@ -130,12 +193,11 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             className="flex-1 gap-2"
             onClick={(e) => {
               e.stopPropagation();
-
               router.push(`/nft/${nft.id}?type=${type}`);
             }}
           >
             {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-            {type === "other" ? "Mua ngay" : "Mint on Blockchain"}
+            {type === "other" ? "Mua ngay" : "Đã sở hữu"}
           </Button>
           <Button
             variant="outline"

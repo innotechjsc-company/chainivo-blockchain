@@ -44,19 +44,25 @@ export class StakingService {
     return ApiService.get<StakingPool[]>(API_ENDPOINTS.STAKING.POOLS);
   }
 
-  static async stake(data: StakeData): Promise<ApiResponse<UserStake>> {
-    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, data);
+  static async stake(
+    stakeId: string,
+    transactionHash: string
+  ): Promise<ApiResponse<UserStake>> {
+    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
+      stakeId,
+      transactionHash,
+    });
   }
 
   static async unstake(id: string): Promise<ApiResponse<any>> {
-    return ApiService.post(`${API_ENDPOINTS.STAKING.UNSTAKE}/${id}`);
+    return ApiService.post(`${API_ENDPOINTS.STAKING.UNSTAKE(id)}`);
   }
 
   static async getRewards(id: string): Promise<ApiResponse<any>> {
-    return ApiService.post(`${API_ENDPOINTS.STAKING.REWARDS}/${id}`);
+    return ApiService.post(`${API_ENDPOINTS.STAKING.CLAIM(id)}`);
   }
   static async getStakesByOwner(usedId: string): Promise<ApiResponse<any>> {
-    return ApiService.get(`${API_ENDPOINTS.STAKING.GETBYOWNER(usedId)}`);
+    return ApiService.get(`${API_ENDPOINTS.STAKING.USER_STAKES(usedId)}`);
   }
 }
 

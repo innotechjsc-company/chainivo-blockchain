@@ -40,16 +40,16 @@ export interface UserClaim {
 
 export class AirdropService {
   static async getCampaigns(): Promise<ApiResponse<AirdropCampaign[]>> {
-    return ApiService.get<AirdropCampaign[]>(API_ENDPOINTS.AIRDROP.CAMPAIGNS);
+    return ApiService.get<AirdropCampaign[]>(API_ENDPOINTS.AIRDROP.LIST);
   }
 
-  static async participate(data: ParticipateData): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.AIRDROP.PARTICIPATE, data);
-  }
+  // static async participate(data: ParticipateData): Promise<ApiResponse<any>> {
+  //   return ApiService.post(API_ENDPOINTS.AIRDROP.PARTICIPATE, data);
+  // }
 
-  static async claim(data: ClaimData): Promise<ApiResponse<UserClaim>> {
-    return ApiService.post<UserClaim>(API_ENDPOINTS.AIRDROP.CLAIM, data);
-  }
+  // static async claim(data: ClaimData): Promise<ApiResponse<UserClaim>> {
+  //   return ApiService.post<UserClaim>(API_ENDPOINTS.AIRDROP.CLAIM, data);
+  // }
 }
 
 export default AirdropService;

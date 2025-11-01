@@ -78,14 +78,34 @@ export const API_ENDPOINTS = {
     CLAIM: (id: string) => `/api/airdrop/claim/${id}`,
   },
 
+  MYSTERY_BOX: {
+    LIST: "/api/mystery-box/list",
+    DETAIL: (id: string) => `/api/mystery-boxes/${id}`,
+    PURCHASE: "/api/mystery-box/purchase",
+    OPEN: "/api/mystery-box/open",
+  },
+
+  LEADERSHIP_TEAM: {
+    GET: "/api/leadership-team",
+  },
+
   BALANCE: {
     GET_BALANCE: (walletAddress: string) =>
       `/api/balance/get-balance/${walletAddress}`,
   },
 
+  MEDIA: {
+    UPLOAD: "/api/media",
+  },
+
   USER: {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
+  },
+  ABOUT: {
+    LEADERS: "/api/leadership-team",
+    // PARTNERS: "/api/about/partners",
+    // ECOSYSTEM: "/api/about/ecosystem",
   },
 } as const;
 

@@ -27,6 +27,9 @@ interface CoinStakingFormProps {
   getStakingPoolsOnSuccess: () => Promise<void>;
   setIsLoading: (isLoading: boolean) => void;
   stakingMyPools?: any[];
+  addPendingStake: (stakeData: any) => string;
+  updateStakeStatus: (id: string, updates: any) => void;
+  removeStake: (id: string) => void;
 }
 
 export const CoinStakingForm = ({
@@ -38,6 +41,9 @@ export const CoinStakingForm = ({
   getStakingPoolsOnSuccess,
   setIsLoading,
   stakingMyPools = [],
+  addPendingStake,
+  updateStakeStatus,
+  removeStake,
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -130,10 +136,10 @@ export const CoinStakingForm = ({
   };
 
   const createTransaction = async (fromAddress: string, amount: number) => {
+    let tempStakeId: string | null = null;
+
     try {
-      setIsLoading(true);
       if (!window.ethereum) {
-        setIsLoading(false);
         throw new Error(
           "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
         );
@@ -141,54 +147,111 @@ export const CoinStakingForm = ({
 
       // Validate from address
       if (!fromAddress) {
-        setIsLoading(false);
         throw new Error("Invalid sender address");
       }
-
+      debugger;
       // Kiểm tra đã stake gói này chưa
       if (
         stakingMyPools?.length > 0 &&
         stakingMyPools?.some(
-          (item: any) => item?.poolId?._id === (selectedPoolData?._id as string)
+          (item: any) =>
+            item?.stake?.id === (selectedPoolData?._id as string) &&
+            item?.status === "active"
         )
       ) {
         toast.error("Bạn đã stake gói này");
-        setIsLoading(false);
         return;
       }
+
+      // BƯỚC 1: Thêm stake ngay vào danh sách với status "pending"
+      const pendingStakeData = {
+        amount: stakeAmount,
+        walletAddress: user?.walletAddress,
+        stake: selectedPoolData,
+        poolInfo: selectedPoolData,
+        status: "pending",
+        canUnstake: true,
+      };
+
+      tempStakeId = addPendingStake(pendingStakeData);
+      toast.info("Đang chờ xác nhận giao dịch...");
+
+      // BƯỚC 2: Xử lý blockchain transaction
+      setIsLoading(true);
+
       let res = await TransferService.sendCanTransfer({
         fromAddress,
         amountCan: amount,
       });
+
       if (res.transactionHash) {
-        let createStake = await StakingService.stake({
-          poolId: selectedPoolData?._id,
-          amount: stakeAmount,
-          walletAddress: user?.walletAddress as string,
-          transactionHash: res.rawReceipt.transactionHash,
-        });
+        let createStake = await StakingService.stake(
+          selectedPoolData?.id as string,
+          res.rawReceipt.transactionHash
+        );
+        // debugger;
         if (createStake.success) {
+          // BƯỚC 5: Thành công - xóa temp stake và refresh để lấy data thật
+          removeStake(tempStakeId);
           toast.success("Giao dịch stake thành công");
+
           setTimeout(async () => {
-            await fetchStakingData();
-            await getStakingPoolsOnSuccess();
-            await getAllCanBalance();
-            setAmount("");
-            setSelectedPool("");
-            setIsLoading(false);
-          }, 1500);
+            try {
+              await getStakingPoolsOnSuccess();
+              await getAllCanBalance();
+              setAmount("");
+              setSelectedPool("");
+              setIsLoading(false);
+            } catch (refreshError) {
+              setIsLoading(false);
+            }
+          }, 500);
         } else {
+          // Thất bại - xóa temp stake
+          removeStake(tempStakeId);
           setIsLoading(false);
           toast.error("Giao dịch stake thất bại");
         }
+      } else {
+        if (tempStakeId) {
+          removeStake(tempStakeId);
+        }
+        setIsLoading(false);
+        toast.error("Không nhận được xác nhận giao dịch");
       }
     } catch (error) {
+      console.error("=== [STAKE ERROR] Exception caught ===");
+      console.error("Error type:", typeof error);
+      console.error("Error constructor:", error?.constructor?.name);
+      console.error("Error code:", (error as any)?.code);
+      console.error("Error message:", (error as any)?.message);
+      console.error("Error data:", (error as any)?.data);
+      console.error("Error stack:", (error as any)?.stack);
+      console.error("Full error object:", error);
+
+      try {
+        console.error("Error JSON:", JSON.stringify(error, null, 2));
+      } catch (e) {
+      }
+
+      // Xóa temp stake nếu có lỗi
+      if (tempStakeId) {
+        removeStake(tempStakeId);
+      }
+
       if ((error as any).code === 4001) {
         setIsLoading(false);
         toast.error("Người dùng đã từ chối giao dịch");
       } else if ((error as any).code === -32603) {
         setIsLoading(false);
         toast.error("Lỗi nội bộ. Vui lòng thử lại.");
+      } else if ((error as any).code === 205) {
+        // AbiError - thường do sai network
+        setIsLoading(false);
+        toast.error("Lỗi blockchain. Vui lòng kiểm tra wallet đã kết nối đúng network chưa (Polygon Amoy Testnet)");
+      } else if ((error as any).message?.includes("Sai network")) {
+        setIsLoading(false);
+        toast.error((error as any).message);
       } else if ((error as any).message?.includes("insufficient funds")) {
         setIsLoading(false);
         toast.error("Số dư không đủ để thực hiện giao dịch");
@@ -198,8 +261,12 @@ export const CoinStakingForm = ({
       } else if ((error as any).message?.includes("Invalid")) {
         setIsLoading(false);
         toast.error((error as any).message);
+      } else {
+        setIsLoading(false);
+        toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
       }
-      setIsLoading(false);
+
+      console.error("=== [STAKE ERROR] End of error handling ===");
     }
   };
 

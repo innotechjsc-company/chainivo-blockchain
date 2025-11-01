@@ -254,73 +254,73 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
    * @returns Transaction hash
    */
 
-  const createNFTInDatabase = async (nftData: any) => {
-    try {
-      // Get authentication token
-      const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        throw new Error("No authentication token available");
-      }
+  // const createNFTInDatabase = async (nftData: any) => {
+  //   try {
+  //     // Get authentication token
+  //     const token = localStorage.getItem("jwt_token");
+  //     if (!token) {
+  //       throw new Error("No authentication token available");
+  //     }
 
-      const response = await NFTService.mintNFT({
-        toAddress: user?.walletAddress as string,
-        tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}`,
-        name: nftData.name,
-        description: `NFT from ${nftData.collection.name}`,
-        image: nftData.image,
-        attributes: [
-          { trait_type: "Rarity", value: nftData?.rarity },
-          { trait_type: "Collection", value: nftData.collection.name },
-        ],
-        collection: nftData.collection,
-        walletAddress: user?.walletAddress as string,
-        mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
-        fromMysteryBox: true,
-      });
-      console.log(response);
+  //     const response = await NFTService.mintNFT({
+  //       toAddress: user?.walletAddress as string,
+  //       tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+  //         .toString(36)
+  //         .substr(2, 9)}`,
+  //       name: nftData.name,
+  //       description: `NFT from ${nftData.collection.name}`,
+  //       image: nftData.image,
+  //       attributes: [
+  //         { trait_type: "Rarity", value: nftData?.rarity },
+  //         { trait_type: "Collection", value: nftData.collection.name },
+  //       ],
+  //       collection: nftData.collection,
+  //       walletAddress: user?.walletAddress as string,
+  //       mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+  //       fromMysteryBox: true,
+  //     });
+  //     console.log(response);
 
-      // const response = await fetch(buildApiUrl(config.API_ENDPOINTS.NFT.MINT), {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      //   body: JSON.stringify({
-      //     toAddress: walletAddress,
-      //     tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
-      //       .toString(36)
-      //       .substr(2, 9)}`,
-      //     name: nftData.name,
-      //     description: `NFT from ${nftData.collection.name}`,
-      //     image: nftData.image,
-      //     attributes: [
-      //       { trait_type: "Rarity", value: nftData.rarity },
-      //       { trait_type: "Collection", value: nftData.collection.name },
-      //     ],
-      //     collection: nftData.collection,
-      //     creatorAddress: walletAddress,
-      //     mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
-      //     fromMysteryBox: true,
-      //   }),
-      // });
+  //     // const response = await fetch(buildApiUrl(config.API_ENDPOINTS.NFT.MINT), {
+  //     //   method: "POST",
+  //     //   headers: {
+  //     //     "Content-Type": "application/json",
+  //     //     Authorization: `Bearer ${token}`,
+  //     //   },
+  //     //   body: JSON.stringify({
+  //     //     toAddress: walletAddress,
+  //     //     tokenURI: `ipfs://nft_${Date.now()}_${Math.random()
+  //     //       .toString(36)
+  //     //       .substr(2, 9)}`,
+  //     //     name: nftData.name,
+  //     //     description: `NFT from ${nftData.collection.name}`,
+  //     //     image: nftData.image,
+  //     //     attributes: [
+  //     //       { trait_type: "Rarity", value: nftData.rarity },
+  //     //       { trait_type: "Collection", value: nftData.collection.name },
+  //     //     ],
+  //     //     collection: nftData.collection,
+  //     //     creatorAddress: walletAddress,
+  //     //     mintOnBlockchain: false, // ✅ Không mint trên blockchain ngay
+  //     //     fromMysteryBox: true,
+  //     //   }),
+  //     // });
 
-      // if (response.ok) {
-      //   const result = await response.json();
-      //   // NFT minted successfully
-      //   return result;
-      // } else {
-      //   const errorData = await response.json().catch(() => ({}));
-      //   throw new Error(
-      //     errorData.message || `Failed to mint NFT: ${response.status}`
-      //   );
-      // }
-    } catch (error) {
-      console.error("Error minting NFT:", error);
-      throw error;
-    }
-  };
+  //     // if (response.ok) {
+  //     //   const result = await response.json();
+  //     //   // NFT minted successfully
+  //     //   return result;
+  //     // } else {
+  //     //   const errorData = await response.json().catch(() => ({}));
+  //     //   throw new Error(
+  //     //     errorData.message || `Failed to mint NFT: ${response.status}`
+  //     //   );
+  //     // }
+  //   } catch (error) {
+  //     console.error("Error minting NFT:", error);
+  //     throw error;
+  //   }
+  // };
 
   const createTransaction = async (fromAddress: string, amount: number) => {
     try {
@@ -389,8 +389,8 @@ export default function TierDetailPage({ params }: TierDetailPageProps) {
         },
       };
 
-      const result = await createNFTInDatabase(newNFT);
-      return result;
+      // const result = await createNFTInDatabase(newNFT);
+      // return result;
     } catch (error: any) {
       console.error("Transaction error:", error);
 

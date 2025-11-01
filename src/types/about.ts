@@ -4,10 +4,20 @@
  */
 
 export interface Leader {
-  name: string;
+  id: string;
+  fullName: string;
   position: string;
-  description: string;
-  avatar: string;
+  email: string;
+  phone: string;
+  biography: string;
+  image: {
+    id: string;
+    url: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
+  isActive: boolean;
 }
 
 export interface Partner {

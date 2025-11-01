@@ -14,7 +14,6 @@ Thư mục này chứa các screen components cấp cao đại diện cho các v
 - **Services:** Luôn dùng services từ thư mục `/services` cho business logic
 - **Types:** Import types từ thư mục `/types`
 - **Utils:** Sử dụng utility functions từ thư mục `/utils`
-- **Không ghép api:** Chưa cần ghép api, chỉ cần giao diện
 
 ## Cấu Trúc Screen
 

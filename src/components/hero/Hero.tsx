@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, TrendingUp, Users, Zap } from "lucide-react";
+import { ArrowRight, Info, Rocket, TrendingUp, Users, Zap } from "lucide-react";
 import Link from "next/link";
 
 export const Hero = () => {
@@ -39,13 +39,22 @@ export const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Button size="lg" variant="default" className="text-lg px-8">
-              Bắt đầu đầu tư
-              <TrendingUp className="w-5 h-5 ml-2" />
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8">
-              Tìm hiểu thêm
-            </Button>
+            <Link href="/investments" passHref>
+              <Button className="gap-2" asChild>
+                <a>
+                  <Rocket className="w-4 h-4" />
+                  Bắt đầu đầu tư
+                </a>
+              </Button>
+            </Link>
+            <Link href="/about" passHref>
+              <Button className="gap-2" asChild>
+                <a>
+                  <Info className="w-4 h-4" />
+                  Tìm hiểu thêm
+                </a>
+              </Button>
+            </Link>
           </div>
 
           {/* Stats */}
