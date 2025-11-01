@@ -47,6 +47,7 @@ export const AboutUsScreen = () => {
     contactInfo,
     statsCards,
     formData,
+    formErrors,
     handleSubmit,
     updateFormData,
   } = useAboutData();
@@ -395,6 +396,7 @@ export const AboutUsScreen = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <ContactForm
                   formData={formData}
+                  formErrors={formErrors}
                   onFormDataChange={updateFormData}
                   onSubmit={handleSubmit}
                 />
