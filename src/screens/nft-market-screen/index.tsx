@@ -17,6 +17,7 @@ export default function NFTMarketScreen() {
     fetchUserNFTs,
     userNFTs,
     otherNFTsData,
+    otherNFTsAnalytics,
     searchMarketplace,
     searchNFTs,
   } = useNFTFilters(nfts);
@@ -29,6 +30,7 @@ export default function NFTMarketScreen() {
           stats={stats}
           volumeData={volumeData}
           priceData={priceData}
+          analytics={otherNFTsAnalytics}
         />
 
         {/* Filters */}
