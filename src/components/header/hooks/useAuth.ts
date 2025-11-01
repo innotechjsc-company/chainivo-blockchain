@@ -29,7 +29,7 @@ export const useAuth = (onSignOut?: () => void) => {
   // Convert authStore user to userProfile format
   const userProfile: UserProfile | null = user
     ? {
-        username: user.username || user.email,
+        username: user.email,
         avatar_url: null, // Can be added to authStore user type later
       }
     : null;

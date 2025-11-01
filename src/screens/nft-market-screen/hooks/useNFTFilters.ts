@@ -21,6 +21,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const [userNFTs, setUserNFTs] = useState<any[]>([]);
   const [searchNFTs, setSearchNFTs] = useState<any[]>([]);
   const [otherNFTsData, setOtherNFTsData] = useState<any[]>([]);
+  const [otherNFTsAnalytics, setOtherNFTsAnalytics] = useState<any>(null);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   const fetchUserNFTs = async () => {
@@ -38,10 +39,96 @@ export const useNFTFilters = (nfts: NFT[]) => {
     const response = await NFTService.allNFTInMarketplace();
 
     if (response.success) {
-      setOtherNFTsData((response.data as any).nfts || []);
+      const data: any = response.data as any;
+
+      // Handle different response structures
+      // Case 1: { nfts: [...], analytics: {...} }
+      // Case 2: { items: [...], analytics: {...} }
+      // Case 3: { data: { nfts: [...], analytics: {...} } }
+      // Case 4: Direct array with analytics at root level
+
+      if (data?.nfts || data?.items) {
+        setOtherNFTsData(data.nfts || data.items || []);
+        if (data.analytics) {
+          console.log(data.analytics);
+          setOtherNFTsAnalytics(data.analytics);
+        }
+      } else if (Array.isArray(data)) {
+        setOtherNFTsData(data);
+        // Analytics might be at response level
+        if ((response as any).analytics) {
+          setOtherNFTsAnalytics((response as any).analytics);
+        }
+      } else if (data?.data) {
+        // Nested structure
+        setOtherNFTsData(
+          data.data?.nfts || data.data?.items || data.data || []
+        );
+        if (data.data?.analytics || data.analytics) {
+          setOtherNFTsAnalytics(data.data?.analytics || data.analytics);
+        }
+      } else {
+        setOtherNFTsData(data || []);
+        // Check if analytics exists at any level
+        if (data?.analytics) {
+          setOtherNFTsAnalytics(data.analytics);
+        } else if ((response as any).analytics) {
+          setOtherNFTsAnalytics((response as any).analytics);
+        }
+      }
+
+      // Debug log to help identify the structure
+      console.log("NFT Marketplace Response:", {
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : [],
+        hasAnalytics: !!(data?.analytics || (response as any).analytics),
+        responseKeys: Object.keys(response),
+      });
     } else {
       toast.error(response.message);
     }
+  };
+
+  // Helper function to filter NFTs based on filters
+  const filterNFTsByCriteria = (
+    nftsToFilter: any[],
+    filterCriteria: NFTFiltersState
+  ): any[] => {
+    return nftsToFilter.filter((nft: any) => {
+      // Type filter
+      if (filterCriteria.type !== "all" && nft.type !== filterCriteria.type) {
+        return false;
+      }
+
+      // Rarity filter (check level or rarity field)
+      if (filterCriteria.rarity.length > 0) {
+        const nftRarity = String(nft.level || nft.rarity || "");
+        if (!filterCriteria.rarity.includes(nftRarity)) {
+          return false;
+        }
+      }
+
+      // Price range filter
+      const priceValue =
+        nft.price ||
+        nft.currentPrice?.amount ||
+        nft.currentPrice?.price?.amount ||
+        0;
+      const numericPrice =
+        typeof priceValue === "string"
+          ? parseFloat(priceValue)
+          : Number(priceValue);
+
+      if (
+        !isNaN(numericPrice) &&
+        (numericPrice < filterCriteria.priceRange[0] ||
+          numericPrice > filterCriteria.priceRange[1])
+      ) {
+        return false;
+      }
+
+      return true;
+    });
   };
 
   const searchMarketplace = async (
@@ -57,13 +144,58 @@ export const useNFTFilters = (nfts: NFT[]) => {
       type: f.type !== "all" ? f.type : undefined,
       isActive: "true",
     };
-    const response = await NFTService.allNFTInMarketplace(params);
-    if (response.success) {
-      const data: any = response.data as any;
-      setSearchNFTs(data?.nfts || data?.items || data || []);
+
+    try {
+      // Search in marketplace
+      const response = await NFTService.allNFTInMarketplace(params);
+      let marketplaceResults: any[] = [];
+
+      if (response.success) {
+        const data: any = response.data as any;
+        marketplaceResults = data?.nfts || data?.items || data || [];
+      } else {
+        toast.error(response.message);
+      }
+
+      // Filter userNFTs based on the same criteria
+      const filteredUserNFTs = filterNFTsByCriteria(userNFTs, f);
+
+      // Merge results from both sources
+      // Use a Map to avoid duplicates based on id/_id/tokenId
+      const mergedResults = new Map<string, any>();
+
+      // Add marketplace results
+      marketplaceResults.forEach((nft: any) => {
+        const id = String(nft.id || nft._id || nft.tokenId || "");
+        if (id && !mergedResults.has(id)) {
+          mergedResults.set(id, nft);
+        } else if (!id) {
+          // If no ID, add with a unique key
+          const uniqueKey = `marketplace-${mergedResults.size}`;
+          mergedResults.set(uniqueKey, nft);
+        }
+      });
+
+      // Add filtered user NFTs
+      filteredUserNFTs.forEach((nft: any) => {
+        const id = String(nft.id || nft._id || nft.tokenId || "");
+        if (id && !mergedResults.has(id)) {
+          mergedResults.set(id, nft);
+        } else if (!id) {
+          // If no ID, add with a unique key
+          const uniqueKey = `user-${mergedResults.size}`;
+          mergedResults.set(uniqueKey, nft);
+        }
+      });
+
+      // Convert Map to Array
+      const finalResults = Array.from(mergedResults.values());
+
+      setSearchNFTs(finalResults);
       return true;
-    } else {
-      toast.error(response.message);
+    } catch (error) {
+      console.error("Error searching marketplace:", error);
+      toast.error("Lỗi khi tìm kiếm NFT.");
       return false;
     }
   };
@@ -127,6 +259,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
     fetchUserNFTs,
     userNFTs,
     otherNFTsData,
+    otherNFTsAnalytics,
     searchMarketplace,
     searchNFTs,
   };

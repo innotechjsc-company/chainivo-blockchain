@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sparkles, Zap } from "lucide-react";
-import { CreateStakingNFTRequest, AvailableNFT } from "@/types/staking";
+import { CreateStakingNFTRequest, AvailableNFT } from "@/types/Staking";
 
 interface NFTStakingFormProps {
   availableNFTs: AvailableNFT[];

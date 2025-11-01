@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { NFT } from './types';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { NFT } from "./types";
 
 interface NFTFilters {
   collection?: string;
@@ -28,88 +28,99 @@ const initialState: NFTState = {
 
 // Async thunks
 export const fetchNFTs = createAsyncThunk(
-  'nft/fetchNFTs',
+  "nft/fetchNFTs",
   async (filters: NFTFilters | undefined, { rejectWithValue }) => {
     try {
-      const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+      const queryParams = new URLSearchParams(
+        filters as Record<string, string>
+      ).toString();
       const response = await fetch(`/api/nfts?${queryParams}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch NFTs');
+        throw new Error("Failed to fetch NFTs");
       }
 
       const nfts = await response.json();
       return nfts;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Fetch failed');
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Fetch failed"
+      );
     }
   }
 );
 
 export const fetchUserNFTs = createAsyncThunk(
-  'nft/fetchUserNFTs',
+  "nft/fetchUserNFTs",
   async (userId: string, { rejectWithValue }) => {
     try {
       const response = await fetch(`/api/nfts/user/${userId}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user NFTs');
+        throw new Error("Failed to fetch user NFTs");
       }
 
       const userNFTs = await response.json();
       return userNFTs;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Fetch failed');
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Fetch failed"
+      );
     }
   }
 );
 
 export const buyNFT = createAsyncThunk(
-  'nft/buyNFT',
+  "nft/buyNFT",
   async (nftId: string, { rejectWithValue }) => {
     try {
       const response = await fetch(`/api/nfts/${nftId}/buy`, {
-        method: 'POST',
+        method: "POST",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to buy NFT');
+        throw new Error("Failed to buy NFT");
       }
 
       const boughtNFT = await response.json();
       return boughtNFT;
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : 'Purchase failed'
+        error instanceof Error ? error.message : "Purchase failed"
       );
     }
   }
 );
 
 export const sellNFT = createAsyncThunk(
-  'nft/sellNFT',
-  async ({ nftId, price }: { nftId: string; price: number }, { rejectWithValue }) => {
+  "nft/sellNFT",
+  async (
+    { nftId, price }: { nftId: string; price: number },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(`/api/nfts/${nftId}/sell`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ price }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to sell NFT');
+        throw new Error("Failed to sell NFT");
       }
 
       return nftId;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Sale failed');
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Sale failed"
+      );
     }
   }
 );
 
 // Slice
 const nftSlice = createSlice({
-  name: 'nft',
+  name: "nft",
   initialState,
   reducers: {
     selectNFT: (state, action: PayloadAction<NFT>) => {
@@ -181,7 +192,9 @@ const nftSlice = createSlice({
         state.error = null;
       })
       .addCase(sellNFT.fulfilled, (state, action) => {
-        state.userNFTs = state.userNFTs.filter((nft) => nft.id !== action.payload);
+        state.userNFTs = state.userNFTs.filter(
+          (nft) => nft._id !== action.payload
+        );
         state.isLoading = false;
         state.error = null;
       })
@@ -192,5 +205,6 @@ const nftSlice = createSlice({
   },
 });
 
-export const { selectNFT, setFilters, clearFilters, clearError } = nftSlice.actions;
+export const { selectNFT, setFilters, clearFilters, clearError } =
+  nftSlice.actions;
 export default nftSlice.reducer;

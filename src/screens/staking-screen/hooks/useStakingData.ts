@@ -120,6 +120,7 @@ export const useStakingData = () => {
 
   const getClaimRewardsData = async (stakeId: string) => {
     setIsLoading(true);
+    debugger;
     const response = await StakingService.getRewards(stakeId);
     if (response?.success) {
       await getStakingPools();

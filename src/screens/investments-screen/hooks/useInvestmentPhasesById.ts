@@ -16,9 +16,13 @@ export const useInvestmentPhasesById = (id: string) => {
         // TODO: Chuyen sang getPhaseById() khi backend da fix
         const response = await ApiService.getPhases();
 
-        if (response.success && response.data && response.data.phases) {
+        if (
+          response.success &&
+          response.data &&
+          (response.data as any).phases
+        ) {
           // Filter ra phase co phaseId khop voi id
-          const foundPhase = response.data.phases.find(
+          const foundPhase = (response.data as any).phases.find(
             (p: Phase) => p.phaseId === Number(id)
           );
 
@@ -29,7 +33,9 @@ export const useInvestmentPhasesById = (id: string) => {
             setError("Khong tim thay phase voi ID nay");
           }
         } else {
-          setError(response.error || response.message || "Khong lay duoc du lieu");
+          setError(
+            response.error || response.message || "Khong lay duoc du lieu"
+          );
         }
       } catch (err) {
         setError("Loi ket noi den server");
