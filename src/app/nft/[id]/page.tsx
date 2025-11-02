@@ -9,6 +9,14 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAppSelector } from "@/stores";
 import {
   ArrowLeft,
@@ -64,6 +72,7 @@ export default function NFTDetailPage() {
   const [commentLoading, setCommentLoading] = useState(false);
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const id = params?.id as string;
   const type = (searchParams?.get("type") || params?.type) as
     | "tier"
@@ -293,7 +302,7 @@ export default function NFTDetailPage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (type === "other") {
-                      handleBuyNFT();
+                      setConfirmDialogOpen(true);
                     } else {
                       toast.success("Bạn đã sở hữu NFT này");
                     }
@@ -447,6 +456,36 @@ export default function NFTDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận mua NFT</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn thực hiện giao dịch mua này không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialogOpen(false)}
+            >
+              Không
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                handleBuyNFT();
+              }}
+              disabled={buyLoading}
+            >
+              Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

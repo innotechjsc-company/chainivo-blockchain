@@ -117,17 +117,21 @@ export const useStakingData = () => {
   };
 
   const getClaimRewardsData = async (stakeId: string) => {
-    setIsLoading(true);
-    debugger;
-    const response = await StakingService.getRewards(stakeId);
-    if (response?.success) {
-      await getStakingPools();
+    try {
+      setIsLoading(true);
+      const response = await StakingService.getRewards(stakeId);
+      if (response?.success) {
+        await getStakingPools();
+        setIsLoading(false);
+        toast.success("Nhận thưởng thành công!");
+        return response?.data;
+      } else {
+        setIsLoading(false);
+        throw new Error(response?.message);
+      }
+    } catch (error) {
       setIsLoading(false);
-      toast.success("Nhận thưởng thành công!");
-      return response?.data;
-    } else {
-      setIsLoading(false);
-      toast.error("Lỗi nhận thưởng!");
+      toast.error(error instanceof Error ? error.message : "Lỗi nhận thưởng!");
       return [];
     }
   };

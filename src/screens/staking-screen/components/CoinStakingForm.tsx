@@ -11,6 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sparkles, Zap } from "lucide-react";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import { useAppSelector } from "@/stores";
@@ -50,6 +58,8 @@ export const CoinStakingForm = ({
   const [userCanBalance, setUserCanBalance] = useState<number>(0);
   const [takePools, setTakePools] = useState<any[]>([]);
   const [selectedPool, setSelectedPool] = useState<string>("");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingStakeAmount, setPendingStakeAmount] = useState<number>(0);
 
   // Hàm format số với dấu phẩy
   const formatNumberWithCommas = (value: string): string => {
@@ -110,8 +120,18 @@ export const CoinStakingForm = ({
       }
     }
 
+    // Lưu stake amount và mở dialog xác nhận
+    setPendingStakeAmount(stakeAmount);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmStake = async () => {
+    setConfirmDialogOpen(false);
     try {
-      await createTransaction(user?.walletAddress as string, stakeAmount);
+      await createTransaction(
+        user?.walletAddress as string,
+        pendingStakeAmount
+      );
     } catch (error) {
       console.error(error);
     }
@@ -165,7 +185,7 @@ export const CoinStakingForm = ({
 
       // BƯỚC 1: Thêm stake ngay vào danh sách với status "pending"
       const pendingStakeData = {
-        amount: stakeAmount,
+        amount: amount, // Use amount parameter instead of stakeAmount from closure
         walletAddress: user?.walletAddress,
         stake: selectedPoolData,
         poolInfo: selectedPoolData,
@@ -231,8 +251,7 @@ export const CoinStakingForm = ({
 
       try {
         console.error("Error JSON:", JSON.stringify(error, null, 2));
-      } catch (e) {
-      }
+      } catch (e) {}
 
       // Xóa temp stake nếu có lỗi
       if (tempStakeId) {
@@ -248,7 +267,9 @@ export const CoinStakingForm = ({
       } else if ((error as any).code === 205) {
         // AbiError - thường do sai network
         setIsLoading(false);
-        toast.error("Lỗi blockchain. Vui lòng kiểm tra wallet đã kết nối đúng network chưa (Polygon Amoy Testnet)");
+        toast.error(
+          "Lỗi blockchain. Vui lòng kiểm tra wallet đã kết nối đúng network chưa (Polygon Amoy Testnet)"
+        );
       } else if ((error as any).message?.includes("Sai network")) {
         setIsLoading(false);
         toast.error((error as any).message);
@@ -301,177 +322,213 @@ export const CoinStakingForm = ({
   const isExceedBalance = stakeAmount > userCanBalance && stakeAmount > 0;
 
   return (
-    <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
-      <div
-        className="relative h-48 overflow-hidden"
-        style={{
-          backgroundImage: `url('/staking-coin-hero.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        {/* Overlay for better text visibility */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-        <div className="absolute bottom-4 left-4 right-4">
-          <h3 className="text-2xl font-bold mb-1 text-white drop-shadow-lg">
-            Stake CAN Token
-          </h3>
-          <p className="text-white/90 drop-shadow-lg">
-            APY {currentApy}% - Nhận thưởng liên tục
-          </p>
-        </div>
-      </div>
-
-      <CardContent className="staking-card-content pt-6 space-y-4">
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
-              Số dư khả dụng
-            </span>
-            <span className="text-xl font-bold">
-              {userCanBalance.toLocaleString()} CAN
-            </span>
+    <>
+      <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
+        <div
+          className="relative h-48 overflow-hidden"
+          style={{
+            backgroundImage: `url('/staking-coin-hero.jpg')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          {/* Overlay for better text visibility */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4">
+            <h3 className="text-2xl font-bold mb-1 text-white drop-shadow-lg">
+              Stake CAN Token
+            </h3>
+            <p className="text-white/90 drop-shadow-lg">
+              APY {currentApy}% - Nhận thưởng liên tục
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="staking-form space-y-4">
-          <div>
-            <Label htmlFor="pool" className="text-sm font-medium mb-2 block">
-              Chọn gói Stake
-            </Label>
-            <Select value={selectedPool} onValueChange={setSelectedPool}>
-              <SelectTrigger className="w-full h-12 text-lg">
-                <SelectValue placeholder="Chọn pool staking" />
-              </SelectTrigger>
-              <SelectContent>
-                {takePools.map((pool, idx) => {
-                  const optionId = String(pool?._id ?? pool?.id ?? idx);
-                  return (
-                    <SelectItem key={optionId} value={optionId}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{pool.name}</span>
-                        {/* <span className="text-sm text-muted-foreground">
+        <CardContent className="staking-card-content pt-6 space-y-4">
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Số dư khả dụng
+              </span>
+              <span className="text-xl font-bold">
+                {userCanBalance.toLocaleString()} CAN
+              </span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="staking-form space-y-4">
+            <div>
+              <Label htmlFor="pool" className="text-sm font-medium mb-2 block">
+                Chọn gói Stake
+              </Label>
+              <Select value={selectedPool} onValueChange={setSelectedPool}>
+                <SelectTrigger className="w-full h-12 text-lg">
+                  <SelectValue placeholder="Chọn pool staking" />
+                </SelectTrigger>
+                <SelectContent>
+                  {takePools.map((pool, idx) => {
+                    const optionId = String(pool?._id ?? pool?.id ?? idx);
+                    return (
+                      <SelectItem key={optionId} value={optionId}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{pool.name}</span>
+                          {/* <span className="text-sm text-muted-foreground">
                         APY: {pool.apy}% | Min: {pool.minStakeAmount} CAN
                       </span> */}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="amount" className="text-sm font-medium mb-2 block">
-              Số lượng CAN stake
-            </Label>
-            <Input
-              id="amount"
-              type="text"
-              placeholder="Nhập số lượng CAN"
-              value={amount}
-              onChange={handleAmountChange}
-              className={`text-lg h-12 ${
-                isExceedBalance || isInvalidStakeAmount
-                  ? "border-red-500 focus:border-red-500"
-                  : ""
-              }`}
-            />
-
-            {isExceedBalance && (
-              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                <span className="text-red-500">⚠️</span>
-                Số CAN trong tài khoản không đủ. Số dư khả dụng:{" "}
-                {userCanBalance.toLocaleString()} CAN
-              </p>
-            )}
-            {isBelowMinStake && (
-              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                <span className="text-red-500">⚠️</span>
-                Số lượng stake tối thiểu là {selectedPoolData?.minStake} CAN
-              </p>
-            )}
-            {isAboveMaxStake && (
-              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                <span className="text-red-500">⚠️</span>
-                Số lượng stake tối đa là {selectedPoolData?.maxStake} CAN
-              </p>
-            )}
-            {isValidAmount && selectedPoolData && (
-              <p className="text-green-600 text-sm mt-2">
-                Tổng thưởng dự kiến:{" "}
-                {((stakeAmount * selectedPoolData.apy) / 100).toFixed(2)} CAN
-              </p>
-            )}
-          </div>
-
-          {selectedPoolData && (
-            <div className="p-4 bg-green-500/10 rounded-lg space-y-2 border border-green-500/20 animate-fade-in">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-500">
-                  Thông tin gói stake ({selectedPoolData.name})
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Thời gian stake
-                  </p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.name === "Flexible Staking Pool"
-                      ? "Không giới hạn"
-                      : `${selectedPoolData.lockPeriod} ngày`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Stakers</p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.totalStakers}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Staked</p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.totalStaked}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Min Stake</p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.minStake} CAN
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Max Stake</p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.maxStake} CAN
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">APY</p>
-                  <p className="text-sm font-bold text-green-500">
-                    {selectedPoolData.apy}%
-                  </p>
-                </div>
-              </div>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          <div className="staking-form-actions">
+            <div>
+              <Label
+                htmlFor="amount"
+                className="text-sm font-medium mb-2 block"
+              >
+                Số lượng CAN stake
+              </Label>
+              <Input
+                id="amount"
+                type="text"
+                placeholder="Nhập số lượng CAN"
+                value={amount}
+                onChange={handleAmountChange}
+                className={`text-lg h-12 ${
+                  isExceedBalance || isInvalidStakeAmount
+                    ? "border-red-500 focus:border-red-500"
+                    : ""
+                }`}
+              />
+
+              {isExceedBalance && (
+                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                  <span className="text-red-500">⚠️</span>
+                  Số CAN trong tài khoản không đủ. Số dư khả dụng:{" "}
+                  {userCanBalance.toLocaleString()} CAN
+                </p>
+              )}
+              {isBelowMinStake && (
+                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                  <span className="text-red-500">⚠️</span>
+                  Số lượng stake tối thiểu là {selectedPoolData?.minStake} CAN
+                </p>
+              )}
+              {isAboveMaxStake && (
+                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                  <span className="text-red-500">⚠️</span>
+                  Số lượng stake tối đa là {selectedPoolData?.maxStake} CAN
+                </p>
+              )}
+              {isValidAmount && selectedPoolData && (
+                <p className="text-green-600 text-sm mt-2">
+                  Tổng thưởng dự kiến:{" "}
+                  {((stakeAmount * selectedPoolData.apy) / 100).toFixed(2)} CAN
+                </p>
+              )}
+            </div>
+
+            {selectedPoolData && (
+              <div className="p-4 bg-green-500/10 rounded-lg space-y-2 border border-green-500/20 animate-fade-in">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-500">
+                    Thông tin gói stake ({selectedPoolData.name})
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Thời gian stake
+                    </p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.name === "Flexible Staking Pool"
+                        ? "Không giới hạn"
+                        : `${selectedPoolData.lockPeriod} ngày`}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Total Stakers
+                    </p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.totalStakers}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Total Staked
+                    </p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.totalStaked}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Min Stake</p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.minStake} CAN
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Max Stake</p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.maxStake} CAN
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">APY</p>
+                    <p className="text-sm font-bold text-green-500">
+                      {selectedPoolData.apy}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="staking-form-actions">
+              <Button
+                type="submit"
+                className="w-full h-12 text-lg cursor-pointer"
+                disabled={!isValidAmount || loading}
+              >
+                <Zap className="h-5 w-5 mr-2" />
+                {loading ? "Đang xử lý..." : "Stake Ngay"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận Stake</DialogTitle>
+            <DialogDescription>
+              Bạn có muốn thực hiện stake gói này không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
-              type="submit"
-              className="w-full h-12 text-lg cursor-pointer"
-              disabled={!isValidAmount || loading}
+              variant="outline"
+              onClick={() => setConfirmDialogOpen(false)}
             >
-              <Zap className="h-5 w-5 mr-2" />
-              {loading ? "Đang xử lý..." : "Stake Ngay"}
+              Không
             </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+            <Button
+              variant="default"
+              onClick={handleConfirmStake}
+              disabled={loading}
+            >
+              Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
