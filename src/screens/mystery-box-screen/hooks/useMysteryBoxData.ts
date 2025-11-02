@@ -38,6 +38,9 @@ export interface MysteryBoxData {
   remainingSupply: number;
   isActive: boolean;
   isUnlimited?: boolean;
+  status: "available" | "out_of_stock" | "discontinued";
+  isFeatured: boolean;
+  publishedAt?: string;
   tierAttributes: {
     color?: string;
     borderColor?: string;
@@ -177,6 +180,9 @@ export const useMysteryBoxData = () => {
               : (box.totalStock || 0) - (box.soldCount || 0),
             isActive: box.isActive,
             isUnlimited: box.isUnlimited || false,
+            status: box.status || "available",
+            isFeatured: box.isFeatured || false,
+            publishedAt: box.publishedAt,
             tierAttributes: {
               color: tierInfo.color,
               borderColor: tierInfo.borderColor,

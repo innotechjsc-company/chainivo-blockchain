@@ -12,3 +12,6 @@ export type {
 } from "./ToastService";
 
 export { default as TransferService } from "./TransferService";
+
+export { LocalStorageService, storage, STORAGE_KEYS } from "./LocalStorageService";
+export type { StorageKey, ThemeMode, UserInfo } from "./LocalStorageService";

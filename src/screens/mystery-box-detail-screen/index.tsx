@@ -12,7 +12,13 @@ import {
   RewardsDetail,
   PurchaseCard,
   ConfirmPurchaseModal,
+  BoxOpeningAnimation,
+  RewardDisplay,
 } from "./components";
+import {
+  MysteryBoxService,
+  type OpenBoxResponse,
+} from "@/api/services/mystery-box-service";
 
 interface MysteryBoxDetailScreenProps {
   boxId: string;
@@ -25,6 +31,9 @@ export default function MysteryBoxDetailScreen({
   const { box, isLoading, error } = useBoxDetail(boxId);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [showReward, setShowReward] = useState(false);
+  const [openedReward, setOpenedReward] = useState<OpenBoxResponse | null>(null);
 
   // Handler to open modal
   const handleOpenModal = () => {
@@ -44,24 +53,44 @@ export default function MysteryBoxDetailScreen({
 
     try {
       setIsPurchasing(true);
-
-      // TODO: Implement purchase logic here
-      // await MysteryBoxService.purchaseBox(...)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      toast.success("Mua hộp thành công!");
-      console.log("Purchase confirmed:", { boxId: box.id, quantity: 1 });
-
       setIsModalOpen(false);
-      // Optionally refetch box details or navigate
-    } catch (err) {
-      toast.error("Có lỗi xảy ra khi mua hộp");
-      console.error("Purchase error:", err);
-    } finally {
+
+      // Call MYSTERY_BOX.BUY API to open the box
+      const response = await MysteryBoxService.openBox({
+        mysteryBoxId: box.id,
+      });
+
+      if (response.success && response.data) {
+        // Show opening animation
+        setIsOpening(true);
+        setOpenedReward(response.data);
+      } else {
+        throw new Error(response.message || "Không thể mở hộp");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Có lỗi xảy ra khi mở hộp");
+      console.error("Box opening error:", err);
       setIsPurchasing(false);
     }
+  };
+
+  // Handler when animation completes
+  const handleAnimationComplete = () => {
+    setIsOpening(false);
+    setIsPurchasing(false);
+
+    if (openedReward) {
+      // Show reward display modal
+      setShowReward(true);
+    }
+  };
+
+  // Handler to close reward display
+  const handleCloseReward = () => {
+    setShowReward(false);
+    setOpenedReward(null);
+    // Optionally refetch box details or navigate
+    // router.push("/mysterybox");
   };
 
   // Loading state
@@ -144,6 +173,21 @@ export default function MysteryBoxDetailScreen({
           onConfirm={handleConfirmPurchase}
           box={box}
           isLoading={isPurchasing}
+        />
+
+        {/* Box Opening Animation */}
+        <BoxOpeningAnimation
+          isOpen={isOpening}
+          boxName={box.name}
+          boxImage={box.image}
+          onAnimationComplete={handleAnimationComplete}
+        />
+
+        {/* Reward Display */}
+        <RewardDisplay
+          isOpen={showReward}
+          onClose={handleCloseReward}
+          reward={openedReward}
         />
       </main>
     </div>

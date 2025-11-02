@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { LocalStorageService } from "@/services";
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = React.useState(false);
@@ -16,10 +17,10 @@ export function ThemeToggle() {
     setIsDark(newIsDark);
     if (newIsDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
+      LocalStorageService.setTheme("dark");
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+      LocalStorageService.setTheme("light");
     }
   };
 
