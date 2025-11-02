@@ -88,13 +88,24 @@ export const useBoxDetail = (id: string) => {
       if (apiBox && apiBox.id) {
         const tierInfo = getTierInfo(apiBox.price);
 
+        // Helper to construct full image URL
+        const getImageUrl = (imageData: any): string => {
+          if (!imageData?.url) return "/nft-box.jpg";
+          
+          const imageUrl = imageData.url;
+          // Nếu URL đã là full URL (bắt đầu bằng http), dùng trực tiếp
+          if (imageUrl.startsWith("http")) {
+            return imageUrl;
+          }
+          // Nếu là relative path, ghép với API_BASE_URL
+          return `${config.API_BASE_URL}${imageUrl}`;
+        };
+
         const mappedBox: MysteryBoxData = {
           id: apiBox.id,
           name: apiBox.name,
           description: apiBox.description || "",
-          image: apiBox.image?.url
-            ? `${config.API_BASE_URL}${apiBox.image.url}`
-            : "/nft-box.jpg",
+          image: getImageUrl(apiBox.image),
           price: {
             amount: apiBox.price,
             currency: "CAN",

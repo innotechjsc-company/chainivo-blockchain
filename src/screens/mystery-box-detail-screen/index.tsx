@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
   MysteryBoxService,
   type OpenBoxResponse,
 } from "@/api/services/mystery-box-service";
+import TransferService from "@/services/TransferService";
+import { useAppSelector } from "@/stores";
 
 interface MysteryBoxDetailScreenProps {
   boxId: string;
@@ -29,11 +31,33 @@ export default function MysteryBoxDetailScreen({
 }: MysteryBoxDetailScreenProps) {
   const router = useRouter();
   const { box, isLoading, error } = useBoxDetail(boxId);
+  const user = useAppSelector((state) => state.auth.user);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
+  const [isApiLoading, setIsApiLoading] = useState(false);
   const [showReward, setShowReward] = useState(false);
-  const [openedReward, setOpenedReward] = useState<OpenBoxResponse | null>(null);
+  const [openedReward, setOpenedReward] = useState<OpenBoxResponse | null>(
+    null
+  );
+
+  // Helper to get image URL from box object
+  const getBoxImageUrl = (): string => {
+    if (!box) return "/nft-box.jpg";
+
+    // Nếu image là string (đã được convert)
+    if (typeof box.image === "string") {
+      return box.image || "/nft-box.jpg";
+    }
+
+    // Nếu image là object (chưa được convert)
+    if (box.image && typeof box.image === "object" && "url" in box.image) {
+      const imageObj = box.image as any;
+      return imageObj.url || "/nft-box.jpg";
+    }
+
+    return "/nft-box.jpg";
+  };
 
   // Handler to open modal
   const handleOpenModal = () => {
@@ -49,33 +73,64 @@ export default function MysteryBoxDetailScreen({
 
   // Handler for confirmed purchase
   const handleConfirmPurchase = async () => {
-    if (!box) return;
-
+    if (!box || !user?.walletAddress) {
+      toast.error("Vui lòng kết nối ví trước khi mua hộp");
+      return;
+    }
     try {
       setIsPurchasing(true);
       setIsModalOpen(false);
-
-      // Call MYSTERY_BOX.BUY API to open the box
-      const response = await MysteryBoxService.openBox({
-        mysteryBoxId: box.id,
+      // Step 1: Transfer CAN tokens to admin wallet
+      toast.info("Đang chuyển token...");
+      const transferResult = await TransferService.sendCanTransfer({
+        fromAddress: user.walletAddress,
+        amountCan: Number(box.price.amount),
       });
+      console.log("Transfer successful:", transferResult);
+      toast.success("Chuyển token thành công!");
 
-      if (response.success && response.data) {
-        // Show opening animation
-        setIsOpening(true);
-        setOpenedReward(response.data);
-      } else {
-        throw new Error(response.message || "Không thể mở hộp");
-      }
+      // Step 2: Show opening animation immediately after transfer
+      setIsOpening(true);
+      setIsApiLoading(true);
+
+      // Step 3: Call MYSTERY_BOX.BUY API with transaction hash (in parallel)
+      MysteryBoxService.openBox({
+        mysteryBoxId: box.id,
+        transactionHash: transferResult.transactionHash,
+      })
+        .then((response) => {
+          if (response.success && response.data) {
+            setOpenedReward(response.data);
+          } else {
+            throw new Error(response.message || "Không thể mở hộp");
+          }
+        })
+        .catch((err: any) => {
+          const errorMessage = err?.message || "Có lỗi xảy ra khi mở hộp";
+          toast.error(errorMessage);
+          console.error("Box opening error:", err);
+          setIsOpening(false);
+          setIsPurchasing(false);
+        })
+        .finally(() => {
+          setIsApiLoading(false);
+        });
     } catch (err: any) {
-      toast.error(err?.message || "Có lỗi xảy ra khi mở hộp");
-      console.error("Box opening error:", err);
+      const errorMessage = err?.message || "Có lỗi xảy ra khi mua hộp";
+      toast.error(errorMessage);
+      console.error("Box purchase error:", err);
+      setIsOpening(false);
       setIsPurchasing(false);
     }
   };
 
   // Handler when animation completes
   const handleAnimationComplete = () => {
+    // Nếu API vẫn đang load, giữ animation mở
+    if (isApiLoading) {
+      return;
+    }
+
     setIsOpening(false);
     setIsPurchasing(false);
 
@@ -84,6 +139,20 @@ export default function MysteryBoxDetailScreen({
       setShowReward(true);
     }
   };
+
+  // Effect: Đóng animation khi API xong và animation đã hoàn tất
+  useEffect(() => {
+    if (!isApiLoading && isOpening && openedReward) {
+      // API vừa xong, animation vẫn mở, có reward data → close animation
+      const timer = setTimeout(() => {
+        setIsOpening(false);
+        setIsPurchasing(false);
+        setShowReward(true);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isApiLoading, isOpening, openedReward]);
 
   // Handler to close reward display
   const handleCloseReward = () => {
@@ -179,8 +248,9 @@ export default function MysteryBoxDetailScreen({
         <BoxOpeningAnimation
           isOpen={isOpening}
           boxName={box.name}
-          boxImage={box.image}
+          boxImage={getBoxImageUrl()}
           onAnimationComplete={handleAnimationComplete}
+          isApiComplete={!isApiLoading}
         />
 
         {/* Reward Display */}

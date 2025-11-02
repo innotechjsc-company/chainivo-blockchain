@@ -150,6 +150,19 @@ export const useMysteryBoxData = () => {
         const apiData = response.data as any;
         const mysteryBoxes = apiData.mysteryBoxes || [];
 
+        // Helper to construct full image URL
+        const getImageUrl = (imageData: any): string => {
+          if (!imageData?.url) return "/nft-box.jpg";
+          
+          const imageUrl = imageData.url;
+          // Nếu URL đã là full URL (bắt đầu bằng http), dùng trực tiếp
+          if (imageUrl.startsWith("http")) {
+            return imageUrl;
+          }
+          // Nếu là relative path, ghép với API_BASE_URL
+          return `${config.API_BASE_URL}${imageUrl}`;
+        };
+
         const mappedBoxes: MysteryBoxData[] = mysteryBoxes.map((box: any) => {
           const tierInfo = getTierInfo(box.price);
           const dropRates = calculateDropRates(box.rewards);
@@ -158,9 +171,7 @@ export const useMysteryBoxData = () => {
             id: box.id,
             name: box.name,
             description: box.description || "",
-            image: box.image?.url
-              ? `${config.API_BASE_URL}${box.image.url}`
-              : "/nft-box.jpg",
+            image: getImageUrl(box.image),
             price: {
               amount: box.price,
               currency: "CAN",

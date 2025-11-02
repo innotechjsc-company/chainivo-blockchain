@@ -8,6 +8,7 @@ interface BoxOpeningAnimationProps {
   boxName?: string;
   boxImage?: string;
   onAnimationComplete?: () => void;
+  isApiComplete?: boolean;
 }
 
 export const BoxOpeningAnimation = ({
@@ -15,37 +16,64 @@ export const BoxOpeningAnimation = ({
   boxName = "Mystery Box",
   boxImage,
   onAnimationComplete,
+  isApiComplete = false,
 }: BoxOpeningAnimationProps) => {
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "shake" | "opening" | "reveal"
   >("initial");
+  const [progressWidth, setProgressWidth] = useState(0);
 
   useEffect(() => {
     if (!isOpen) {
       setAnimationPhase("initial");
+      setProgressWidth(0);
       return;
     }
 
-    const timeline = [
-      { phase: "shake" as const, delay: 500 },
-      { phase: "opening" as const, delay: 2000 },
-      { phase: "reveal" as const, delay: 3000 },
-    ];
+    const timeouts: NodeJS.Timeout[] = [];
 
-    const timeouts = timeline.map(({ phase, delay }) =>
-      setTimeout(() => setAnimationPhase(phase), delay)
+    // Phase 1: initial → shake (500ms)
+    timeouts.push(
+      setTimeout(() => setAnimationPhase("shake"), 500)
     );
 
-    // Call completion callback after reveal
-    const completionTimeout = setTimeout(() => {
-      onAnimationComplete?.();
-    }, 3500);
+    // Phase 2: shake → opening (2000ms)
+    timeouts.push(
+      setTimeout(() => setAnimationPhase("opening"), 2000)
+    );
+
+    // Phase 3: opening → reveal (only when API is complete)
+    if (isApiComplete) {
+      timeouts.push(
+        setTimeout(() => setAnimationPhase("reveal"), 3000)
+      );
+      
+      // Call completion callback after reveal
+      timeouts.push(
+        setTimeout(() => {
+          onAnimationComplete?.();
+        }, 3500)
+      );
+    }
+
+    // Progress bar animation - stop at 90% until API is complete
+    const progressInterval = setInterval(() => {
+      setProgressWidth((prev) => {
+        if (isApiComplete) {
+          // API done - go to 100%
+          return Math.min(prev + 10, 100);
+        } else {
+          // API not done - stop at 90%
+          return Math.min(prev + 3, 90);
+        }
+      });
+    }, 100);
 
     return () => {
       timeouts.forEach(clearTimeout);
-      clearTimeout(completionTimeout);
+      clearInterval(progressInterval);
     };
-  }, [isOpen, onAnimationComplete]);
+  }, [isOpen, onAnimationComplete, isApiComplete]);
 
   if (!isOpen) return null;
 
@@ -145,13 +173,12 @@ export const BoxOpeningAnimation = ({
           <div className="mt-8 max-w-md mx-auto">
             <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-3000 ${
-                  animationPhase === "reveal" ? "w-full" : "w-0 animate-progress"
-                }`}
+                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-100"
+                style={{ width: `${progressWidth}%` }}
               />
             </div>
             <p className="mt-4 text-gray-400 text-sm">
-              {animationPhase === "reveal"
+              {progressWidth === 100
                 ? "Hoàn tất!"
                 : "Vui lòng đợi trong giây lát..."}
             </p>

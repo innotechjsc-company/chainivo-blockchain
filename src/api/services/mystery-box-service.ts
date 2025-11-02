@@ -28,7 +28,7 @@ export interface PurchaseBoxData {
 
 export interface OpenBoxData {
   mysteryBoxId: string;
-  // transactionHash?: string;
+  transactionHash?: string;
 }
 
 export interface NFTImage {

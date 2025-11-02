@@ -1,11 +1,13 @@
 import MysteryBoxDetailScreen from "@/screens/mystery-box-detail-screen";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function MysteryBoxDetailPage({ params }: PageProps) {
-  return <MysteryBoxDetailScreen boxId={params.id} />;
+export default async function MysteryBoxDetailPage({ params }: PageProps) {
+  const { id } = await params;
+
+  return <MysteryBoxDetailScreen boxId={id} />;
 }
