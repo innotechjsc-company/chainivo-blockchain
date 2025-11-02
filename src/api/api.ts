@@ -102,6 +102,11 @@ export const API_ENDPOINTS = {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
   },
+  ABOUT: {
+    LEADERS: "/api/leadership-team",
+    // PARTNERS: "/api/about/partners",
+    // ECOSYSTEM: "/api/about/ecosystem",
+  },
 } as const;
 
 export interface ApiResponse<T = any> {

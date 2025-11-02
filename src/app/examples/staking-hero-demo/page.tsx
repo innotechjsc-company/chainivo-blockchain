@@ -1,22 +1,147 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Zap, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import { useAppSelector } from "@/stores";
+import { StakingService, WalletService } from "@/api/services";
+import TransferService from "@/services/TransferService";
+import { toast } from "sonner";
 export default function StakingHeroDemoPage() {
   const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
-  const userBalance = 10000;
+  const [userBalance, setUserBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [stakingPools, setStakingPools] = useState<any[]>([]);
+  const [selectedPoolId, setSelectedPoolId] = useState("");
+  const [stakingMyPools, setStakingMyPools] = useState<any[]>([]);
   const apy = 12;
+  // Fetch staking pools
+  const fetchPools = async () => {
+    try {
+      const response = await StakingService.getPools();
+      if (response?.success && response?.data) {
+        setStakingPools(response.data);
+        // Chon pool dau tien lam default
+        if (response.data.length > 0) {
+          setSelectedPoolId(response.data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching pools:", error);
+    }
+  };
+
+  // Fetch user CAN balance
+  const fetchBalance = async () => {
+    if (!user?.walletAddress) return;
+    try {
+      const response = await WalletService.getWalletCanBalances(
+        user.walletAddress
+      );
+      if (response?.success && response?.data) {
+        setUserBalance(Number(response.data.can) || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+    }
+  };
+
+  // Load data khi mount
+  useEffect(() => {
+    fetchPools();
+    fetchBalance();
+  }, [user?.walletAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Staking amount:", amount);
+
+    // Validation
+    if (!user || !user.walletAddress) {
+      toast.error("Vui long dang nhap de stake");
+      return;
+    }
+
+    if (!selectedPoolId) {
+      toast.error("Vui long chon pool staking");
+      return;
+    }
+
+    const stakeAmount = parseFloat(amount);
+    if (!stakeAmount || stakeAmount <= 0) {
+      toast.error("Vui long nhap so luong CAN hop le");
+      return;
+    }
+
+    if (stakeAmount > userBalance) {
+      toast.error("So CAN trong tai khoan khong du");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Buoc 1: Transfer CAN token qua blockchain
+      toast.loading("Dang xu ly giao dich blockchain...", {
+        id: "stake-toast",
+      });
+
+      const transferRes = await TransferService.sendCanTransfer({
+        fromAddress: user.walletAddress,
+        amountCan: stakeAmount,
+      });
+
+      // Step 2: Create stake record on backend
+      if (transferRes.transactionHash) {
+        toast.loading("Saving staking information...", { id: "stake-toast" });
+
+        const stakeRes = await StakingService.stake({
+          poolId: selectedPoolId,
+          amount: stakeAmount,
+          walletAddress: user.walletAddress,
+          transactionHash: transferRes.rawReceipt.transactionHash,
+          blockNumber: transferRes.blockNumber,
+        });
+
+        if (stakeRes.success) {
+          toast.success("Staking successful!", { id: "stake-toast" });
+
+          // Reset form and refresh data
+          setAmount("");
+          await fetchBalance();
+        } else {
+          toast.error(stakeRes.message || "Error saving stake", {
+            id: "stake-toast",
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Stake error:", error);
+
+      // Handle error cases
+      if (error.code === 401) {
+        toast.error("User rejected transaction", { id: "stake-toast" });
+      } else if (error.code === -32603) {
+        toast.error("Timeout. Please try again.", { id: "stake-toast" });
+      } else if (error.message?.includes("insufficient funds")) {
+        toast.error("Insufficient funds for transaction", {
+          id: "stake-toast",
+        });
+      } else if (error.message?.includes("gas")) {
+        toast.error("Gas error. Please try again.", { id: "stake-toast" });
+      } else {
+        toast.error(error.message || "An error occurred during staking", {
+          id: "stake-toast",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isValidAmount =
@@ -158,10 +283,10 @@ export default function StakingHeroDemoPage() {
                     <Button
                       type="submit"
                       className="w-full h-12 text-lg"
-                      disabled={!isValidAmount}
+                      disabled={!isValidAmount || isLoading}
                     >
                       <Zap className="h-5 w-5 mr-2" />
-                      Stake Ngay
+                      {isLoading ? "Đang stake..." : "Stake Ngay"}
                     </Button>
                   </div>
                 </form>

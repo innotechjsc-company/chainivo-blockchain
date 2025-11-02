@@ -7,7 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StakingCoin, StakingNFT, StakingPool } from "@/types/Staking";
+import { Badge } from "@/components/ui/badge";
+import { StakingCoin, StakingNFT, StakingPool } from "@/types/staking";
 import {
   TrendingUp,
   Clock,
@@ -15,6 +16,7 @@ import {
   XCircle,
   Sparkles,
   Package,
+  Loader2,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -111,14 +113,18 @@ export const ActiveStakesList = ({
             </div>
           ) : (
             stakingMyPools.map((pool) => {
-              const key = (pool as any)._id || (pool as any).id;
-              const name = (pool as any).poolId?.name ?? "Gói stake";
-              const apy = (pool as any).poolId?.apy ?? 0;
+              const key = (pool as any).id;
+              const name = (pool as any).stake?.name ?? "Gói stake";
+              const apy = (pool as any).poolInfo?.apy ?? 0;
               const totalStaked = (pool as any).amount ?? 0;
-              const lockPeriod = (pool as any).poolId?.lockPeriod ?? 0;
+              const lockPeriod = (pool as any).poolInfo?.lockPeriod ?? 0;
               const stakedAt = (pool as any).stakedAt as string;
-              const id = (pool as any)._id || (pool as any).id;
+              const id = (pool as any).id;
               const rewards = (pool as any).earned ?? 0;
+              const canUnstake = (pool as any).canUnstake ?? true;
+              const daysRemaining = (pool as any).daysRemaining ?? 0;
+              const daysSinceStaked = (pool as any).daysSinceStaked ?? 0;
+              const status = (pool as any).status ?? "active";
               return (
                 <Card
                   key={key}
@@ -126,11 +132,30 @@ export const ActiveStakesList = ({
                 >
                   <CardContent className="pt-6 space-y-4">
                     <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <p className="text-lg font-bold truncate max-w-[14rem]">
-                          {name}
-                        </p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1 whitespace-nowrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-lg font-bold truncate max-w-[14rem]">
+                            {name}
+                          </p>
+                          {status === "pending" && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Chờ xác nhận
+                            </Badge>
+                          )}
+                          {status === "processing" && (
+                            <Badge variant="default" className="flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Đang xử lý
+                            </Badge>
+                          )}
+                          {status === "active" && (
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                              Đang hoạt động
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                           <TrendingUp className="h-3 w-3" />
                           APY: {apy}%
                         </p>
@@ -145,7 +170,7 @@ export const ActiveStakesList = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div className="p-3 bg-background/50 rounded-lg min-w-0">
                         <span className="text-muted-foreground block truncate">
                           Thời gian stake
@@ -160,6 +185,12 @@ export const ActiveStakesList = ({
                         </span>
                         <p className="font-medium truncate">{rewards} CAN</p>
                       </div>
+                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
+                        <span className="text-muted-foreground block truncate">
+                          Đã stake
+                        </span>
+                        <p className="font-medium truncate">{daysSinceStaked} ngày</p>
+                      </div>
                       <CountdownTimer
                         startAt={stakedAt}
                         lockDays={Number(lockPeriod) || 0}
@@ -170,6 +201,7 @@ export const ActiveStakesList = ({
                       <Button
                         variant="default"
                         onClick={() => getClaimRewardsData(id)}
+                        disabled={status !== "active"}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <Gift className="h-4 w-4" />
@@ -178,10 +210,13 @@ export const ActiveStakesList = ({
                       <Button
                         variant="destructive"
                         onClick={() => unStakeData(id)}
+                        disabled={!canUnstake && status === "active"}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />
-                        Huỷ Staking
+                        {status === "pending" && "Hủy lệnh"}
+                        {status === "processing" && "Hủy lệnh"}
+                        {status === "active" && (canUnstake ? "Rút tiền" : `Còn ${daysRemaining} ngày`)}
                       </Button>
                     </div>
                   </CardContent>
