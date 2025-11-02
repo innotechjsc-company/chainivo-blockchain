@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
+import { LocalStorageService } from "@/services";
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -15,7 +16,7 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("jwt_token");
+    const token = LocalStorageService.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,15 +27,82 @@ api.interceptors.request.use(
   }
 );
 
+// Biến để track việc refresh token đang diễn ra
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("jwt_token");
-      localStorage.removeItem("jwt_exp");
-      localStorage.removeItem("user_info");
-      window.location.href = "/auth?tab=login";
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Nếu lỗi 401 và chưa retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Nếu đang refresh, đưa request vào queue
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Gọi API refresh token
+        const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
+        const { refreshedToken, exp, user } = response.data;
+
+        // Lưu token mới vào LocalStorageService
+        LocalStorageService.setToken(refreshedToken, exp);
+        if (user) {
+          LocalStorageService.setUserInfo(user);
+        }
+
+        // Update token cho các requests trong queue
+        processQueue(null, refreshedToken);
+
+        // Retry request gốc với token mới
+        originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh token thất bại -> clear storage và redirect
+        processQueue(refreshError, null);
+        LocalStorageService.clearAuthData();
+
+        // Chỉ redirect nếu đang ở browser (không phải SSR)
+        if (typeof window !== "undefined") {
+          // window.location.href = "/auth?tab=login";
+        }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
     return Promise.reject(error);
   }
 );
@@ -43,7 +111,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/api/users/login",
     REGISTER: "/api/users",
-    REFRESH: "/api/users/refresh",
+    REFRESH: "/api/users/refresh-token",
     LOGOUT: "/api/users/logout",
     WITH_AUTH: "/api/with-auth",
   },
@@ -82,7 +150,7 @@ export const API_ENDPOINTS = {
     LIST: "/api/mystery-box/list",
     DETAIL: (id: string) => `/api/mystery-boxes/${id}`,
     PURCHASE: "/api/mystery-box/purchase",
-    OPEN: "/api/mystery-box/open",
+    BUY: "/api/mystery-box/buy",
   },
 
   LEADERSHIP_TEAM: {

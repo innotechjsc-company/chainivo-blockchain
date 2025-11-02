@@ -3,25 +3,22 @@ import { MysteryBoxData } from "./useMysteryBoxData";
 
 export interface MysteryBoxFilters {
   priceRange: [number, number];
-  tierLevels: number[];
-  rarities: string[];
-  availability: "all" | "available" | "soldOut";
+  status: "all" | "available" | "out_of_stock" | "discontinued";
+  isFeatured: "all" | "featured" | "regular";
   sortBy:
     | "price-asc"
     | "price-desc"
+    | "newest"
     | "supply-asc"
-    | "supply-desc"
-    | "tier-asc"
-    | "tier-desc";
+    | "supply-desc";
 }
 
 export const useMysteryBoxFilters = (boxes: MysteryBoxData[]) => {
   const [filters, setFilters] = useState<MysteryBoxFilters>({
-    priceRange: [0, 1000000], // Increase max to 1M CAN
-    tierLevels: [],
-    rarities: [],
-    availability: "all",
-    sortBy: "tier-asc",
+    priceRange: [0, 100000], // Max price in CAN tokens
+    status: "all",
+    isFeatured: "all",
+    sortBy: "price-asc",
   });
 
   const filteredBoxes = useMemo(() => {
@@ -36,23 +33,16 @@ export const useMysteryBoxFilters = (boxes: MysteryBoxData[]) => {
         box.price.amount <= filters.priceRange[1]
     );
 
-    // Filter by tier levels
-    if (filters.tierLevels.length > 0) {
-      result = result.filter((box) =>
-        filters.tierLevels.includes(box.tierLevel)
-      );
+    // Filter by status
+    if (filters.status !== "all") {
+      result = result.filter((box) => box.status === filters.status);
     }
 
-    // Filter by rarities
-    if (filters.rarities.length > 0) {
-      result = result.filter((box) => filters.rarities.includes(box.rarity));
-    }
-
-    // Filter by availability
-    if (filters.availability === "available") {
-      result = result.filter((box) => box.isActive && box.remainingSupply > 0);
-    } else if (filters.availability === "soldOut") {
-      result = result.filter((box) => box.remainingSupply === 0);
+    // Filter by featured
+    if (filters.isFeatured === "featured") {
+      result = result.filter((box) => box.isFeatured === true);
+    } else if (filters.isFeatured === "regular") {
+      result = result.filter((box) => box.isFeatured === false);
     }
 
     // Sort
@@ -62,14 +52,15 @@ export const useMysteryBoxFilters = (boxes: MysteryBoxData[]) => {
           return a.price.amount - b.price.amount;
         case "price-desc":
           return b.price.amount - a.price.amount;
+        case "newest":
+          // Sort by publishedAt (newest first)
+          const dateA = new Date(a.publishedAt || 0).getTime();
+          const dateB = new Date(b.publishedAt || 0).getTime();
+          return dateB - dateA;
         case "supply-asc":
           return a.remainingSupply - b.remainingSupply;
         case "supply-desc":
           return b.remainingSupply - a.remainingSupply;
-        case "tier-asc":
-          return a.tierLevel - b.tierLevel;
-        case "tier-desc":
-          return b.tierLevel - a.tierLevel;
         default:
           return 0;
       }
@@ -80,21 +71,19 @@ export const useMysteryBoxFilters = (boxes: MysteryBoxData[]) => {
 
   const resetFilters = () => {
     setFilters({
-      priceRange: [0, 1000000], // Match initial state
-      tierLevels: [],
-      rarities: [],
-      availability: "all",
-      sortBy: "tier-asc",
+      priceRange: [0, 100000],
+      status: "all",
+      isFeatured: "all",
+      sortBy: "price-asc",
     });
   };
 
   const hasActiveFilters = useMemo(() => {
     return (
-      filters.tierLevels.length > 0 ||
-      filters.rarities.length > 0 ||
-      filters.availability !== "all" ||
       filters.priceRange[0] !== 0 ||
-      filters.priceRange[1] !== 1000000
+      filters.priceRange[1] !== 100000 ||
+      filters.status !== "all" ||
+      filters.isFeatured !== "all"
     );
   }, [filters]);
 

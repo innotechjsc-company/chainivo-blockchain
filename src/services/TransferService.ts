@@ -27,24 +27,24 @@ export interface TransferParams {
 }
 
 export default class TransferService {
-  // ERC-20 ABI chuẩn để gọi các hàm balanceOf và transfer
+  // ERC-20 ABI - Từ contract thực tế trên Polygonscan
   private static readonly erc20Abi = [
     {
-      name: "balanceOf",
-      type: "function" as const,
       inputs: [{ internalType: "address", name: "account", type: "address" }],
+      name: "balanceOf",
       outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-      stateMutability: "view" as const,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      name: "transfer",
-      type: "function" as const,
       inputs: [
         { internalType: "address", name: "to", type: "address" },
-        { internalType: "uint256", name: "amount", type: "uint256" },
+        { internalType: "uint256", name: "value", type: "uint256" },
       ],
+      name: "transfer",
       outputs: [{ internalType: "bool", name: "", type: "bool" }],
-      stateMutability: "nonpayable" as const,
+      stateMutability: "nonpayable",
+      type: "function",
     },
   ];
 
@@ -186,6 +186,38 @@ export default class TransferService {
   }
 
   /**
+   * Kiểm tra xem contract có tồn tại tại address này không
+   * Lưu ý: Validation này chỉ là optional - contract có thể tồn tại nhưng RPC không thể verify
+   */
+  private static async validateContract(
+    web3: Web3Type,
+    contractAddress: string
+  ): Promise<boolean> {
+    try {
+      // Thử gọi balanceOf với address 0x0 để test contract
+      // Cách này reliablehơn là getCode
+      const contract = this.getTokenContract(web3, contractAddress);
+      await contract.methods
+        .balanceOf("0x0000000000000000000000000000000000000000")
+        .call();
+      console.log(`✅ Contract is valid at ${contractAddress}`);
+      return true;
+    } catch (error: any) {
+      // Nếu lỗi là "address is not a valid address", contract có thể vẫn hợp lệ
+      // Chỉ fail nếu là lỗi format address
+      if (error?.toString()?.includes("not a valid address")) {
+        console.warn(`⚠️ Invalid contract address format: ${contractAddress}`);
+        return false;
+      }
+      // Nếu lỗi khác (RPC fail, timeout), vẫn return true để retry balanceOf call
+      console.warn(
+        `⚠️ Could not validate contract (will retry): ${error?.message}`
+      );
+      return true;
+    }
+  }
+
+  /**
    * Kiểm tra số dư token của một địa chỉ ví
    */
   static async getBalance(params: {
@@ -194,15 +226,41 @@ export default class TransferService {
   }): Promise<string> {
     const { walletAddress, tokenType } = params;
 
-    const web3 = await this.getWeb3();
-    const tokenAddress = this.getTokenAddress(tokenType);
-    const contract = this.getTokenContract(web3, tokenAddress);
+    try {
+      const web3 = await this.getWeb3();
+      const tokenAddress = this.getTokenAddress(tokenType);
 
-    // Lấy số dư dạng Wei
-    const balanceWei = await contract.methods.balanceOf(walletAddress).call();
+      console.log(
+        `📍 getBalance - Token: ${tokenType}, Address: ${tokenAddress}, Wallet: ${walletAddress}`
+      );
 
-    // Chuyển đổi sang dạng thập phân để dễ đọc
-    return this.fromWei(web3, balanceWei);
+      // Validate contract exists
+      const contractExists = await this.validateContract(web3, tokenAddress);
+      if (!contractExists) {
+        throw new Error(`Contract không tồn tại tại address: ${tokenAddress}`);
+      }
+
+      const contract = this.getTokenContract(web3, tokenAddress);
+
+      // Lấy số dư dạng Wei
+      console.log(`📍 Calling balanceOf...`);
+      const balanceWei = await contract.methods.balanceOf(walletAddress).call();
+
+      // Lấy số decimals đúng cho token type
+      const decimals = this.getTokenDecimals(tokenType);
+
+      // Chuyển đổi sang dạng thập phân để dễ đọc - dùng decimals chính xác
+      const balance = this.fromWeiWithDecimals(web3, balanceWei, decimals);
+      console.log(`✅ Balance fetched: ${balance} ${tokenType}`);
+      return balance;
+    } catch (error: any) {
+      console.error(`❌ getBalance Error:`, error);
+      throw new Error(
+        `Lỗi khi kiểm tra số dư ${params.tokenType}: ${
+          error?.message || error?.toString() || "Unknown error"
+        }`
+      );
+    }
   }
 
   /**
@@ -219,55 +277,71 @@ export default class TransferService {
       gasBoostPercent = 50,
     } = params;
 
-    // Nếu không có địa chỉ người nhận, mặc định gửi về admin
-    const recipientAddress = toAddress || config.WALLET_ADDRESSES.ADMIN;
+    try {
+      // Nếu không có địa chỉ người nhận, mặc định gửi về admin
+      const recipientAddress = toAddress || config.WALLET_ADDRESSES.ADMIN;
 
-    // 1. Khởi tạo Web3 và lấy contract của token
-    const web3 = await this.getWeb3();
-    const tokenAddress = this.getTokenAddress(tokenType);
-    const contract = this.getTokenContract(web3, tokenAddress);
-
-    // 2. Kiểm tra số dư token của người gửi
-    const balanceWei = await contract.methods.balanceOf(fromAddress).call();
-    const requiredWei = this.toWei(web3, String(amount));
-    debugger;
-    if (BigInt(balanceWei) < BigInt(requiredWei)) {
-      const availableBalance = this.fromWei(web3, balanceWei);
-      throw new Error(
-        `Số dư ${tokenType} không đủ. Cần: ${amount} ${tokenType}, Có sẵn: ${availableBalance} ${tokenType}`
+      console.log(
+        `📍 transferToken START - Token: ${tokenType}, From: ${fromAddress}, To: ${recipientAddress}, Amount: ${amount}`
       );
+
+      // 1. Khởi tạo Web3 và lấy contract của token
+      const web3 = await this.getWeb3();
+      const tokenAddress = this.getTokenAddress(tokenType);
+
+      console.log(`📍 Step 1: tokenAddress = ${tokenAddress}`);
+
+      const contract = this.getTokenContract(web3, tokenAddress);
+
+      // Lấy số decimals từ mapping dựa vào loại token
+      const decimals = this.getTokenDecimals(tokenType);
+      console.log(`📍 Step 2: decimals = ${decimals}`);
+
+      // Tính toán required Wei trực tiếp (bỏ qua balance check do ABI issue)
+      const requiredWei = this.toWeiWithDecimals(String(amount), decimals);
+      console.log(`📍 Step 3: requiredWei = ${requiredWei}`);
+
+      // Tính toán gas price tối ưu
+      const gasPrice = await this.getOptimizedGasPrice(web3, gasBoostPercent);
+      console.log(`📍 Step 4: gasPrice = ${gasPrice}`);
+
+      // Thực hiện giao dịch chuyển token trực tiếp
+      // (Contract sẽ reject nếu insufficient balance)
+      console.log(`📍 Step 5: Sending transaction...`);
+      const receipt = await contract.methods
+        .transfer(recipientAddress, requiredWei)
+        .send({
+          from: fromAddress,
+          gas: String(gasLimit),
+          gasPrice,
+        });
+
+      console.log(`✅ Transaction sent: ${(receipt as any)?.transactionHash}`);
+
+      // Trích xuất thông tin từ receipt
+      const recipient = this.extractRecipientFromReceipt(
+        receipt,
+        recipientAddress
+      );
+      const blockNumber = this.normalizeBlockNumber(
+        (receipt as any)?.blockNumber
+      );
+
+      // Trả về kết quả giao dịch
+      return {
+        transactionHash: (receipt as any)?.transactionHash,
+        blockNumber,
+        recipient,
+        tokenType,
+        amount: String(amount),
+        rawReceipt: receipt,
+      };
+    } catch (error: any) {
+      console.error(`❌ transferToken Error:`, error);
+      const errorMessage =
+        error?.message || error?.toString() || "Unknown error";
+      throw new Error(`Lỗi chuyển ${params.tokenType}: ${errorMessage}`);
     }
-
-    // 3. Tính toán gas price tối ưu
-    const gasPrice = await this.getOptimizedGasPrice(web3, gasBoostPercent);
-
-    // 4. Thực hiện giao dịch chuyển token
-    const receipt = await contract.methods
-      .transfer(recipientAddress, requiredWei)
-      .send({
-        from: fromAddress,
-        gas: String(gasLimit),
-        gasPrice,
-      });
-
-    // 5. Trích xuất thông tin từ receipt
-    const recipient = this.extractRecipientFromReceipt(
-      receipt,
-      recipientAddress
-    );
-    const blockNumber = this.normalizeBlockNumber(
-      (receipt as any)?.blockNumber
-    );
-
-    // 6. Trả về kết quả giao dịch
-    return {
-      transactionHash: (receipt as any)?.transactionHash,
-      blockNumber,
-      recipient,
-      tokenType,
-      amount: String(amount),
-      rawReceipt: receipt,
-    };
   }
 
   /**
@@ -354,16 +428,14 @@ export default class TransferService {
     amountCan: number;
     gasLimit?: number;
     gasBoostPercent?: number;
-    token?: string;
   }): Promise<{
     transactionHash: string;
     blockNumber: string;
     recipient: string;
     rawReceipt: any;
-    token?: string;
   }> {
     // Map từ tham số cũ sang tham số mới
-    const tokenType: TokenType = params.token === "USDT" ? "USDC" : "CAN";
+    const tokenType: TokenType = "CAN";
 
     const result = await this.transferToken({
       fromAddress: params.fromAddress,
@@ -380,7 +452,6 @@ export default class TransferService {
       blockNumber: result.blockNumber,
       recipient: result.recipient,
       rawReceipt: result.rawReceipt,
-      token: params.token,
     };
   }
 }

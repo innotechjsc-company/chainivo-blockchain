@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  MysteryBoxHeaderCard,
   MysteryBoxFiltersCard,
   MysteryBoxGridCard,
 } from "./components";
 import {
   useMysteryBoxData,
   useMysteryBoxFilters,
-  useMysteryBoxStats,
 } from "./hooks";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -18,7 +16,6 @@ export default function MysteryBoxScreen() {
 
   // 1. Fetch dữ liệu qua hooks
   const { boxes, isLoading, error } = useMysteryBoxData();
-  const { stats } = useMysteryBoxStats(boxes);
   const { filters, setFilters, filteredBoxes, resetFilters, hasActiveFilters } =
     useMysteryBoxFilters(boxes);
 
@@ -68,9 +65,6 @@ export default function MysteryBoxScreen() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
-        {/* Header with Stats */}
-        <MysteryBoxHeaderCard stats={stats} />
-
         {/* Filters */}
         <MysteryBoxFiltersCard
           filters={filters}
