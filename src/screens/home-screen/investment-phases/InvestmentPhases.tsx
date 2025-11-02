@@ -38,7 +38,7 @@ export const InvestmentPhases = () => {
           {phases.map((phase, index) => {
             return (
               <Card
-                key={phase.phaseId}
+                key={phase.id}
                 className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
                   phase.status === "active"
                     ? "border-2 border-primary animate-glow"
