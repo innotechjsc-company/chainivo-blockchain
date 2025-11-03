@@ -5,7 +5,10 @@ export interface MysteryBox {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: {
+    amount: number;
+    currency: string;
+  };
   tier: string;
   image: string;
   totalSupply: number;
@@ -90,8 +93,13 @@ export class MysteryBoxService {
     return ApiService.post(API_ENDPOINTS.MYSTERY_BOX.PURCHASE, data);
   }
 
-  static async openBox(data: OpenBoxData): Promise<ApiResponse<OpenBoxResponse>> {
-    return ApiService.post<OpenBoxResponse>(API_ENDPOINTS.MYSTERY_BOX.BUY, data);
+  static async openBox(
+    data: OpenBoxData
+  ): Promise<ApiResponse<OpenBoxResponse>> {
+    return ApiService.post<OpenBoxResponse>(
+      API_ENDPOINTS.MYSTERY_BOX.BUY,
+      data
+    );
   }
 }
 
