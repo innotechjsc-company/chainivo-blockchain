@@ -169,7 +169,6 @@ export const CoinStakingForm = ({
       if (!fromAddress) {
         throw new Error("Invalid sender address");
       }
-      debugger;
       // Kiểm tra đã stake gói này chưa
       if (
         stakingMyPools?.length > 0 &&
@@ -209,7 +208,7 @@ export const CoinStakingForm = ({
           selectedPoolData?.id as string,
           res.rawReceipt.transactionHash
         );
-        // debugger;
+        // ;
         if (createStake.success) {
           // BƯỚC 5: Thành công - xóa temp stake và refresh để lấy data thật
           removeStake(tempStakeId);

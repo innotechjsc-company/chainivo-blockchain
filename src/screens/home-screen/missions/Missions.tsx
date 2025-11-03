@@ -1,7 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Calendar, Gift, Target, Trophy, CheckCircle2 } from "lucide-react";
 
 const dailyMissions = [
@@ -83,59 +94,27 @@ const monthlyMissions = [
   },
 ];
 
-const MissionCard = ({ mission }: { mission: any }) => (
-  <div className="glass rounded-xl p-6 flex items-center justify-between hover:scale-105 transition-all">
-    <div className="flex items-center space-x-4 flex-1">
-      <div
-        className={`w-12 h-12 rounded-full flex items-center justify-center ${
-          mission.completed ? "bg-green-500/20" : "bg-primary/20"
-        }`}
-      >
-        {mission.completed ? (
-          <CheckCircle2 className="w-6 h-6 text-green-400" />
-        ) : (
-          <Target className="w-6 h-6 text-primary" />
-        )}
-      </div>
-
-      <div className="flex-1">
-        <h4 className="font-bold text-lg mb-1">{mission.title}</h4>
-        <div className="flex items-center space-x-2">
-          <Gift className="w-4 h-4 text-primary" />
-          <span className="text-sm text-primary font-semibold">
-            {mission.reward}
-          </span>
-        </div>
-
-        {/* Progress Bar */}
-        {!mission.completed && (
-          <div className="mt-2">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Tiến độ</span>
-              <span>{mission.progress}%</span>
-            </div>
-            <div className="w-full bg-muted/20 rounded-full h-1.5">
-              <div
-                className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all"
-                style={{ width: `${mission.progress}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-
-    <Button
-      variant={mission.completed ? "outline" : "default"}
-      disabled={mission.completed}
-      className="ml-4"
-    >
-      {mission.completed ? "Hoàn thành" : "Nhận thưởng"}
-    </Button>
-  </div>
-);
-
 export const Missions = () => {
+  const allMissions = useMemo(() => {
+    return [
+      ...dailyMissions.map((m) => ({ ...m, type: "Hàng ngày" as const })),
+      ...weeklyMissions.map((m) => ({ ...m, type: "Hàng tuần" as const })),
+      ...monthlyMissions.map((m) => ({ ...m, type: "Hàng tháng" as const })),
+    ];
+  }, []);
+
+  const getTypeBadgeColor = (type: string) => {
+    switch (type) {
+      case "Hàng ngày":
+        return "bg-blue-500/20 text-blue-300";
+      case "Hàng tuần":
+        return "bg-purple-500/20 text-purple-300";
+      case "Hàng tháng":
+        return "bg-pink-500/20 text-pink-300";
+      default:
+        return "bg-muted/20 text-muted-foreground";
+    }
+  };
   return (
     <section id="missions" className="py-20 relative">
       <div className="container mx-auto px-4">
@@ -169,38 +148,104 @@ export const Missions = () => {
           </div>
         </div>
 
-        {/* Missions Tabs */}
-        <Tabs defaultValue="daily" className="w-full">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8 glass">
-            <TabsTrigger value="daily" className="text-base">
-              Hàng ngày
-            </TabsTrigger>
-            <TabsTrigger value="weekly" className="text-base">
-              Hàng tuần
-            </TabsTrigger>
-            <TabsTrigger value="monthly" className="text-base">
-              Hàng tháng
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="daily" className="space-y-4 animate-fade-in">
-            {dailyMissions.map((mission) => (
-              <MissionCard key={mission.id} mission={mission} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="weekly" className="space-y-4 animate-fade-in">
-            {weeklyMissions.map((mission) => (
-              <MissionCard key={mission.id} mission={mission} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="monthly" className="space-y-4 animate-fade-in">
-            {monthlyMissions.map((mission) => (
-              <MissionCard key={mission.id} mission={mission} />
-            ))}
-          </TabsContent>
-        </Tabs>
+        {/* Missions Table */}
+        <Card className="glass">
+          <CardContent className="p-6">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50">
+                    <TableHead className="w-[120px]">Loại</TableHead>
+                    <TableHead className="min-w-[200px]">Nhiệm vụ</TableHead>
+                    <TableHead className="w-[150px]">Phần thưởng</TableHead>
+                    <TableHead className="w-[200px]">Tiến độ</TableHead>
+                    <TableHead className="w-[120px]">Trạng thái</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allMissions.map((mission) => (
+                    <TableRow
+                      key={`${mission.type}-${mission.id}`}
+                      className="border-border/50"
+                    >
+                      <TableCell>
+                        <Badge
+                          className={`${getTypeBadgeColor(
+                            mission.type
+                          )} border-0`}
+                          variant="outline"
+                        >
+                          {mission.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              mission.completed
+                                ? "bg-green-500/20"
+                                : "bg-primary/20"
+                            }`}
+                          >
+                            {mission.completed ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <Target className="w-5 h-5 text-primary" />
+                            )}
+                          </div>
+                          <span className="font-semibold">{mission.title}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Gift className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-primary font-semibold">
+                            {mission.reward}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {mission.completed ? (
+                          <span className="text-sm text-green-400 font-semibold">
+                            Hoàn thành
+                          </span>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Tiến độ</span>
+                              <span>{mission.progress}%</span>
+                            </div>
+                            <Progress
+                              value={mission.progress}
+                              className="h-2"
+                            />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {mission.completed ? (
+                          <Badge
+                            className="bg-green-500/20 text-green-300 border-0"
+                            variant="outline"
+                          >
+                            Hoàn thành
+                          </Badge>
+                        ) : (
+                          <Badge
+                            className="bg-yellow-500/20 text-yellow-300 border-0"
+                            variant="outline"
+                          >
+                            Đang thực hiện
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Special Event */}
         <div className="mt-12 glass rounded-2xl p-8 text-center border-2 border-primary animate-glow">
