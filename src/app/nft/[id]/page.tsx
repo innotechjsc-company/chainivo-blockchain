@@ -48,6 +48,7 @@ import {
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { LoadingSkeleton } from "./components/LoadingSkeleton";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -195,24 +196,32 @@ export default function NFTDetailPage() {
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        setBuyLoading(false);
-
         await NFTService.transferNFT({
           nftId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
+        setBuyLoading(false);
+        toast.success("Mua NFT thành công!");
         router.push("/nftmarket");
         // TODO: Có thể thêm toast notification hoặc refresh data
       } else {
         setBuyLoading(false);
+        toast.error("Mua NFT thất bại: Không có transaction hash");
         console.error("Failed to buy NFT: No transaction hash");
       }
     } catch (error: any) {
       setBuyLoading(false);
+      toast.error(
+        `Lỗi khi mua NFT: ${error?.message || "Đã xảy ra lỗi không xác định"}`
+      );
       console.error("Error buying NFT:", error?.message || error);
-      // TODO: Có thể thêm toast notification để hiển thị lỗi
     }
   };
+
+  // Show LoadingSkeleton when buying NFT
+  if (buyLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

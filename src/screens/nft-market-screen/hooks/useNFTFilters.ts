@@ -22,70 +22,86 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const [searchNFTs, setSearchNFTs] = useState<any[]>([]);
   const [otherNFTsData, setOtherNFTsData] = useState<any[]>([]);
   const [otherNFTsAnalytics, setOtherNFTsAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   const fetchUserNFTs = async () => {
-    const response = await NFTService.getNFTsByOwner(
-      userInfo?.walletAddress || ""
-    );
-    if (response.success) {
-      setUserNFTs((response.data as any).nfts || []);
-    } else {
-      toast.error(response.message);
+    if (!userInfo || !userInfo.walletAddress) {
+      setUserNFTs([]);
+      return;
+    }
+    try {
+      const response = await NFTService.getNFTsByOwner(
+        userInfo?.walletAddress || ""
+      );
+      if (response.success) {
+        setUserNFTs((response.data as any).nfts || []);
+      } else {
+        toast.error(response.message);
+        setUserNFTs([]);
+      }
+    } catch (error) {
+      setUserNFTs([]);
     }
   };
 
   const fetchOtherNFTs = async () => {
-    const response = await NFTService.allNFTInMarketplace();
+    try {
+      const response = await NFTService.allNFTInMarketplace();
 
-    if (response.success) {
-      const data: any = response.data as any;
+      if (response.success) {
+        const data: any = response.data as any;
 
-      // Handle different response structures
-      // Case 1: { nfts: [...], analytics: {...} }
-      // Case 2: { items: [...], analytics: {...} }
-      // Case 3: { data: { nfts: [...], analytics: {...} } }
-      // Case 4: Direct array with analytics at root level
+        // Handle different response structures
+        // Case 1: { nfts: [...], analytics: {...} }
+        // Case 2: { items: [...], analytics: {...} }
+        // Case 3: { data: { nfts: [...], analytics: {...} } }
+        // Case 4: Direct array with analytics at root level
 
-      if (data?.nfts || data?.items) {
-        setOtherNFTsData(data.nfts || data.items || []);
-        if (data.analytics) {
-          console.log(data.analytics);
-          setOtherNFTsAnalytics(data.analytics);
+        if (data?.nfts || data?.items) {
+          setOtherNFTsData(data.nfts || data.items || []);
+          if (data.analytics) {
+            console.log(data.analytics);
+            setOtherNFTsAnalytics(data.analytics);
+          }
+        } else if (Array.isArray(data)) {
+          setOtherNFTsData(data);
+          // Analytics might be at response level
+          if ((response as any).analytics) {
+            setOtherNFTsAnalytics((response as any).analytics);
+          }
+        } else if (data?.data) {
+          // Nested structure
+          setOtherNFTsData(
+            data.data?.nfts || data.data?.items || data.data || []
+          );
+          if (data.data?.analytics || data.analytics) {
+            setOtherNFTsAnalytics(data.data?.analytics || data.analytics);
+          }
+        } else {
+          setOtherNFTsData(data || []);
+          // Check if analytics exists at any level
+          if (data?.analytics) {
+            setOtherNFTsAnalytics(data.analytics);
+          } else if ((response as any).analytics) {
+            setOtherNFTsAnalytics((response as any).analytics);
+          }
         }
-      } else if (Array.isArray(data)) {
-        setOtherNFTsData(data);
-        // Analytics might be at response level
-        if ((response as any).analytics) {
-          setOtherNFTsAnalytics((response as any).analytics);
-        }
-      } else if (data?.data) {
-        // Nested structure
-        setOtherNFTsData(
-          data.data?.nfts || data.data?.items || data.data || []
-        );
-        if (data.data?.analytics || data.analytics) {
-          setOtherNFTsAnalytics(data.data?.analytics || data.analytics);
-        }
+
+        // Debug log to help identify the structure
+        console.log("NFT Marketplace Response:", {
+          hasData: !!data,
+          dataKeys: data ? Object.keys(data) : [],
+          hasAnalytics: !!(data?.analytics || (response as any).analytics),
+          responseKeys: Object.keys(response),
+        });
       } else {
-        setOtherNFTsData(data || []);
-        // Check if analytics exists at any level
-        if (data?.analytics) {
-          setOtherNFTsAnalytics(data.analytics);
-        } else if ((response as any).analytics) {
-          setOtherNFTsAnalytics((response as any).analytics);
-        }
+        toast.error(response.message);
+        setOtherNFTsData([]);
       }
-
-      // Debug log to help identify the structure
-      console.log("NFT Marketplace Response:", {
-        hasData: !!data,
-        dataKeys: data ? Object.keys(data) : [],
-        hasAnalytics: !!(data?.analytics || (response as any).analytics),
-        responseKeys: Object.keys(response),
-      });
-    } else {
-      toast.error(response.message);
+    } catch (error) {
+      console.error("Error fetching NFTs:", error);
+      setOtherNFTsData([]);
     }
   };
 
@@ -200,9 +216,18 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
   useEffect(() => {
-    fetchOtherNFTs();
-    fetchUserNFTs();
-  }, []);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchOtherNFTs(), fetchUserNFTs()]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [userInfo]);
 
   const filteredNFTs = useMemo(() => {
     return nfts.filter((nft) => {
@@ -262,5 +287,6 @@ export const useNFTFilters = (nfts: NFT[]) => {
     otherNFTsAnalytics,
     searchMarketplace,
     searchNFTs,
+    loading,
   };
 };
