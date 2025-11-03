@@ -51,13 +51,6 @@ export const useNFTFilters = (nfts: NFT[]) => {
 
       if (response.success) {
         const data: any = response.data as any;
-
-        // Handle different response structures
-        // Case 1: { nfts: [...], analytics: {...} }
-        // Case 2: { items: [...], analytics: {...} }
-        // Case 3: { data: { nfts: [...], analytics: {...} } }
-        // Case 4: Direct array with analytics at root level
-
         if (data?.nfts || data?.items) {
           setOtherNFTsData(data.nfts || data.items || []);
           if (data.analytics) {

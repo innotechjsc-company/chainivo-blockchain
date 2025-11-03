@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Sparkles, Zap } from "lucide-react";
 import { CreateStakingNFTRequest, AvailableNFT } from "@/types/Staking";
+import { API_ENDPOINTS, ApiService } from "@/api/api";
+import { NFTService } from "@/api/services/nft-service";
+import { useAppSelector } from "@/stores";
+import { toast } from "sonner";
 
 interface NFTStakingFormProps {
   availableNFTs: AvailableNFT[];
@@ -27,8 +31,52 @@ export const NFTStakingForm = ({
   apy = 15,
 }: NFTStakingFormProps) => {
   const [selectedNFTId, setSelectedNFTId] = useState("");
+  const [selectedPoolId, setSelectedPoolId] = useState("");
 
   const selectedNFT = availableNFTs.find((nft) => nft.id === selectedNFTId);
+  const [takePools, setTakePools] = useState<any[]>([]);
+  const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const selectedUserNFT = userNFTs.find(
+    (nft: any) => String(nft?._id ?? nft?.id) === selectedNFTId
+  );
+  const userInfo = useAppSelector((state) => state.auth.user);
+
+  const fetchUserNFTs = async () => {
+    if (!userInfo || !userInfo.walletAddress) {
+      setUserNFTs([]);
+      return;
+    }
+    try {
+      const response = await NFTService.getNFTsByOwner(
+        userInfo?.walletAddress || ""
+      );
+      if (response.success) {
+        setUserNFTs((response.data as any).nfts || []);
+      } else {
+        toast.error(response.message);
+        setUserNFTs([]);
+      }
+    } catch (error) {
+      setUserNFTs([]);
+    }
+  };
+
+  const getStakingPools = async () => {
+    const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
+
+    if (response?.success) {
+      setTakePools(
+        (response?.data as any)?.pools.filter(
+          (pool: any) => pool.type === "nft"
+        )
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchUserNFTs();
+    getStakingPools();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +129,39 @@ export const NFTStakingForm = ({
               htmlFor="nft-select"
               className="text-sm font-medium mb-2 block"
             >
+              Chọn gói stake NFT
+            </Label>
+            <Select value={selectedPoolId} onValueChange={setSelectedPoolId}>
+              <SelectTrigger className="w-full h-12 text-lg">
+                <SelectValue placeholder="-- Chọn NFT --" />
+              </SelectTrigger>
+              <SelectContent>
+                {takePools.map((pool, idx) => {
+                  const optionId = String(pool?._id ?? pool?.id ?? idx);
+                  return (
+                    <SelectItem key={optionId} value={optionId}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{pool.name}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {selectedPoolId && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Đã chọn NFT:{" "}
+                {takePools.find(
+                  (p: any) => String(p?._id ?? p?.id) === selectedPoolId
+                )?.name || "-"}
+              </div>
+            )}
+          </div>
+          <div>
+            <Label
+              htmlFor="nft-select"
+              className="text-sm font-medium mb-2 block"
+            >
               Chọn NFT để stake
             </Label>
             <Select value={selectedNFTId} onValueChange={setSelectedNFTId}>
@@ -88,18 +169,24 @@ export const NFTStakingForm = ({
                 <SelectValue placeholder="-- Chọn NFT --" />
               </SelectTrigger>
               <SelectContent>
-                {availableNFTs.map((nft) => (
-                  <SelectItem key={nft.id} value={nft.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{nft.name}</span>
-                      <span className="text-muted-foreground ml-2">
-                        ({nft.value.toLocaleString()} CAN)
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {userNFTs.map((pool, idx) => {
+                  const optionId = String(pool?._id ?? pool?.id ?? idx);
+                  return (
+                    <SelectItem key={optionId} value={optionId}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{pool.name}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
+            {selectedUserNFT && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                So tien goi NFT:{" "}
+                {Number(selectedUserNFT?.price ?? 0).toLocaleString()} CAN
+              </div>
+            )}
           </div>
 
           {selectedNFT && (

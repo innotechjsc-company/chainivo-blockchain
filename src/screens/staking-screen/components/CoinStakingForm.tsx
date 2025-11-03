@@ -151,7 +151,11 @@ export const CoinStakingForm = ({
     const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
 
     if (response?.success) {
-      setTakePools((response?.data as any)?.pools);
+      setTakePools(
+        (response?.data as any)?.pools.filter(
+          (pool: any) => pool.type === "token"
+        )
+      );
     }
   };
 
