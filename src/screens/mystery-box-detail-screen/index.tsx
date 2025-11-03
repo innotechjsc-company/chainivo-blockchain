@@ -81,19 +81,17 @@ export default function MysteryBoxDetailScreen({
       setIsPurchasing(true);
       setIsModalOpen(false);
       // Step 1: Transfer CAN tokens to admin wallet
-      toast.info("Đang chuyển token...");
+      toast.info("Đang chuẩn bị...");
+      setIsOpening(true);
+      setIsApiLoading(true);
       const transferResult = await TransferService.sendCanTransfer({
         fromAddress: user.walletAddress,
         amountCan: Number(box.price.amount),
       });
-      console.log("Transfer successful:", transferResult);
       toast.success("Chuyển token thành công!");
 
-      // Step 2: Show opening animation immediately after transfer
-      setIsOpening(true);
-      setIsApiLoading(true);
-
-      // Step 3: Call MYSTERY_BOX.BUY API with transaction hash (in parallel)
+      // Step 2: Call MYSTERY_BOX.BUY API with transaction hash (in parallel)
+      toast.info("Đang mở hộp...");
       MysteryBoxService.openBox({
         mysteryBoxId: box.id,
         transactionHash: transferResult.transactionHash,
@@ -251,6 +249,10 @@ export default function MysteryBoxDetailScreen({
           boxImage={getBoxImageUrl()}
           onAnimationComplete={handleAnimationComplete}
           isApiComplete={!isApiLoading}
+          initialTitle="Đang chuẩn bị..."
+          shakeTitle="Đang chuyển token..."
+          openingTitle="Đang mở hộp quà!"
+          revealTitle="Chúc mừng!"
         />
 
         {/* Reward Display */}

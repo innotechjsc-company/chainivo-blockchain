@@ -35,7 +35,7 @@ export default function Home() {
         {user && <UserDashboard />}
         <BlockchainStats />
         <InvestmentPhases />
-        <MembershipTiers />
+        {/* <MembershipTiers /> */}
         <NFTMarketplace />
         <Missions />
         {/* <NewsEvents /> */}
