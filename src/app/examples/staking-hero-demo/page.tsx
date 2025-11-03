@@ -1,6 +1,6 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,13 +100,10 @@ export default function StakingHeroDemoPage() {
       if (transferRes.transactionHash) {
         toast.loading("Saving staking information...", { id: "stake-toast" });
 
-        const stakeRes = await StakingService.stake({
-          poolId: selectedPoolId,
-          amount: stakeAmount,
-          walletAddress: user.walletAddress,
-          transactionHash: transferRes.rawReceipt.transactionHash,
-          blockNumber: transferRes.blockNumber,
-        });
+        const stakeRes = await StakingService.stake(
+          selectedPoolId,
+          transferRes.transactionHash
+        );
 
         if (stakeRes.success) {
           toast.success("Staking successful!", { id: "stake-toast" });

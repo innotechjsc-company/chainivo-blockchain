@@ -305,13 +305,43 @@ export default class TransferService {
       const gasPrice = await this.getOptimizedGasPrice(web3, gasBoostPercent);
       console.log(`📍 Step 4: gasPrice = ${gasPrice}`);
 
+      // Validate fromAddress before sending transaction
+      let senderAddress = fromAddress;
+      if (!senderAddress || senderAddress.trim() === "") {
+        // Try to get current account from ethereum provider
+        if ((window as any).ethereum) {
+          const accounts = await (window as any).ethereum.request({
+            method: "eth_accounts",
+          });
+          if (accounts && accounts.length > 0) {
+            senderAddress = accounts[0];
+            console.log(
+              `📍 Using current account from provider: ${senderAddress}`
+            );
+          } else {
+            throw new Error(
+              "Không tìm thấy địa chỉ ví. Vui lòng kết nối MetaMask."
+            );
+          }
+        } else {
+          throw new Error(
+            "Địa chỉ ví không được cung cấp và không có ethereum provider."
+          );
+        }
+      }
+
+      // Validate address format
+      if (!senderAddress.startsWith("0x") || senderAddress.length !== 42) {
+        throw new Error(`Địa chỉ ví không hợp lệ: ${senderAddress}`);
+      }
+
       // Thực hiện giao dịch chuyển token trực tiếp
       // (Contract sẽ reject nếu insufficient balance)
-      console.log(`📍 Step 5: Sending transaction...`);
+      console.log(`📍 Step 5: Sending transaction from ${senderAddress}...`);
       const receipt = await contract.methods
         .transfer(recipientAddress, requiredWei)
         .send({
-          from: fromAddress,
+          from: senderAddress,
           gas: String(gasLimit),
           gasPrice,
         });

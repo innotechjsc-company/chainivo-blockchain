@@ -91,7 +91,7 @@ export const useBoxDetail = (id: string) => {
         // Helper to construct full image URL
         const getImageUrl = (imageData: any): string => {
           if (!imageData?.url) return "/nft-box.jpg";
-          
+
           const imageUrl = imageData.url;
           // Nếu URL đã là full URL (bắt đầu bằng http), dùng trực tiếp
           if (imageUrl.startsWith("http")) {
@@ -135,6 +135,8 @@ export const useBoxDetail = (id: string) => {
             glowColor: tierInfo.glowColor,
             bonusMultiplier: tierInfo.bonusMultiplier,
           },
+          status: apiBox.status || "available",
+          isFeatured: apiBox.isFeatured || false,
         };
 
         console.log("Mapped Box:", mappedBox);
