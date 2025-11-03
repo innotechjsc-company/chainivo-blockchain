@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { User } from './types';
+import { AuthUser } from './authSlice';
 
 interface UserState {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -75,12 +75,12 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
-    updateProfile: (state, action: PayloadAction<Partial<User>>) => {
+    updateProfile: (state, action: PayloadAction<Partial<AuthUser>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
     },
-    setUser: (state, action: PayloadAction<User | null>) => {
+    setUser: (state, action: PayloadAction<AuthUser | null>) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
     },

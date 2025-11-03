@@ -21,6 +21,7 @@ import { MobileMenu } from "./components/MobileMenu";
 import { UserService } from "@/api/services/user-service";
 import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
 import { LocalStorageService } from "@/services";
+import { log } from "console";
 
 interface HeaderProps {
   session?: any;
@@ -47,7 +48,19 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
 
   const getBalance = async () => {
     if (!user?.walletAddress) return;
+
     try {
+      // get connected metamask account
+      if (!window.ethereum?.isMetaMask) return false;
+      const accounts: string[] = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      if (accounts.length > 0) {
+        if (accounts[0].toLowerCase() === user?.walletAddress?.toLowerCase()) {
+          LocalStorageService.setWalletConnectionStatus(true);
+          console.log("wallet connected");
+        }
+      }
       // update wallet to redux
       dispatch(setWalletBalance(user?.walletAddress || ""));
       const balance = await UserService.getBalance(user?.walletAddress || "");

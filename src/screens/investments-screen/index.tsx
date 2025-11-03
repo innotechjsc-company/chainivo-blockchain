@@ -40,12 +40,6 @@ export default function InvestmentsScreen() {
     error: profileError,
   } = useUserProfile();
 
-  // 2. Event handlers
-  const handleInvestmentAction = (phaseId: number) => {
-    // TODO: Implement investment action
-    console.log("Investment action for phase:", phaseId);
-  };
-
   // 3. Compose UI
   return (
     <div className="min-h-screen flex flex-col">
