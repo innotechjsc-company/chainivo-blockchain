@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ThemeMode } from "@/types/colors";
+import { LocalStorageService } from "@/services";
 
 /**
  * Hook để quản lý theme (dark/light mode)
@@ -14,8 +15,8 @@ export function useTheme() {
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    // Lấy theme từ localStorage hoặc system preference
-    const stored = localStorage.getItem("theme") as ThemeMode | null;
+    // Lấy theme từ LocalStorageService hoặc system preference
+    const stored = LocalStorageService.getTheme();
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
     ).matches;
@@ -55,7 +56,7 @@ export function useTheme() {
 
   const setTheme = (newTheme: ThemeMode) => {
     setThemeState(newTheme);
-    localStorage.setItem("theme", newTheme);
+    LocalStorageService.setTheme(newTheme);
 
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"

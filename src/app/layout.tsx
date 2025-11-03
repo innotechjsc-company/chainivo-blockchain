@@ -29,6 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* 
+          Theme initialization script - Runs before React hydration to prevent FOUC
+          Note: Cannot use LocalStorageService here as it runs before React loads
+          Key 'theme' matches STORAGE_KEYS.THEME from LocalStorageService
+        */}
         <script
           dangerouslySetInnerHTML={{
             __html: `

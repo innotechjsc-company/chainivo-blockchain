@@ -41,15 +41,16 @@ export {
 
 // Export specific commonly used actions
 export {
-  login,
-  register,
-  logout,
-  refreshToken,
+  setLoginSuccess,
+  setLoading,
+  setError,
+  logout as logoutAction,
   clearError,
   setUser as setAuthUser,
   updateProfile as updateAuthProfile,
   initializeAuth,
 } from "./authSlice";
+export type { AuthUser } from "./authSlice";
 export {
   loginUser,
   registerUser,

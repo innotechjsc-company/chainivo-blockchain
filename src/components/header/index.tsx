@@ -20,6 +20,7 @@ import { UserMenu } from "./components/UserMenu";
 import { MobileMenu } from "./components/MobileMenu";
 import { UserService } from "@/api/services/user-service";
 import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
+import { LocalStorageService } from "@/services";
 
 interface HeaderProps {
   session?: any;
@@ -73,6 +74,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   };
 
   useEffect(() => {
+    console.log("user", user);
     if (user) {
       getBalance();
     }
@@ -105,7 +107,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   onClick={() => router.push("/wallet")}
                 >
                   <Wallet className="w-4 h-4 mr-2" />
-                  {localStorage.getItem("isConnectedToWallet") === "true"
+                  {LocalStorageService.isConnectedToWallet()
                     ? "Đã kết nối ví"
                     : "Kết nối ví"}
                 </Button>

@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StakingCoin, StakingNFT, StakingPool } from "@/types/staking";
 import {
   TrendingUp,
   Clock,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
+import { StakingCoin, StakingNFT, StakingPool } from "@/types";
 
 function CountdownTimer({
   startAt,
@@ -138,19 +138,28 @@ export const ActiveStakesList = ({
                             {name}
                           </p>
                           {status === "pending" && (
-                            <Badge variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
                               <Loader2 className="h-3 w-3 animate-spin" />
                               Chờ xác nhận
                             </Badge>
                           )}
                           {status === "processing" && (
-                            <Badge variant="default" className="flex items-center gap-1">
+                            <Badge
+                              variant="default"
+                              className="flex items-center gap-1"
+                            >
                               <Loader2 className="h-3 w-3 animate-spin" />
                               Đang xử lý
                             </Badge>
                           )}
                           {status === "active" && (
-                            <Badge variant="outline" className="text-green-600 border-green-600">
+                            <Badge
+                              variant="outline"
+                              className="text-green-600 border-green-600"
+                            >
                               Đang hoạt động
                             </Badge>
                           )}
@@ -189,7 +198,9 @@ export const ActiveStakesList = ({
                         <span className="text-muted-foreground block truncate">
                           Đã stake
                         </span>
-                        <p className="font-medium truncate">{daysSinceStaked} ngày</p>
+                        <p className="font-medium truncate">
+                          {daysSinceStaked} ngày
+                        </p>
                       </div>
                       <CountdownTimer
                         startAt={stakedAt}
@@ -216,7 +227,10 @@ export const ActiveStakesList = ({
                         <XCircle className="h-4 w-4" />
                         {status === "pending" && "Hủy lệnh"}
                         {status === "processing" && "Hủy lệnh"}
-                        {status === "active" && (canUnstake ? "Rút tiền" : `Còn ${daysRemaining} ngày`)}
+                        {status === "active" &&
+                          (canUnstake
+                            ? "Rút tiền"
+                            : `Còn ${daysRemaining} ngày`)}
                       </Button>
                     </div>
                   </CardContent>

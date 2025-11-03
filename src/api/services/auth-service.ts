@@ -1,4 +1,5 @@
 import { ApiService, API_ENDPOINTS } from "../api";
+import { LocalStorageService } from "@/services";
 
 export interface LoginCredentials {
   email: string;
@@ -46,24 +47,19 @@ export interface AuthResponse {
 
 export class AuthService {
   static getToken(): string | null {
-    return localStorage.getItem("jwt_token");
+    return LocalStorageService.getToken();
   }
 
   static setToken(token: string, exp?: number): void {
-    localStorage.setItem("jwt_token", token);
-    if (exp) {
-      localStorage.setItem("jwt_exp", exp.toString());
-    }
+    LocalStorageService.setToken(token, exp);
   }
 
   static removeToken(): void {
-    localStorage.removeItem("jwt_token");
-    localStorage.removeItem("jwt_exp");
+    LocalStorageService.removeToken();
   }
 
   static getTokenExpiration(): number | null {
-    const exp = localStorage.getItem("jwt_exp");
-    return exp ? parseInt(exp, 10) : null;
+    return LocalStorageService.getTokenExpiration();
   }
 
   static isAuthenticated(): boolean {
@@ -105,14 +101,10 @@ export class AuthService {
     createdAt?: string;
     updatedAt?: string;
   } | null {
-    // Get user info from localStorage (stored during login)
-    const userStr = localStorage.getItem("user_info");
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (error) {
-        console.error("Failed to parse stored user info:", error);
-      }
+    // Get user info from LocalStorageService (stored during login)
+    const userInfo = LocalStorageService.getUserInfo();
+    if (userInfo) {
+      return userInfo as any;
     }
 
     // Fallback to token parsing
@@ -137,11 +129,11 @@ export class AuthService {
   }
 
   static setUserInfo(user: any): void {
-    localStorage.setItem("user_info", JSON.stringify(user));
+    LocalStorageService.setUserInfo(user);
   }
 
   static removeUserInfo(): void {
-    localStorage.removeItem("user_info");
+    LocalStorageService.removeUserInfo();
   }
 
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -213,11 +205,8 @@ export class AuthService {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      this.removeToken();
-      this.removeUserInfo();
-      // Clear wallet-related data on logout
-      localStorage.removeItem("walletAddress");
-      localStorage.removeItem("isConnectedToWallet");
+      // Clear all auth data including wallet
+      LocalStorageService.clearAuthData();
     }
   }
 

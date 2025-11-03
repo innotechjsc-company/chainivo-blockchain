@@ -26,35 +26,18 @@ export const MysteryBoxFiltersCard = ({
   hasActiveFilters,
   onResetFilters,
 }: MysteryBoxFiltersCardProps) => {
-  const tierLevels = [
-    { value: 1, label: "Thường" },
-    { value: 2, label: "Đồng" },
-    { value: 3, label: "Bạc" },
-    { value: 4, label: "Vàng" },
-    { value: 5, label: "Kim Cương" },
+  const statusOptions = [
+    { value: "all", label: "Tất cả trạng thái" },
+    { value: "available", label: "Còn hàng" },
+    { value: "out_of_stock", label: "Hết hàng" },
+    { value: "discontinued", label: "Ngừng bán" },
   ];
 
-  const rarities = [
-    { value: "common", label: "Thường" },
-    { value: "uncommon", label: "Không phổ biến" },
-    { value: "rare", label: "Hiếm" },
-    { value: "epic", label: "Sử thi" },
-    { value: "legendary", label: "Huyền thoại" },
+  const featuredOptions = [
+    { value: "all", label: "Tất cả" },
+    { value: "featured", label: "Nổi bật" },
+    { value: "regular", label: "Thường" },
   ];
-
-  const toggleTierLevel = (level: number) => {
-    const newLevels = filters.tierLevels.includes(level)
-      ? filters.tierLevels.filter((l) => l !== level)
-      : [...filters.tierLevels, level];
-    onFiltersChange({ ...filters, tierLevels: newLevels });
-  };
-
-  const toggleRarity = (rarity: string) => {
-    const newRarities = filters.rarities.includes(rarity)
-      ? filters.rarities.filter((r) => r !== rarity)
-      : [...filters.rarities, rarity];
-    onFiltersChange({ ...filters, rarities: newRarities });
-  };
 
   return (
     <Card className="glass mb-6">
@@ -74,61 +57,57 @@ export const MysteryBoxFiltersCard = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Tier Levels */}
+          {/* Price Range */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Hạng:</label>
-            <div className="flex flex-wrap gap-2">
-              {tierLevels.map((tier) => (
-                <Badge
-                  key={tier.value}
-                  variant={
-                    filters.tierLevels.includes(tier.value)
-                      ? "default"
-                      : "outline"
-                  }
-                  className="cursor-pointer hover:bg-primary/80"
-                  onClick={() => toggleTierLevel(tier.value)}
-                >
-                  {tier.label}
-                </Badge>
-              ))}
+            <label className="text-sm font-medium mb-2 block">
+              Khoảng giá (CAN):
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="0"
+                value={filters.priceRange[0]}
+                onChange={(e) => {
+                  const newMin = parseInt(e.target.value) || 0;
+                  onFiltersChange({
+                    ...filters,
+                    priceRange: [newMin, filters.priceRange[1]],
+                  });
+                }}
+                className="w-24 px-2 py-1 border border-border rounded text-sm"
+                placeholder="Min"
+              />
+              <span className="text-muted-foreground">-</span>
+              <input
+                type="number"
+                min="0"
+                value={filters.priceRange[1]}
+                onChange={(e) => {
+                  const newMax = parseInt(e.target.value) || 100000;
+                  onFiltersChange({
+                    ...filters,
+                    priceRange: [filters.priceRange[0], newMax],
+                  });
+                }}
+                className="w-24 px-2 py-1 border border-border rounded text-sm"
+                placeholder="Max"
+              />
             </div>
           </div>
 
-          {/* Rarities */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Độ hiếm:</label>
-            <div className="flex flex-wrap gap-2">
-              {rarities.map((rarity) => (
-                <Badge
-                  key={rarity.value}
-                  variant={
-                    filters.rarities.includes(rarity.value)
-                      ? "default"
-                      : "outline"
-                  }
-                  className="cursor-pointer hover:bg-primary/80"
-                  onClick={() => toggleRarity(rarity.value)}
-                >
-                  {rarity.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Availability and Sort */}
+          {/* Status and Featured */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Availability */}
+            {/* Status */}
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Trạng thái:
               </label>
               <Select
-                value={filters.availability}
+                value={filters.status}
                 onValueChange={(value) =>
                   onFiltersChange({
                     ...filters,
-                    availability: value as typeof filters.availability,
+                    status: value as typeof filters.status,
                   })
                 }
               >
@@ -136,22 +115,24 @@ export const MysteryBoxFiltersCard = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="available">Còn hàng</SelectItem>
-                  <SelectItem value="soldOut">Hết hàng</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Sort By */}
+            {/* Featured */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Sắp xếp:</label>
+              <label className="text-sm font-medium mb-2 block">Nổi bật:</label>
               <Select
-                value={filters.sortBy}
+                value={filters.isFeatured}
                 onValueChange={(value) =>
                   onFiltersChange({
                     ...filters,
-                    sortBy: value as typeof filters.sortBy,
+                    isFeatured: value as typeof filters.isFeatured,
                   })
                 }
               >
@@ -159,17 +140,41 @@ export const MysteryBoxFiltersCard = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tier-asc">Hạng: Thấp đến Cao</SelectItem>
-                  <SelectItem value="tier-desc">Hạng: Cao đến Thấp</SelectItem>
-                  <SelectItem value="price-asc">Giá: Thấp đến Cao</SelectItem>
-                  <SelectItem value="price-desc">Giá: Cao đến Thấp</SelectItem>
-                  <SelectItem value="supply-asc">Số lượng: Ít nhất</SelectItem>
-                  <SelectItem value="supply-desc">
-                    Số lượng: Nhiều nhất
-                  </SelectItem>
+                  {featuredOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Sắp xếp:</label>
+            <Select
+              value={filters.sortBy}
+              onValueChange={(value) =>
+                onFiltersChange({
+                  ...filters,
+                  sortBy: value as typeof filters.sortBy,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="price-asc">Giá: Thấp đến Cao</SelectItem>
+                <SelectItem value="price-desc">Giá: Cao đến Thấp</SelectItem>
+                <SelectItem value="newest">Mới nhất</SelectItem>
+                <SelectItem value="supply-asc">Số lượng: Ít nhất</SelectItem>
+                <SelectItem value="supply-desc">
+                  Số lượng: Nhiều nhất
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
