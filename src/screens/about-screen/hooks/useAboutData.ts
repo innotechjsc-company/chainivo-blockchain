@@ -35,7 +35,7 @@ export const useAboutData = () => {
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [leadersLoading, setLeadersLoading] = useState<boolean>(false);
   const [leadersError, setLeadersError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -43,7 +43,6 @@ export const useAboutData = () => {
     message: "",
   });
 
-  
   const fetchLeaders = async () => {
     setLeadersLoading(true);
     setLeadersError(null);
@@ -60,24 +59,28 @@ export const useAboutData = () => {
         const leadersData = (response.data as any).docs || [];
         setLeaders(leadersData);
       } else {
-        setLeadersError(response.error || response.message || 'Khong lay duoc danh sach leaders');
+        setLeadersError(
+          response.error ||
+            response.message ||
+            "Khong lay duoc danh sach leaders"
+        );
         setLeaders([]);
       }
     } catch (error) {
-      setLeadersError('Loi ket noi den server');
+      setLeadersError("Loi ket noi den server");
       setLeaders([]);
-      console.error('Error fetching leaders:', error);
+      console.error("Error fetching leaders:", error);
     } finally {
       setLeadersLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchLeaders();
   }, []);
 
   // console.log('leaders', leaders);
-  // debugger;
+  // ;
   const partners: Partner[] = [
     { name: "Binance", type: "Exchange Partner" },
     { name: "Coinbase", type: "Investment Partner" },
@@ -159,11 +162,13 @@ export const useAboutData = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    dispatch(addNotification({
-      type: "success",
-      title: "Đã gửi thành công",
-      message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sờbm nhất!",
-    }));
+    dispatch(
+      addNotification({
+        type: "success",
+        title: "Đã gửi thành công",
+        message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sờbm nhất!",
+      })
+    );
 
     setFormData({
       name: "",

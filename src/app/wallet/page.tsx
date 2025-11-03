@@ -8,6 +8,7 @@ import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { UserService } from "@/api/services/user-service";
 import { useAppSelector, useAppDispatch, updateAuthProfile } from "@/stores";
 import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
+import { LocalStorageService } from "@/services";
 
 // MetaMask types
 interface MetaMaskProvider {
@@ -75,8 +76,8 @@ export default function WalletConnectPage() {
 
   // Clear wallet state when user changes (logout/login different account)
   useEffect(() => {
-    // Get saved user ID from localStorage to detect user changes
-    const savedUserId = localStorage.getItem("currentUserId");
+    // Get saved user ID from LocalStorageService to detect user changes
+    const savedUserId = LocalStorageService.getCurrentUserId();
 
     if (user?.id && savedUserId !== user.id) {
       // User has changed, clear wallet connection state
@@ -86,23 +87,22 @@ export default function WalletConnectPage() {
       setError(null);
 
       // Update saved user ID
-      localStorage.setItem("currentUserId", user.id);
+      LocalStorageService.setCurrentUserId(user.id);
     } else if (!user?.id && savedUserId) {
       // User logged out
       console.log("User logged out, clearing wallet connection state");
       setConnected(null);
       setWalletAddress(null);
       setError(null);
-      localStorage.removeItem("currentUserId");
+      LocalStorageService.removeCurrentUserId();
     }
   }, [user?.id]);
 
   // Check for saved wallet connection status and verify with MetaMask
   useEffect(() => {
     const checkSavedConnection = async () => {
-      const savedWalletAddress = localStorage.getItem("walletAddress");
-      const isConnectedToWallet =
-        localStorage.getItem("isConnectedToWallet") === "true";
+      const savedWalletAddress = LocalStorageService.getWalletAddress();
+      const isConnectedToWallet = LocalStorageService.isConnectedToWallet();
 
       if (isConnectedToWallet && savedWalletAddress) {
         // Show saved wallet address and try to verify with MetaMask
@@ -135,11 +135,11 @@ export default function WalletConnectPage() {
           setWalletAddress(null);
           setError(null);
 
-          localStorage.removeItem("walletAddress");
+          LocalStorageService.removeWalletAddress();
         } else if (connected === "metamask") {
           // User switched accounts
           setWalletAddress(accounts[0]);
-          localStorage.setItem("walletAddress", accounts[0]);
+          LocalStorageService.setWalletAddress(accounts[0]);
         }
       };
 
@@ -182,7 +182,7 @@ export default function WalletConnectPage() {
 
       if (accounts.length > 0) {
         const currentAccount = accounts[0];
-        const savedAddress = localStorage.getItem("walletAddress");
+        const savedAddress = LocalStorageService.getWalletAddress();
 
         if (
           savedAddress &&
@@ -232,7 +232,7 @@ export default function WalletConnectPage() {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
 
-        localStorage.setItem("isConnectedToWallet", "true");
+        LocalStorageService.setWalletConnectionStatus(true);
 
         if (accounts?.length > 1) {
           setError("Bạn chỉ kết nối được 1 ví cho mỗi lần kết nối");
@@ -247,7 +247,7 @@ export default function WalletConnectPage() {
         if (
           accounts[0] &&
           user?.walletAddress !== accounts[0] &&
-          !localStorage.getItem("walletAddress")
+          !LocalStorageService.getWalletAddress()
         ) {
           try {
             let res = await UserService.updateWalletAddress({
@@ -257,7 +257,7 @@ export default function WalletConnectPage() {
             console.log("res", res);
 
             if (res.success) {
-              localStorage.setItem("walletAddress", accounts[0]);
+              LocalStorageService.setWalletAddress(accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
               // update wallet to redux
               dispatch(setWalletBalance(accounts[0]));
@@ -282,7 +282,7 @@ export default function WalletConnectPage() {
           }
         } else if (accounts[0]) {
           // If wallet address is the same, still update local state
-          localStorage.setItem("walletAddress", accounts[0]);
+          LocalStorageService.setWalletAddress(accounts[0]);
           dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
           // update wallet to redux
         }
@@ -322,7 +322,7 @@ export default function WalletConnectPage() {
         ],
       });
       console.log("MetaMask permissions revoked");
-      localStorage.removeItem("isConnectedToWallet");
+      LocalStorageService.removeWalletConnectionStatus();
     } catch (err: any) {
       // If revokePermissions is not supported, just log the error
       console.log("MetaMask revoke permissions not supported or failed:", err);
@@ -334,8 +334,8 @@ export default function WalletConnectPage() {
     setWalletAddress(null);
     setError(null);
 
-    // Clear localStorage
-    localStorage.removeItem("walletAddress");
+    // Clear wallet data from LocalStorageService
+    LocalStorageService.clearWalletData();
   };
 
   const handleConnect = async (walletId: string) => {

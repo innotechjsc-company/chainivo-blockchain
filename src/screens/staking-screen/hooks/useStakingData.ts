@@ -8,9 +8,8 @@ import {
   AvailableNFT,
   StakingConfig,
   StakingPool,
-} from "@/types/staking";
+} from "@/types";
 import StakingService from "@/api/services/staking-service";
-import { ApiService } from "@/api/api";
 import { toast } from "sonner";
 
 /**
@@ -106,37 +105,39 @@ export const useStakingData = () => {
     }
   };
   const getStakingPools = async () => {
-    const response = await StakingService.getUserStakes(
+    const response = await StakingService.getStakesByOwner(
       (userInfo?.id as string) ?? ""
     );
-    
+
     if (response?.success) {
       setStakingMyPools(response?.data?.stakes as StakingPool[]);
     } else {
       setStakingMyPools([]);
     }
-
   };
 
   const getClaimRewardsData = async (stakeId: string) => {
-    setIsLoading(true);
-    debugger;
-    const response = await StakingService.getRewards(stakeId);
-    if (response?.success) {
-      await getStakingPools();
+    try {
+      setIsLoading(true);
+      const response = await StakingService.getRewards(stakeId);
+      if (response?.success) {
+        await getStakingPools();
+        setIsLoading(false);
+        toast.success("Nhận thưởng thành công!");
+        return response?.data;
+      } else {
+        setIsLoading(false);
+        throw new Error(response?.message);
+      }
+    } catch (error) {
       setIsLoading(false);
-      toast.success("Nhận thưởng thành công!");
-      return response?.data;
-    } else {
-      setIsLoading(false);
-      toast.error("Lỗi nhận thưởng!");
+      toast.error(error instanceof Error ? error.message : "Lỗi nhận thưởng!");
       return [];
     }
   };
   const unStakeData = async (stakeId: string) => {
     setIsLoading(true);
     const response = await StakingService.unstake(stakeId);
-    debugger;
     if (response?.success) {
       await getStakingPools();
       setIsLoading(false);

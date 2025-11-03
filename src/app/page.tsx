@@ -11,15 +11,16 @@ import { NFTMarketplace } from "@/screens/home-screen/nft-marketplace/NFTMarketp
 import { Missions } from "@/screens/home-screen/missions/Missions";
 import { NewsEvents } from "@/screens/home-screen/news-events/NewsEvents";
 import { Footer } from "@/components/footer/Footer";
+import { LocalStorageService } from "@/services";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Check for user in localStorage
-    const storedUser = localStorage.getItem("user");
+    // Check for user in LocalStorageService (legacy)
+    const storedUser = LocalStorageService.getUser();
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
   }, []);
 
@@ -34,7 +35,7 @@ export default function Home() {
         {user && <UserDashboard />}
         <BlockchainStats />
         <InvestmentPhases />
-        <MembershipTiers />
+        {/* <MembershipTiers /> */}
         <NFTMarketplace />
         <Missions />
         {/* <NewsEvents /> */}

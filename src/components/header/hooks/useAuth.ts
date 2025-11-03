@@ -3,9 +3,10 @@ import { useRouter } from "next/navigation";
 import {
   useAppSelector,
   useAppDispatch,
-  logout as logoutAction,
+  logoutAction,
   initializeAuth,
 } from "@/stores";
+import { AuthService } from "@/api/services/auth-service";
 
 interface UserProfile {
   username: string;
@@ -35,9 +36,17 @@ export const useAuth = (onSignOut?: () => void) => {
     : null;
 
   const handleSignOut = async () => {
-    await dispatch(logoutAction());
-    onSignOut?.();
-    router.push("/");
+    try {
+      // Call AuthService logout (clears localStorage and API call)
+      await AuthService.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear Redux state
+      dispatch(logoutAction());
+      onSignOut?.();
+      router.push("/");
+    }
   };
 
   const handleSignIn = () => {
