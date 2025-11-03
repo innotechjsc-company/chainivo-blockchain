@@ -8,13 +8,10 @@ import { Button } from "@/components/ui/button";
 import {
   Target,
   Users,
-  Globe,
   TrendingUp,
   Shield,
-  Zap,
   Rocket,
   Award,
-  Loader2,
   Building2,
   Code2,
   Briefcase,
@@ -40,8 +37,6 @@ export const AboutUsScreen = () => {
   // Custom hooks
   const {
     leaders,
-    leadersLoading,
-    leadersError,
     partners,
     ecosystem,
     contactInfo,
@@ -168,19 +163,11 @@ export const AboutUsScreen = () => {
                   Đội ngũ lãnh đạo
                 </h2>
                 <p className="text-muted-foreground">
-                Những chuyên gia hàng đầu với kinh nghiệm dày dặn trong lĩnh vực công nghệ và tài chính
+                  Những chuyên gia hàng đầu với kinh nghiệm dày dặn trong lĩnh vực công nghệ và tài chính
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {leadersLoading ? (
-                  <div className="flex justify-center items-center h-full">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                ) : leadersError ? (
-                  <div className="flex justify-center items-center h-full">
-                    <p className="text-muted-foreground">{leadersError}</p>
-                  </div>
-                ) : leaders.map((leader, index) => (
+                {leaders.map((leader, index) => (
                   <TeamCard key={index} leader={leader} index={index} />
                 ))}
               </div>
@@ -280,102 +267,6 @@ export const AboutUsScreen = () => {
                   <EcosystemCard key={index} item={item} index={index} />
                 ))}
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Organizational Structure - Copy y hệt từ component gốc */}
-        <section className="py-16 bg-gradient-to-b from-background via-background to-background/50">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
-              {/* Header */}
-              <div className="text-center mb-12">
-                <h2 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">
-                  Sơ đồ tổ chức doanh nghiệp
-                </h2>
-                <p className="text-muted-foreground text-lg">Cấu trúc tổ chức chuyên nghiệp và hiệu quả</p>
-              </div>
-
-              {/* Organization Structure */}
-              <Card className="glass space-y-8 p-6">
-                {/* CEO/Director Level */}
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <div className="px-8 py-4 rounded-xl bg-gradient-to-br from-primary to-secondary text-white font-bold text-lg shadow-lg flex items-center gap-3">
-                      <Building2 size={24} />
-                      Ban Giám Đốc
-                    </div>
-                    {/* Connector line */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-1 h-12 bg-gradient-to-b from-primary/50 to-transparent"></div>
-                  </div>
-                </div>
-
-                {/* Departments Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                  {/* Department 1: Technology */}
-                  <div className="group">
-                    {/* Connector line from director */}
-                    {/* <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gradient-to-b from-primary/50 to-transparent -top-8"></div> */}
-
-                    <Card className="relative p-6 border border-primary/30 hover:border-primary/60 transition-all duration-300 shadow-lg hover:shadow-xl bg-card/50 backdrop-blur-sm">
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                      <div className="relative z-10">
-                        <div className="flex justify-center mb-4">
-                          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                            <Code2 size={28} className="text-primary" />
-                          </div>
-                        </div>
-                        <h3 className="text-center font-bold text-foreground text-lg mb-3">Phòng Công nghệ</h3>
-                        <p className="text-center text-sm text-muted-foreground leading-relaxed">
-                          Blockchain Dev, Smart Contracts, Security
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* Department 2: Business */}
-                  <div className="group">
-                    <Card className="relative p-6 border border-secondary/30 hover:border-secondary/60 transition-all duration-300 shadow-lg hover:shadow-xl bg-card/50 backdrop-blur-sm">
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                      <div className="relative z-10">
-                        <div className="flex justify-center mb-4">
-                          <div className="p-3 rounded-lg bg-secondary/10 border border-secondary/20">
-                            <Briefcase size={28} className="text-secondary" />
-                          </div>
-                        </div>
-                        <h3 className="text-center font-bold text-foreground text-lg mb-3">Phòng Kinh doanh</h3>
-                        <p className="text-center text-sm text-muted-foreground leading-relaxed">
-                          Sales, Marketing, Partnership
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* Department 3: Operations */}
-                  <div className="group">
-                    <Card className="relative p-6 border border-accent/30 hover:border-accent/60 transition-all duration-300 shadow-lg hover:shadow-xl bg-card/50 backdrop-blur-sm">
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                      <div className="relative z-10">
-                        <div className="flex justify-center mb-4">
-                          <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-                            <Cog size={28} className="text-accent" />
-                          </div>
-                        </div>
-                        <h3 className="text-center font-bold text-foreground text-lg mb-3">Phòng Vận hành</h3>
-                        <p className="text-center text-sm text-muted-foreground leading-relaxed">
-                          Operations, Support, Compliance
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              </Card>
             </div>
           </div>
         </section>

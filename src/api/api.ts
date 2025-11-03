@@ -172,7 +172,7 @@ export const API_ENDPOINTS = {
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
-    // PARTNERS: "/api/about/partners",
+    PARTNERS: "/api/about/partners",
     // ECOSYSTEM: "/api/about/ecosystem",
   },
 } as const;
