@@ -37,6 +37,7 @@ export const useAboutData = () => {
   const [leadersLoading, setLeadersLoading] = useState<boolean>(false);
   const [leadersError, setLeadersError] = useState<string | null>(null);
 
+
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -158,23 +159,31 @@ export const useAboutData = () => {
             response.message ||
             "Khong lay duoc danh sach leaders"
         );
+        setLeadersError(
+          response.error ||
+            response.message ||
+            "Khong lay duoc danh sach leaders"
+        );
         setLeaders([]);
       }
     } catch (error) {
       setLeadersError("Loi ket noi den server");
+      setLeadersError("Loi ket noi den server");
       setLeaders([]);
+      console.error("Error fetching leaders:", error);
       console.error("Error fetching leaders:", error);
     } finally {
       setLeadersLoading(false);
     }
   };
 
+
   useEffect(() => {
     fetchLeaders();
   }, []);
 
   // console.log('leaders', leaders);
-  // debugger;
+  // ;
   const partners: Partner[] = [
     { name: "Binance", type: "Exchange Partner" },
     { name: "Coinbase", type: "Investment Partner" },
