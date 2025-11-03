@@ -9,6 +9,7 @@ import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
+import { config } from "@/api/config";
 
 interface NFTCardProps {
   nft: any;
@@ -35,18 +36,62 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
       ? (nft.sharesSold / nft.totalShares) * 100
       : 0;
 
-  // Function to get NFT image from public folder
-  const getNFTImage = (nft: NFT) => {
-    // If it's a tier NFT, use tier images
+  // Function to get NFT image from API backend or fallback to default
+  const getNFTImage = (nft: any): string => {
+    // Helper to construct full image URL from API
+    const getImageUrl = (imageData: any): string | null => {
+      if (!imageData) return null;
+
+      let imageUrl: string;
+
+      // Handle different image data structures
+      if (typeof imageData === "string") {
+        imageUrl = imageData;
+      } else if (imageData?.url) {
+        imageUrl = imageData.url;
+      } else if (imageData?.image) {
+        imageUrl =
+          typeof imageData.image === "string"
+            ? imageData.image
+            : imageData.image?.url;
+      } else {
+        return null;
+      }
+
+      if (!imageUrl || imageUrl.trim() === "") return null;
+
+      // If URL is already a full URL (starts with http), use it directly
+      if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+        return imageUrl;
+      }
+
+      // If it's a relative path, combine with API_BASE_URL
+      // Handle slashes properly to avoid double slashes
+      const apiBase = config.API_BASE_URL.endsWith("/")
+        ? config.API_BASE_URL.slice(0, -1)
+        : config.API_BASE_URL;
+      const imagePath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+      return `${apiBase}${imagePath}`;
+    };
+
+    // Try to get image from API backend first
+    const apiImageUrl = getImageUrl(
+      nft?.image || nft?.imageUrl || nft?.image_url
+    );
+    if (apiImageUrl) {
+      return apiImageUrl;
+    }
+
+    // Fallback to default images based on type
     if (nft.type === "tier") {
-      const tierName = nft.name.toLowerCase();
+      const tierName = (nft.name || "").toLowerCase();
       if (tierName.includes("bronze")) return "/tier-bronze.jpg";
       if (tierName.includes("silver")) return "/tier-silver.jpg";
       if (tierName.includes("gold")) return "/tier-gold.jpg";
       if (tierName.includes("platinum")) return "/tier-platinum.jpg";
     }
 
-    // For other NFTs, use nft-box.jpg as default
+    // Default fallback for other NFTs
     return "/nft-box.jpg";
   };
 
@@ -113,26 +158,32 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
     return `${start}***${end}`;
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Fallback to default image if the image fails to load
+    const target = e.target as HTMLImageElement;
+    target.src = "/nft-box.jpg";
+  };
+
   return (
     <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
         onClick={() => router.push(`/nft/${nft.id}?type=${type}`)}
-        style={{
-          backgroundImage: `url('${nftImage}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
       >
+        <img
+          src={nftImage}
+          alt={nft.name || "NFT"}
+          className="w-full h-full object-cover"
+          onError={handleImageError}
+        />
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
 
         {/* Rarity Badge */}
         <Badge
-          className={`absolute top-4 right-4 ${
+          className={`absolute top-4 right-4 z-10 ${
             rarityColors[nft.rarity as keyof typeof rarityColors]
           }`}
         >
@@ -143,7 +194,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
+          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
           onClick={isLiked ? handleUnlike : handleLike}
         >
           {/* {isOtherNFT ? (

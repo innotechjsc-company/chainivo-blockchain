@@ -48,6 +48,7 @@ import {
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { LoadingSkeleton } from "./components/LoadingSkeleton";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -146,6 +147,56 @@ export default function NFTDetailPage() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  // Function to get NFT image from API backend or fallback to default
+  const getNFTImage = (nft: any): string => {
+    // Helper to construct full image URL from API
+    const getImageUrl = (imageData: any): string | null => {
+      if (!imageData) return null;
+
+      let imageUrl: string;
+
+      // Handle different image data structures
+      if (typeof imageData === "string") {
+        imageUrl = imageData;
+      } else if (imageData?.url) {
+        imageUrl = imageData.url;
+      } else if (imageData?.image) {
+        imageUrl =
+          typeof imageData.image === "string"
+            ? imageData.image
+            : imageData.image?.url;
+      } else {
+        return null;
+      }
+
+      if (!imageUrl || imageUrl.trim() === "") return null;
+
+      // If URL is already a full URL (starts with http), use it directly
+      if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+        return imageUrl;
+      }
+
+      // If it's a relative path, combine with API_BASE_URL
+      // Handle slashes properly to avoid double slashes
+      const apiBase = config.API_BASE_URL.endsWith("/")
+        ? config.API_BASE_URL.slice(0, -1)
+        : config.API_BASE_URL;
+      const imagePath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+      return `${apiBase}${imagePath}`;
+    };
+
+    // Try to get image from API backend first
+    const apiImageUrl = getImageUrl(
+      nft?.image || nft?.imageUrl || nft?.image_url
+    );
+    if (apiImageUrl) {
+      return apiImageUrl;
+    }
+
+    // Default fallback
+    return "/nft-box.jpg";
+  };
+
   const handlePostComment = async () => {
     if (!commentText.trim() || !id || commentLoading) return;
 
@@ -195,24 +246,32 @@ export default function NFTDetailPage() {
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        setBuyLoading(false);
-
         await NFTService.transferNFT({
           nftId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
+        setBuyLoading(false);
+        toast.success("Mua NFT thành công!");
         router.push("/nftmarket");
         // TODO: Có thể thêm toast notification hoặc refresh data
       } else {
         setBuyLoading(false);
+        toast.error("Mua NFT thất bại: Không có transaction hash");
         console.error("Failed to buy NFT: No transaction hash");
       }
     } catch (error: any) {
       setBuyLoading(false);
+      toast.error(
+        `Lỗi khi mua NFT: ${error?.message || "Đã xảy ra lỗi không xác định"}`
+      );
       console.error("Error buying NFT:", error?.message || error);
-      // TODO: Có thể thêm toast notification để hiển thị lỗi
     }
   };
+
+  // Show LoadingSkeleton when buying NFT
+  if (buyLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -231,7 +290,7 @@ export default function NFTDetailPage() {
           <div className="space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
-                src={nftData.image || "/nft-box.jpg"}
+                src={getNFTImage(nftData)}
                 alt={nftData.name ?? "NFT"}
                 className="object-cover w-full h-full"
                 onError={(e) => {
