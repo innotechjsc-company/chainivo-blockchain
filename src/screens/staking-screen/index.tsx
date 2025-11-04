@@ -14,8 +14,6 @@ import { NFTStakingForm } from "./components/NFTStakingForm";
 import { ActiveStakesList } from "./components/ActiveStakesList";
 import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
-import { API_ENDPOINTS, ApiService } from "@/api/api";
-import StakingService from "@/api/services/staking-service";
 import { Spinner } from "@/components/ui/spinner";
 
 /**
@@ -57,6 +55,7 @@ export const StakingScreen = () => {
     addPendingStake,
     updateStakeStatus,
     removeStake,
+    getEarningPerHour,
   } = useStakingData();
 
   const {
@@ -137,6 +136,10 @@ export const StakingScreen = () => {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    stakingMyPools;
+  }, [stakingMyPools]);
+
   // Loading state - chỉ hiển thị khi đang fetch data lần đầu và chưa có data
   if (dataLoading && !stakingStats && !dataError) {
     return <LoadingSkeleton />;
@@ -207,11 +210,7 @@ export const StakingScreen = () => {
           <StakingStats
             stats={{
               totalCoinStaked: stakingMyPools.length,
-              totalCoinRewards: stakingMyPools.reduce(
-                (sum: number, item: any) =>
-                  sum + Number(item?.earnedRewards ?? 0),
-                0
-              ),
+              totalCoinRewards: getEarningPerHour,
               totalNFTValue: 0,
               totalNFTRewards: 0,
               totalActiveStakes: stakingMyPools.length,
@@ -295,6 +294,13 @@ export const StakingScreen = () => {
                 onStake={handleNFTStake}
                 loading={actionLoading}
                 apy={stakingConfig?.nftAPY}
+                fetchStakingData={fetchStakingData}
+                getStakingPoolsOnSuccess={getStakingPools}
+                setIsLoading={setIsLoading}
+                stakingMyPools={stakingMyPools}
+                addPendingStake={addPendingStake}
+                updateStakeStatus={updateStakeStatus}
+                removeStake={removeStake}
               />
 
               <ActiveStakesList

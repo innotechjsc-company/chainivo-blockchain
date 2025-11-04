@@ -315,7 +315,6 @@ export const CoinStakingForm = ({
   const isAboveMaxStake =
     selectedPoolData && stakeAmount > selectedPoolData.maxStake;
   const isInvalidStakeAmount = isBelowMinStake || isAboveMaxStake;
-
   const isValidAmount =
     stakeAmount > 0 &&
     stakeAmount <= userCanBalance &&
