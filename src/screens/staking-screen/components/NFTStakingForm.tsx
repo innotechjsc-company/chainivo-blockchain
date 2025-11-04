@@ -218,12 +218,14 @@ export const NFTStakingForm = ({
 
       // BƯỚC 2: Xử lý blockchain transaction
       setIsLoading(true);
+      if (setParentIsLoading) {
+        setParentIsLoading(true);
+      }
 
       let res = await TransferService.sendCanTransfer({
         fromAddress,
         amountCan: amount,
       });
-      debugger;
 
       if (res.transactionHash) {
         let createStake = await StakingService.stake(
@@ -247,8 +249,14 @@ export const NFTStakingForm = ({
               setSelectedNFTId("");
               setSelectedPoolId("");
               setIsLoading(false);
+              if (setParentIsLoading) {
+                setParentIsLoading(false);
+              }
             } catch (refreshError) {
               setIsLoading(false);
+              if (setParentIsLoading) {
+                setParentIsLoading(false);
+              }
             }
           }, 500);
         } else {
@@ -257,6 +265,9 @@ export const NFTStakingForm = ({
             removeStake?.(tempStakeId);
           }
           setIsLoading(false);
+          if (setParentIsLoading) {
+            setParentIsLoading(false);
+          }
           toast.error("Giao dịch stake thất bại");
         }
       } else {
@@ -264,6 +275,9 @@ export const NFTStakingForm = ({
           removeStake?.(tempStakeId);
         }
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Không nhận được xác nhận giao dịch");
       }
     } catch (error) {
@@ -287,30 +301,54 @@ export const NFTStakingForm = ({
 
       if ((error as any).code === 4001) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Người dùng đã từ chối giao dịch");
       } else if ((error as any).code === -32603) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Lỗi nội bộ. Vui lòng thử lại.");
       } else if ((error as any).code === 205) {
         // AbiError - thường do sai network
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error(
           "Lỗi blockchain. Vui lòng kiểm tra wallet đã kết nối đúng network chưa (Polygon Amoy Testnet)"
         );
       } else if ((error as any).message?.includes("Sai network")) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error((error as any).message);
       } else if ((error as any).message?.includes("insufficient funds")) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Số dư không đủ để thực hiện giao dịch");
       } else if ((error as any).message?.includes("gas")) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Lỗi gas. Vui lòng thử lại.");
       } else if ((error as any).message?.includes("Invalid")) {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error((error as any).message);
       } else {
         setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
         toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
       }
 
