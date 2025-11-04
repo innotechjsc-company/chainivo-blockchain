@@ -57,6 +57,7 @@ export const StakingScreen = () => {
     addPendingStake,
     updateStakeStatus,
     removeStake,
+    getEarningPerHour,
   } = useStakingData();
 
   const {
@@ -137,6 +138,10 @@ export const StakingScreen = () => {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    stakingMyPools;
+  }, [stakingMyPools]);
+
   // Loading state - chỉ hiển thị khi đang fetch data lần đầu và chưa có data
   if (dataLoading && !stakingStats && !dataError) {
     return <LoadingSkeleton />;
@@ -207,11 +212,7 @@ export const StakingScreen = () => {
           <StakingStats
             stats={{
               totalCoinStaked: stakingMyPools.length,
-              totalCoinRewards: stakingMyPools.reduce(
-                (sum: number, item: any) =>
-                  sum + Number(item?.earnedRewards ?? 0),
-                0
-              ),
+              totalCoinRewards: getEarningPerHour,
               totalNFTValue: 0,
               totalNFTRewards: 0,
               totalActiveStakes: stakingMyPools.length,
