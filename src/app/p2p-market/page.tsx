@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { NFTService } from "@/api/services/nft-service";
 import type { ApiResponse } from "@/api/api";
 import { config } from "@/api/config";
@@ -51,6 +52,13 @@ export default function P2PMarketPage() {
   const [items, setItems] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  // filter states
+  const [rarity, setRarity] = useState<string>("");
+  const [assetType, setAssetType] = useState<string>("");
+  const [unit, setUnit] = useState<string>("");
+  const [pendingRange, setPendingRange] = useState<[number, number]>([
+    0, 1000000,
+  ]);
 
   // Build full image URL from backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -130,13 +138,15 @@ export default function P2PMarketPage() {
       const q = search.trim().toLowerCase();
       result = result.filter(
         (it) =>
-          it.name.toLowerCase().includes(q) ||
-          it.collection.toLowerCase().includes(q)
+          (it.name ?? "").toLowerCase().includes(q) ||
+          (it.collection ?? "").toLowerCase().includes(q)
       );
     }
     if (selectedCollections.length > 0) {
       result = result.filter((it) =>
-        selectedCollections.some((c) => it.collection.toLowerCase().includes(c))
+        selectedCollections.some((c) =>
+          (it.collection ?? "").toLowerCase().includes(c)
+        )
       );
     }
     if (sort === "price-asc") result.sort((a, b) => a.price - b.price);
@@ -199,34 +209,80 @@ export default function P2PMarketPage() {
                     placeholder="Search for anything"
                   />
                 </div>
-                <div className="max-h-[420px] overflow-auto pr-1 space-y-2">
-                  {mockCollections.map((c) => {
-                    const isActive = selectedCollections.includes(
-                      c.name.toLowerCase()
-                    );
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() =>
-                          setSelectedCollections((prev) =>
-                            isActive
-                              ? prev.filter((v) => v !== c.name.toLowerCase())
-                              : [...prev, c.name.toLowerCase()]
-                          )
-                        }
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors text-left ${
-                          isActive
-                            ? "border-primary/40 bg-primary/5"
-                            : "border-border hover:bg-accent/50"
-                        }`}
-                      >
-                        <span className="text-xl" aria-hidden>
-                          {c.icon}
-                        </span>
-                        <span className="text-sm">{c.name}</span>
-                      </button>
-                    );
-                  })}
+                <div className="space-y-4">
+                  {/* Do hiem (Rarity) */}
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">Độ hiếm</span>
+                    <Select value={rarity} onValueChange={setRarity}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="-- Chọn độ hiếm --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Thường</SelectItem>
+                        <SelectItem value="2">Bạc</SelectItem>
+                        <SelectItem value="3">Vàng</SelectItem>
+                        <SelectItem value="4">Bạch kim</SelectItem>
+                        <SelectItem value="5">Kim cương</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Loai (Type) */}
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">Loại</span>
+                    <Select value={assetType} onValueChange={setAssetType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="-- Chọn loại --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nft">NFT</SelectItem>
+                        <SelectItem value="membership">Membership</SelectItem>
+                        <SelectItem value="mystery-box">Mystery Box</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Don vi giao dich (Currency) */}
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">
+                      Đơn vị giao dịch
+                    </span>
+                    <Select value={unit} onValueChange={setUnit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="-- Chọn đơn vị --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bnb">BNB</SelectItem>
+                        <SelectItem value="can">CAN</SelectItem>
+                        <SelectItem value="usdt">USDT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Khoang gia (Price Range) */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Khoảng giá</span>
+                      <span className="text-xs text-muted-foreground">
+                        {pendingRange[0].toLocaleString("vi-VN")} -{" "}
+                        {pendingRange[1].toLocaleString("vi-VN")}{" "}
+                        {unit?.toUpperCase()}
+                      </span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={1000000}
+                      step={1}
+                      value={pendingRange}
+                      onValueChange={(v) =>
+                        setPendingRange([
+                          Math.round((v as [number, number])[0]),
+                          Math.round((v as [number, number])[1]),
+                        ])
+                      }
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
