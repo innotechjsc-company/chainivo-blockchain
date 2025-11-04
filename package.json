@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start"
+    "dev": "bun --bun run next dev --turbopack",
+    "build": "bun --bun run next build --turbopack",
+    "start": "bun --bun run next start",
+    "install:clean": "rm -rf node_modules package-lock.json && bun install"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
