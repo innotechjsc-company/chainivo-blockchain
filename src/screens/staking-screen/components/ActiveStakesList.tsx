@@ -9,6 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   TrendingUp,
   Clock,
   Gift,
@@ -86,8 +94,50 @@ export const ActiveStakesList = ({
   getClaimRewardsData,
   unStakeData,
 }: ActiveStakesListProps) => {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
+  const [confirmUnstakeOpen, setConfirmUnstakeOpen] = useState(false);
+  const [selectedUnstakeId, setSelectedUnstakeId] = useState<string | null>(
+    null
+  );
+
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
+
+  const handleClaimClick = (stakeId: string) => {
+    setSelectedStakeId(stakeId);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmClaim = async () => {
+    const stakeId = selectedStakeId;
+    // Tat modal ngay lap tuc
+    setConfirmDialogOpen(false);
+    setSelectedStakeId(null);
+    if (!stakeId) return;
+    try {
+      await getClaimRewardsData(stakeId);
+    } catch (e) {
+      // noop
+    }
+  };
+
+  const handleUnstakeClick = (stakeId: string) => {
+    setSelectedUnstakeId(stakeId);
+    setConfirmUnstakeOpen(true);
+  };
+
+  const handleConfirmUnstake = async () => {
+    const stakeId = selectedUnstakeId;
+    setConfirmUnstakeOpen(false);
+    setSelectedUnstakeId(null);
+    if (!stakeId) return;
+    try {
+      await unStakeData(stakeId);
+    } catch (e) {
+      // noop
+    }
+  };
 
   return (
     <div className="stakes-list space-y-6">
@@ -184,16 +234,16 @@ export const ActiveStakesList = ({
                     <div className="grid grid-cols-2 gap-3 mt-2">
                       <Button
                         variant="default"
-                        onClick={() => getClaimRewardsData(id)}
+                        onClick={() => handleClaimClick(id)}
                         disabled={status !== "active"}
-                        className="flex items-center justify-center gap-2 cursor-pointer bg-sky-500 hover:bg-sky-600 text-white"
+                        className="flex items-center justify-center gap-2 cursor-pointer bg-sky-500 hover:bg-sky-600 text-white cursor-pointer"
                       >
                         <Gift className="h-4 w-4" />
                         Nhận thưởng
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => unStakeData(id)}
+                        onClick={() => handleUnstakeClick(id)}
                         disabled={!canUnstake && status === "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer"
                       >
@@ -210,6 +260,58 @@ export const ActiveStakesList = ({
       </Card>
 
       {/* My Staking Pools */}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận nhận thưởng</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn nhận thưởng?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                setSelectedStakeId(null);
+              }}
+            >
+              Từ chối
+            </Button>
+            <Button variant="default" onClick={handleConfirmClaim}>
+              Xác nhận
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unstake Confirmation Dialog */}
+      <Dialog open={confirmUnstakeOpen} onOpenChange={setConfirmUnstakeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận hủy staking</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn huỷ gói stake này không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmUnstakeOpen(false);
+                setSelectedUnstakeId(null);
+              }}
+            >
+              Thoát
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmUnstake}>
+              Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -14,8 +14,6 @@ import { NFTStakingForm } from "./components/NFTStakingForm";
 import { ActiveStakesList } from "./components/ActiveStakesList";
 import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
-import { API_ENDPOINTS, ApiService } from "@/api/api";
-import StakingService from "@/api/services/staking-service";
 import { Spinner } from "@/components/ui/spinner";
 
 /**

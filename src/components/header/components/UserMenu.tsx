@@ -49,6 +49,10 @@ export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
           <User className="w-4 h-4 mr-2" />
           Quản lý tài khoản
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/missions")}>
+          <Settings className="w-4 h-4 mr-2" />
+          Nhiệm vụ
+        </DropdownMenuItem>
         <DropdownMenuItem>
           <Settings className="w-4 h-4 mr-2" />
           Cài đặt
