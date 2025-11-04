@@ -95,15 +95,15 @@ export default function P2PMarketPage() {
     const l = (level || "").toString();
     switch (l) {
       case "1":
-        return "text-amber-800"; // nau/amber dam
+        return "text-amber-800";
       case "2":
-        return "text-slate-400"; // bac
+        return "text-slate-400";
       case "3":
-        return "text-yellow-500"; // vang
+        return "text-yellow-500";
       case "4":
-        return "text-indigo-400"; // bach kim (platinum tone)
+        return "text-indigo-400";
       case "5":
-        return "text-cyan-400"; // kim cuong
+        return "text-cyan-400";
       default:
         return "text-foreground";
     }
@@ -119,10 +119,10 @@ export default function P2PMarketPage() {
           setItems(resp?.data?.docs);
         } else {
           setItems([]);
-          setError(resp?.message || resp?.error || "Khong the tai danh sach");
+          setError(resp?.message || resp?.error || "Không thể tải danh sách");
         }
       } catch (e: any) {
-        setError(e?.message || "Khong the tai danh sach");
+        setError(e?.message || "Không thể tải danh sách");
         setItems([]);
       } finally {
         setLoading(false);
@@ -198,15 +198,14 @@ export default function P2PMarketPage() {
             <Card className="glass sticky top-24">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Collections</h3>
-                  <span className="text-xl">—</span>
+                  <h3 className="text-sm font-semibold">Tìm kiếm NFT</h3>
                 </div>
                 <div className="relative">
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-3"
-                    placeholder="Search for anything"
+                    placeholder="Tìm kiếm NFT theo tên"
                   />
                 </div>
                 <div className="space-y-4">
@@ -283,6 +282,17 @@ export default function P2PMarketPage() {
                       className="w-full"
                     />
                   </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setSearch("");
+                      setRarity("");
+                      setAssetType("");
+                      setUnit("");
+                    }}
+                  >
+                    Tìm kiếm
+                  </Button>
                 </div>
               </CardContent>
             </Card>
