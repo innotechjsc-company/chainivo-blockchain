@@ -24,4 +24,10 @@ export class UserService {
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
   }
+
+  static async changeName(data: {
+    newName: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.USER.CHANGE_NAME, data);
+  }
 }

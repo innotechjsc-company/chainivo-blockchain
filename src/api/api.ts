@@ -168,6 +168,7 @@ export const API_ENDPOINTS = {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
     CHANGE_PASSWORD: "/api/user/change-password",
+    CHANGE_NAME: "/api/user/change-name",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",

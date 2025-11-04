@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Wallet, History, Settings, Upload } from "lucide-react";
-import { useAppSelector } from "@/stores";
+import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
+import { UserService } from "@/api/services/user-service";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
+import { updateProfile } from "@/stores/authSlice";
 
 interface Profile {
   name: string;
@@ -25,6 +27,7 @@ interface Profile {
 
 export default function AccountManagementPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
@@ -32,6 +35,9 @@ export default function AccountManagementPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
@@ -72,18 +78,61 @@ export default function AccountManagementPage() {
     fetchCanBalance();
   }, []);
 
+  // Validation: Chi cho phep chu (co dau), so, khoang trang
+  const validateName = (name: string): string | null => {
+    const trimmedName = name.trim();
+
+    if (trimmedName.length === 0) {
+      return "Ten khong duoc de trong";
+    }
+
+    if (trimmedName.length > 100) {
+      return "Ten khong duoc vuot qua 100 ky tu";
+    }
+
+    // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
+    const nameRegex = /^[a-zA-Z0-9\u00C0-\u1EF9\s]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      return "Ten chi duoc chua chu cai, so va khoang trang";
+    }
+
+    return null;
+  };
+
   const handleUpdateProfile = async () => {
+    // Reset messages
+    setUpdateError(null);
+    setUpdateSuccess(null);
+
+    // Validate input
+    const validationError = validateName(username);
+    if (validationError) {
+      setUpdateError(validationError);
+      return;
+    }
+
+    setUpdateLoading(true);
+
     try {
-      // Mock update profile
-      console.log("Updating profile with username:", username);
+      const trimmedName = username.trim();
+      const response = await UserService.changeName({ newName: trimmedName });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (response.success) {
+        dispatch(updateProfile({ name: trimmedName }));
 
-      setProfile((prev) => (prev ? { ...prev, username } : null));
-      console.log("Profile updated successfully");
-    } catch (error) {
-      console.error("Error updating profile:", error);
+        setProfile((prev) => (prev ? { ...prev, name: trimmedName } : null));
+
+        setUpdateSuccess("Cap nhat ten thanh cong");
+
+
+        setTimeout(() => setUpdateSuccess(null), 3000);
+      } else {
+        setUpdateError(response.error || "Co loi xay ra khi cap nhat ten");
+      }
+    } catch (error: any) {
+      setUpdateError(error.message || "Khong the cap nhat ten");
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -197,12 +246,25 @@ export default function AccountManagementPage() {
                       <Label htmlFor="name">Tên người dùng</Label>
                       <Input
                         id="name"
-                        value={user?.name || ""}
+                        value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         className="mt-2"
+                        maxLength={100}
+                        disabled={updateLoading}
                       />
+                      {updateError && (
+                        <p className="text-sm text-red-500 mt-1">{updateError}</p>
+                      )}
+                      {updateSuccess && (
+                        <p className="text-sm text-green-500 mt-1">{updateSuccess}</p>
+                      )}
                     </div>
-                    <Button onClick={handleUpdateProfile}>Cập nhật</Button>
+                    <Button
+                      onClick={handleUpdateProfile}
+                      disabled={updateLoading}
+                    >
+                      {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
+                    </Button>
                   </div>
                 </div>
 
