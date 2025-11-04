@@ -17,6 +17,7 @@ import { LocalStorageService } from "@/services";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 import { AvatarUpload } from "@/components/account/AvatarUpload";
 import { updateProfile } from "@/stores/authSlice";
+import { MyNFTCollection } from "@/components/account/MyNFTCollection";
 
 interface Profile {
   name: string;
@@ -378,8 +379,10 @@ export default function AccountManagementPage() {
 
             <TabsContent value="wallet">
               <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-4">Ví của tôi</h3>
-                <div className="space-y-4">
+                <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
+
+                {/* Wallet Balance Overview */}
+                <div className="space-y-4 mb-8">
                   <div className="flex justify-between items-center p-4 glass rounded-lg">
                     <div>
                       <div className="font-semibold">Số dư CAN</div>
@@ -387,7 +390,7 @@ export default function AccountManagementPage() {
                         {canBalance?.toLocaleString()} CAN
                       </div>
                     </div>
-                    <Button>Nạp tiền</Button>
+                    {/* <Button>Nạp tiền</Button> */}
                   </div>
                   <div className="p-4 glass rounded-lg">
                     <div className="text-sm text-muted-foreground mb-2">
@@ -408,6 +411,9 @@ export default function AccountManagementPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* NFT Collection */}
+                <MyNFTCollection />
               </Card>
             </TabsContent>
 
