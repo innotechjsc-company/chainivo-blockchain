@@ -75,7 +75,6 @@ export class NFTService {
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.COMMENT, data);
   }
-
   static async getComment(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.get(`${API_ENDPOINTS.NFT.COMMENT}?nftId=${nftId}`);
   }
@@ -84,6 +83,9 @@ export class NFTService {
   }
   static async unlikeNft(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.post(`${API_ENDPOINTS.NFT.UNLIKE}`, { nftId });
+  }
+  static async getP2PList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.P2P_LIST, data);
   }
 }
 
