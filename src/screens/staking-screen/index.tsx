@@ -295,6 +295,13 @@ export const StakingScreen = () => {
                 onStake={handleNFTStake}
                 loading={actionLoading}
                 apy={stakingConfig?.nftAPY}
+                fetchStakingData={fetchStakingData}
+                getStakingPoolsOnSuccess={getStakingPools}
+                setIsLoading={setIsLoading}
+                stakingMyPools={stakingMyPools}
+                addPendingStake={addPendingStake}
+                updateStakeStatus={updateStakeStatus}
+                removeStake={removeStake}
               />
 
               <ActiveStakesList
