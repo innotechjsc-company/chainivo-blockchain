@@ -40,6 +40,7 @@ export interface AuthResponse {
     name?: string;
     walletAddress?: string;
     role?: string;
+    avatarUrl?: string;
   };
   token: string;
   exp: number;
@@ -158,6 +159,7 @@ export class AuthService {
             name: authData.user.name || "",
             walletAddress: authData.user.walletAddress || "",
             role: authData.user.role || "user",
+            avatarUrl: authData.user.avatarUrl || "",
             createdAt: authData.user.createdAt,
             updatedAt: authData.user.updatedAt,
           };

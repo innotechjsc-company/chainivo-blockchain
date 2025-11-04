@@ -168,7 +168,7 @@ export const API_ENDPOINTS = {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
     CHANGE_PASSWORD: "/api/user/change-password",
-    CHANGE_NAME: "/api/user/change-name",
+    UPDATE_PROFILE: "/api/user/update-profile",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
@@ -182,6 +182,26 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+export interface AvatarObject {
+  id: string;
+  url: string;
+  filename: string;
+  alt?: string;
+  caption?: string;
+  mimeType: string;
+  filesize: number;
+  width: number;
+  height: number;
+  type: string;
+}
+
+export interface UpdateProfileResponse {
+  userId: string;
+  name?: string;
+  avatar?: AvatarObject;
+  updatedAt: string;
 }
 
 export class ApiService {
@@ -219,6 +239,23 @@ export class ApiService {
     }
   }
 
+  static async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.post(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+        message: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
   static async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     try {
       const response = await api.put(endpoint, data);
@@ -227,6 +264,35 @@ export class ApiService {
       return {
         success: false,
         error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.patch(endpoint, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async patchFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.patch(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+        message: error.response?.data?.message || error.message,
       };
     }
   }

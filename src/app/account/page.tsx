@@ -6,15 +6,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings, Upload } from "lucide-react";
+import { User, Wallet, History, Settings } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
 import { UserService } from "@/api/services/user-service";
+import { LocalStorageService } from "@/services";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
+import { AvatarUpload } from "@/components/account/AvatarUpload";
 import { updateProfile } from "@/stores/authSlice";
 
 interface Profile {
@@ -38,15 +39,21 @@ export default function AccountManagementPage() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     // Simulate loading user profile
     const timer = setTimeout(() => {
+      // Get avatar from localStorage or Redux
+      const userInfo = LocalStorageService.getUserInfo();
+      const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
+
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatar_url: null,
+        avatar_url: avatarUrl,
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -57,7 +64,7 @@ export default function AccountManagementPage() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchCanBalance = async () => {
@@ -104,36 +111,101 @@ export default function AccountManagementPage() {
     setUpdateError(null);
     setUpdateSuccess(null);
 
-    // Validate input
-    const validationError = validateName(username);
-    if (validationError) {
-      setUpdateError(validationError);
+    // Validate: least 1 field must be provided
+    const trimmedName = username.trim();
+    const hasNameChange = trimmedName !== profile?.name;
+    const hasAvatarChange = selectedAvatar !== null;
+
+    if (!hasNameChange && !hasAvatarChange) {
+      setUpdateError("Vui long cap nhat ten hoac anh dai dien");
       return;
+    }
+
+    // Validate name if changing
+    if (hasNameChange) {
+      const validationError = validateName(trimmedName);
+      if (validationError) {
+        setUpdateError(validationError);
+        return;
+      }
     }
 
     setUpdateLoading(true);
 
     try {
-      const trimmedName = username.trim();
-      const response = await UserService.changeName({ newName: trimmedName });
+      // Create FormData
+      const formData = new FormData();
+
+      if (hasNameChange) {
+        formData.append('name', trimmedName);
+      }
+
+      if (hasAvatarChange && selectedAvatar) {
+        formData.append('avatar', selectedAvatar);
+      }
+
+      // Call API
+      const response = await UserService.updateProfile(formData);
 
       if (response.success) {
-        dispatch(updateProfile({ name: trimmedName }));
+        const updateData: any = {};
+        let avatarUrl: string | null = null;
 
-        setProfile((prev) => (prev ? { ...prev, name: trimmedName } : null));
+        if (hasNameChange) {
+          updateData.name = trimmedName;
+        }
 
-        setUpdateSuccess("Cap nhat ten thanh cong");
+        if (hasAvatarChange && response.data?.avatar?.url) {
+          // Lấy avatar URL từ API response (backend trả về full avatar object)
+          avatarUrl = response.data.avatar.url;
+          updateData.avatarUrl = avatarUrl;
+        }
 
+        // Update Redux store
+        dispatch(updateProfile(updateData));
+
+        // Update local profile state
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                name: hasNameChange ? trimmedName : prev.name,
+                avatar_url: hasAvatarChange && avatarUrl ? avatarUrl : prev.avatar_url,
+              }
+            : null
+        );
+
+        // Update localStorage with new user info (including avatar URL)
+        const currentUserInfo = LocalStorageService.getUserInfo();
+        if (currentUserInfo) {
+          const updatedUserInfo = {
+            ...currentUserInfo,
+            name: hasNameChange ? trimmedName : currentUserInfo.name,
+            avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : currentUserInfo.avatarUrl,
+          };
+          LocalStorageService.setUserInfo(updatedUserInfo);
+        }
+
+        // Clear avatar upload state
+        setSelectedAvatar(null);
+        setAvatarPreview(null);
+
+        setUpdateSuccess("Cap nhat profile thanh cong");
 
         setTimeout(() => setUpdateSuccess(null), 3000);
       } else {
-        setUpdateError(response.error || "Co loi xay ra khi cap nhat ten");
+        setUpdateError(response.error || response.message || "Co loi xay ra khi cap nhat profile");
       }
     } catch (error: any) {
-      setUpdateError(error.message || "Khong the cap nhat ten");
+      setUpdateError(error.message || "Khong the cap nhat profile");
     } finally {
       setUpdateLoading(false);
     }
+  };
+
+  const handleAvatarSelect = (file: File | null, previewUrl: string | null) => {
+    setSelectedAvatar(file);
+    setAvatarPreview(previewUrl);
   };
 
   const handleSignOut = async () => {
@@ -234,37 +306,40 @@ export default function AccountManagementPage() {
 
             <TabsContent value="profile">
               <Card className="p-6 glass">
-                <div className="flex items-start gap-6 mb-6">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profile?.avatar_url || ""} />
-                    <AvatarFallback className="text-2xl">
-                      {username?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="mb-4">
-                      <Label htmlFor="name">Tên người dùng</Label>
-                      <Input
-                        id="name"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="mt-2"
-                        maxLength={100}
-                        disabled={updateLoading}
-                      />
+                <div className="flex flex-col gap-6 mb-6">
+                  <div className="flex gap-6">
+                    <AvatarUpload
+                      currentAvatar={profile?.avatar_url || ""}
+                      userName={username}
+                      onAvatarSelect={handleAvatarSelect}
+                      disabled={updateLoading}
+                      error={selectedAvatar ? undefined : undefined}
+                    />
+                    <div className="flex-1">
+                      <div className="mb-4">
+                        <Label htmlFor="name">Ten nguoi dung</Label>
+                        <Input
+                          id="name"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="mt-2"
+                          maxLength={100}
+                          disabled={updateLoading}
+                        />
+                      </div>
                       {updateError && (
                         <p className="text-sm text-red-500 mt-1">{updateError}</p>
                       )}
                       {updateSuccess && (
                         <p className="text-sm text-green-500 mt-1">{updateSuccess}</p>
                       )}
+                      <Button
+                        onClick={handleUpdateProfile}
+                        disabled={updateLoading}
+                      >
+                        {updateLoading ? "Dang cap nhat..." : "Cap nhat"}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={handleUpdateProfile}
-                      disabled={updateLoading}
-                    >
-                      {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
-                    </Button>
                   </div>
                 </div>
 

@@ -6,6 +6,7 @@ export interface AuthUser {
   name: string;
   walletAddress: string;
   role: string;
+  avatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }

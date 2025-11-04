@@ -1,5 +1,4 @@
-import { IUser } from "@/types";
-import { API_ENDPOINTS, ApiResponse, ApiService } from "../api";
+import { API_ENDPOINTS, ApiResponse, ApiService, UpdateProfileResponse } from "../api";
 
 export class UserService {
   static async getBalance(walletAddress: string): Promise<ApiResponse<any>> {
@@ -25,9 +24,12 @@ export class UserService {
     return ApiService.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
   }
 
-  static async changeName(data: {
-    newName: string;
-  }): Promise<ApiResponse<any>> {
-    return ApiService.post(API_ENDPOINTS.USER.CHANGE_NAME, data);
+  static async updateProfile(
+    formData: FormData
+  ): Promise<ApiResponse<UpdateProfileResponse>> {
+    return ApiService.patchFormData<UpdateProfileResponse>(
+      API_ENDPOINTS.USER.UPDATE_PROFILE,
+      formData
+    );
   }
 }
