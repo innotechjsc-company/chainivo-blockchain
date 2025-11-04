@@ -4,10 +4,8 @@ import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService } from "@/services";
 
-const API_BASE_URL = config.API_BASE_URL;
-
 const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: config.API_BASE_URL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
