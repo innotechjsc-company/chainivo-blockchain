@@ -13,6 +13,7 @@ import { useAppSelector } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
+import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 
 interface Profile {
   name: string;
@@ -30,6 +31,7 @@ export default function AccountManagementPage() {
   const [canBalance, setCanBalance] = useState(0);
   const [txLoading, setTxLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
@@ -348,7 +350,11 @@ export default function AccountManagementPage() {
                         ••••••••
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsChangePasswordOpen(true)}
+                    >
                       Thay đổi
                     </Button>
                   </div>
@@ -376,6 +382,13 @@ export default function AccountManagementPage() {
           </Tabs>
         </div>
       </main>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        userEmail={user?.email}
+      />
     </div>
   );
 }

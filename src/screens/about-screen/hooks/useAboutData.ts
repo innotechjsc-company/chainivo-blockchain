@@ -6,6 +6,7 @@ import {
   Partner,
   EcosystemItem,
   ContactFormData,
+  ContactFormErrors,
   ContactInfo,
   StatsCard,
 } from "@/types/about";
@@ -36,12 +37,106 @@ export const useAboutData = () => {
   const [leadersLoading, setLeadersLoading] = useState<boolean>(false);
   const [leadersError, setLeadersError] = useState<string | null>(null);
 
+
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
     phone: "",
     message: "",
   });
+
+  const [formErrors, setFormErrors] = useState<ContactFormErrors>({});
+
+  // Validation helper: Sanitize HTML entities de chong XSS
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+      .trim();
+  };
+
+  // Validation function
+  const validateForm = (data: ContactFormData): ContactFormErrors => {
+    const errors: ContactFormErrors = {};
+
+    // Name validation: required, min 2, max 50, khong chua script tags
+    if (!data.name || data.name.trim().length < 2) {
+      errors.name = "Ho va ten phai co it nhat 2 ky tu";
+    } else if (data.name.length > 50) {
+      errors.name = "Ho va ten khong duoc qua 50 ky tu";
+    } else if (/<script|<\/script|javascript:|onerror=/i.test(data.name)) {
+      errors.name = "Ho va ten chua ky tu khong hop le";
+    }
+
+    // Email validation: required, format hop le, max 100
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+    if (!data.email) {
+      errors.email = "Email là bắt buộc";
+    } else if (!emailRegex.test(data.email.trim())) {
+      errors.email = "Email không hợp lệ";
+    } else if (data.email.length > 100) {
+      errors.email = "Email không được quá 100 ký tự";
+    } else {
+      const normalizedEmail = data.email.trim();
+      const parts = normalizedEmail.split("@");
+
+      if (parts.length !== 2) {
+        errors.email = "Email không hợp lệ";
+      } else {
+        const [local, domain] = parts;
+
+        // Kiểm tra local part
+        if (
+          local.length === 0 ||
+          local.length > 64 ||
+          /^\.|\.$|\.\./.test(local)
+        ) {
+          errors.email = "Email không hợp lệ (phần trước @ không hợp lệ)";
+        }
+
+        if (
+          !errors.email &&
+          (domain.length === 0 ||
+            domain.length > 255 ||
+            /^\.|\.$|\.\./.test(domain))
+        ) {
+          errors.email = "Email không hợp lệ (domain không hợp lệ)";
+        }
+
+
+        if (!errors.email) {
+          const lastDotIndex = domain.lastIndexOf(".");
+          if (lastDotIndex === -1 || domain.length - lastDotIndex - 1 < 2) {
+            errors.email = "Email không hợp lệ (TLD phải có ít nhất 2 ký tự)";
+          }
+        }
+      }
+    }
+
+    // Phone validation: optional nhung neu co thi phai dung format VN
+    // if (data.phone && data.phone.trim().length > 0) {
+    //   const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
+    //   const cleanPhone = data.phone.replace(/\s/g, '');
+    //   if (!phoneRegex.test(cleanPhone)) {
+    //     errors.phone = 'So dien thoai khong hop le (dau so VN: 03x, 05x, 07x, 08x, 09x)';
+    //   }
+    // }
+
+    // Message validation: required, min 20, max 1000
+    if (!data.message || data.message.trim().length < 20) {
+      errors.message = "Noi dung phai co it nhat 20 ky tu";
+    } else if (data.message.length > 5000) {
+      errors.message = "Noi dung khong duoc qua 5000 ky tu";
+    } else if (/<script|<\/script|javascript:|onerror=/i.test(data.message)) {
+      errors.message = "Noi dung chua ky tu khong hop le";
+    }
+
+    return errors;
+  };
 
   const fetchLeaders = async () => {
     setLeadersLoading(true);
@@ -64,16 +159,24 @@ export const useAboutData = () => {
             response.message ||
             "Khong lay duoc danh sach leaders"
         );
+        setLeadersError(
+          response.error ||
+            response.message ||
+            "Khong lay duoc danh sach leaders"
+        );
         setLeaders([]);
       }
     } catch (error) {
       setLeadersError("Loi ket noi den server");
+      setLeadersError("Loi ket noi den server");
       setLeaders([]);
+      console.error("Error fetching leaders:", error);
       console.error("Error fetching leaders:", error);
     } finally {
       setLeadersLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchLeaders();
@@ -158,24 +261,53 @@ export const useAboutData = () => {
     },
   ];
 
-  // Copy y hệt logic handleSubmit từ component gốc
+  // Submit form voi validation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate form truoc khi submit
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    // Neu co loi thi khong submit
+    if (Object.keys(errors).length > 0) {
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Loi nhap lieu",
+          message: "Vui long kiem tra lai thong tin",
+        })
+      );
+      return;
+    }
+
+    // Sanitize data truoc khi gui len server
+    const sanitizedData = {
+      name: sanitizeInput(formData.name),
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.replace(/\D/g, ""), // Chi giu so
+      message: sanitizeInput(formData.message),
+    };
+
+    // TODO: Gui data len server qua API
+    console.log("Sanitized data:", sanitizedData);
 
     dispatch(
       addNotification({
         type: "success",
-        title: "Đã gửi thành công",
-        message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sờbm nhất!",
+        title: "Da gui thanh cong",
+        message: "Chung toi se lien he voi ban trong thoi gian som nhat!",
       })
     );
 
+    // Reset form
     setFormData({
       name: "",
       email: "",
       phone: "",
       message: "",
     });
+    setFormErrors({});
   };
 
   const updateFormData = (field: keyof ContactFormData, value: string) => {
@@ -192,6 +324,7 @@ export const useAboutData = () => {
     contactInfo,
     statsCards,
     formData,
+    formErrors,
 
     // Actions
     handleSubmit,

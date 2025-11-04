@@ -38,6 +38,13 @@ export interface ContactFormData {
   message: string;
 }
 
+export interface ContactFormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+}
+
 export interface ContactInfo {
   type: "email" | "phone" | "address";
   title: string;

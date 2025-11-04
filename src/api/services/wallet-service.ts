@@ -34,21 +34,21 @@ export class WalletService {
     address: string
   ): Promise<ApiResponse<any>> {
     return ApiService.get(
-      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=USDT`
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE(address)}?token=USDT`
     );
   }
   static async getWalletPolBalances(
     address: string
   ): Promise<ApiResponse<any>> {
     return ApiService.get(
-      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=POL`
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE(address)}?token=POL`
     );
   }
   static async getWalletCanBalances(
     address: string
   ): Promise<ApiResponse<any>> {
     return ApiService.get(
-      `${API_ENDPOINTS.BALANCE.GET_BALANCE}/${address}?token=CAN`
+      `${API_ENDPOINTS.BALANCE.GET_BALANCE(address)}?token=CAN`
     );
   }
 }

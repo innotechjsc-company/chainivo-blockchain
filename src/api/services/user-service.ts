@@ -16,4 +16,12 @@ export class UserService {
   static async updateUserProfile(data: any): Promise<ApiResponse<any>> {
     return ApiService.put(API_ENDPOINTS.USER.UPDATE_USER_PROFILE, data);
   }
+
+  static async changePassword(data: {
+    oldPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
+  }
 }

@@ -167,10 +167,11 @@ export const API_ENDPOINTS = {
   USER: {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
+    CHANGE_PASSWORD: "/api/user/change-password",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
-    // PARTNERS: "/api/about/partners",
+    PARTNERS: "/api/about/partners",
     // ECOSYSTEM: "/api/about/ecosystem",
   },
 } as const;
