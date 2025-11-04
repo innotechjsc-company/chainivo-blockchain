@@ -58,10 +58,9 @@ export const LANGUAGES: Language[] = [
 export const NAVIGATION_ITEMS: NavigationItem[] = [
   // { href: "/", label: "Trang chủ" },
   { href: "/investments", label: "Đầu tư" },
-  { href: "#", label: "Đầu tư NFT" },
-  { href: "#", label: "NFT Market" },
-  { href: "#", label: "P2P Market" },
-  // { href: "/missions", label: "Nhiệm vụ" },
+  { href: "/", label: "Đầu tư NFT" },
+  { href: "/", label: "NFT Market" },
+  { href: "/p2pmarket", label: "P2P Market" },
   { href: "/staking", label: "Staking" },
   { href: "/about", label: "Về chúng tôi" },
 ];
