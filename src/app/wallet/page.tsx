@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, Check, ArrowLeft, Loader2 } from "lucide-react";
 import { UserService } from "@/api/services/user-service";
 import { useAppSelector, useAppDispatch, updateAuthProfile } from "@/stores";
-import { setWalletBalance, updateBalance } from "@/stores/walletSlice";
+import { setWalletBalance } from "@/stores/walletSlice";
 import { LocalStorageService } from "@/services";
 
 // MetaMask types
@@ -67,10 +67,7 @@ export default function WalletConnectPage() {
     if (user?.walletAddress) {
       setWalletAddress(user.walletAddress);
       // Don't auto-connect, just show the saved wallet address
-      console.log(
-        "Found saved wallet address from Redux user:",
-        user.walletAddress
-      );
+      precheckAndAutoConnectIfSame();
     }
   }, [user]);
 
@@ -81,7 +78,6 @@ export default function WalletConnectPage() {
 
     if (user?.id && savedUserId !== user.id) {
       // User has changed, clear wallet connection state
-      console.log("User changed, clearing wallet connection state");
       setConnected(null);
       setWalletAddress(null);
       setError(null);
@@ -90,7 +86,6 @@ export default function WalletConnectPage() {
       LocalStorageService.setCurrentUserId(user.id);
     } else if (!user?.id && savedUserId) {
       // User logged out
-      console.log("User logged out, clearing wallet connection state");
       setConnected(null);
       setWalletAddress(null);
       setError(null);
@@ -107,7 +102,6 @@ export default function WalletConnectPage() {
       if (isConnectedToWallet && savedWalletAddress) {
         // Show saved wallet address and try to verify with MetaMask
         setWalletAddress(savedWalletAddress);
-        console.log("Found saved wallet connection:", savedWalletAddress);
 
         // Try to verify with MetaMask if available
         if (typeof window !== "undefined" && window.ethereum?.isMetaMask) {
@@ -120,7 +114,7 @@ export default function WalletConnectPage() {
     };
 
     checkSavedConnection();
-  }, []);
+  }, [user]);
 
   // Check if MetaMask is installed and set up listeners
   useEffect(() => {
@@ -144,9 +138,8 @@ export default function WalletConnectPage() {
       };
 
       // Listen for chain changes
-      const handleChainChanged = (chainId: string) => {
-        console.log("MetaMask chain changed to:", chainId);
-        // You might want to handle chain changes here
+      const handleChainChanged = (_chainId: string) => {
+        // Co the can nhac thong bao nguoi dung chuyen chain khac
       };
 
       window.ethereum.on("accountsChanged", handleAccountsChanged);
@@ -190,6 +183,8 @@ export default function WalletConnectPage() {
         ) {
           // Same account, auto-connect
           setWalletAddress(currentAccount);
+          LocalStorageService.setWalletConnectionStatus(true);
+
           setConnected("metamask");
           return true;
         } else if (savedAddress) {
@@ -202,10 +197,39 @@ export default function WalletConnectPage() {
       }
 
       return false;
-    } catch (err) {
-      console.error("Error verifying MetaMask connection:", err);
+    } catch (_err) {
       return false;
     }
+  };
+
+  const isSameAddress = (a?: string | null, b?: string | null) => {
+    if (!a || !b) return false;
+    return a.toLowerCase() === b.toLowerCase();
+  };
+
+  // Neu user co walletAddress va trung voi dia chi luu local va MetaMask dang o cung tai khoan,
+  // thi tu dong set state va bo qua yeu cau quyen ket noi (eth_requestAccounts)
+  const precheckAndAutoConnectIfSame = async (): Promise<boolean> => {
+    const userAddr = user?.walletAddress || null;
+    const localAddr = await Promise.resolve(
+      LocalStorageService.getWalletAddress()
+    );
+    const isConnected = await Promise.resolve(
+      LocalStorageService.isConnectedToWallet()
+    );
+    if (isConnected && userAddr) {
+      if (!window.ethereum?.isMetaMask) return false;
+      const accounts: string[] = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      if (accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        setConnected("metamask");
+        LocalStorageService.setWalletConnectionStatus(true);
+        return true;
+      }
+    }
+    return false;
   };
 
   // MetaMask connection function
@@ -232,10 +256,8 @@ export default function WalletConnectPage() {
         setWalletAddress(accounts[0]);
         setConnected("metamask");
 
-        LocalStorageService.setWalletConnectionStatus(true);
-
         if (accounts?.length > 1) {
-          setError("Bạn chỉ kết nối được 1 ví cho mỗi lần kết nối");
+          setError("Bạn chỉ kết nối được 1 ví cho 1 tài khoản");
           setConnected(null);
           await disconnectFromMetaMask();
 
@@ -254,9 +276,9 @@ export default function WalletConnectPage() {
               walletAddress: accounts[0],
               userId: user?.id as unknown as string,
             });
-            console.log("res", res);
 
             if (res.success) {
+              LocalStorageService.setWalletConnectionStatus(true);
               LocalStorageService.setWalletAddress(accounts[0]);
               dispatch(updateAuthProfile({ walletAddress: accounts[0] }));
               // update wallet to redux
@@ -288,7 +310,6 @@ export default function WalletConnectPage() {
         }
       }
     } catch (err: any) {
-      console.error("MetaMask connection error:", err);
       if (err.code === 4001) {
         setError("Người dùng đã từ chối kết nối MetaMask");
       } else if (err.code === -32002) {
@@ -304,7 +325,6 @@ export default function WalletConnectPage() {
   // MetaMask disconnect function
   const disconnectFromMetaMask = async () => {
     if (!window.ethereum?.isMetaMask) {
-      console.log("MetaMask not available for disconnect");
       return;
     }
 
@@ -321,11 +341,9 @@ export default function WalletConnectPage() {
           },
         ],
       });
-      console.log("MetaMask permissions revoked");
       LocalStorageService.removeWalletConnectionStatus();
-    } catch (err: any) {
-      // If revokePermissions is not supported, just log the error
-      console.log("MetaMask revoke permissions not supported or failed:", err);
+    } catch (_err: any) {
+      // Bo qua neu khong ho tro hoac that bai
     }
 
     // Clear local state regardless of API success
@@ -336,6 +354,7 @@ export default function WalletConnectPage() {
 
     // Clear wallet data from LocalStorageService
     LocalStorageService.clearWalletData();
+    setIsDisconnecting(false);
   };
 
   const handleConnect = async (walletId: string) => {
@@ -343,10 +362,6 @@ export default function WalletConnectPage() {
       await connectToMetaMask();
     } else {
       setConnected(walletId);
-
-      console.log(
-        `Connected to ${wallets.find((w) => w.id === walletId)?.name}`
-      );
     }
   };
 
@@ -359,7 +374,6 @@ export default function WalletConnectPage() {
 
       setWalletAddress(null);
       setError(null);
-      console.log("Wallet disconnected");
     }
   };
 

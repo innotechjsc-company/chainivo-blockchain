@@ -10,11 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface UserProfile {
-  username: string;
-  avatar_url: string | null;
-}
+import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
 
 interface UserMenuProps {
   userProfile: UserProfile | null;
@@ -34,11 +30,11 @@ export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
           <Avatar className="w-8 h-8">
             <AvatarImage src={userProfile?.avatar_url || ""} />
             <AvatarFallback>
-              {userProfile?.username?.[0]?.toUpperCase() || "U"}
+              {userProfile?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium">
-            {userProfile?.username || "User"}
+            {userProfile?.name || "User"}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -48,6 +44,10 @@ export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <User className="w-4 h-4 mr-2" />
           Quản lý tài khoản
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/missions")}>
+          <Settings className="w-4 h-4 mr-2" />
+          Nhiệm vụ
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Settings className="w-4 h-4 mr-2" />

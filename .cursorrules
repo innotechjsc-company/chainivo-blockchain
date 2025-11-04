@@ -10,22 +10,54 @@ Import from `@/stores`:
 
 ```typescript
 // User Store - Authentication & Profile
-import { useUserStore, useUser, useIsAuthenticated, useUserActions } from '@/stores'
+import {
+  useUserStore,
+  useUser,
+  useIsAuthenticated,
+  useUserActions,
+} from "@/stores";
 
 // Wallet Store - Crypto Wallet & Transactions
-import { useWalletStore, useWallet, useTransactions, useWalletActions } from '@/stores'
+import {
+  useWalletStore,
+  useWallet,
+  useTransactions,
+  useWalletActions,
+} from "@/stores";
 
 // Investment Store - Portfolio Management
-import { useInvestmentStore, useInvestments, usePortfolioSummary, useInvestmentActions } from '@/stores'
+import {
+  useInvestmentStore,
+  useInvestments,
+  usePortfolioSummary,
+  useInvestmentActions,
+} from "@/stores";
 
 // NFT Store - NFT Marketplace
-import { useNFTStore, useNFTs, useUserNFTs, useSelectedNFT, useNFTActions } from '@/stores'
+import {
+  useNFTStore,
+  useNFTs,
+  useUserNFTs,
+  useSelectedNFT,
+  useNFTActions,
+} from "@/stores";
 
 // Mission Store - Daily Missions
-import { useMissionStore, useMissions, useActiveMissions, useDailyStreak, useMissionActions } from '@/stores'
+import {
+  useMissionStore,
+  useMissions,
+  useActiveMissions,
+  useDailyStreak,
+  useMissionActions,
+} from "@/stores";
 
 // Notification Store - In-App Notifications
-import { useNotificationStore, useNotifications, useUnreadCount, useNotificationActions } from '@/stores'
+import {
+  useNotificationStore,
+  useNotifications,
+  useUnreadCount,
+  useNotificationActions,
+} from "@/stores";
 ```
 
 ### Best Practices
@@ -39,18 +71,18 @@ import { useNotificationStore, useNotifications, useUnreadCount, useNotification
 ### Example Usage
 
 ```typescript
-'use client'
+"use client";
 
-import { useUser, useUserStore } from '@/stores'
+import { useUser, useUserStore } from "@/stores";
 
 export default function Component() {
   // Optimized selector - only re-renders when user changes
-  const user = useUser()
-  
+  const user = useUser();
+
   // Access actions
-  const { login, logout, isLoading } = useUserStore()
-  
-  return <div>Welcome, {user?.username}!</div>
+  const { login, logout, isLoading } = useUserStore();
+
+  return <div>Welcome, {user?.name}!</div>;
 }
 ```
 
@@ -64,6 +96,7 @@ export default function Component() {
 ### Store Structure
 
 All stores follow this pattern:
+
 - State properties (data, isLoading, error)
 - Action methods (fetch, add, update, delete)
 - Clear error handling
@@ -78,4 +111,3 @@ All stores follow this pattern:
 - Handle loading and error states
 - Clear errors on unmount if needed
 - Use `'use client'` directive for client components
-

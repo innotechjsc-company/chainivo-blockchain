@@ -7,7 +7,8 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  avatar?: string;
+  name: string;
+  avatar_url: string | null;
   walletAddress?: string;
   createdAt: string | Date;
   updatedAt?: string | Date;

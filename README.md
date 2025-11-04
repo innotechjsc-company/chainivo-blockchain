@@ -44,12 +44,13 @@ A modern blockchain project built with **Next.js 15**, **React 19**, **Tailwind 
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm, yarn, pnpm, or bun
 
 ### Environment Setup
 
 1. Copy the example environment file:
+
 ```bash
 cp .env.example .env.local
 ```
@@ -62,6 +63,7 @@ cp .env.example .env.local
    - Configure gas fees and defaults
 
 **Environment Variables:**
+
 - `ENVIRONMENT`: Set to `development` or `production`
 - `API_BASE_URL_DEV/PROD`: Backend API URL
 - `FRONTEND_BASE_URL_DEV/PROD`: Frontend URL
@@ -103,14 +105,15 @@ npm start
 For detailed information about Zustand configuration and usage, see [ZUSTAND_GUIDE.md](./ZUSTAND_GUIDE.md).
 
 **Quick Start:**
+
 ```typescript
-import { useUser, useWallet } from '@/stores'
+import { useUser, useWallet } from "@/stores";
 
 function MyComponent() {
-  const user = useUser()
-  const wallet = useWallet()
-  
-  return <div>Welcome, {user?.username}!</div>
+  const user = useUser();
+  const wallet = useWallet();
+
+  return <div>Welcome, {user?.name}!</div>;
 }
 ```
 
@@ -161,7 +164,7 @@ import { Button } from "@/components/ui/button";
 
 <Button className="bg-gradient-to-r from-blue-500 to-purple-500">
   Custom Button
-</Button>
+</Button>;
 ```
 
 ## 📁 Project Structure
@@ -209,6 +212,7 @@ chainivo-blockchain/
 ## 📚 Resources
 
 ### Official Documentation
+
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Zustand Documentation](https://docs.pmnd.rs/zustand)
 - [shadcn/ui Documentation](https://ui.shadcn.com)
@@ -216,6 +220,7 @@ chainivo-blockchain/
 - [Radix UI Documentation](https://www.radix-ui.com)
 
 ### Useful Links
+
 - [Zustand GitHub](https://github.com/pmndrs/zustand)
 - [shadcn/ui Components](https://ui.shadcn.com/docs/components)
 - [shadcn/ui Themes](https://ui.shadcn.com/themes)

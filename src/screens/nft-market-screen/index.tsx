@@ -4,7 +4,6 @@ import { NFTMarketHeaderCard, NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
 
 export default function NFTMarketScreen() {
-  // 1. Fetch dữ liệu qua hooks
   const { nfts } = useNFTData();
   const { stats, volumeData, priceData } = useNFTStats();
   const {
