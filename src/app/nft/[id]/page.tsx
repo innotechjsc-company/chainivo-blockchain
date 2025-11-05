@@ -159,7 +159,7 @@ export default function NFTDetailPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Không tìm thấy NFT</h1>
-            <Button onClick={() => router.push("/nft-market")}>Quay lại</Button>
+            <Button onClick={() => router.back()}>Quay lại</Button>
           </div>
         </main>
       </div>
@@ -327,11 +327,7 @@ export default function NFTDetailPage() {
         </div>
       )}
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => router.push("/nft-market")}
-        >
+        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
