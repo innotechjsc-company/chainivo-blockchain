@@ -17,5 +17,18 @@ export function getLevelBadge(level: string) {
       return "Bạch kim";
     case "5":
       return "Kim cương";
+    default:
+      return "Không rõ";
+  }
+}
+
+export function getNFTType(type: string) {
+  switch (type) {
+    case "normal":
+      return "NFT thường";
+    case "rank":
+      return "NFT hạng";
+    case "mysteryBox":
+      return "NFT hộp bí ẩn";
   }
 }

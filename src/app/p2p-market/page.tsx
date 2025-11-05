@@ -19,6 +19,7 @@ import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
 import { Eye } from "lucide-react";
 import { getLevelBadge } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface CollectionItem {
   id: string;
@@ -30,7 +31,7 @@ interface MarketItem {
   id: string;
   name: string;
   collection: string;
-  price: number;
+  salePrice: number;
   currency: string;
   image?: string;
   level: string;
@@ -59,7 +60,7 @@ export default function P2PMarketPage() {
   const [pendingRange, setPendingRange] = useState<[number, number]>([
     0, 1000000,
   ]);
-
+  const router = useRouter();
   // Build full image URL from backend or fallback to default
   const getNFTImage = (nft: any): string => {
     const extract = (imageData: any): string | null => {
@@ -190,14 +191,14 @@ export default function P2PMarketPage() {
                       const sorted = [...prevItems];
                       if (value === "price-asc") {
                         sorted.sort((a, b) => {
-                          const priceA = Number(a.price ?? 0) || 0;
-                          const priceB = Number(b.price ?? 0) || 0;
+                          const priceA = Number(a.salePrice ?? 0) || 0;
+                          const priceB = Number(b.salePrice ?? 0) || 0;
                           return priceA - priceB;
                         });
                       } else if (value === "price-desc") {
                         sorted.sort((a, b) => {
-                          const priceA = Number(a.price ?? 0) || 0;
-                          const priceB = Number(b.price ?? 0) || 0;
+                          const priceA = Number(a.salePrice ?? 0) || 0;
+                          const priceB = Number(b.salePrice ?? 0) || 0;
                           return priceB - priceA;
                         });
                       }
@@ -272,7 +273,6 @@ export default function P2PMarketPage() {
                         <SelectItem value="mysteryBox">
                           NFT Hộp bí ẩn
                         </SelectItem>
-                        <SelectItem value="investment">NFT Đầu tư</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -334,6 +334,11 @@ export default function P2PMarketPage() {
                       if (unit) {
                         params.currency = unit;
                       }
+                      if (pendingRange && pendingRange.length === 2) {
+                        params.minPrice = pendingRange[0];
+                        params.maxPrice = pendingRange[1];
+                        debugger;
+                      }
                       fetchP2P(
                         Object.keys(params).length > 0 ? params : undefined
                       );
@@ -382,10 +387,10 @@ export default function P2PMarketPage() {
                       </p>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-xs text-muted-foreground">
-                          Price
+                          Sale Price
                         </span>
                         <span className="text-sm font-bold">
-                          {Number(item.price ?? 0).toLocaleString("vi-VN")}{" "}
+                          {Number(item.salePrice ?? 0).toLocaleString("vi-VN")}{" "}
                           {item.currency.toUpperCase()}
                         </span>
                       </div>
@@ -394,6 +399,9 @@ export default function P2PMarketPage() {
                           className="w-full h-10 justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-primary/70 
                           text-primary-foreground hover:from-primary/90 hover:to-primary/60 shadow-sm cursor-pointer"
                           size="sm"
+                          onClick={() => {
+                            router.push(`/nft/${item.id}?type=other`);
+                          }}
                         >
                           <Eye className="w-4 h-4" />
                           Mua ngay
