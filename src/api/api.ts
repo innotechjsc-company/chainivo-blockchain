@@ -130,6 +130,16 @@ export const API_ENDPOINTS = {
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
+    P2P_LIST: "/api/nft-market/for-sale",
+    LIST_INVESTMENT: "/api/investment-nft/list",
+    BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
+    BUY_P2P: "/api/nft-market/buy",
+    BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
+      `/api/nft/transaction-history/list?nftId=${id}`,
+    INVESTMENT_NFT_HISTORY_TRANSACTION: (
+      nftId: string
+    ) => `/api/nft-investment-history?where[nft][equals]=${nftId}
+`,
   },
 
   STAKING: {
@@ -180,6 +190,12 @@ export const API_ENDPOINTS = {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface ApiTransactionHistoryResponse<T = any> {
+  docs?: T;
   error?: string;
   message?: string;
 }

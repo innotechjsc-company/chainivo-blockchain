@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Lock, CheckCircle2 } from "lucide-react";
 import { Phase } from "@/api/services/phase-service";
+import {
+  TOKEN_DEAULT_CURRENCY,
+  TOKEN_DEAULT_CURRENCY_INVESTMENT,
+} from "@/api/config";
 
 interface InvestmentPhasesCardProps {
   phases: Phase[];
@@ -42,7 +46,7 @@ export const InvestmentPhasesCard = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading &&
             Array.from({ length: 4 }).map((_, index) => (
               <Card
@@ -126,16 +130,20 @@ export const InvestmentPhasesCard = ({
                   <h3 className="text-2xl font-bold">{phase.name}</h3>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Giá bán:</span>
-                      <span className="font-bold text-primary">
-                        {phase.pricePerToken}
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Tổng cung :</span>
+                      <span className="text-xl font-semibold gradient-text">
+                        {phase.totalTokens.toLocaleString("en-US")}{" "}
+                        {TOKEN_DEAULT_CURRENCY}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tổng coin:</span>
-                      <span className="font-semibold">{phase.totalTokens}</span>
+                      <span className="text-muted-foreground">Giá bán:</span>
+                      <span className="text-xl text-primary">
+                        {phase.pricePerToken} {TOKEN_DEAULT_CURRENCY_INVESTMENT}
+                      </span>
                     </div>
+
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Đã bán:</span>
                       <span className="font-semibold">{phase.soldTokens}</span>

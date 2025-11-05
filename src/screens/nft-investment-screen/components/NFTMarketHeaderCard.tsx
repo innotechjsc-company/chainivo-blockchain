@@ -52,7 +52,7 @@ export const NFTMarketHeaderCard = ({
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          <span className="gradient-text">NFT Marketplace</span>
+          <span className="gradient-text">Đầu tư NFT</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Khám phá, mua bán và sở hữu các NFT độc quyền
@@ -82,7 +82,7 @@ export const NFTMarketHeaderCard = ({
                 </div>
               </div>
               <div className="text-3xl font-bold gradient-text mb-1">
-                {stat.value}
+                {stat.value?.toLocaleString?.("en-US") ?? stat.value}
               </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </CardContent>

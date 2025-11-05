@@ -176,3 +176,4 @@ export const buildBlockchainUrl = (
 };
 
 export const TOKEN_DEAULT_CURRENCY = "CAN";
+export const TOKEN_DEAULT_CURRENCY_INVESTMENT = "USDC";
