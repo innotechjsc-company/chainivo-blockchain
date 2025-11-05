@@ -128,9 +128,7 @@ export const API_ENDPOINTS = {
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
-<<<<<<< HEAD
     POST_FOR_SALE: "/api/nft-market/post-for-sale",
-=======
     P2P_LIST: "/api/nft-market/for-sale",
     LIST_INVESTMENT: "/api/investment-nft/list",
     BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
@@ -141,7 +139,6 @@ export const API_ENDPOINTS = {
       nftId: string
     ) => `/api/nft-investment-history?where[nft][equals]=${nftId}
 `,
->>>>>>> 7a3e5b0a0e2f5d5b75755a490f52df71e5d9e6de
   },
 
   STAKING: {
@@ -198,7 +195,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-<<<<<<< HEAD
 export interface AvatarObject {
   id: string;
   url: string;
@@ -218,12 +214,11 @@ export interface UpdateProfileResponse {
   avatar?: AvatarObject;
   avatarUrl?: string;  // Backend trả về cả avatarUrl string để dễ sử dụng
   updatedAt: string;
-=======
+}
 export interface ApiTransactionHistoryResponse<T = any> {
   docs?: T;
   error?: string;
   message?: string;
->>>>>>> 7a3e5b0a0e2f5d5b75755a490f52df71e5d9e6de
 }
 
 export class ApiService {
