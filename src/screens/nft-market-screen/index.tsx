@@ -102,25 +102,14 @@ export default function NFTMarketScreen() {
           />
         ) : (
           <>
-            {filters.type !== "other" && tierNFTs.length > 0 && (
-              <NFTGridCard
-                nfts={userNFTs}
-                title="NFT của tôi"
-                initialCount={3}
-              />
-            )}
-
-            {/* Other NFTs */}
             {filters.type !== "tier" && otherNFTs.length > 0 && (
-              <>
-                <div className="mb-8">
-                  <NFTGridCard
-                    nfts={otherNFTsData}
-                    title="NFT Khác"
-                    initialCount={6}
-                  />
-                </div>
-              </>
+              <div className="mb-8">
+                <NFTGridCard
+                  nfts={otherNFTsData}
+                  title="NFT Marketplace"
+                  initialCount={6}
+                />
+              </div>
             )}
           </>
         )}

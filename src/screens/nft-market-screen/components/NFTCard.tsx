@@ -10,6 +10,7 @@ import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
+import { getLevelBadge } from "@/lib/utils";
 
 interface NFTCardProps {
   nft: any;
@@ -169,7 +170,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft/${nft.id}?type=${type}`)}
+        onClick={() => router.push(`/nft-template/${nft.id}`)}
       >
         <img
           src={nftImage}
@@ -187,7 +188,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             rarityColors[nft.rarity as keyof typeof rarityColors]
           }`}
         >
-          {nft.rarity}
+          {getLevelBadge(nft?.level)}
         </Badge>
 
         {/* Like/Purchase Button */}
@@ -244,7 +245,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             className="flex-1 gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.id}?type=${type}`);
+              router.push(`/nft-template/${nft.id}`);
             }}
           >
             {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
@@ -255,7 +256,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.id}?type=${type}`);
+              router.push(`/nft-template/${nft.id}}`);
             }}
           >
             <Eye className="w-4 h-4" />

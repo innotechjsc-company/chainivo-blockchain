@@ -57,6 +57,11 @@ export class NFTService {
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
+
+  static async getNFTByTemplateId(id: string): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL_TEMPLATE(id));
+  }
+
   static async getNFTInvestmentById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL_INVESTMENT_NFT(id));
   }

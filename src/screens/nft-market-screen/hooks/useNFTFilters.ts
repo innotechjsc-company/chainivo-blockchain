@@ -60,7 +60,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
 
   const fetchOtherNFTs = async () => {
     try {
-      const response = await NFTService.getNFTInvestmentList();
+      const response = await NFTService.allNFTInMarketplace();
       if (response.success) {
         const data: any = response.data as any;
         const list = normalizeNFTCollection(data);
