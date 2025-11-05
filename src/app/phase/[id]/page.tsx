@@ -47,7 +47,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [investAmount, setInvestAmount] = useState<string>("100");
+  const [investAmount, setInvestAmount] = useState<string>("");
+  const [gasPrice, setGasPrice] = useState<string>("0");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isInvestmentConfirmed, setIsInvestmentConfirmed] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
@@ -93,6 +94,14 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
     };
   }, [resolvedParams?.id]);
 
+  async function checkGasFeeUSDCTransfer(): Promise<any> {
+    const result = await TransferService.checkGasFeeUSDCTransfer({
+      fromAddress: user?.walletAddress ?? "",
+      amount: parseFloat(investAmount) ?? 0,
+    });
+    return result;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -131,7 +140,6 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   };
 
   const { baseTokens, totalTokens } = calculateTokens();
-
   const totalTokensSupply = phase.totalTokens || 0;
   const soldTokens = phase.soldTokens || 0;
   const progressPercent =
@@ -170,6 +178,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         if (investment.success) {
           setBuyLoading(false);
           setIsInvestmentConfirmed(response);
+          toast.success("Giao dịch thành công!");
           setIsConfirmOpen(false);
         } else {
           setBuyLoading(false);
@@ -449,9 +458,16 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Số tiền đầu tư (USD)
-                    </label>
+                    {/* row 2 label with space between */}
+                    <div className="flex items-center justify-between text-center">
+                      <label className="text-sm font-medium mb-2 block">
+                        Số tiền đầu tư (USD)
+                      </label>
+                      <label className="text-sm text-muted-foreground mb-2 block">
+                        (Tối thiểu: {phase.minBuyAmount} USDC)
+                      </label>
+                    </div>
+
                     <Input
                       type="number"
                       value={investAmount}
@@ -486,8 +502,23 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     variant={phase.status === "active" ? "default" : "outline"}
                     disabled={phase.status !== "active" || buyLoading}
                     onClick={() => {
-                      if (phase.status === "active") {
-                        setIsConfirmOpen(true);
+                      if (
+                        phase.status === "active" &&
+                        parseFloat(investAmount) >= phase.minBuyAmount
+                      ) {
+                        checkGasFeeUSDCTransfer().then((rs: any) => {
+                          if (rs.result) {
+                            // setGasPrice(rs.message);
+                            setIsConfirmOpen(true);
+                          } else {
+                            toast.error(rs.message);
+                            return;
+                          }
+                        });
+                      } else {
+                        toast.error(
+                          `Số tiền đầu tư tối thiểu ${phase.minBuyAmount} USDC`
+                        );
                       }
                     }}
                   >
@@ -514,26 +545,40 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                           đoạn {phase.name}?
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Số tiền:</span>
-                          <span className="font-medium">
-                            {investAmount} USD
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Giá mỗi token:</span>
-                          <span className="font-medium">
-                            {phase.pricePerToken} USD
-                          </span>
-                        </div>
-                        <div className="flex justify-between border-t pt-2">
-                          <span>Tổng token nhận:</span>
-                          <span className="font-semibold">
-                            {totalTokens} CAN
-                          </span>
-                        </div>
-                      </div>
+
+                      {(() => {
+                        const nativeSymbol = "POL"; // Polygon Amoy native token
+                        return (
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Số tiền:</span>
+                              <span className="font-medium">
+                                {investAmount} USD
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Giá mỗi token:</span>
+                              <span className="font-medium">
+                                {phase.pricePerToken} USD
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-2">
+                              <span>Tổng token nhận:</span>
+                              <span className="font-semibold">
+                                {totalTokens} CAN
+                              </span>
+                            </div>
+                            {/* phí gas */}
+                            {/* <div className="flex justify-between border-t pt-2">
+                              <span>Phí gas ước tính:</span>
+                              <span className="font-semibold">
+                                {gasPrice} {nativeSymbol}
+                              </span>
+                            </div> */}
+                          </div>
+                        );
+                      })()}
+
                       <DialogFooter>
                         <Button
                           variant="outline"
@@ -732,7 +777,6 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
             const gasPriceWei = String(
               tx?.gasPrice || tx?.rawReceipt?.effectiveGasPrice || "0"
             );
-            const gasPriceGwei = formatGweiFromWei(gasPriceWei);
             const gasUsed = BigInt(String(tx?.rawReceipt?.gasUsed || "0"));
             const feeWei = (gasUsed * BigInt(gasPriceWei || "0")).toString();
             const feePOL = formatFromWei(feeWei, 18);
@@ -753,11 +797,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   <span className="font-semibold">{canReceived} CAN</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Gas price</span>
-                  <span className="font-medium">{gasPriceGwei} Gwei</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Phí ước tính</span>
+                  <span>Phí gas (Phí có thể thay đổi theo thời gian)</span>
                   <span className="font-medium">
                     {feePOL} {nativeSymbol}
                   </span>

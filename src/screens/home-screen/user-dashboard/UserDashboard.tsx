@@ -3,26 +3,17 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, TrendingUp, Award, Activity } from "lucide-react";
-
-interface Profile {
-  username: string;
-  can_balance: number;
-  total_invested: number;
-  membership_tier: string;
-}
+import {
+  UserProfile,
+  useUserProfile,
+} from "@/screens/investments-screen/hooks/useUserProfile";
 
 export const UserDashboard = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { profile, loading, error } = useUserProfile();
 
-  useEffect(() => {
-    // Mock data for demonstration
-    setProfile({
-      username: "Demo User",
-      can_balance: 15000,
-      total_invested: 2500,
-      membership_tier: "gold",
-    });
-  }, []);
+  if (loading) return <div>Loading...</div>;
+
+  if (error) return <div>Error: {error}</div>;
 
   if (!profile) return null;
 
@@ -38,7 +29,7 @@ export const UserDashboard = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold gradient-text mb-4">
-            Xin chào, {profile.username}!
+            Xin chào, {profile.name}!
           </h2>
           <p className="text-foreground/60">Dashboard của bạn</p>
         </div>

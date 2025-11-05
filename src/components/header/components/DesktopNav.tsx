@@ -16,7 +16,10 @@ export const DesktopNav = () => {
     item: { href: string; label: string }
   ) => {
     // Check if item is "NFT Market" and user is not authenticated
-    if (item.label === "NFT Market" && (!isAuthenticated || !user)) {
+    if (
+      (item.href === "/nftmarket" || item.href === "/investments") &&
+      (!isAuthenticated || !user)
+    ) {
       e.preventDefault();
       router.push("/auth?tab=login");
       toast.info("Bạn cần đăng nhập để tiếp tính năng này");

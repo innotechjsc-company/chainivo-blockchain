@@ -6,6 +6,7 @@ import { Wallet, TrendingUp, Award, Activity, Clock } from "lucide-react";
 
 interface UserProfile {
   username: string;
+  name: string;
   can_balance: number;
   total_invested: number;
   membership_tier: string;
@@ -106,7 +107,7 @@ export const UserDashboardCard = ({
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold gradient-text mb-4">
-            Xin chào, {profile.username}!
+            Xin chào, {profile.name}!
           </h2>
           <p className="text-foreground/60">Dashboard của bạn</p>
         </div>

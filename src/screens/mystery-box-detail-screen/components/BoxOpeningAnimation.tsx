@@ -9,6 +9,10 @@ interface BoxOpeningAnimationProps {
   boxImage?: string;
   onAnimationComplete?: () => void;
   isApiComplete?: boolean;
+  initialTitle?: string;
+  shakeTitle?: string;
+  openingTitle?: string;
+  revealTitle?: string;
 }
 
 export const BoxOpeningAnimation = ({
@@ -17,6 +21,10 @@ export const BoxOpeningAnimation = ({
   boxImage,
   onAnimationComplete,
   isApiComplete = false,
+  initialTitle = "Đang chuẩn bị...",
+  shakeTitle = "Đang mở hộp...",
+  openingTitle = "Đang mở hộp quà!",
+  revealTitle = "Chúc mừng!",
 }: BoxOpeningAnimationProps) => {
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "shake" | "opening" | "reveal"
@@ -33,21 +41,15 @@ export const BoxOpeningAnimation = ({
     const timeouts: NodeJS.Timeout[] = [];
 
     // Phase 1: initial → shake (500ms)
-    timeouts.push(
-      setTimeout(() => setAnimationPhase("shake"), 500)
-    );
+    timeouts.push(setTimeout(() => setAnimationPhase("shake"), 500));
 
     // Phase 2: shake → opening (2000ms)
-    timeouts.push(
-      setTimeout(() => setAnimationPhase("opening"), 2000)
-    );
+    timeouts.push(setTimeout(() => setAnimationPhase("opening"), 2000));
 
     // Phase 3: opening → reveal (only when API is complete)
     if (isApiComplete) {
-      timeouts.push(
-        setTimeout(() => setAnimationPhase("reveal"), 3000)
-      );
-      
+      timeouts.push(setTimeout(() => setAnimationPhase("reveal"), 3000));
+
       // Call completion callback after reveal
       timeouts.push(
         setTimeout(() => {
@@ -105,10 +107,10 @@ export const BoxOpeningAnimation = ({
         <div className="relative text-center">
           {/* Title */}
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-8 animate-pulse">
-            {animationPhase === "initial" && "Đang mở hộp..."}
-            {animationPhase === "shake" && "Chuẩn bị..."}
-            {animationPhase === "opening" && "Đang mở hộp quà!"}
-            {animationPhase === "reveal" && "Chúc mừng!"}
+            {animationPhase === "initial" && initialTitle}
+            {animationPhase === "shake" && shakeTitle}
+            {animationPhase === "opening" && openingTitle}
+            {animationPhase === "reveal" && revealTitle}
           </h2>
 
           {/* Box container */}

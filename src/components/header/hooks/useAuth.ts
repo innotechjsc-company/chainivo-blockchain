@@ -7,11 +7,8 @@ import {
   initializeAuth,
 } from "@/stores";
 import { AuthService } from "@/api/services/auth-service";
+import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
 
-interface UserProfile {
-  username: string;
-  avatar_url: string | null;
-}
 
 export const useAuth = (onSignOut?: () => void) => {
   const router = useRouter();
@@ -30,8 +27,13 @@ export const useAuth = (onSignOut?: () => void) => {
   // Convert authStore user to userProfile format
   const userProfile: UserProfile | null = user
     ? {
-        username: user.email,
-        avatar_url: null, // Can be added to authStore user type later
+      ...user,
+        name: user.name || user.email,
+        username: user.name || user.email,
+        can_balance: 0,
+        total_invested: 0,
+        membership_tier: user.role || "bronze",
+        avatar_url: user.avatar_url || null,
       }
     : null;
 
