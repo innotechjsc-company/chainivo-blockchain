@@ -18,7 +18,7 @@ import type { ApiResponse } from "@/api/api";
 import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
 import { Eye } from "lucide-react";
-import { getLevelBadge } from "@/lib/utils";
+import { getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface CollectionItem {
@@ -35,6 +35,7 @@ interface MarketItem {
   currency: string;
   image?: string;
   level: string;
+  type: string;
 }
 
 const mockCollections: CollectionItem[] = [
@@ -387,11 +388,19 @@ export default function P2PMarketPage() {
                       </p>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-xs text-muted-foreground">
-                          Sale Price
+                          Giá bán
                         </span>
                         <span className="text-sm font-bold">
                           {Number(item.salePrice ?? 0).toLocaleString("vi-VN")}{" "}
                           {item.currency.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          Loại NFT
+                        </span>
+                        <span className="text-sm font-bold">
+                          {getNFTType(item.type ?? "normal")}
                         </span>
                       </div>
                       <div className="mt-3">

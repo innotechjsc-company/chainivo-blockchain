@@ -75,6 +75,8 @@ export default function NFTDetailPage() {
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const id = params?.id as string;
   const type = (searchParams?.get("type") || params?.type) as
     | "tier"
@@ -82,30 +84,65 @@ export default function NFTDetailPage() {
     | undefined;
   const user = useAppSelector((state) => state.auth.user);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    NFTService.getNFTById(id)
-      .then((res) => {
-        if (res.success && res.data) setNftData(res.data);
-        else setNftData(null);
-      })
-      .catch(() => setNftData(null))
-      .finally(() => setLoading(false));
-  }, [id]);
-
   const getComments = async () => {
-    const response = await NFTService.getComment(id);
-    if (response.success) setComments(response.data.comments);
-    else setComments([]);
+    try {
+      const response = await NFTService.getComment(id);
+      if (response.success) setComments(response.data.comments);
+      else setComments([]);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setComments([]);
+    }
+  };
+
+  const fetchTransactionHistory = async () => {
+    try {
+      const response = await NFTService.buyP2PHistoryTransaction(id);
+      if (response.success) {
+        setTransactions((response.data as any)?.transactions ?? []);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      setTransactions([]);
+    }
   };
 
   useEffect(() => {
-    getComments();
-  }, [id]);
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    getComments();
+    // Set loading to true when component mounts
+    setLoading(true);
+
+    // Fetch all data in parallel
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([
+          // Fetch NFT data
+          NFTService.getNFTById(id)
+            .then((res) => {
+              if (res.success && res.data) setNftData(res.data);
+              else setNftData(null);
+            })
+            .catch(() => setNftData(null)),
+          // Fetch comments
+          getComments(),
+          // Fetch transaction history
+          fetchTransactionHistory(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        // Set loading to false when all API calls are complete
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, [id]);
 
   if (loading) {
@@ -247,14 +284,23 @@ export default function NFTDetailPage() {
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        await NFTService.transferNFT({
+        let result = await NFTService.buyP2PList({
           nftId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
-        setBuyLoading(false);
-        toast.success("Mua NFT thành công!");
-        router.push("/p2p-market");
-        // TODO: Có thể thêm toast notification hoặc refresh data
+
+        if (result.success) {
+          setBuyLoading(false);
+          toast.success("Mua NFT thành công!");
+          router.push("/p2p-market");
+        } else {
+          setBuyLoading(false);
+          toast.error(
+            "Mua NFT thất bại , vui lòng liên hệ admin để được hỗ trợ: " +
+              result.message
+          );
+          console.error("Failed to buy NFT: " + result.message);
+        }
       } else {
         setBuyLoading(false);
         toast.error("Mua NFT thất bại: Không có transaction hash");
@@ -269,13 +315,22 @@ export default function NFTDetailPage() {
     }
   };
 
-  // Show LoadingSkeleton when buying NFT
-  if (buyLoading) {
-    return <LoadingSkeleton />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
+      {/* Loading Overlay when buying NFT */}
+      {buyLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 px-6 py-8 bg-background/95 rounded-lg border border-primary/20 shadow-xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <span className="text-lg font-medium text-foreground">
+              Đang xử lý giao dịch...
+            </span>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              Vui lòng đợi trong giây lát, không đóng trình duyệt
+            </p>
+          </div>
+        </div>
+      )}
       <main className="container mx-auto px-4 pt-20 pb-12">
         <Button
           variant="ghost"
@@ -433,8 +488,7 @@ export default function NFTDetailPage() {
         <div className="mt-8">
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
-            {Array.isArray(nftData.transactions) &&
-            nftData.transactions.length > 0 ? (
+            {Array.isArray(transactions) && transactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -454,26 +508,67 @@ export default function NFTDetailPage() {
                       <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
                         Ngày giao dịch
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
-                        Hash
-                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {nftData.transactions.map((tx: any, idx: number) => {
+                    {transactions.map((tx: any, idx: number) => {
                       const txType =
                         tx.type || tx.transaction_type || "transfer";
-                      const fromAddr = tx.from || tx.fromAddress || "-";
-                      const toAddr = tx.to || tx.toAddress || "-";
+                      // Handle from address (could be object or string)
+                      let fromAddr = "-";
+                      if (tx.from) {
+                        fromAddr =
+                          typeof tx.from === "object" && tx.from?.address
+                            ? tx.from.address
+                            : typeof tx.from === "string"
+                            ? tx.from
+                            : "-";
+                      } else if (tx.fromAddress) {
+                        fromAddr =
+                          typeof tx.fromAddress === "object" &&
+                          tx.fromAddress?.address
+                            ? tx.fromAddress.address
+                            : typeof tx.fromAddress === "string"
+                            ? tx.fromAddress
+                            : "-";
+                      } else if (tx.seller?.walletAddress) {
+                        fromAddr = tx.seller.walletAddress;
+                      } else if (tx.seller?.address) {
+                        fromAddr = tx.seller.address;
+                      }
+
+                      // Handle to address (could be object or string)
+                      let toAddr = "-";
+                      if (tx.to) {
+                        toAddr =
+                          typeof tx.to === "object" && tx.to?.address
+                            ? tx.to.address
+                            : typeof tx.to === "string"
+                            ? tx.to
+                            : "-";
+                      } else if (tx.toAddress) {
+                        toAddr =
+                          typeof tx.toAddress === "object" &&
+                          tx.toAddress?.address
+                            ? tx.toAddress.address
+                            : typeof tx.toAddress === "string"
+                            ? tx.toAddress
+                            : "-";
+                      } else if (tx.buyer?.walletAddress) {
+                        toAddr = tx.buyer.walletAddress;
+                      } else if (tx.buyer?.address) {
+                        toAddr = tx.buyer.address;
+                      }
+
                       const amount =
                         tx.amount ||
                         tx.salePrice ||
+                        tx.price ||
                         tx.value ||
                         tx.total_value ||
                         0;
                       const currency = tx.currency || TOKEN_DEAULT_CURRENCY;
-                      const txHash =
-                        tx.transactionHash || tx.hash || tx.txHash || "-";
+
                       const timestamp =
                         tx.timestamp ||
                         tx.createdAt ||
@@ -526,20 +621,6 @@ export default function NFTDetailPage() {
                                 })()
                               : "-"}
                           </td>
-                          <td className="py-3 px-4 text-sm font-mono">
-                            {txHash !== "-" ? (
-                              <a
-                                href={`https://www.oklink.com/amoy/tx/${txHash}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                {formatAddress(txHash)}
-                              </a>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
                         </tr>
                       );
                     })}
@@ -554,89 +635,6 @@ export default function NFTDetailPage() {
             )}
           </div>
         </div>
-
-        {/* <div
-          className="glass rounded-xl p-6 mt-12 flex flex-col"
-          style={{ height: "600px" }}
-        >
-          <h2 className="text-2xl font-bold mb-6">Comments</h2>
-
-          <div className="flex-1 overflow-y-auto pr-2 mb-4 min-h-0">
-            {Array.isArray(comments) && comments.length > 0 ? (
-              <div className="space-y-4">
-                {comments.map((comment: any, index: number) => {
-                  const commentText =
-                    comment.text || comment.content || comment.message || "";
-                  const commentAuthor = comment.user.email ?? "";
-                  const commentDate =
-                    comment.timestamp ||
-                    comment.createdAt ||
-                    comment.created_at ||
-                    comment.date;
-                  return (
-                    <div
-                      key={comment.id || comment._id || index}
-                      className="border-b border-border/50 pb-4 last:border-0"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm font-mono">
-                              {formatAddress(commentAuthor)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {commentDate
-                                ? (() => {
-                                    try {
-                                      return new Date(
-                                        commentDate
-                                      ).toLocaleString();
-                                    } catch {
-                                      return commentDate;
-                                    }
-                                  })()
-                                : ""}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {comment?.content}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                No comments yet. Be the first to comment!
-              </div>
-            )}
-          </div>
-          <div className="mb-4">
-            <Textarea
-              placeholder="Add a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              disabled={commentLoading}
-              className="min-h-[100px] resize-none border-border/50 mb-3 bg-white text-black placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Bình luận dưới tên:{" "}
-                <span className="font-mono">{user?.email}</span>
-              </div>
-              <Button
-                onClick={handlePostComment}
-                disabled={!commentText.trim() || commentLoading}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {commentLoading ? "Đang gửi..." : "Gửi"}
-              </Button>
-            </div>
-          </div>
-        </div> */}
       </main>
 
       {/* Confirmation Dialog */}

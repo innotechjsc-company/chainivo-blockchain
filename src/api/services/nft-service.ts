@@ -87,6 +87,16 @@ export class NFTService {
   static async getP2PList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.get<any[]>(API_ENDPOINTS.NFT.P2P_LIST, data);
   }
+  static async buyP2PList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_P2P, data);
+  }
+  static async buyP2PHistoryTransaction(
+    id: string
+  ): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(
+      API_ENDPOINTS.NFT.BUY_P2P_HISTORY_TRANSACTION(id)
+    );
+  }
 }
 
 export default NFTService;
