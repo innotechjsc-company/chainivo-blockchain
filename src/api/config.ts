@@ -5,9 +5,7 @@ const getEnvValue = (
   prodKey: string,
   fallback: string
 ): string => {
-  console.log("environment", isDevelopment);
   if (isDevelopment) {
-    console.log("devKey", process.env[devKey]);
     return process.env[devKey] || fallback;
   } else if (!isDevelopment) {
     return process.env[prodKey] || fallback;

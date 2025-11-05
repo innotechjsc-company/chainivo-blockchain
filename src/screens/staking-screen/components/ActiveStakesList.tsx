@@ -9,6 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   TrendingUp,
   Clock,
   Gift,
@@ -86,8 +94,50 @@ export const ActiveStakesList = ({
   getClaimRewardsData,
   unStakeData,
 }: ActiveStakesListProps) => {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
+  const [confirmUnstakeOpen, setConfirmUnstakeOpen] = useState(false);
+  const [selectedUnstakeId, setSelectedUnstakeId] = useState<string | null>(
+    null
+  );
+
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
+
+  const handleClaimClick = (stakeId: string) => {
+    setSelectedStakeId(stakeId);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmClaim = async () => {
+    const stakeId = selectedStakeId;
+    // Tat modal ngay lap tuc
+    setConfirmDialogOpen(false);
+    setSelectedStakeId(null);
+    if (!stakeId) return;
+    try {
+      await getClaimRewardsData(stakeId);
+    } catch (e) {
+      // noop
+    }
+  };
+
+  const handleUnstakeClick = (stakeId: string) => {
+    setSelectedUnstakeId(stakeId);
+    setConfirmUnstakeOpen(true);
+  };
+
+  const handleConfirmUnstake = async () => {
+    const stakeId = selectedUnstakeId;
+    setConfirmUnstakeOpen(false);
+    setSelectedUnstakeId(null);
+    if (!stakeId) return;
+    try {
+      await unStakeData(stakeId);
+    } catch (e) {
+      // noop
+    }
+  };
 
   return (
     <div className="stakes-list space-y-6">
@@ -125,112 +175,80 @@ export const ActiveStakesList = ({
               const daysRemaining = (pool as any).daysRemaining ?? 0;
               const daysSinceStaked = (pool as any).daysSinceStaked ?? 0;
               const status = (pool as any).status ?? "active";
+              const startDate = stakedAt
+                ? new Date(stakedAt).toLocaleDateString("vi-VN")
+                : "-";
               return (
                 <Card
                   key={key}
-                  className="border-primary/20 bg-gradient-to-br from-background to-primary/5"
+                  className="border-primary/30 bg-gradient-to-br from-background to-primary/5 relative overflow-hidden"
                 >
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="text-lg font-bold truncate max-w-[14rem]">
-                            {name}
-                          </p>
-                          {status === "pending" && (
-                            <Badge
-                              variant="secondary"
-                              className="flex items-center gap-1"
-                            >
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Chờ xác nhận
-                            </Badge>
-                          )}
-                          {status === "processing" && (
-                            <Badge
-                              variant="default"
-                              className="flex items-center gap-1"
-                            >
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Đang xử lý
-                            </Badge>
-                          )}
-                          {status === "active" && (
-                            <Badge
-                              variant="outline"
-                              className="text-green-600 border-green-600"
-                            >
-                              Đang hoạt động
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                          <TrendingUp className="h-3 w-3" />
-                          APY: {apy}%
-                        </p>
-                      </div>
-                      <div className="text-right min-w-0">
-                        <p className="text-sm text-muted-foreground whitespace-nowrap">
-                          Số Can stake
-                        </p>
-                        <p className="text-xl font-bold truncate max-w-[10rem] ml-auto">
+                  <div className="mx-4 text-lg font-bold flex items-center `">
+                    Gói Stake:
+                    <div className="text-primary mx-2">
+                      {name.toUpperCase()}
+                    </div>
+                  </div>
+                  <CardContent className="pt-4 space-y-4">
+                    {/* Top header row */}
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0">
+                        <p className="text-2xl font-bold ">
                           {Number(totalStaked).toLocaleString()} CAN
                         </p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <TrendingUp className="h-3 w-3" /> APY: {apy}%
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-400 font-bold text-xl">
+                          +{Number(rewards).toLocaleString()} CAN
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Phần thưởng hiện tại
+                        </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
-                        <span className="text-muted-foreground block truncate">
-                          Thời gian stake
-                        </span>
-                        <p className="font-medium truncate">
-                          {lockPeriod} ngày
-                        </p>
-                      </div>
-                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
-                        <span className="text-muted-foreground block truncate">
-                          Phần thưởng{" "}
-                        </span>
-                        <p className="font-medium truncate">{rewards} CAN</p>
-                      </div>
-                      <div className="p-3 bg-background/50 rounded-lg min-w-0">
-                        <span className="text-muted-foreground block truncate">
-                          Đã stake
-                        </span>
-                        <p className="font-medium truncate">
-                          {daysSinceStaked} ngày
-                        </p>
-                      </div>
-                      <CountdownTimer
-                        startAt={stakedAt}
-                        lockDays={Number(lockPeriod) || 0}
-                      />
-                    </div>
+                    {/* Center glow icon */}
+                    {/* <div className="absolute left-1/2 -translate-x-1/2 -top-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 blur-xl"></div>
+                      <Sparkles className="w-4 h-4 text-primary mx-auto -mt-6" />
+                    </div> */}
 
-                    <div className="grid grid-cols-2 gap-2 mt-2">
+                    {/* Dark info strip */}
+                    <div className="bg-black/30 rounded-xl px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Đã stake</span>
+                      </div>
+                      <div className="text-sm font-medium whitespace-nowrap">
+                        {daysSinceStaked} ngày
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Bắt đầu: {startDate}
+                    </p>
+
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-3 mt-2">
                       <Button
                         variant="default"
-                        onClick={() => getClaimRewardsData(id)}
+                        onClick={() => handleClaimClick(id)}
                         disabled={status !== "active"}
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-center justify-center gap-2 cursor-pointer bg-sky-500 hover:bg-sky-600 text-white cursor-pointer"
                       >
                         <Gift className="h-4 w-4" />
                         Nhận thưởng
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => unStakeData(id)}
+                        onClick={() => handleUnstakeClick(id)}
                         disabled={!canUnstake && status === "active"}
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />
-                        {status === "pending" && "Hủy lệnh"}
-                        {status === "processing" && "Hủy lệnh"}
-                        {status === "active" &&
-                          (canUnstake
-                            ? "Rút tiền"
-                            : `Còn ${daysRemaining} ngày`)}
+                        Hủy Staking
                       </Button>
                     </div>
                   </CardContent>
@@ -242,6 +260,58 @@ export const ActiveStakesList = ({
       </Card>
 
       {/* My Staking Pools */}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận nhận thưởng</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn nhận thưởng?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                setSelectedStakeId(null);
+              }}
+            >
+              Từ chối
+            </Button>
+            <Button variant="default" onClick={handleConfirmClaim}>
+              Xác nhận
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unstake Confirmation Dialog */}
+      <Dialog open={confirmUnstakeOpen} onOpenChange={setConfirmUnstakeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận hủy staking</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn huỷ gói stake này không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmUnstakeOpen(false);
+                setSelectedUnstakeId(null);
+              }}
+            >
+              Thoát
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmUnstake}>
+              Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
