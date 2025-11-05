@@ -122,7 +122,7 @@ export default function NFTDetailPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Không tìm thấy NFT</h1>
-            <Button onClick={() => router.push("/nftmarket")}>Quay lại</Button>
+            <Button onClick={() => router.push("/nft-market")}>Quay lại</Button>
           </div>
         </main>
       </div>
@@ -253,7 +253,7 @@ export default function NFTDetailPage() {
         });
         setBuyLoading(false);
         toast.success("Mua NFT thành công!");
-        router.push("/nftmarket");
+        router.push("/nft-market");
         // TODO: Có thể thêm toast notification hoặc refresh data
       } else {
         setBuyLoading(false);
@@ -280,7 +280,7 @@ export default function NFTDetailPage() {
         <Button
           variant="ghost"
           className="mb-6"
-          onClick={() => router.push("/nftmarket")}
+          onClick={() => router.push("/nft-market")}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
