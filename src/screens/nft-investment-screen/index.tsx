@@ -1,11 +1,9 @@
 "use client";
 
 import { NFTMarketHeaderCard, NFTFiltersCard, NFTGridCard } from "./components";
-import {
-  useNFTData,
-  useNFTFilters,
-  useNFTStats,
-} from "@/screens/nft-market-screen/hooks";
+import { useNFTData } from "./hooks/useNFTData";
+import { useNFTFilters } from "./hooks/useNFTFilters";
+import { useNFTStats } from "./hooks/useNFTStats";
 
 export default function NFTInvestmentScreen() {
   const { nfts } = useNFTData();
