@@ -390,7 +390,7 @@ export default function AccountManagementPage() {
                 <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
 
                 {/* Wallet Balance Overview */}
-                <div className="space-y-4 mb-8">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 glass rounded-lg">
                     <div>
                       <div className="font-semibold">Số dư CAN</div>
@@ -419,8 +419,12 @@ export default function AccountManagementPage() {
                     </div>
                   </div>
                 </div>
+              </Card>
+            </TabsContent>
 
-                {/* NFT Collection */}
+            <TabsContent value="my-nft">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
                 <MyNFTCollection />
               </Card>
             </TabsContent>
