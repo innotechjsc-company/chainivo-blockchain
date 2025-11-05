@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Package, ShoppingBag, DollarSign, AlertCircle } from 'lucide-react';
+import { formatNumber } from '@/utils/formatters';
 
 interface NFTStatsCardsProps {
   totalNFTs: number;
@@ -68,7 +69,7 @@ export function NFTStatsCards({
           <div>
             <div className="text-xs text-muted-foreground">Tổng giá trị</div>
             <div className="text-xl font-bold gradient-text">
-              {totalValue.toLocaleString()}
+              {formatNumber(totalValue)}
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
+import { formatNumber } from "@/utils/formatters";
 
 interface NFTCardProps {
   nft: any;
@@ -17,25 +18,11 @@ interface NFTCardProps {
   onListForSale?: (nft: any) => void;
 }
 
-const rarityColors = {
-  Common: "bg-gray-500/20 text-gray-300",
-  Rare: "bg-blue-500/20 text-blue-300",
-  Epic: "bg-purple-500/20 text-purple-300",
-  Legendary: "bg-yellow-500/20 text-yellow-300",
-  Mythic: "bg-pink-500/20 text-pink-300",
-  Divine: "bg-red-500/20 text-red-300",
-};
-
 export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const router = useRouter();
-  const isOtherNFT = nft.type === "other";
   const [isLiked, setIsLiked] = useState<boolean>(
     Boolean(nft?.isLike || nft?.isLiked)
   );
-  const progressPercentage =
-    isOtherNFT && nft.sharesSold && nft.totalShares
-      ? (nft.sharesSold / nft.totalShares) * 100
-      : 0;
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -223,16 +210,11 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             </span>
           </div>
         )}
-
-        <div className="text-xs text-muted-foreground mb-3">
-          <span className="font-mono ">{nft?.description}</span>/
-        </div>
-
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1">
             {/* Label dong theo trang thai */}
             <div className="text-xs text-muted-foreground">
-              {nft.isSale && nft.salePrice ? "Gia ban" : "Gia"}
+              {nft.isSale && nft.salePrice ? "Giá đang bán" : "Gia gốc hiện tại "}     
             </div>
 
             {/* Container co dinh chieu cao - chua 2 gia tri */}
@@ -245,7 +227,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : 'opacity-0 invisible pointer-events-none'
                 }`}
               >
-                {nft.salePrice || 0} {nft.currency?.toUpperCase() || 'CAN'}
+                {formatNumber(nft.salePrice)} {nft.currency?.toUpperCase() || 'CAN'}
               </div>
 
               {/* Gia goc - absolute position (cung vi tri) */}
@@ -255,15 +237,11 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     ? 'opacity-0 invisible pointer-events-none'
                     : 'opacity-100 visible'
                 }`}
-              >
-                {nft?.price ? `${nft.price} ${nft.currency?.toUpperCase()}` : "Thuong luong"}
+                >
+                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || 'CAN'}
+              
               </div>
             </div>
-          </div>
-
-          {/* Badge container - fixed width */}
-          <div className="ml-2 w-20 h-6">
-            
           </div>
         </div>
 
