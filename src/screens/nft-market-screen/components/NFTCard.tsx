@@ -166,7 +166,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
@@ -213,7 +213,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
       </div>
 
       {/* Info */}
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1 flex flex-col">
         <h3 className="text-lg font-bold mb-2 truncate">{nft.name}</h3>
 
         {nft?.owner?.address && (
@@ -239,7 +239,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           <Button
             variant="default"
             className="flex-1 gap-2"
@@ -256,7 +256,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft-template/${nft.id}}`);
+              router.push(`/nft-template/${nft.id}`);
             }}
           >
             <Eye className="w-4 h-4" />
