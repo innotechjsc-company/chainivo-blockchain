@@ -133,6 +133,7 @@ export const API_ENDPOINTS = {
     P2P_LIST: "/api/nft-market/for-sale",
     LIST_INVESTMENT: "/api/investment-nft/list",
     BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
+    DETAIL_INVESTMENT_NFT: (id: string) => `/api/investment-nft/${id}`,
     BUY_P2P: "/api/nft-market/buy",
     BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
       `/api/nft/transaction-history/list?nftId=${id}`,

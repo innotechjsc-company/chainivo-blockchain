@@ -143,29 +143,38 @@ export default function InvestmentNFTDetailPage() {
   useEffect(() => {
     const id = String(params?.id || "");
     if (!id) return;
+
+    let isMounted = true;
+
     (async () => {
       try {
         setLoading(true);
-        setTransactionsLoading(true);
 
-        // Fetch NFT data and transaction history in parallel
-        const [nftResp, txResp] = await Promise.all([
-          NFTService.getNFTById(id),
-          // TODO: Implement investment NFT transaction history endpoint
-          Promise.resolve({ success: false, data: null }),
-        ]);
-
-        if (nftResp?.success) setData((nftResp.data as any) || null);
-        if (txResp?.success) {
-          setTransactions((txResp.data as any)?.transactions ?? []);
-        } else {
-          setTransactions([]);
+        // Fetch NFT data
+        const nftResp = await NFTService.getNFTInvestmentById(id);
+        if (isMounted) {
+          if (nftResp?.success && nftResp.data) {
+            setData((nftResp.data as any).nft);
+          } else {
+            setData(null);
+          }
+          setLoading(false);
         }
-      } finally {
-        setLoading(false);
-        setTransactionsLoading(false);
+      } catch (error) {
+        console.error("Error fetching NFT data:", error);
+        if (isMounted) {
+          setData(null);
+          setLoading(false);
+        }
       }
     })();
+
+    // Fetch transaction history separately
+    fetchTransactionHistory();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params?.id]);
 
   useEffect(() => {
@@ -315,7 +324,7 @@ export default function InvestmentNFTDetailPage() {
                   <div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
                       {formatAmount(data?.pricePerShare)}{" "}
-                      {data?.currency.toUpperCase()}
+                      {data?.currency?.toUpperCase()}
                     </div>
                   </div>
                 </div>

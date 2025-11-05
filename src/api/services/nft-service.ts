@@ -57,6 +57,9 @@ export class NFTService {
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
+  static async getNFTInvestmentById(id: string): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL_INVESTMENT_NFT(id));
+  }
 
   static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.LIST, data);
@@ -98,7 +101,7 @@ export class NFTService {
     );
   }
   static async getNFTInvestmentList(): Promise<ApiResponse<any[]>> {
-    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST);
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT);
   }
   static async buyNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_INVESTMENT_NFT, data);
