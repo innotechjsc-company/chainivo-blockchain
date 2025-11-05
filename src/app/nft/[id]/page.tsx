@@ -49,6 +49,7 @@ import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { getLevelBadge, getNFTType } from "@/lib/utils";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -74,6 +75,8 @@ export default function NFTDetailPage() {
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const id = params?.id as string;
   const type = (searchParams?.get("type") || params?.type) as
     | "tier"
@@ -81,30 +84,65 @@ export default function NFTDetailPage() {
     | undefined;
   const user = useAppSelector((state) => state.auth.user);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    NFTService.getNFTById(id)
-      .then((res) => {
-        if (res.success && res.data) setNftData(res.data);
-        else setNftData(null);
-      })
-      .catch(() => setNftData(null))
-      .finally(() => setLoading(false));
-  }, [id]);
-
   const getComments = async () => {
-    const response = await NFTService.getComment(id);
-    if (response.success) setComments(response.data.comments);
-    else setComments([]);
+    try {
+      const response = await NFTService.getComment(id);
+      if (response.success) setComments(response.data.comments);
+      else setComments([]);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setComments([]);
+    }
+  };
+
+  const fetchTransactionHistory = async () => {
+    try {
+      const response = await NFTService.buyP2PHistoryTransaction(id);
+      if (response.success) {
+        setTransactions((response.data as any)?.transactions ?? []);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      setTransactions([]);
+    }
   };
 
   useEffect(() => {
-    getComments();
-  }, [id]);
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    getComments();
+    // Set loading to true when component mounts
+    setLoading(true);
+
+    // Fetch all data in parallel
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([
+          // Fetch NFT data
+          NFTService.getNFTById(id)
+            .then((res) => {
+              if (res.success && res.data) setNftData(res.data);
+              else setNftData(null);
+            })
+            .catch(() => setNftData(null)),
+          // Fetch comments
+          getComments(),
+          // Fetch transaction history
+          fetchTransactionHistory(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        // Set loading to false when all API calls are complete
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, [id]);
 
   if (loading) {
@@ -121,7 +159,7 @@ export default function NFTDetailPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Không tìm thấy NFT</h1>
-            <Button onClick={() => router.push("/nftmarket")}>Quay lại</Button>
+            <Button onClick={() => router.back()}>Quay lại</Button>
           </div>
         </main>
       </div>
@@ -241,19 +279,28 @@ export default function NFTDetailPage() {
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
         // toAddressData: nftData?.creator?.address ?? "",
-        amountCan: Number(nftData?.price) ?? 0,
+        amountCan: Number(nftData?.salePrice) ?? 0,
       });
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        await NFTService.transferNFT({
+        let result = await NFTService.buyP2PList({
           nftId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
-        setBuyLoading(false);
-        toast.success("Mua NFT thành công!");
-        router.push("/nftmarket");
-        // TODO: Có thể thêm toast notification hoặc refresh data
+
+        if (result.success) {
+          setBuyLoading(false);
+          toast.success("Mua NFT thành công!");
+          router.push("/p2p-market");
+        } else {
+          setBuyLoading(false);
+          toast.error(
+            "Mua NFT thất bại , vui lòng liên hệ admin để được hỗ trợ: " +
+              result.message
+          );
+          console.error("Failed to buy NFT: " + result.message);
+        }
       } else {
         setBuyLoading(false);
         toast.error("Mua NFT thất bại: Không có transaction hash");
@@ -261,26 +308,26 @@ export default function NFTDetailPage() {
       }
     } catch (error: any) {
       setBuyLoading(false);
-      toast.error(
-        `Lỗi khi mua NFT: ${error?.message || "Đã xảy ra lỗi không xác định"}`
-      );
-      console.error("Error buying NFT:", error?.message || error);
     }
   };
-
-  // Show LoadingSkeleton when buying NFT
-  if (buyLoading) {
-    return <LoadingSkeleton />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
+      {/* Loading Overlay when buying NFT */}
+      {buyLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 px-6 py-8 bg-background/95 rounded-lg border border-primary/20 shadow-xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <span className="text-lg font-medium text-foreground">
+              Đang xử lý giao dịch...
+            </span>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              Vui lòng đợi trong giây lát, không đóng trình duyệt
+            </p>
+          </div>
+        </div>
+      )}
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => router.push("/nftmarket")}
-        >
+        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -300,22 +347,6 @@ export default function NFTDetailPage() {
                 }}
               />
             </div>
-            <div className="glass rounded-xl p-4 grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{nftData.likesCount}</div>
-                <div className="text-xs text-muted-foreground">
-                  Lượt yêu thích
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">
-                  {nftData.commentsCount}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  lượt bình luận
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Details section */}
@@ -327,23 +358,20 @@ export default function NFTDetailPage() {
               <p className="text-muted-foreground mb-3">
                 {nftData.description ?? "Không có mô tả"}
               </p>
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <span className="text-xs text-muted-foreground">
-                    Chủ sở hữu:{" "}
-                  </span>
-                  <span className="font-mono">
-                    {nftData?.owner?.email ?? "Khách hàng"}
-                  </span>
-                </div>
-              </div>
+              <p>
+                {user?.walletAddress === nftData?.walletAddress
+                  ? "NFT của bạn"
+                  : ""}
+              </p>
             </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
                 {(() => {
-                  const raw = (nftData as any)?.price;
+                  const raw = (nftData as any)?.salePrice
+                    ? nftData?.salePrice
+                    : nftData?.price;
                   const n =
                     typeof raw === "string" ? parseFloat(raw) : Number(raw);
                   const safe = Number.isFinite(n) ? n : 0;
@@ -351,31 +379,38 @@ export default function NFTDetailPage() {
                 })()}{" "}
                 {TOKEN_DEAULT_CURRENCY}
               </div>
-              <div className="mt-2 text-xs">
-                {nftData.isForSale ? "Đang mở bán" : "Không còn bán"}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="flex-1 gap-2 mt-2 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (type === "other") {
-                      setConfirmDialogOpen(true);
-                    } else {
-                      toast.success("Bạn đã sở hữu NFT này");
-                    }
-                  }}
-                  disabled={buyLoading}
-                >
-                  {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-                  {buyLoading
-                    ? "Đang xử lý..."
-                    : type === "other"
-                    ? "Mua ngay"
-                    : "Đã sở hữu"}
-                </Button>
-              </div>
+
+              {user?.walletAddress === nftData?.walletAddress ? (
+                ""
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    className="flex-1 gap-2 mt-2 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (type === "other") {
+                        setConfirmDialogOpen(true);
+                      } else {
+                        toast.success("Bạn đã sở hữu NFT này");
+                      }
+                    }}
+                    disabled={buyLoading}
+                  >
+                    {type === "other" ? (
+                      <ShoppingCart className="w-4 h-4" />
+                    ) : (
+                      ""
+                    )}
+                    {buyLoading
+                      ? "Đang xử lý..."
+                      : type === "other"
+                      ? "Mua ngay"
+                      : "Đã sở hữu"}
+                  </Button>
+                </div>
+              )}
+
               {buyLoading && (
                 <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <p className="text-sm text-blue-400 text-center">
@@ -385,30 +420,32 @@ export default function NFTDetailPage() {
               )}
             </div>
             {/* Attributes */}
-            {Array.isArray(nftData.attributes) &&
-              nftData.attributes.length > 0 && (
-                <div className="glass rounded-xl p-4">
-                  <h3 className="text-lg font-semibold mb-2">Thuộc tính NFT</h3>
-                  <div
-                    className="grid gap-3"
-                    style={{
-                      gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`,
-                    }}
-                  >
-                    {nftData.attributes.map((attr: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="bg-muted/20 rounded-lg p-3 text-center"
-                      >
-                        <div className="text-xs text-muted-foreground mb-1">
-                          {attr.trait_type ?? "Không rõ"}
-                        </div>
-                        <div className="font-semibold">{attr.value ?? "-"}</div>
-                      </div>
-                    ))}
+            <div className="glass rounded-xl p-4">
+              <h3 className="text-lg font-semibold mb-2">Thuộc tính NFT</h3>
+              <div
+                className="grid gap-3"
+                style={{
+                  gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`,
+                }}
+              >
+                <div className="bg-muted/20 rounded-lg p-3 text-center">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Độ hiếm:
+                  </div>
+                  <div className="font-semibold">
+                    {getLevelBadge(nftData.level as string)}
                   </div>
                 </div>
-              )}
+                <div className="bg-muted/20 rounded-lg p-3 text-center">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Loại NFT:
+                  </div>
+                  <div className="font-semibold">
+                    {getNFTType(nftData.type as string)}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Metadata (if exists) */}
             {nftData.metadata && (
@@ -428,90 +465,234 @@ export default function NFTDetailPage() {
           </div>
         </div>
 
-        {/* Comments Section */}
-        <div
-          className="glass rounded-xl p-6 mt-12 flex flex-col"
-          style={{ height: "600px" }}
-        >
-          <h2 className="text-2xl font-bold mb-6">Comments</h2>
+        {/* Documents Section */}
+        {nftData?.documents &&
+          Array.isArray(nftData.documents) &&
+          nftData.documents.length > 0 && (
+            <div className="mt-8">
+              <div className="glass rounded-xl p-6">
+                <h2 className="text-2xl font-bold mb-6">Tài liệu và Tập tin</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {nftData.documents.map((doc: any, idx: number) => {
+                    const docName =
+                      doc?.name || doc?.filename || `Tài liệu ${idx + 1}`;
+                    const docUrl = doc?.url || doc?.link || "";
+                    const docType = doc?.type || doc?.mimeType || "file";
+                    const fileSize = doc?.filesize || doc?.size || 0;
 
-          {/* Comments List - Scrollable */}
-          <div className="flex-1 overflow-y-auto pr-2 mb-4 min-h-0">
-            {Array.isArray(comments) && comments.length > 0 ? (
-              <div className="space-y-4">
-                {comments.map((comment: any, index: number) => {
-                  const commentText =
-                    comment.text || comment.content || comment.message || "";
-                  const commentAuthor = comment.user.email ?? "";
-                  const commentDate =
-                    comment.timestamp ||
-                    comment.createdAt ||
-                    comment.created_at ||
-                    comment.date;
-                  return (
-                    <div
-                      key={comment.id || comment._id || index}
-                      className="border-b border-border/50 pb-4 last:border-0"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm font-mono">
-                              {formatAddress(commentAuthor)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {commentDate
-                                ? (() => {
-                                    try {
-                                      return new Date(
-                                        commentDate
-                                      ).toLocaleString();
-                                    } catch {
-                                      return commentDate;
-                                    }
-                                  })()
-                                : ""}
-                            </span>
+                    // Format file size
+                    const formatFileSize = (bytes: number) => {
+                      if (bytes === 0) return "0 B";
+                      const k = 1024;
+                      const sizes = ["B", "KB", "MB", "GB"];
+                      const i = Math.floor(Math.log(bytes) / Math.log(k));
+                      return (
+                        Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                        " " +
+                        sizes[i]
+                      );
+                    };
+
+                    // Get file icon based on type
+                    const getFileIcon = (type: string) => {
+                      if (type.includes("pdf")) return "📄";
+                      if (type.includes("image")) return "🖼️";
+                      if (type.includes("video")) return "🎥";
+                      if (type.includes("audio")) return "🎵";
+                      if (type.includes("zip") || type.includes("rar"))
+                        return "📦";
+                      return "📎";
+                    };
+
+                    return (
+                      <a
+                        key={idx}
+                        href={docUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                            {getFileIcon(docType)}
                           </div>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {comment?.content}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-white truncate group-hover:text-primary transition-colors">
+                              {docName}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatFileSize(fileSize)}
+                            </p>
+                            {docType && (
+                              <Badge
+                                variant="secondary"
+                                className="mt-2 text-xs bg-primary/20 text-primary"
+                              >
+                                {docType.split("/")[1] || docType}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DollarSign className="w-4 h-4" />
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* Transaction History Section */}
+        <div className="mt-8">
+          <div className="glass rounded-xl p-6">
+            <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
+            {Array.isArray(transactions) && transactions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                        Loại
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                        Từ
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                        Đến
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                        Giá trị
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                        Ngày giao dịch
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((tx: any, idx: number) => {
+                      const txType =
+                        tx.type || tx.transaction_type || "transfer";
+                      // Handle from address (could be object or string)
+                      let fromAddr = "-";
+                      if (tx.from) {
+                        fromAddr =
+                          typeof tx.from === "object" && tx.from?.address
+                            ? tx.from.address
+                            : typeof tx.from === "string"
+                            ? tx.from
+                            : "-";
+                      } else if (tx.fromAddress) {
+                        fromAddr =
+                          typeof tx.fromAddress === "object" &&
+                          tx.fromAddress?.address
+                            ? tx.fromAddress.address
+                            : typeof tx.fromAddress === "string"
+                            ? tx.fromAddress
+                            : "-";
+                      } else if (tx.seller?.walletAddress) {
+                        fromAddr = tx.seller.walletAddress;
+                      } else if (tx.seller?.address) {
+                        fromAddr = tx.seller.address;
+                      }
+
+                      // Handle to address (could be object or string)
+                      let toAddr = "-";
+                      if (tx.to) {
+                        toAddr =
+                          typeof tx.to === "object" && tx.to?.address
+                            ? tx.to.address
+                            : typeof tx.to === "string"
+                            ? tx.to
+                            : "-";
+                      } else if (tx.toAddress) {
+                        toAddr =
+                          typeof tx.toAddress === "object" &&
+                          tx.toAddress?.address
+                            ? tx.toAddress.address
+                            : typeof tx.toAddress === "string"
+                            ? tx.toAddress
+                            : "-";
+                      } else if (tx.buyer?.walletAddress) {
+                        toAddr = tx.buyer.walletAddress;
+                      } else if (tx.buyer?.address) {
+                        toAddr = tx.buyer.address;
+                      }
+
+                      const amount =
+                        tx.amount ||
+                        tx.salePrice ||
+                        tx.price ||
+                        tx.value ||
+                        tx.total_value ||
+                        0;
+                      const currency = tx.currency || TOKEN_DEAULT_CURRENCY;
+
+                      const timestamp =
+                        tx.timestamp ||
+                        tx.createdAt ||
+                        tx.created_at ||
+                        tx.date ||
+                        "-";
+
+                      return (
+                        <tr
+                          key={idx}
+                          className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <Badge
+                              variant={
+                                txType === "buy" || txType === "purchase"
+                                  ? "default"
+                                  : txType === "sell"
+                                  ? "destructive"
+                                  : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {txType === "buy" || txType === "purchase"
+                                ? "Mua"
+                                : txType === "sell"
+                                ? "Bán"
+                                : "Chuyển"}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-sm font-mono">
+                            {formatAddress(fromAddr)}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-mono">
+                            {formatAddress(toAddr)}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-semibold">
+                            {Number(amount).toLocaleString("vi-VN")} {currency}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {timestamp !== "-"
+                              ? (() => {
+                                  try {
+                                    return new Date(timestamp).toLocaleString(
+                                      "vi-VN"
+                                    );
+                                  } catch {
+                                    return timestamp;
+                                  }
+                                })()
+                              : "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="text-center text-muted-foreground py-8">
-                No comments yet. Be the first to comment!
+              <div className="text-center py-12 text-muted-foreground">
+                <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Chưa có lịch sử giao dịch</p>
               </div>
             )}
-          </div>
-          {/* Comment Input */}
-          <div className="mb-4">
-            <Textarea
-              placeholder="Add a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              disabled={commentLoading}
-              className="min-h-[100px] resize-none border-border/50 mb-3 bg-white text-black placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-
-            {/* Commenting as and Post Button */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Bình luận dưới tên:{" "}
-                <span className="font-mono">{user?.email}</span>
-              </div>
-              <Button
-                onClick={handlePostComment}
-                disabled={!commentText.trim() || commentLoading}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {commentLoading ? "Đang gửi..." : "Gửi"}
-              </Button>
-            </div>
           </div>
         </div>
       </main>

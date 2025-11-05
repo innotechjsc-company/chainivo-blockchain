@@ -115,7 +115,7 @@ export function AvatarUpload({
           className="gap-2"
         >
           <Upload className="w-4 h-4" />
-          Chon anh
+          Chọn ảnh 
         </Button>
 
         {previewUrl && (
@@ -128,7 +128,7 @@ export function AvatarUpload({
             className="gap-2"
           >
             <X className="w-4 h-4" />
-            Xoa
+            Xoá
           </Button>
         )}
       </div>

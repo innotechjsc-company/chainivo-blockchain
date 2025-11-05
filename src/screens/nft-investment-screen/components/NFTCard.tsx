@@ -5,23 +5,44 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Eye, Heart, ShoppingBag, Send } from "lucide-react";
-import { NFT } from "../hooks";
+import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
-import { formatNumber } from "@/utils/formatters";
+import { getLevelBadge } from "@/lib/utils";
 
-interface NFTCardProps {
+interface NFTInvestmentCardProps {
   nft: any;
   type: "tier" | "other";
-  onListForSale?: (nft: any) => void;
 }
 
-export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
+const rarityColors = {
+  Common: "bg-gray-500/20 text-gray-300",
+  Rare: "bg-blue-500/20 text-blue-300",
+  Epic: "bg-purple-500/20 text-purple-300",
+  Legendary: "bg-yellow-500/20 text-yellow-300",
+  Mythic: "bg-pink-500/20 text-pink-300",
+  Divine: "bg-red-500/20 text-red-300",
+};
+
+export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   const router = useRouter();
+  const isOtherNFT = nft.type === "other";
   const [isLiked, setIsLiked] = useState<boolean>(
     Boolean(nft?.isLike || nft?.isLiked)
+  );
+  const soldShares: number = Number(nft?.soldShares ?? 0);
+  const totalShares: number = Number(nft?.availableShares ?? 0);
+  const progressPercentage =
+    totalShares > 0 ? (soldShares / totalShares) * 100 : 0;
+
+  const totalValue: number | string | undefined =
+    nft?.totalValue ?? nft?.total_price ?? nft?.totalETH ?? nft?.priceTotal;
+  const pricePerShare: number | string | undefined =
+    nft?.pricePerShare ?? nft?.sharePrice ?? nft?.price;
+
+  const purchaseCount: number = Number(
+    nft?.purchaseCount ?? nft?.buyerCount ?? nft?.purchases ?? nft?.views ?? 0
   );
 
   // Function to get NFT image from API backend or fallback to default
@@ -88,7 +109,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const refreshLikeState = async () => {
     try {
       const id = String(nft.id ?? nft._id ?? nft.tokenId);
-      const resp = await NFTService.getNFTByTemplateId(id);
+      const resp = await NFTService.getNFTById(id);
       if (resp?.success && resp?.data) {
         setIsLiked(
           Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
@@ -146,6 +167,15 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
     return `${start}***${end}`;
   };
 
+  const formatNumber = (value: unknown) => {
+    if (value === undefined || value === null) return "-";
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value);
+    // Format with thousand separators: 1,000,000
+    const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
+    return Number(formatted).toLocaleString("en-US");
+  };
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     // Fallback to default image if the image fails to load
     const target = e.target as HTMLImageElement;
@@ -153,11 +183,11 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft-template/${nft.id}`)}
+        onClick={() => router.push(`/investment-nft/${nft.id}`)}
       >
         <img
           src={nftImage}
@@ -168,33 +198,19 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+
+        {/* Rarity Badge */}
         <Badge
-          variant="secondary"
-          className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
-            nft.isSale ? "opacity-100 visible" : "opacity-0 invisible"
+          className={`absolute top-4 right-4 z-10 ${
+            rarityColors[nft.rarity as keyof typeof rarityColors]
           }`}
         >
-          Đang bán
+          {getLevelBadge(nft.level as string)}
         </Badge>
-
-        {/* Like/Purchase Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-          onClick={isLiked ? handleUnlike : handleLike}
-        >
-          <Heart
-            className={`w-4 h-4`}
-            fill={isLiked ? "currentColor" : "none"}
-            color={isLiked ? "#ec4899" : undefined}
-            stroke={isLiked ? "#ec4899" : "white"}
-          />
-        </Button>
       </div>
 
       {/* Info */}
-      <CardContent className="p-4 flex-1 flex flex-col">
+      <CardContent className="p-4">
         <h3 className="text-lg font-bold mb-2 truncate">{nft.name}</h3>
 
         {nft?.owner?.address && (
@@ -205,87 +221,71 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             </span>
           </div>
         )}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex-1">
-            {/* Label dong theo trang thai */}
-            <div className="text-xs text-muted-foreground">
-              {nft.isSale && nft.salePrice
-                ? "Giá đang bán"
-                : "Gia gốc hiện tại "}
+
+        {/* Pricing summary */}
+        <div className="grid grid-cols-2 gap-4 mb-3">
+          <div>
+            <div className="text-xs text-muted-foreground">Giá trị tổng</div>
+            <div className="text-lg font-bold">
+              {totalValue !== undefined
+                ? `${formatNumber(totalValue)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
+                : nft?.price
+                ? `${formatNumber(nft?.price)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
+                : "Thương lượng"}
             </div>
-
-            {/* Container co dinh chieu cao - chua 2 gia tri */}
-            <div className="relative h-8">
-              {/* Gia ban - absolute position */}
-              <div
-                className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
-                  nft.isSale && nft.salePrice
-                    ? "opacity-100 visible"
-                    : "opacity-0 invisible pointer-events-none"
-                }`}
-              >
-                {nft.salePrice
-                  ? nft.salePrice.toLocaleString("vi-VN")
-                  : nft.price?.toLocaleString("vi-VN")}
-                {nft.currency?.toUpperCase() || "CAN"}
-              </div>
-
-              {/* Gia goc - absolute position (cung vi tri) */}
-              <div
-                className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
-                  nft.isSale && nft.salePrice
-                    ? "opacity-0 invisible pointer-events-none"
-                    : "opacity-100 visible"
-                }`}
-              >
-                {nft.price?.toLocaleString("vi-VN")}{" "}
-                {nft.currency?.toUpperCase() || "CAN"}
-              </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Giá/cổ phần</div>
+            <div className="text-lg font-bold">
+              {pricePerShare !== undefined
+                ? `${formatNumber(pricePerShare)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
+                : "-"}
             </div>
           </div>
         </div>
 
+        {/* Progress */}
+        <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+          <span>Tiến trình bán</span>
+          {totalShares > 0 && (
+            <span>
+              {nft?.soldShares}/{nft?.availableShares + nft?.soldShares} cổ phần
+            </span>
+          )}
+        </div>
+        <Progress value={progressPercentage} className="h-2 mb-1" />
+        <div className="text-xs text-cyan-400 mb-3">
+          {progressPercentage.toFixed(1)}% đã bán
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-2">
-          {/* Button chinh: Mua ngay / Dang ban / Da so huu */}
-          {type === "tier" && !nft.isSale && onListForSale ? (
-            // NFT cua toi va chua ban -> hien nut "Dang ban"
-            <Button
-              variant="default"
-              className="flex-1 gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onListForSale(nft);
-              }}
-            >
-              <Send className="w-4 h-4" />
-              Đăng bán
-            </Button>
-          ) : (
-            // NFT dang ban hoac NFT cua nguoi khac
-            <Button
-              variant="default"
-              className="flex-1 gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/nft/${nft.id}?type=${type}`);
-              }}
-            >
-              {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-              {type === "other" ? "Mua ngay" : "Đã sở hữu"}
-            </Button>
-          )}
-
-          {/* Button xem chi tiet */}
+          <Button
+            variant="default"
+            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/investment-nft/${nft.id}`);
+            }}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Mua cổ phần
+          </Button>
           <Button
             variant="outline"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft-template/${nft.id}`);
+              router.push(`/investment-nft/${nft.id}`);
             }}
           >
-            <Eye className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
       </CardContent>

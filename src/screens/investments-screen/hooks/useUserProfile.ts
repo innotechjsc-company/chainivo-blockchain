@@ -7,7 +7,7 @@ import { useAppSelector, WalletBalance } from "@/stores";
   can_balance: number;
   total_invested: number;
   membership_tier: string;
-  avatar_url: string | null;
+  avatar_url: string | null; 
 }
 
 export const useUserProfile = () => {
@@ -44,7 +44,7 @@ export const useUserProfile = () => {
           can_balance: (walletBalance as WalletBalance)?.can || 0,
           total_invested: totalInvested,
           membership_tier: authUser.role || "bronze", // Default tier
-          avatar_url: null,
+          avatar_url: authUser.avatarUrl || null,  
         };
         setProfile(userProfile);
       } catch (err) {

@@ -17,7 +17,7 @@ export const DesktopNav = () => {
   ) => {
     // Check if item is "NFT Market" and user is not authenticated
     if (
-      (item.href === "/nftmarket" || item.href === "/investments") &&
+      (item.href === "/nft-market" || item.href === "/investments") &&
       (!isAuthenticated || !user)
     ) {
       e.preventDefault();

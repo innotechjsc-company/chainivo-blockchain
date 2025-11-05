@@ -4,10 +4,9 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  avatar_url?: string | null;
+  avatarUrl?: string;  // 
   walletAddress: string;
   role: string;
-  avatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }

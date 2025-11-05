@@ -123,12 +123,26 @@ export const API_ENDPOINTS = {
   NFT: {
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
+    DETAIL_TEMPLATE: (id: string) => `/api/nft-template/${id}`,
     BUY: "/api/nft/marketplace/buy",
     MY_NFT: "/api/nft/my-nft",
+    // So huu NFT
+    OWNERSHIP_LIST: "/api/nft-ownership",
+    MY_OWNERSHIP: "/api/nft-ownership/my",
+    OWNERSHIP_DETAIL: (id: string) => `/api/nft-ownership/${id}`,
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
     POST_FOR_SALE: "/api/nft-market/post-for-sale",
+    P2P_LIST: "/api/nft-market/for-sale",
+    LIST_INVESTMENT: "/api/investment-nft/list",
+    BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
+    DETAIL_INVESTMENT_NFT: (id: string) => `/api/investment-nft/${id}`,
+    BUY_P2P: "/api/nft-market/buy",
+    BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
+      `/api/nft/transaction-history/list?nftId=${id}`,
+    INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
+      `/api/nft-investment-history?where[nft][equals]=${nftId}`,
   },
 
   STAKING: {
@@ -202,7 +216,13 @@ export interface UpdateProfileResponse {
   userId: string;
   name?: string;
   avatar?: AvatarObject;
+  avatarUrl?: string; // Backend trả về cả avatarUrl string để dễ sử dụng
   updatedAt: string;
+}
+export interface ApiTransactionHistoryResponse<T = any> {
+  docs?: T;
+  error?: string;
+  message?: string;
 }
 
 export class ApiService {
@@ -240,11 +260,14 @@ export class ApiService {
     }
   }
 
-  static async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+  static async postFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await api.post(endpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
       return response.data;
@@ -281,11 +304,14 @@ export class ApiService {
     }
   }
 
-  static async patchFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+  static async patchFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await api.patch(endpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
       return response.data;
