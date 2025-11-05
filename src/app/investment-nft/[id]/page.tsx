@@ -355,17 +355,9 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                   <Input
                     type="number"
-                    min={1}
-                    max={Math.max(
-                      1,
-                      Number(
-                        data?.remainingShares ?? data?.availableShares ?? 1
-                      )
-                    )}
+                    min={0}
                     value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, Number(e.target.value || 1)))
-                    }
+                    onChange={(e) => setQuantity(Number(e.target.value || 0))}
                     className="bg-background/50 border-cyan-500/30 focus:border-cyan-500/60"
                   />
                   <div className="text-xs text-muted-foreground">
