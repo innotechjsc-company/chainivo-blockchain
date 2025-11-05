@@ -248,7 +248,7 @@ export const Missions = () => {
         </Card>
 
         {/* Special Event */}
-        <div className="mt-12 glass rounded-2xl p-8 text-center border-2 border-primary animate-glow">
+        {/* <div className="mt-12 glass rounded-2xl p-8 text-center border-2 border-primary animate-glow">
           <Trophy className="w-16 h-16 text-primary mx-auto mb-4 animate-float" />
           <h3 className="text-2xl font-bold mb-2">🎉 Sự kiện đặc biệt</h3>
           <p className="text-muted-foreground mb-4">
@@ -272,7 +272,7 @@ export const Missions = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

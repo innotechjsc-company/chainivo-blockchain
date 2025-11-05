@@ -19,8 +19,7 @@ export const config = {
   API_BASE_URL: getEnvValue(
     "NEXT_PUBLIC_API_BASE_URL_DEV",
     "API_BASE_URL_PROD",
-    // "https://chainivo.online"
-    "http://localhost:3001"
+    "https://chainivo.online"
   ),
 
   FRONTEND_BASE_URL: getEnvValue(
