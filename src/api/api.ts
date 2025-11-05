@@ -131,9 +131,11 @@ export const API_ENDPOINTS = {
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
     P2P_LIST: "/api/nft-market/for-sale",
+    LIST_INVESTMENT: "/api/investment-nft/list",
     BUY_P2P: "/api/nft-market/buy",
     BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
       `/api/nft/transaction-history/list?nftId=${id}`,
+    // INVESTMENT_LIST: "/api/nft/investment/list",
   },
 
   STAKING: {

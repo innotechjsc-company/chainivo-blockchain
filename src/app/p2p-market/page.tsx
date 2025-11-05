@@ -279,7 +279,7 @@ export default function P2PMarketPage() {
                   </div>
 
                   {/* Don vi giao dich (Currency) */}
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <span className="text-sm font-medium">
                       Đơn vị giao dịch
                     </span>
@@ -293,7 +293,7 @@ export default function P2PMarketPage() {
                         <SelectItem value="usdt">USDT</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> */}
 
                   {/* Khoang gia (Price Range) */}
                   <div className="space-y-3">

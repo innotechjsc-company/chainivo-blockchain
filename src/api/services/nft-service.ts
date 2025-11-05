@@ -97,6 +97,9 @@ export class NFTService {
       API_ENDPOINTS.NFT.BUY_P2P_HISTORY_TRANSACTION(id)
     );
   }
+  static async getNFTInvestmentList(): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT);
+  }
 }
 
 export default NFTService;

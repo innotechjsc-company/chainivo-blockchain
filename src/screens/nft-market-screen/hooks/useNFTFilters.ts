@@ -45,49 +45,31 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
 
+  // Ensure we always return an array for downstream components (e.g. Grid uses slice)
+  const normalizeNFTCollection = (input: any): any[] => {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    if (Array.isArray(input.nfts)) return input.nfts;
+    if (Array.isArray(input.items)) return input.items;
+    if (Array.isArray(input.data)) return input.data;
+    if (input.data) return normalizeNFTCollection(input.data);
+    return [];
+  };
+
   const fetchOtherNFTs = async () => {
     try {
-      const response = await NFTService.allNFTInMarketplace();
-
+      const response = await NFTService.getNFTInvestmentList();
+      debugger;
       if (response.success) {
         const data: any = response.data as any;
-        if (data?.nfts || data?.items) {
-          setOtherNFTsData(data.nfts || data.items || []);
-          if (data.analytics) {
-            console.log(data.analytics);
-            setOtherNFTsAnalytics(data.analytics);
-          }
-        } else if (Array.isArray(data)) {
-          setOtherNFTsData(data);
-          // Analytics might be at response level
-          if ((response as any).analytics) {
-            setOtherNFTsAnalytics((response as any).analytics);
-          }
-        } else if (data?.data) {
-          // Nested structure
-          setOtherNFTsData(
-            data.data?.nfts || data.data?.items || data.data || []
-          );
-          if (data.data?.analytics || data.analytics) {
-            setOtherNFTsAnalytics(data.data?.analytics || data.analytics);
-          }
-        } else {
-          setOtherNFTsData(data || []);
-          // Check if analytics exists at any level
-          if (data?.analytics) {
-            setOtherNFTsAnalytics(data.analytics);
-          } else if ((response as any).analytics) {
-            setOtherNFTsAnalytics((response as any).analytics);
-          }
-        }
+        const list = normalizeNFTCollection(data);
+        setOtherNFTsData(list);
 
-        // Debug log to help identify the structure
-        console.log("NFT Marketplace Response:", {
-          hasData: !!data,
-          dataKeys: data ? Object.keys(data) : [],
-          hasAnalytics: !!(data?.analytics || (response as any).analytics),
-          responseKeys: Object.keys(response),
-        });
+        const analytics =
+          (data && (data.analytics || data?.data?.analytics)) ||
+          (response as any).analytics ||
+          null;
+        setOtherNFTsAnalytics(analytics);
       } else {
         toast.error(response.message);
         setOtherNFTsData([]);

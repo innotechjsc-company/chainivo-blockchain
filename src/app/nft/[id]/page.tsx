@@ -308,13 +308,8 @@ export default function NFTDetailPage() {
       }
     } catch (error: any) {
       setBuyLoading(false);
-      toast.error(
-        `Lỗi khi mua NFT: ${error?.message || "Đã xảy ra lỗi không xác định"}`
-      );
-      console.error("Error buying NFT:", error?.message || error);
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Loading Overlay when buying NFT */}
@@ -356,22 +351,6 @@ export default function NFTDetailPage() {
                 }}
               />
             </div>
-            {/* <div className="glass rounded-xl p-4 grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{nftData.likesCount}</div>
-                <div className="text-xs text-muted-foreground">
-                  Lượt yêu thích
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">
-                  {nftData.commentsCount}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  lượt bình luận
-                </div>
-              </div>
-            </div> */}
           </div>
 
           {/* Details section */}
@@ -383,16 +362,11 @@ export default function NFTDetailPage() {
               <p className="text-muted-foreground mb-3">
                 {nftData.description ?? "Không có mô tả"}
               </p>
-              {/* <div className="flex flex-wrap gap-4">
-                <div>
-                  <span className="text-xs text-muted-foreground">
-                    Người bán:
-                  </span>
-                  <span className="font-mono">
-                    {formatAddress(nftData?.walletAddress ?? "")}
-                  </span>
-                </div>
-              </div> */}
+              <p>
+                {user?.walletAddress === nftData?.walletAddress
+                  ? "NFT của bạn"
+                  : ""}
+              </p>
             </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
@@ -408,28 +382,37 @@ export default function NFTDetailPage() {
                 {TOKEN_DEAULT_CURRENCY}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="flex-1 gap-2 mt-2 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (type === "other") {
-                      setConfirmDialogOpen(true);
-                    } else {
-                      toast.success("Bạn đã sở hữu NFT này");
-                    }
-                  }}
-                  disabled={buyLoading}
-                >
-                  {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-                  {buyLoading
-                    ? "Đang xử lý..."
-                    : type === "other"
-                    ? "Mua ngay"
-                    : "Đã sở hữu"}
-                </Button>
-              </div>
+              {user?.walletAddress === nftData?.walletAddress ? (
+                ""
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    className="flex-1 gap-2 mt-2 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (type === "other") {
+                        setConfirmDialogOpen(true);
+                      } else {
+                        toast.success("Bạn đã sở hữu NFT này");
+                      }
+                    }}
+                    disabled={buyLoading}
+                  >
+                    {type === "other" ? (
+                      <ShoppingCart className="w-4 h-4" />
+                    ) : (
+                      ""
+                    )}
+                    {buyLoading
+                      ? "Đang xử lý..."
+                      : type === "other"
+                      ? "Mua ngay"
+                      : "Đã sở hữu"}
+                  </Button>
+                </div>
+              )}
+
               {buyLoading && (
                 <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <p className="text-sm text-blue-400 text-center">
