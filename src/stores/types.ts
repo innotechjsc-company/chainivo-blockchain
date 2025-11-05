@@ -8,7 +8,7 @@ export interface User {
   email: string;
   username: string;
   name: string;
-  avatar_url: string | null;
+  avatarUrl?: string | null;  // Đổi từ avatar_url sang avatarUrl để khớp backend
   walletAddress?: string;
   createdAt: string | Date;
   updatedAt?: string | Date;

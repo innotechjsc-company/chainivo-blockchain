@@ -6,17 +6,22 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings, Upload } from "lucide-react";
-import { useAppSelector } from "@/stores";
+import { User, Wallet, History, Settings } from "lucide-react";
+import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
+import { UserService } from "@/api/services/user-service";
+import { LocalStorageService } from "@/services";
+import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
+import { AvatarUpload } from "@/components/account/AvatarUpload";
+import { updateProfile } from "@/stores/authSlice";
+import { MyNFTCollection } from "@/components/account/MyNFTCollection";
 
 interface Profile {
   name: string;
-  avatar_url: string | null;
+  avatarUrl: string | null;  //
   can_balance: number;
   membership_tier: string;
   total_invested: number;
@@ -24,21 +29,32 @@ interface Profile {
 
 export default function AccountManagementPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [canBalance, setCanBalance] = useState(0);
   const [txLoading, setTxLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     // Simulate loading user profile
     const timer = setTimeout(() => {
+      // Get avatar from localStorage or Redux
+      const userInfo = LocalStorageService.getUserInfo();
+      const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
+
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatar_url: null,
+        avatarUrl: avatarUrl,  // 
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -49,7 +65,7 @@ export default function AccountManagementPage() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchCanBalance = async () => {
@@ -70,19 +86,132 @@ export default function AccountManagementPage() {
     fetchCanBalance();
   }, []);
 
-  const handleUpdateProfile = async () => {
-    try {
-      // Mock update profile
-      console.log("Updating profile with username:", username);
+  // Validation: Chi cho phep chu (co dau), so, khoang trang
+  const validateName = (name: string): string | null => {
+    const trimmedName = name.trim();
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setProfile((prev) => (prev ? { ...prev, username } : null));
-      console.log("Profile updated successfully");
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    if (trimmedName.length === 0) {
+      return "Ten khong duoc de trong";
     }
+
+    if (trimmedName.length > 100) {
+      return "Ten khong duoc vuot qua 100 ky tu";
+    }
+
+    // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
+    const nameRegex = /^[a-zA-Z0-9\u00C0-\u1EF9\s]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      return "Ten chi duoc chua chu cai, so va khoang trang";
+    }
+
+    return null;
+  };
+
+  const handleUpdateProfile = async () => {
+
+    setUpdateError(null);
+    setUpdateSuccess(null);
+
+    const trimmedName = username.trim();
+    const hasNameChange = trimmedName !== profile?.name;
+    const hasAvatarChange = selectedAvatar !== null;
+
+    if (!hasNameChange && !hasAvatarChange) {
+      setUpdateError("Vui long cap nhat ten hoac anh dai dien");
+      return;
+    }
+
+    if (hasNameChange) {
+      const validationError = validateName(trimmedName);
+      if (validationError) {
+        setUpdateError(validationError);
+        return;
+      }
+    }
+
+    setUpdateLoading(true);
+
+    try {
+      // Create FormData
+      const formData = new FormData();
+
+      if (hasNameChange) {
+        formData.append('name', trimmedName);
+      }
+
+      if (hasAvatarChange && selectedAvatar) {
+        formData.append('avatar', selectedAvatar);
+      }
+
+      // Call API
+      const response = await UserService.updateProfile(formData);
+
+      if (response.success) {
+        const updateData: any = {};
+        let avatarUrl: string | null = null;
+
+        if (hasNameChange) {
+          updateData.name = trimmedName;
+        }
+
+        
+        const actualData = (response.data as any)?.data || response.data;
+
+        if (hasAvatarChange && actualData?.avatarUrl) {
+        
+          avatarUrl = actualData.avatarUrl;
+          updateData.avatarUrl = avatarUrl;
+        } else if (hasAvatarChange && actualData?.avatar?.url) {
+     
+          avatarUrl = actualData.avatar.url;
+          updateData.avatarUrl = avatarUrl;
+        }
+
+        // Update Redux store
+        dispatch(updateProfile(updateData));
+
+        // Update local profile state
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                name: hasNameChange ? trimmedName : prev.name,
+                avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl,  //
+              }
+            : null
+        );
+
+        // Update localStorage with new user info (including avatar URL)
+        const currentUserInfo = LocalStorageService.getUserInfo();
+        if (currentUserInfo) {
+          const updatedUserInfo = {
+            ...currentUserInfo,
+            name: hasNameChange ? trimmedName : currentUserInfo.name,
+            avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : currentUserInfo.avatarUrl,
+          };
+          LocalStorageService.setUserInfo(updatedUserInfo);
+        }
+
+        // Clear avatar upload state
+        setSelectedAvatar(null);
+        setAvatarPreview(null);
+
+        setUpdateSuccess("Cap nhat profile thanh cong");
+
+        setTimeout(() => setUpdateSuccess(null), 3000);
+      } else {
+        setUpdateError(response.error || response.message || "Co loi xay ra khi cap nhat profile");
+      }
+    } catch (error: any) {
+      setUpdateError(error.message || "Khong the cap nhat profile");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleAvatarSelect = (file: File | null, previewUrl: string | null) => {
+    setSelectedAvatar(file);
+    setAvatarPreview(previewUrl);
   };
 
   const handleSignOut = async () => {
@@ -162,7 +291,7 @@ export default function AccountManagementPage() {
           </h1>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -170,6 +299,9 @@ export default function AccountManagementPage() {
               <TabsTrigger value="wallet">
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
+              </TabsTrigger>
+              <TabsTrigger value="my-nft"> 
+                NFT của tôi
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
@@ -183,24 +315,40 @@ export default function AccountManagementPage() {
 
             <TabsContent value="profile">
               <Card className="p-6 glass">
-                <div className="flex items-start gap-6 mb-6">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profile?.avatar_url || ""} />
-                    <AvatarFallback className="text-2xl">
-                      {username?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="mb-4">
-                      <Label htmlFor="name">Tên người dùng</Label>
-                      <Input
-                        id="name"
-                        value={user?.name || ""}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="mt-2"
-                      />
+                <div className="flex flex-col gap-6 mb-6">
+                  <div className="flex gap-6">
+                    <AvatarUpload
+                      currentAvatar={profile?.avatarUrl || ""}
+                      userName={username}
+                      onAvatarSelect={handleAvatarSelect}
+                      disabled={updateLoading}
+                      error={selectedAvatar ? undefined : undefined}
+                    />
+                    <div className="flex-1">
+                      <div className="mb-4">
+                        <Label htmlFor="name">Tên hiển thị </Label>
+                        <Input
+                          id="name"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="mt-2"
+                          maxLength={100}
+                          disabled={updateLoading}
+                        />
+                      </div>
+                      {updateError && (
+                        <p className="text-sm text-red-500 mt-1">{updateError}</p>
+                      )}
+                      {updateSuccess && (
+                        <p className="text-sm text-green-500 mt-1">{updateSuccess}</p>
+                      )}
+                      <Button
+                        onClick={handleUpdateProfile}
+                        disabled={updateLoading}
+                      >
+                        {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
+                      </Button>
                     </div>
-                    <Button onClick={handleUpdateProfile}>Cập nhật</Button>
                   </div>
                 </div>
 
@@ -239,7 +387,9 @@ export default function AccountManagementPage() {
 
             <TabsContent value="wallet">
               <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-4">Ví của tôi</h3>
+                <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
+
+                {/* Wallet Balance Overview */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 glass rounded-lg">
                     <div>
@@ -248,7 +398,7 @@ export default function AccountManagementPage() {
                         {canBalance?.toLocaleString()} CAN
                       </div>
                     </div>
-                    <Button>Nạp tiền</Button>
+                    {/* <Button>Nạp tiền</Button> */}
                   </div>
                   <div className="p-4 glass rounded-lg">
                     <div className="text-sm text-muted-foreground mb-2">
@@ -269,6 +419,13 @@ export default function AccountManagementPage() {
                     </div>
                   </div>
                 </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="my-nft">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
+                <MyNFTCollection />
               </Card>
             </TabsContent>
 
@@ -348,7 +505,11 @@ export default function AccountManagementPage() {
                         ••••••••
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsChangePasswordOpen(true)}
+                    >
                       Thay đổi
                     </Button>
                   </div>
@@ -376,6 +537,13 @@ export default function AccountManagementPage() {
           </Tabs>
         </div>
       </main>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        userEmail={user?.email}
+      />
     </div>
   );
 }
