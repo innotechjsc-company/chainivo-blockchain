@@ -86,7 +86,6 @@ export default function NFTDetailPage() {
     setLoading(true);
     NFTService.getNFTByTemplateId(id)
       .then((res) => {
-        debugger;
         if (res.success && res.data) setNftData(res.data);
         else setNftData(null);
       })
@@ -214,7 +213,7 @@ export default function NFTDetailPage() {
         setCommentText("");
 
         // Refresh NFT data to get updated comments
-        const refreshResponse = await NFTService.getNFTById(id);
+        const refreshResponse = await NFTService.getNFTByTemplateId(id);
         if (refreshResponse.success && refreshResponse.data) {
           setNftData(refreshResponse.data);
           await getComments();

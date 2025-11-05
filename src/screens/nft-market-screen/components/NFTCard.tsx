@@ -101,7 +101,7 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
   const refreshLikeState = async () => {
     try {
       const id = String(nft.id ?? nft._id ?? nft.tokenId);
-      const resp = await NFTService.getNFTById(id);
+      const resp = await NFTService.getNFTByTemplateId(id);
       if (resp?.success && resp?.data) {
         setIsLiked(
           Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
@@ -198,11 +198,6 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
           onClick={isLiked ? handleUnlike : handleLike}
         >
-          {/* {isOtherNFT ? (
-            <ShoppingBag className="w-4 h-4" />
-          ) : (         
-            <Heart className="w-4 h-4" />
-          )} */}
           <Heart
             className={`w-4 h-4`}
             fill={isLiked ? "currentColor" : "none"}
