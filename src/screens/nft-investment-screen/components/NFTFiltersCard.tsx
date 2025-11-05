@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -28,12 +28,57 @@ export const NFTFiltersCard = ({
   const [pendingRange, setPendingRange] = useState<[number, number]>(
     filters.priceRange
   );
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
+    type: true,
+    rarity: true,
+    status: true,
+    shares: true,
+    price: true,
+  });
+
+  // Toggle section expansion
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const typeOptions = [
+    { label: "Tất cả", value: "all" },
+    { label: "Biệt thự", value: "tier" },
+    { label: "Đầu tư", value: "investment" },
+  ];
 
   const rarityOptions = [
-    { label: "Thường", value: "1", color: "bg-gray-500/20 text-gray-300" },
-    { label: "Vàng", value: "2", color: "bg-yellow-500/20 text-yellow-300" },
-    { label: "Bạch kim", value: "3", color: "bg-blue-500/20 text-blue-300" },
-    { label: "Kim cương", value: "4", color: "bg-pink-500/20 text-pink-300" },
+    { label: "Thường (1★)", value: "1", color: "bg-gray-500/20 text-gray-300" },
+    {
+      label: "Vàng (2★)",
+      value: "2",
+      color: "bg-yellow-500/20 text-yellow-300",
+    },
+    {
+      label: "Bạch kim (3★)",
+      value: "3",
+      color: "bg-blue-500/20 text-blue-300",
+    },
+    {
+      label: "Kim cương (4★)",
+      value: "4",
+      color: "bg-pink-500/20 text-pink-300",
+    },
+  ];
+
+  const statusOptions = [
+    { label: "Đang bán", value: "active", icon: "🟢" },
+    { label: "Không bán", value: "inactive", icon: "🔴" },
+  ];
+
+  const sharesOptions = [
+    { label: "Còn cổ phần", value: "available" },
+    { label: "Hết cổ phần", value: "sold_out" },
   ];
 
   const toggleRarity = (rarity: string) => {
@@ -41,6 +86,24 @@ export const NFTFiltersCard = ({
       ? filters.rarity.filter((r) => r !== rarity)
       : [...filters.rarity, rarity];
     onFiltersChange({ ...filters, rarity: newRarity });
+  };
+
+  const toggleType = (type: string) => {
+    onFiltersChange({ ...filters, type });
+  };
+
+  const toggleStatus = (status: string) => {
+    const newStatus = (filters.status || []).includes(status)
+      ? (filters.status || []).filter((s) => s !== status)
+      : [...(filters.status || []), status];
+    onFiltersChange({ ...filters, status: newStatus });
+  };
+
+  const toggleShares = (shares: string) => {
+    const newShares = (filters.shares || []).includes(shares)
+      ? (filters.shares || []).filter((s) => s !== shares)
+      : [...(filters.shares || []), shares];
+    onFiltersChange({ ...filters, shares: newShares });
   };
 
   const handleApplyFilters = async () => {
@@ -59,6 +122,26 @@ export const NFTFiltersCard = ({
     setPendingRange(filters.priceRange);
   }, [filters.priceRange]);
 
+  // Helper to count active filters in a section
+  const getActiveCount = (section: string): number => {
+    switch (section) {
+      case "type":
+        return filters.type !== "all" ? 1 : 0;
+      case "rarity":
+        return filters.rarity.length;
+      case "status":
+        return (filters.status || []).length;
+      case "shares":
+        return (filters.shares || []).length;
+      case "price":
+        return filters.priceRange[0] !== 0 || filters.priceRange[1] !== 1000000
+          ? 1
+          : 0;
+      default:
+        return 0;
+    }
+  };
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -69,70 +152,268 @@ export const NFTFiltersCard = ({
         >
           <Filter className="w-4 h-4" />
           {showFilters ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
+          {hasActiveFilters && (
+            <Badge
+              variant="secondary"
+              className="ml-2 bg-cyan-500/20 text-cyan-300"
+            >
+              {(filters.rarity.length || 0) +
+                (filters.status?.length || 0) +
+                (filters.shares?.length || 0) +
+                (filters.type !== "all" ? 1 : 0) +
+                (filters.priceRange[0] !== 0 ||
+                filters.priceRange[1] !== 1000000
+                  ? 1
+                  : 0)}
+            </Badge>
+          )}
         </Button>
         {hasActiveFilters && (
-          <Button variant="ghost" onClick={onResetFilters} className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={onResetFilters}
+            className="gap-2 text-red-400 hover:text-red-300"
+          >
             <X className="w-4 h-4" />
-            Xóa bộ lọc
+            Xóa tất cả
           </Button>
         )}
       </div>
 
       {showFilters && (
-        <Card className="glass">
-          <CardContent className="p-6 space-y-6">
-            <div>
-              <label className="text-sm font-semibold mb-3 block">
-                Tìm kiếm NFT
-              </label>
+        <Card className="glass border-cyan-500/20">
+          <CardContent className="p-6 space-y-4">
+            {/* Type Filter Section */}
+            <div className="border-b border-border/30 pb-4">
+              <button
+                onClick={() => toggleSection("type")}
+                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
+              >
+                <label className="text-sm font-semibold cursor-pointer">
+                  Loại NFT
+                  {getActiveCount("type") > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
+                    >
+                      {getActiveCount("type")}
+                    </Badge>
+                  )}
+                </label>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    expandedSections.type ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {expandedSections.type && (
+                <div className="flex flex-wrap gap-2">
+                  {typeOptions.map((option) => (
+                    <Badge
+                      key={option.value}
+                      className={`cursor-pointer transition-all ${
+                        filters.type === option.value
+                          ? "bg-cyan-500/30 text-cyan-300 border-cyan-500/50"
+                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                      onClick={() => toggleType(option.value)}
+                    >
+                      {option.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="text-sm font-semibold mb-3 block">
-                Độ hiếm (
-                {filters.rarity.length > 0 ? filters.rarity.length : "Tất cả"})
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {rarityOptions.map((option) => (
-                  <Badge
-                    key={option.value}
-                    className={`cursor-pointer transition-all ${
-                      filters.rarity.includes(option.value)
-                        ? option.color
-                        : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
-                    }`}
-                    onClick={() => toggleRarity(option.value)}
-                  >
-                    {option.label}
-                  </Badge>
-                ))}
-              </div>
+            {/* Rarity Filter Section */}
+            <div className="border-b border-border/30 pb-4">
+              <button
+                onClick={() => toggleSection("rarity")}
+                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
+              >
+                <label className="text-sm font-semibold cursor-pointer">
+                  Độ hiếm
+                  {getActiveCount("rarity") > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
+                    >
+                      {getActiveCount("rarity")}
+                    </Badge>
+                  )}
+                </label>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    expandedSections.rarity ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {expandedSections.rarity && (
+                <div className="flex flex-wrap gap-2">
+                  {rarityOptions.map((option) => (
+                    <Badge
+                      key={option.value}
+                      className={`cursor-pointer transition-all ${
+                        filters.rarity.includes(option.value)
+                          ? option.color
+                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                      onClick={() => toggleRarity(option.value)}
+                    >
+                      {option.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="text-sm font-semibold mb-3 block">
-                Khoảng giá: {pendingRange[0]} CAN - {pendingRange[1]} CAN
-              </label>
-              <Slider
-                min={0}
-                max={1000000}
-                step={1}
-                value={pendingRange}
-                onValueChange={(v) =>
-                  setPendingRange([
-                    Math.round((v as [number, number])[0]),
-                    Math.round((v as [number, number])[1]),
-                  ])
-                }
-                className="w-full"
-              />
+            {/* Status Filter Section */}
+            <div className="border-b border-border/30 pb-4">
+              <button
+                onClick={() => toggleSection("status")}
+                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
+              >
+                <label className="text-sm font-semibold cursor-pointer">
+                  Trạng thái
+                  {getActiveCount("status") > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
+                    >
+                      {getActiveCount("status")}
+                    </Badge>
+                  )}
+                </label>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    expandedSections.status ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {expandedSections.status && (
+                <div className="flex flex-wrap gap-2">
+                  {statusOptions.map((option) => (
+                    <Badge
+                      key={option.value}
+                      className={`cursor-pointer transition-all gap-1 ${
+                        (filters.status || []).includes(option.value)
+                          ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
+                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                      onClick={() => toggleStatus(option.value)}
+                    >
+                      <span>{option.icon}</span>
+                      {option.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="pt-4 border-t border-border/50">
+            {/* Shares Filter Section */}
+            <div className="border-b border-border/30 pb-4">
+              <button
+                onClick={() => toggleSection("shares")}
+                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
+              >
+                <label className="text-sm font-semibold cursor-pointer">
+                  Tính sẵn có
+                  {getActiveCount("shares") > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
+                    >
+                      {getActiveCount("shares")}
+                    </Badge>
+                  )}
+                </label>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    expandedSections.shares ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {expandedSections.shares && (
+                <div className="flex flex-wrap gap-2">
+                  {sharesOptions.map((option) => (
+                    <Badge
+                      key={option.value}
+                      className={`cursor-pointer transition-all ${
+                        (filters.shares || []).includes(option.value)
+                          ? "bg-violet-500/30 text-violet-300 border-violet-500/50"
+                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                      onClick={() => toggleShares(option.value)}
+                    >
+                      {option.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Price Range Filter Section */}
+            <div className="border-b border-border/30 pb-4">
+              <button
+                onClick={() => toggleSection("price")}
+                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
+              >
+                <label className="text-sm font-semibold cursor-pointer">
+                  Khoảng giá
+                  {getActiveCount("price") > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
+                    >
+                      {getActiveCount("price")}
+                    </Badge>
+                  )}
+                </label>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    expandedSections.price ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {expandedSections.price && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      <span className="text-cyan-400 font-semibold">
+                        {pendingRange[0].toLocaleString()}
+                      </span>
+                      {" CAN"}
+                    </span>
+                    <span>~</span>
+                    <span>
+                      <span className="text-purple-400 font-semibold">
+                        {pendingRange[1].toLocaleString()}
+                      </span>
+                      {" CAN"}
+                    </span>
+                  </div>
+                  <Slider
+                    min={0}
+                    max={1000000}
+                    step={10000}
+                    value={pendingRange}
+                    onValueChange={(v) =>
+                      setPendingRange([
+                        Math.round((v as [number, number])[0]),
+                        Math.round((v as [number, number])[1]),
+                      ])
+                    }
+                    className="w-full"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Apply Button */}
+            <div className="pt-2">
               <Button
                 onClick={handleApplyFilters}
-                className="w-full cursor-pointer"
-                variant="default"
+                className="w-full cursor-pointer bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold"
               >
                 Áp dụng bộ lọc
               </Button>

@@ -31,6 +31,9 @@ export default function InvestmentNFTDetailPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const [buyLoading, setBuyLoading] = useState<boolean>(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] =
+    useState<boolean>(false);
   const user = useAppSelector((state) => state.auth.user);
 
   const formatAmount = (value: unknown) => {
@@ -111,8 +114,27 @@ export default function InvestmentNFTDetailPage() {
     }
   };
 
+  const fetchTransactionHistory = async () => {
+    try {
+      setTransactionsLoading(true);
+      const response = await NFTService.investmentNFTHistoryTransaction(
+        String(params?.id || "")
+      );
+      if (response && Array.isArray(response.docs)) {
+        setTransactions(response.docs);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      setTransactions([]);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
-  const totalShares: number = Number(data?.availableShares ?? 0);
+  const availableShares: number = Number(data?.availableShares ?? 0);
+  const totalShares: number = Number(data?.availableShares + data?.soldShares);
   const progress = totalShares > 0 ? (sharesSold / totalShares) * 100 : 0;
   const pricePerShare: number = Number(data?.pricePerShare ?? 0);
   const totalCost = Math.max(1, quantity) * (pricePerShare || 0);
@@ -124,13 +146,30 @@ export default function InvestmentNFTDetailPage() {
     (async () => {
       try {
         setLoading(true);
-        const resp = await NFTService.getNFTById(id);
+        setTransactionsLoading(true);
 
-        if (resp?.success) setData((resp.data as any) || null);
+        // Fetch NFT data and transaction history in parallel
+        const [nftResp, txResp] = await Promise.all([
+          NFTService.getNFTById(id),
+          // TODO: Implement investment NFT transaction history endpoint
+          Promise.resolve({ success: false, data: null }),
+        ]);
+
+        if (nftResp?.success) setData((nftResp.data as any) || null);
+        if (txResp?.success) {
+          setTransactions((txResp.data as any)?.transactions ?? []);
+        } else {
+          setTransactions([]);
+        }
       } finally {
         setLoading(false);
+        setTransactionsLoading(false);
       }
     })();
+  }, [params?.id]);
+
+  useEffect(() => {
+    fetchTransactionHistory();
   }, [params?.id]);
 
   return (
@@ -248,26 +287,38 @@ export default function InvestmentNFTDetailPage() {
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-muted-foreground mb-1">
-                      Giá trị tổng
+                      Tổng số cổ phần
                     </div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                      {formatAmount(data?.price)} {currency}
+                      {formatAmount(data?.totalShares)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Giá/cổ phần
+                      Cổ phần mở bán
                     </div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-white">
-                      {formatAmount(pricePerShare)} {currency}
+                      {formatAmount(data?.availableShares + data?.soldShares)}
                     </div>
                   </div>
                 </div>
-
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Đơn giá
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                      {formatAmount(data?.pricePerShare)}{" "}
+                      {data?.currency.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
                 <div className="pt-2">
                   <div className="mb-2 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
@@ -275,13 +326,17 @@ export default function InvestmentNFTDetailPage() {
                     </span>
                     {totalShares > 0 && (
                       <span className="text-muted-foreground">
-                        {sharesSold}/{totalShares} cổ phần
+                        <span className="text-purple-400 font-semibold">
+                          {progress.toFixed(1)}%
+                        </span>
                       </span>
                     )}
                   </div>
                   <Progress value={progress} className="h-2.5" />
                   <div className="mt-2 text-xs text-cyan-400 font-semibold">
-                    {progress.toFixed(1)}% đã bán
+                    <span className="font-semibold text-cyan-400">
+                      {sharesSold} CP / {totalShares} CP
+                    </span>
                   </div>
                 </div>
 
@@ -468,6 +523,153 @@ export default function InvestmentNFTDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Transaction History Section */}
+        <div className="mt-12">
+          <Card className="glass">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
+              {transactionsLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Đang tải lịch sử giao dịch...</p>
+                </div>
+              ) : Array.isArray(transactions) ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Người mua
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Số cổ phần
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Tổng tiền
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Thời gian
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Trạng thái
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Hash giao dịch
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((tx: any, idx: number) => {
+                        // Handle buyer address/username
+
+                        const displayBuyer = formatAddress(
+                          tx?.user?.walletAddress
+                        );
+
+                        const displayBuyerEmail = tx?.user?.email || "-";
+
+                        // Handle shares
+                        const shares = tx.shares || tx.quantity || 0;
+
+                        // Handle total price
+                        const totalPrice =
+                          tx.totalPrice ||
+                          tx.total_price ||
+                          tx.price ||
+                          tx.amount ||
+                          0;
+                        const txCurrency = (
+                          tx.currency ||
+                          currency ||
+                          "CAN"
+                        ).toUpperCase();
+
+                        // Handle timestamp
+                        const timestamp =
+                          tx.createdAt || tx.created_at || tx.date || "-";
+                        let formattedDate = "-";
+                        if (timestamp !== "-") {
+                          try {
+                            formattedDate = new Date(timestamp).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            formattedDate = timestamp;
+                          }
+                        }
+
+                        // Handle transaction hash
+                        const txHash =
+                          tx.transactionHash ||
+                          tx.transaction_hash ||
+                          tx.txHash ||
+                          "-";
+
+                        // Handle status
+                        const status = tx.status || "success";
+                        const statusColor =
+                          status === "success" || status === "completed"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : status === "pending"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400";
+                        const statusLabel =
+                          status === "success"
+                            ? "Thành công"
+                            : status === "pending"
+                            ? "Đang xử lý"
+                            : "Thất bại";
+
+                        return (
+                          <tr
+                            key={idx}
+                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-medium text-white">
+                              {displayBuyer}
+                            </td>
+                            <td className="py-3 px-4 text-cyan-400 font-semibold">
+                              {formatAmount(shares)} CP
+                            </td>
+                            <td className="py-3 px-4 font-semibold">
+                              {formatAmount(totalPrice)} {txCurrency}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {formattedDate}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge className={`text-xs ${statusColor}`}>
+                                {statusLabel}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-xs font-mono">
+                              {txHash !== "-" ? (
+                                <a
+                                  href={`https://www.oklink.com/amoy/tx/${txHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
+                                >
+                                  {formatAddress(txHash)}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Chưa có lịch sử giao dịch</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Loading Spinner Overlay */}
         {buyLoading && (

@@ -1,5 +1,5 @@
 import { ApiService, API_ENDPOINTS } from "../api";
-import type { ApiResponse } from "../api";
+import type { ApiResponse, ApiTransactionHistoryResponse } from "../api";
 
 export interface NFT {
   _id: string;
@@ -102,6 +102,13 @@ export class NFTService {
   }
   static async buyNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_INVESTMENT_NFT, data);
+  }
+  static async investmentNFTHistoryTransaction(
+    id: string
+  ): Promise<ApiTransactionHistoryResponse<any[]>> {
+    return ApiService.get<any[]>(
+      API_ENDPOINTS.NFT.INVESTMENT_NFT_HISTORY_TRANSACTION(id)
+    );
   }
 }
 

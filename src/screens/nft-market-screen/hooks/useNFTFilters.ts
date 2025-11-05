@@ -9,6 +9,8 @@ export interface NFTFiltersState {
   rarity: string[];
   priceRange: [number, number];
   type: string;
+  status?: string[];
+  shares?: string[];
 }
 
 export const useNFTFilters = (nfts: NFT[]) => {
@@ -98,6 +100,32 @@ export const useNFTFilters = (nfts: NFT[]) => {
         }
       }
 
+      // Status filter
+      if (filterCriteria.status && filterCriteria.status.length > 0) {
+        const nftStatus = nft.isActive ? "active" : "inactive";
+        if (!filterCriteria.status.includes(nftStatus)) {
+          return false;
+        }
+      }
+
+      // Shares availability filter
+      if (filterCriteria.shares && filterCriteria.shares.length > 0) {
+        const remainingShares = Number(
+          nft.remainingShares ?? nft.availableShares ?? 0
+        );
+        const hasAvailableShares = remainingShares > 0;
+
+        if (
+          filterCriteria.shares.includes("available") &&
+          !hasAvailableShares
+        ) {
+          return false;
+        }
+        if (filterCriteria.shares.includes("sold_out") && hasAvailableShares) {
+          return false;
+        }
+      }
+
       // Price range filter
       const priceValue =
         nft.price ||
@@ -130,9 +158,13 @@ export const useNFTFilters = (nfts: NFT[]) => {
       limit: 24,
       minPrice: String(f.priceRange[0]),
       maxPrice: String(f.priceRange[1]),
-      level: f.rarity.join(","),
+      level: f.rarity.length > 0 ? f.rarity.join(",") : undefined,
       type: f.type !== "all" ? f.type : undefined,
-      isActive: "true",
+      isActive: f.status?.includes("active")
+        ? "true"
+        : f.status?.includes("inactive")
+        ? "false"
+        : undefined,
     };
 
     try {
