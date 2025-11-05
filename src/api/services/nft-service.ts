@@ -1,5 +1,5 @@
 import { ApiService, API_ENDPOINTS } from "../api";
-import type { ApiResponse } from "../api";
+import type { ApiResponse, ApiTransactionHistoryResponse } from "../api";
 import type { MyNFTsResponse } from "@/types/NFT";
 
 export interface NFT {
@@ -85,7 +85,6 @@ export class NFTService {
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.COMMENT, data);
   }
-
   static async getComment(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.get(`${API_ENDPOINTS.NFT.COMMENT}?nftId=${nftId}`);
   }
@@ -102,6 +101,32 @@ export class NFTService {
     salePrice: number;
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.POST_FOR_SALE, data);
+  }
+  static async getP2PList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.P2P_LIST, data);
+  }
+  static async buyP2PList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_P2P, data);
+  }
+  static async buyP2PHistoryTransaction(
+    id: string
+  ): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(
+      API_ENDPOINTS.NFT.BUY_P2P_HISTORY_TRANSACTION(id)
+    );
+  }
+  static async getNFTInvestmentList(): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT);
+  }
+  static async buyNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_INVESTMENT_NFT, data);
+  }
+  static async investmentNFTHistoryTransaction(
+    id: string
+  ): Promise<ApiTransactionHistoryResponse<any[]>> {
+    return ApiService.get<any[]>(
+      API_ENDPOINTS.NFT.INVESTMENT_NFT_HISTORY_TRANSACTION(id)
+    );
   }
 }
 
