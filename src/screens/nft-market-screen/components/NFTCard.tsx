@@ -88,7 +88,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const refreshLikeState = async () => {
     try {
       const id = String(nft.id ?? nft._id ?? nft.tokenId);
-      const resp = await NFTService.getNFTById(id);
+      const resp = await NFTService.getNFTByTemplateId(id);
       if (resp?.success && resp?.data) {
         setIsLiked(
           Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
@@ -153,11 +153,11 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
       {/* Image */}
       <div
         className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft/${nft.id}?type=${type}`)}
+        onClick={() => router.push(`/nft-template/${nft.id}`)}
       >
         <img
           src={nftImage}
@@ -171,10 +171,10 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         <Badge
           variant="secondary"
           className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
-            nft.isSale ? 'opacity-100 visible' : 'opacity-0 invisible'
+            nft.isSale ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
         >
-          Đang bán 
+          Đang bán
         </Badge>
 
         {/* Like/Purchase Button */}
@@ -184,11 +184,6 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
           onClick={isLiked ? handleUnlike : handleLike}
         >
-          {/* {isOtherNFT ? (
-            <ShoppingBag className="w-4 h-4" />
-          ) : (         
-            <Heart className="w-4 h-4" />
-          )} */}
           <Heart
             className={`w-4 h-4`}
             fill={isLiked ? "currentColor" : "none"}
@@ -199,7 +194,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
       </div>
 
       {/* Info */}
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1 flex flex-col">
         <h3 className="text-lg font-bold mb-2 truncate">{nft.name}</h3>
 
         {nft?.owner?.address && (
@@ -214,7 +209,9 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           <div className="flex-1">
             {/* Label dong theo trang thai */}
             <div className="text-xs text-muted-foreground">
-              {nft.isSale && nft.salePrice ? "Giá đang bán" : "Gia gốc hiện tại "}     
+              {nft.isSale && nft.salePrice
+                ? "Giá đang bán"
+                : "Gia gốc hiện tại "}
             </div>
 
             {/* Container co dinh chieu cao - chua 2 gia tri */}
@@ -223,23 +220,23 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
-                    ? 'opacity-100 visible'
-                    : 'opacity-0 invisible pointer-events-none'
+                    ? "opacity-100 visible"
+                    : "opacity-0 invisible pointer-events-none"
                 }`}
               >
-                {formatNumber(nft.salePrice)} {nft.currency?.toUpperCase() || 'CAN'}
+                {formatNumber(nft.salePrice)}{" "}
+                {nft.currency?.toUpperCase() || "CAN"}
               </div>
 
               {/* Gia goc - absolute position (cung vi tri) */}
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
-                    ? 'opacity-0 invisible pointer-events-none'
-                    : 'opacity-100 visible'
+                    ? "opacity-0 invisible pointer-events-none"
+                    : "opacity-100 visible"
                 }`}
-                >
-                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || 'CAN'}
-              
+              >
+                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || "CAN"}
               </div>
             </div>
           </div>
@@ -259,7 +256,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
               }}
             >
               <Send className="w-4 h-4" />
-              Đăng bán 
+              Đăng bán
             </Button>
           ) : (
             // NFT dang ban hoac NFT cua nguoi khac
@@ -282,7 +279,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/nft/${nft.id}?type=${type}`);
+              router.push(`/nft-template/${nft.id}`);
             }}
           >
             <Eye className="w-4 h-4" />

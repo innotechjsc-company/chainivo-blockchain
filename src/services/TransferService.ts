@@ -387,28 +387,30 @@ export default class TransferService {
       gasLimit = 150000,
       gasBoostPercent = 50,
     } = params;
-     // 1. Khởi tạo Web3 và lấy contract của USDC token
-     const web3 = await this.getWeb3();
-     const tokenAddress = this.getTokenAddress("USDC");
-     const contract = this.getTokenContract(web3, tokenAddress);
- 
-     // 2. Kiểm tra số dư USDC của người gửi
-     const balanceWei = await contract.methods.balanceOf(fromAddress).call();
-     const requiredWei = this.toWeiWithDecimals(String(amount), 6);
- 
-     if (BigInt(balanceWei) < BigInt(requiredWei)) {
-       const availableBalance = this.fromWeiWithDecimals(web3, balanceWei, 6);
-       console.error(`Số dư USDC không đủ. Cần: ${amount} USDC, Có sẵn: ${availableBalance} USDC`);
-       return {
+    // 1. Khởi tạo Web3 và lấy contract của USDC token
+    const web3 = await this.getWeb3();
+    const tokenAddress = this.getTokenAddress("USDC");
+    const contract = this.getTokenContract(web3, tokenAddress);
+
+    // 2. Kiểm tra số dư USDC của người gửi
+    const balanceWei = await contract.methods.balanceOf(fromAddress).call();
+    const requiredWei = this.toWeiWithDecimals(String(amount), 6);
+
+    if (BigInt(balanceWei) < BigInt(requiredWei)) {
+      const availableBalance = this.fromWeiWithDecimals(web3, balanceWei, 6);
+      console.error(
+        `Số dư USDC không đủ. Cần: ${amount} USDC, Có sẵn: ${availableBalance} USDC`
+      );
+      return {
         result: false,
         message: `Số dư USDC không đủ. Bạn chỉ còn ${availableBalance} USDC`,
-       };
-     }
- 
-     // 3. Tính toán gas price tối ưu
-     const gasPrice = await this.getOptimizedGasPrice(web3, gasBoostPercent);
-     const gasPriceFormattedForDisplay = this.formatGweiFromWei(gasPrice);
-     debugger
+      };
+    }
+
+    // 3. Tính toán gas price tối ưu
+    const gasPrice = await this.getOptimizedGasPrice(web3, gasBoostPercent);
+    const gasPriceFormattedForDisplay = this.formatGweiFromWei(gasPrice);
+
     return {
       result: true,
       message: gasPriceFormattedForDisplay,

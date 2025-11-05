@@ -179,10 +179,12 @@ export class NFTService {
     };
   }
 
-  static async getNFTOwnershipDetail(
-    id: string
-  ): Promise<ApiResponse<any>> {
-    return ApiService.get<any>(API_ENDPOINTS.NFT.OWNERSHIP_DETAIL(id));
+  static async getNFTByTemplateId(id: string): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL_TEMPLATE(id));
+  }
+
+  static async getNFTInvestmentById(id: string): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL_INVESTMENT_NFT(id));
   }
 
   static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
