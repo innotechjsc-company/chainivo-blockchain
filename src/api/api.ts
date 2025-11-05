@@ -125,6 +125,10 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/api/nft/${id}`,
     BUY: "/api/nft/marketplace/buy",
     MY_NFT: "/api/nft/my-nft",
+    // So huu NFT
+    OWNERSHIP_LIST: "/api/nft-ownership",
+    MY_OWNERSHIP: "/api/nft-ownership/my",
+    OWNERSHIP_DETAIL: (id: string) => `/api/nft-ownership/${id}`,
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",

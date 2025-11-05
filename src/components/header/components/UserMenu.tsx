@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
 
@@ -41,6 +41,10 @@ export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/mynft")}>
+          <Wallet className="w-4 h-4 mr-2" />
+          NFT cổ phần
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <User className="w-4 h-4 mr-2" />
           Quản lý tài khoản

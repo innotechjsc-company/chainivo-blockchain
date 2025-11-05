@@ -47,6 +47,14 @@ export interface TransferNFTData {
   transactionHash?: string;
 }
 
+export interface GetNFTOwnershipsParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'name' | 'price' | 'viewsCount' | 'likesCount' | 'createdAt' | 'publishedAt';
+  sortOrder?: 'asc' | 'desc';
+  isSale?: boolean;
+}
+
 // Params cho API /api/nft/my-nft
 export interface GetMyNFTsParams {
   page?: number;
@@ -66,6 +74,115 @@ export class NFTService {
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
+  }
+
+  // So huu NFT (ownership)
+  static async getNFTOwnerships(
+    params?: GetNFTOwnershipsParams
+  ): Promise<ApiResponse<MyNFTsResponse['data']>> {
+    const res = await ApiService.get<any>(API_ENDPOINTS.NFT.MY_OWNERSHIP, params);
+    if (!res.success || !res.data) return res as ApiResponse<MyNFTsResponse['data']>;
+
+    const ownerships = Array.isArray(res.data.ownerships) ? res.data.ownerships : [];
+
+    const nfts = ownerships.map((o: any) => {
+      const nft = o?.nft || {};
+      const imageObj = nft?.image;
+      const imageUrl = typeof imageObj === 'string' ? imageObj : imageObj?.url || '';
+      return {
+        id: nft.id || nft._id,
+        name: nft.name || '',
+        description: nft.description || '',
+        image: imageUrl,
+        price: typeof nft.price === 'number' ? nft.price : 0,
+        salePrice: nft.isSale ? (typeof nft.pricePerShare === 'number' ? nft.pricePerShare : (typeof nft.price === 'number' ? nft.price : null)) : null,
+        walletAddress: nft.walletAddress || '',
+        owner: o?.user?.id || null,
+        isSale: !!nft.isSale,
+        isActive: !!nft.isActive,
+        type: nft.type,
+        level: nft.level,
+        currency: nft.currency,
+        viewsCount: typeof nft.viewsCount === 'number' ? nft.viewsCount : 0,
+        likesCount: typeof nft.likesCount === 'number' ? nft.likesCount : 0,
+        isLike: !!nft.isLike,
+        createdAt: nft.createdAt,
+        publishedAt: nft.investmentStartDate || nft.createdAt,
+        updatedAt: nft.updatedAt,
+      } as MyNFTsResponse['data']['nfts'][number];
+    });
+
+    const p = res.data.pagination || {};
+    const pagination = {
+      page: p.page ?? 1,
+      limit: p.limit ?? nfts.length,
+      total: p.totalDocs ?? p.total ?? nfts.length,
+      totalPages: p.totalPages ?? 1,
+      hasNextPage: !!p.hasNextPage,
+      hasPrevPage: !!p.hasPrevPage,
+    } as MyNFTsResponse['data']['pagination'];
+
+    return {
+      success: true,
+      data: { nfts, pagination },
+    };
+  }
+
+  static async getMyNFTOwnerships(
+    params?: GetNFTOwnershipsParams
+  ): Promise<ApiResponse<MyNFTsResponse['data']>> {
+    const res = await ApiService.get<any>(API_ENDPOINTS.NFT.OWNERSHIP_LIST, params);
+    if (!res.success || !res.data) return res as ApiResponse<MyNFTsResponse['data']>;
+
+    const ownerships = Array.isArray(res.data.ownerships) ? res.data.ownerships : [];
+
+    const nfts = ownerships.map((o: any) => {
+      const nft = o?.nft || {};
+      const imageObj = nft?.image;
+      const imageUrl = typeof imageObj === 'string' ? imageObj : imageObj?.url || '';
+      return {
+        id: nft.id || nft._id,
+        name: nft.name || '',
+        description: nft.description || '',
+        image: imageUrl,
+        price: typeof nft.price === 'number' ? nft.price : 0,
+        salePrice: nft.isSale ? (typeof nft.pricePerShare === 'number' ? nft.pricePerShare : (typeof nft.price === 'number' ? nft.price : null)) : null,
+        walletAddress: nft.walletAddress || '',
+        owner: o?.user?.id || null,
+        isSale: !!nft.isSale,
+        isActive: !!nft.isActive,
+        type: nft.type,
+        level: nft.level,
+        currency: nft.currency,
+        viewsCount: typeof nft.viewsCount === 'number' ? nft.viewsCount : 0,
+        likesCount: typeof nft.likesCount === 'number' ? nft.likesCount : 0,
+        isLike: !!nft.isLike,
+        createdAt: nft.createdAt,
+        publishedAt: nft.investmentStartDate || nft.createdAt,
+        updatedAt: nft.updatedAt,
+      } as MyNFTsResponse['data']['nfts'][number];
+    });
+
+    const p = res.data.pagination || {};
+    const pagination = {
+      page: p.page ?? 1,
+      limit: p.limit ?? nfts.length,
+      total: p.totalDocs ?? p.total ?? nfts.length,
+      totalPages: p.totalPages ?? 1,
+      hasNextPage: !!p.hasNextPage,
+      hasPrevPage: !!p.hasPrevPage,
+    } as MyNFTsResponse['data']['pagination'];
+
+    return {
+      success: true,
+      data: { nfts, pagination },
+    };
+  }
+
+  static async getNFTOwnershipDetail(
+    id: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.get<any>(API_ENDPOINTS.NFT.OWNERSHIP_DETAIL(id));
   }
 
   static async allNFTInMarketplace(data?: any): Promise<ApiResponse<NFT>> {
