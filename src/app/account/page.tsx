@@ -21,7 +21,7 @@ import { MyNFTCollection } from "@/components/account/MyNFTCollection";
 
 interface Profile {
   name: string;
-  avatarUrl: string | null;  //
+  avatarUrl: string | null; //
   can_balance: number;
   membership_tier: string;
   total_invested: number;
@@ -54,7 +54,7 @@ export default function AccountManagementPage() {
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatarUrl: avatarUrl,  // 
+        avatarUrl: avatarUrl, //
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -108,7 +108,6 @@ export default function AccountManagementPage() {
   };
 
   const handleUpdateProfile = async () => {
-
     setUpdateError(null);
     setUpdateSuccess(null);
 
@@ -136,11 +135,11 @@ export default function AccountManagementPage() {
       const formData = new FormData();
 
       if (hasNameChange) {
-        formData.append('name', trimmedName);
+        formData.append("name", trimmedName);
       }
 
       if (hasAvatarChange && selectedAvatar) {
-        formData.append('avatar', selectedAvatar);
+        formData.append("avatar", selectedAvatar);
       }
 
       // Call API
@@ -154,15 +153,12 @@ export default function AccountManagementPage() {
           updateData.name = trimmedName;
         }
 
-        
         const actualData = (response.data as any)?.data || response.data;
 
         if (hasAvatarChange && actualData?.avatarUrl) {
-        
           avatarUrl = actualData.avatarUrl;
           updateData.avatarUrl = avatarUrl;
         } else if (hasAvatarChange && actualData?.avatar?.url) {
-     
           avatarUrl = actualData.avatar.url;
           updateData.avatarUrl = avatarUrl;
         }
@@ -176,7 +172,8 @@ export default function AccountManagementPage() {
             ? {
                 ...prev,
                 name: hasNameChange ? trimmedName : prev.name,
-                avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl,  //
+                avatarUrl:
+                  hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl, //
               }
             : null
         );
@@ -187,7 +184,10 @@ export default function AccountManagementPage() {
           const updatedUserInfo = {
             ...currentUserInfo,
             name: hasNameChange ? trimmedName : currentUserInfo.name,
-            avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : currentUserInfo.avatarUrl,
+            avatarUrl:
+              hasAvatarChange && avatarUrl
+                ? avatarUrl
+                : currentUserInfo.avatarUrl,
           };
           LocalStorageService.setUserInfo(updatedUserInfo);
         }
@@ -200,7 +200,11 @@ export default function AccountManagementPage() {
 
         setTimeout(() => setUpdateSuccess(null), 3000);
       } else {
-        setUpdateError(response.error || response.message || "Co loi xay ra khi cap nhat profile");
+        setUpdateError(
+          response.error ||
+            response.message ||
+            "Co loi xay ra khi cap nhat profile"
+        );
       }
     } catch (error: any) {
       setUpdateError(error.message || "Khong the cap nhat profile");
@@ -235,7 +239,7 @@ export default function AccountManagementPage() {
       setTxLoading(true);
 
       const [nftsRes, rewardsRes] = await Promise.all([
-        NFTService.getNFTsByOwner(user.walletAddress),
+        NFTService.getNFTsByOwner({ ownerAddress: user.walletAddress }),
         StakingService.getStakesByOwner(user.walletAddress),
       ]);
       let transactions = [];
@@ -300,9 +304,7 @@ export default function AccountManagementPage() {
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
               </TabsTrigger>
-              <TabsTrigger value="my-nft"> 
-                NFT của tôi
-              </TabsTrigger>
+              <TabsTrigger value="my-nft">NFT của tôi</TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
@@ -337,10 +339,14 @@ export default function AccountManagementPage() {
                         />
                       </div>
                       {updateError && (
-                        <p className="text-sm text-red-500 mt-1">{updateError}</p>
+                        <p className="text-sm text-red-500 mt-1">
+                          {updateError}
+                        </p>
                       )}
                       {updateSuccess && (
-                        <p className="text-sm text-green-500 mt-1">{updateSuccess}</p>
+                        <p className="text-sm text-green-500 mt-1">
+                          {updateSuccess}
+                        </p>
                       )}
                       <Button
                         onClick={handleUpdateProfile}
