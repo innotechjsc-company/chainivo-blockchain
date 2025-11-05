@@ -175,9 +175,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
     if (value === undefined || value === null) return "-";
     const num = Number(value);
     if (Number.isNaN(num)) return String(value);
-    // Format with thousand separators: 1,000,000
-    const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
-    return Number(formatted).toLocaleString("en-US");
+    return num % 1 === 0 ? num.toString() : num.toFixed(1);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -232,9 +230,11 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-xs text-muted-foreground">Giá trị tổng</div>
             <div className="text-lg font-bold">
               {totalValue !== undefined
-                ? `${formatNumber(totalValue)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(totalValue)} ${
+                    nft?.currency.toUpperCase() 
+                  }`
                 : nft?.price
-                ? `${formatNumber(nft?.price)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(nft?.price)} ETH`
                 : "Thương lượng"}
             </div>
           </div>
@@ -242,7 +242,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-xs text-muted-foreground">Giá/cổ phần</div>
             <div className="text-lg font-bold">
               {pricePerShare !== undefined
-                ? `${formatNumber(pricePerShare)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(pricePerShare)} ${nft?.currency || "ETH"}`
                 : "-"}
             </div>
           </div>

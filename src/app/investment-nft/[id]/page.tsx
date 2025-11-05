@@ -140,14 +140,6 @@ export default function InvestmentNFTDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Chủ sở hữu
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {data?.owner?.username || "CryptoCollector"}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground mb-1">
                       Người bán
                     </div>
                     <div className="text-sm font-semibold text-white">
@@ -243,7 +235,9 @@ export default function InvestmentNFTDetailPage() {
 
             <Card className="glass">
               <CardContent className="p-5">
-                <h3 className="font-semibold mb-4 text-white">Thông tin chi tiết</h3>
+                <h3 className="font-semibold mb-4 text-white">
+                  Thông tin chi tiết
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1">
