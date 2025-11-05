@@ -128,6 +128,7 @@ export const API_ENDPOINTS = {
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
+    POST_FOR_SALE: "/api/nft-market/post-for-sale",
   },
 
   STAKING: {

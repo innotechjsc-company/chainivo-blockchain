@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useMyNFTCollection } from '@/hooks/useMyNFTCollection';
 import { NFTStatsCards } from './NFTStatsCards';
 import { NFTCard } from '@/screens/nft-market-screen/components/NFTCard';
+import { ListNFTDialog } from './ListNFTDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import type { NFTItem } from '@/types/NFT';
 
 // Loading Skeleton Component
 function LoadingSkeleton() {
@@ -41,7 +44,17 @@ function LoadingSkeleton() {
 
 export function MyNFTCollection() {
   // Su dung hook fetch NFT collection
-  const { nfts, stats, loading, error, filter, setFilter } = useMyNFTCollection();
+  const { nfts, stats, loading, error, filter, setFilter, refetch } = useMyNFTCollection();
+
+  // State cho List NFT Dialog
+  const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Handler mo dialog dang ban NFT
+  const handleListForSale = (nft: NFTItem) => {
+    setSelectedNFT(nft);
+    setDialogOpen(true);
+  };
 
   // Loading state
   if (loading) {
@@ -95,10 +108,19 @@ export function MyNFTCollection() {
               key={nft.id}
               nft={nft}
               type="tier"
+              onListForSale={handleListForSale}
             />
           ))}
         </div>
       )}
+
+      {/* List NFT Dialog */}
+      <ListNFTDialog
+        nft={selectedNFT}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={refetch}
+      />
     </div>
   );
 }

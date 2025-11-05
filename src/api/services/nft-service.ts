@@ -60,8 +60,8 @@ export class NFTService {
   static async getNFTs(): Promise<ApiResponse<NFT[]>> {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
-  static async getNFTsByOwner(address: string): Promise<ApiResponse<NFT[]>> {
-    return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.MY_NFT);
+  static async getNFTsByOwner(params?: GetMyNFTsParams): Promise<ApiResponse<MyNFTsResponse['data']>> {
+    return ApiService.get<MyNFTsResponse['data']>(API_ENDPOINTS.NFT.MY_NFT, params);
   }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {
@@ -94,6 +94,14 @@ export class NFTService {
   }
   static async unlikeNft(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.post(`${API_ENDPOINTS.NFT.UNLIKE}`, { nftId });
+  }
+
+  // Dang ban NFT len marketplace
+  static async listNFTForSale(data: {
+    nftId: string;
+    salePrice: number;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.POST_FOR_SALE, data);
   }
 }
 

@@ -31,7 +31,7 @@ interface UseMyNFTCollectionResult {
  * const { nfts, stats, loading, error, filter, setFilter } = useMyNFTCollection();
  */
 export function useMyNFTCollection(): UseMyNFTCollectionResult {
-  const [nfts, setNfts] = useState<NFTItem[]>([]);
+  const [allNFTs, setAllNFTs] = useState<NFTItem[]>([]); // Luu toan bo NFT
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NFTFilterType>('all');
@@ -44,58 +44,59 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     hasPrevPage: false,
   });
 
-  // Fetch NFTs tu API
+  // Fetch TAT CA NFTs tu API (khong filter)
   const fetchNFTs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Chuyen doi filter sang param API
-      let isSale: boolean | undefined;
-      if (filter === 'sale') {
-        isSale = true;
-      } else if (filter === 'not-listed') {
-        isSale = false;
-      }
-      // filter === 'all' thi khong truyen param isSale
-
+      // Fetch ALL NFTs - khong truyen isSale param
       const response = await NFTService.getNFTsByOwner({
-        page: pagination.page,
-        limit: pagination.limit,
-        isSale,
+        page: 1,
+        limit: 100, // Tang limit de lay het NFT
         sortBy: 'createdAt',
         sortOrder: 'desc',
       });
 
       if (response.success && response.data) {
-        setNfts(response.data.nfts);
+        setAllNFTs(response.data.nfts);
         setPagination(response.data.pagination);
       } else {
         setError(response.message || 'Khong the tai danh sach NFT');
-        setNfts([]);
+        setAllNFTs([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Loi khong xac dinh');
-      setNfts([]);
+      setAllNFTs([]);
     } finally {
       setLoading(false);
     }
-  }, [filter, pagination.page, pagination.limit]);
+  }, []); // Khong phu thuoc vao filter nua
 
-  // Fetch data khi filter thay doi
+  // Fetch data khi mount
   useEffect(() => {
     fetchNFTs();
   }, [fetchNFTs]);
 
-  // Tinh toan stats tu danh sach NFTs
+  // Filter NFTs o client-side dua tren filter state
+  const nfts = useMemo(() => {
+    if (filter === 'sale') {
+      return allNFTs.filter((nft) => nft.isSale === true);
+    } else if (filter === 'not-listed') {
+      return allNFTs.filter((nft) => nft.isSale === false);
+    }
+    return allNFTs; // 'all'
+  }, [allNFTs, filter]);
+
+  // Tinh toan stats tu TOAN BO NFTs
   const stats = useMemo((): NFTStats => {
-    const totalNFTs = nfts.length;
-    const onSale = nfts.filter((nft) => nft.isSale).length;
-    const notListed = nfts.filter((nft) => !nft.isSale).length;
-    const inactive = nfts.filter((nft) => !nft.isActive).length;
+    const totalNFTs = allNFTs.length;
+    const onSale = allNFTs.filter((nft) => nft.isSale === true).length;
+    const notListed = allNFTs.filter((nft) => nft.isSale === false).length;
+    const inactive = allNFTs.filter((nft) => !nft.isActive).length;
 
     // Tinh tong gia tri: uu tien salePrice, neu khong co thi dung price
-    const totalValue = nfts.reduce((sum, nft) => {
+    const totalValue = allNFTs.reduce((sum, nft) => {
       return sum + (nft.salePrice || nft.price);
     }, 0);
 
@@ -106,7 +107,7 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
       totalValue,
       inactive,
     };
-  }, [nfts]);
+  }, [allNFTs]);
 
   // Reset filter handler
   const handleSetFilter = useCallback((newFilter: NFTFilterType) => {
