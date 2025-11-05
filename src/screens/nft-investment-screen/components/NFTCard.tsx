@@ -9,6 +9,7 @@ import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
+import { getLevelBadge } from "@/lib/utils";
 
 interface NFTInvestmentCardProps {
   nft: any;
@@ -206,28 +207,8 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             rarityColors[nft.rarity as keyof typeof rarityColors]
           }`}
         >
-          {nft.rarity}
+          {getLevelBadge(nft.level as string)}
         </Badge>
-
-        {/* Like/Purchase Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-          onClick={isLiked ? handleUnlike : handleLike}
-        >
-          {/* {isOtherNFT ? (
-            <ShoppingBag className="w-4 h-4" />
-          ) : (         
-            <Heart className="w-4 h-4" />
-          )} */}
-          <Heart
-            className={`w-4 h-4`}
-            fill={isLiked ? "currentColor" : "none"}
-            color={isLiked ? "#ec4899" : undefined}
-            stroke={isLiked ? "#ec4899" : "white"}
-          />
-        </Button>
       </div>
 
       {/* Info */}

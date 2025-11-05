@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { NFT } from "@/screens/nft-market-screen/hooks";
 import { NFTInvestmentCard } from "./NFTCard";
 
 interface NFTGridCardProps {
-  nfts: NFT[];
+  nfts: any[];
   title: string;
   initialCount?: number;
 }
