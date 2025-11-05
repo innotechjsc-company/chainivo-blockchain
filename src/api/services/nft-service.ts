@@ -1,5 +1,6 @@
 import { ApiService, API_ENDPOINTS } from "../api";
 import type { ApiResponse } from "../api";
+import type { MyNFTsResponse } from "@/types/NFT";
 
 export interface NFT {
   _id: string;
@@ -44,6 +45,15 @@ export interface TransferNFTData {
   fromAddress: string;
   toAddress: string;
   transactionHash?: string;
+}
+
+// Params cho API /api/nft/my-nft
+export interface GetMyNFTsParams {
+  page?: number;
+  limit?: number;
+  isSale?: boolean;
+  sortBy?: 'name' | 'price' | 'viewsCount' | 'likesCount' | 'createdAt' | 'publishedAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class NFTService {
