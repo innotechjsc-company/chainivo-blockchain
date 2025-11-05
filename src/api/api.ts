@@ -137,10 +137,8 @@ export const API_ENDPOINTS = {
     BUY_P2P: "/api/nft-market/buy",
     BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
       `/api/nft/transaction-history/list?nftId=${id}`,
-    INVESTMENT_NFT_HISTORY_TRANSACTION: (
-      nftId: string
-    ) => `/api/nft-investment-history?where[nft][equals]=${nftId}
-`,
+    INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
+      `/api/nft-investment-history?where[nft][equals]=${nftId}`,
   },
 
   STAKING: {
@@ -214,7 +212,7 @@ export interface UpdateProfileResponse {
   userId: string;
   name?: string;
   avatar?: AvatarObject;
-  avatarUrl?: string;  // Backend trả về cả avatarUrl string để dễ sử dụng
+  avatarUrl?: string; // Backend trả về cả avatarUrl string để dễ sử dụng
   updatedAt: string;
 }
 export interface ApiTransactionHistoryResponse<T = any> {
@@ -258,11 +256,14 @@ export class ApiService {
     }
   }
 
-  static async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+  static async postFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await api.post(endpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
       return response.data;
@@ -299,11 +300,14 @@ export class ApiService {
     }
   }
 
-  static async patchFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+  static async patchFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await api.patch(endpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
       return response.data;
