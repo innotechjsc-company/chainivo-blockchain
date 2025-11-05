@@ -237,6 +237,7 @@ export interface NFTItem {
   createdAt: string;
   publishedAt: string;
   updatedAt: string;
+  purchaseDate: string;
 }
 
 export interface Pagination {

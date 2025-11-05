@@ -121,6 +121,7 @@ export class NFTService {
         createdAt: nft.createdAt,
         publishedAt: nft.investmentStartDate || nft.createdAt,
         updatedAt: nft.updatedAt,
+        purchaseDate: ownerships.metadata?.purchaseDate || nft.createdAt,
       } as MyNFTsResponse['data']['nfts'][number];
     });
 
@@ -172,6 +173,7 @@ export class NFTService {
         createdAt: nft.createdAt,
         publishedAt: nft.investmentStartDate || nft.createdAt,
         updatedAt: nft.updatedAt,
+        purchaseDate: ownerships.metadata?.purchaseDate || nft.createdAt,
       } as MyNFTsResponse['data']['nfts'][number];
     });
 

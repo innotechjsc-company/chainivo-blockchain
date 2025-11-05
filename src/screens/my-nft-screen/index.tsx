@@ -31,7 +31,7 @@ export default function MyNFTScreen(): JSX.Element {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await NFTService.getNFTOwnerships({ page: 1, limit: 50 });
+        const res = await NFTService.getMyNFTOwnerships({ page: 1, limit: 50 });
         const items = res?.data?.nfts ?? [];
         // Loc client-side: chi lay NFT co type = 'investment'
         const investmentNFTs = items.filter(
@@ -50,7 +50,24 @@ export default function MyNFTScreen(): JSX.Element {
 
   const content = useMemo(() => {
     if (isLoading) {
-      return <div className="py-10 text-center">Dang tai du lieu...</div>;
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
+            >
+              <div className="w-full h-48 bg-gray-100 dark:bg-white/10 animate-pulse" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 w-3/4 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-4 w-full bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-4 w-5/6 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-5 w-1/3 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
     }
 
     if (error) {
@@ -66,7 +83,7 @@ export default function MyNFTScreen(): JSX.Element {
         {nfts.map((nft) => (
           <div
             key={nft.id}
-            className="rounded-lg border border-gray-200 overflow-hidden bg-white dark:bg-neutral-900"
+            className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
           >
             <img
               src={nft.image}
@@ -89,13 +106,35 @@ export default function MyNFTScreen(): JSX.Element {
                 </span>
                 <span className="ml-1 uppercase">{nft.currency}</span>
               </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="text-gray-500">Ngày mua</div>
+                  <div className="font-medium">
+                    {new Date(
+                      nft.purchaseDate || nft.createdAt
+                    ).toLocaleDateString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Cấp độ</div>
+                  <div className="font-medium">{nft.level}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Lượt xem</div>
+                  <div className="font-medium">{nft.viewsCount}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Lượt thích</div>
+                  <div className="font-medium">{nft.likesCount}</div>
+                </div>
+              </div>
               {nft.isSale ? (
                 <div className="mt-2 inline-block text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20">
-                  Dang rao ban
+                  Đang bán
                 </div>
               ) : (
                 <div className="mt-2 inline-block text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 dark:bg-white/10">
-                  Khong rao ban
+                  Không bán
                 </div>
               )}
             </div>
@@ -106,8 +145,8 @@ export default function MyNFTScreen(): JSX.Element {
   }, [isLoading, error, nfts]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">NFT cua toi - Dau tu</h1>
+    <div className="container mx-auto px-4 pt-4 pb-8">
+      <h1 className="text-2xl font-bold mb-6 pt-20">NFT Cổ phần</h1>
       {content}
     </div>
   );
