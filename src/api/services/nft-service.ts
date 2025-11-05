@@ -60,16 +60,28 @@ export interface GetMyNFTsParams {
   page?: number;
   limit?: number;
   isSale?: boolean;
-  sortBy?: 'name' | 'price' | 'viewsCount' | 'likesCount' | 'createdAt' | 'publishedAt';
-  sortOrder?: 'asc' | 'desc';
+  ownerAddress?: string;
+  sortBy?:
+    | "name"
+    | "price"
+    | "viewsCount"
+    | "likesCount"
+    | "createdAt"
+    | "publishedAt";
+  sortOrder?: "asc" | "desc";
 }
 
 export class NFTService {
   static async getNFTs(): Promise<ApiResponse<NFT[]>> {
     return ApiService.get<NFT[]>(API_ENDPOINTS.NFT.LIST);
   }
-  static async getNFTsByOwner(params?: GetMyNFTsParams): Promise<ApiResponse<MyNFTsResponse['data']>> {
-    return ApiService.get<MyNFTsResponse['data']>(API_ENDPOINTS.NFT.MY_NFT, params);
+  static async getNFTsByOwner(
+    params?: GetMyNFTsParams
+  ): Promise<ApiResponse<MyNFTsResponse["data"]>> {
+    return ApiService.get<MyNFTsResponse["data"]>(
+      API_ENDPOINTS.NFT.MY_NFT,
+      params
+    );
   }
 
   static async getNFTById(id: string): Promise<ApiResponse<NFT>> {

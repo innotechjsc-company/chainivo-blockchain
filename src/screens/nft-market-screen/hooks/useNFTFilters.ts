@@ -33,10 +33,10 @@ export const useNFTFilters = (nfts: NFT[]) => {
       return;
     }
     try {
-      const response = await NFTService.getNFTsByOwner(
-        userInfo?.walletAddress || ""
-      );
-      debugger
+      const response = await NFTService.getNFTsByOwner({
+        ownerAddress: userInfo?.walletAddress || "",
+      });
+      debugger;
       if (response.success) {
         setUserNFTs((response.data as any).nfts || []);
       } else {
