@@ -33,9 +33,9 @@ export const useNFTFilters = (nfts: NFT[]) => {
       return;
     }
     try {
-      const response = await NFTService.getNFTsByOwner(
-        userInfo?.walletAddress || ""
-      );
+      const response = await NFTService.getNFTsByOwner({
+        ownerAddress: userInfo?.walletAddress || "",
+      });
       if (response.success) {
         setUserNFTs((response.data as any).nfts || []);
       } else {
