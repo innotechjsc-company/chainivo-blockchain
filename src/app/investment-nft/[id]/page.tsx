@@ -78,22 +78,17 @@ export default function InvestmentNFTDetailPage() {
     setBuyLoading(true);
 
     try {
-      debugger;
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
-        // toAddressData: data?.creator?.address ?? "",
         amountCan: Number(data?.pricePerShare * Number(quantity)) ?? 0,
       });
 
-      // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        debugger;
         let result = await NFTService.buyNFTInvestmentList({
           nftId: data?.id,
           transactionHash: response?.transactionHash,
           shares: Number(quantity),
         });
-        debugger;
         if (result.success) {
           setBuyLoading(false);
           toast.success("Mua cổ phần NFT thành công!");
@@ -117,7 +112,7 @@ export default function InvestmentNFTDetailPage() {
   };
 
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
-  const totalShares: number = Number(data?.totalShares ?? 0);
+  const totalShares: number = Number(data?.availableShares ?? 0);
   const progress = totalShares > 0 ? (sharesSold / totalShares) * 100 : 0;
   const pricePerShare: number = Number(data?.pricePerShare ?? 0);
   const totalCost = Math.max(1, quantity) * (pricePerShare || 0);
@@ -141,6 +136,50 @@ export default function InvestmentNFTDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
+        {/* Loading Spinner - Initial Data Load */}
+        {loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="glass border border-cyan-500/20 rounded-lg p-8 flex flex-col items-center gap-4 max-w-sm">
+              {/* Spinner */}
+              <svg
+                className="animate-spin h-12 w-12 text-cyan-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+
+              {/* Text */}
+              <div className="text-center space-y-2">
+                <h3 className="text-white font-semibold text-lg">
+                  Đang tải NFT
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Vui lòng chờ trong giây lát...
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
@@ -394,18 +433,85 @@ export default function InvestmentNFTDetailPage() {
                 Thoát
               </Button>
               <Button
+                disabled={buyLoading}
                 onClick={() => {
                   // Xử lý mua cổ phần ở đây
                   setShowConfirmation(false);
                   handleBuyNFT();
                 }}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold"
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed gap-2 flex items-center justify-center"
               >
-                Đồng ý
+                {buyLoading && (
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                )}
+                {buyLoading ? "Đang xử lý..." : "Đồng ý"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Loading Spinner Overlay */}
+        {buyLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="glass border border-cyan-500/20 rounded-lg p-8 flex flex-col items-center gap-4 max-w-sm">
+              {/* Spinner */}
+              <svg
+                className="animate-spin h-12 w-12 text-cyan-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+
+              {/* Text */}
+              <div className="text-center space-y-2">
+                <h3 className="text-white font-semibold text-lg">
+                  Giao dịch đang thực hiện
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Vui lòng không đóng trình duyệt hoặc thoát khỏi trang
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

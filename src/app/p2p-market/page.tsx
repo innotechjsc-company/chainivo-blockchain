@@ -338,7 +338,6 @@ export default function P2PMarketPage() {
                       if (pendingRange && pendingRange.length === 2) {
                         params.minPrice = pendingRange[0];
                         params.maxPrice = pendingRange[1];
-                        debugger;
                       }
                       fetchP2P(
                         Object.keys(params).length > 0 ? params : undefined
