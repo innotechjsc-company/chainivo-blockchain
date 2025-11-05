@@ -21,7 +21,7 @@ import { MyNFTCollection } from "@/components/account/MyNFTCollection";
 
 interface Profile {
   name: string;
-  avatar_url: string | null;
+  avatarUrl: string | null;  //
   can_balance: number;
   membership_tier: string;
   total_invested: number;
@@ -54,7 +54,7 @@ export default function AccountManagementPage() {
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatar_url: avatarUrl,
+        avatarUrl: avatarUrl,  // 
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -108,11 +108,10 @@ export default function AccountManagementPage() {
   };
 
   const handleUpdateProfile = async () => {
-    // Reset messages
+
     setUpdateError(null);
     setUpdateSuccess(null);
 
-    // Validate: least 1 field must be provided
     const trimmedName = username.trim();
     const hasNameChange = trimmedName !== profile?.name;
     const hasAvatarChange = selectedAvatar !== null;
@@ -122,7 +121,6 @@ export default function AccountManagementPage() {
       return;
     }
 
-    // Validate name if changing
     if (hasNameChange) {
       const validationError = validateName(trimmedName);
       if (validationError) {
@@ -156,9 +154,16 @@ export default function AccountManagementPage() {
           updateData.name = trimmedName;
         }
 
-        if (hasAvatarChange && response.data?.avatar?.url) {
-          // Lấy avatar URL từ API response (backend trả về full avatar object)
-          avatarUrl = response.data.avatar.url;
+        
+        const actualData = (response.data as any)?.data || response.data;
+
+        if (hasAvatarChange && actualData?.avatarUrl) {
+        
+          avatarUrl = actualData.avatarUrl;
+          updateData.avatarUrl = avatarUrl;
+        } else if (hasAvatarChange && actualData?.avatar?.url) {
+     
+          avatarUrl = actualData.avatar.url;
           updateData.avatarUrl = avatarUrl;
         }
 
@@ -171,7 +176,7 @@ export default function AccountManagementPage() {
             ? {
                 ...prev,
                 name: hasNameChange ? trimmedName : prev.name,
-                avatar_url: hasAvatarChange && avatarUrl ? avatarUrl : prev.avatar_url,
+                avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl,  //
               }
             : null
         );
@@ -295,6 +300,9 @@ export default function AccountManagementPage() {
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
               </TabsTrigger>
+              <TabsTrigger value="my-nft"> 
+                NFT của tôi
+              </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
@@ -310,7 +318,7 @@ export default function AccountManagementPage() {
                 <div className="flex flex-col gap-6 mb-6">
                   <div className="flex gap-6">
                     <AvatarUpload
-                      currentAvatar={profile?.avatar_url || ""}
+                      currentAvatar={profile?.avatarUrl || ""}
                       userName={username}
                       onAvatarSelect={handleAvatarSelect}
                       disabled={updateLoading}
@@ -318,7 +326,7 @@ export default function AccountManagementPage() {
                     />
                     <div className="flex-1">
                       <div className="mb-4">
-                        <Label htmlFor="name">Ten nguoi dung</Label>
+                        <Label htmlFor="name">Tên hiển thị </Label>
                         <Input
                           id="name"
                           value={username}
@@ -338,7 +346,7 @@ export default function AccountManagementPage() {
                         onClick={handleUpdateProfile}
                         disabled={updateLoading}
                       >
-                        {updateLoading ? "Dang cap nhat..." : "Cap nhat"}
+                        {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
                       </Button>
                     </div>
                   </div>

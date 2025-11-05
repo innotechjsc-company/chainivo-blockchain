@@ -202,6 +202,7 @@ export interface UpdateProfileResponse {
   userId: string;
   name?: string;
   avatar?: AvatarObject;
+  avatarUrl?: string;  // Backend trả về cả avatarUrl string để dễ sử dụng
   updatedAt: string;
 }
 
