@@ -98,7 +98,7 @@ export class NFTService {
     );
   }
   static async getNFTInvestmentList(): Promise<ApiResponse<any[]>> {
-    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT);
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST);
   }
   static async buyNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_INVESTMENT_NFT, data);
