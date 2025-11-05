@@ -11,6 +11,17 @@ import { Heart, ArrowLeft } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import TransferService from "@/services/TransferService";
+import { useAppSelector } from "@/stores";
 
 export default function InvestmentNFTDetailPage() {
   const params = useParams();
@@ -18,6 +29,9 @@ export default function InvestmentNFTDetailPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [quantity, setQuantity] = useState<number>(1);
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  const [buyLoading, setBuyLoading] = useState<boolean>(false);
+  const user = useAppSelector((state) => state.auth.user);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -58,6 +72,49 @@ export default function InvestmentNFTDetailPage() {
       (data?.type === "tier" ? "/tier-gold.jpg" : "/nft-box.jpg")
     );
   }, [data]);
+
+  const handleBuyNFT = async () => {
+    if (!data || buyLoading) return;
+    setBuyLoading(true);
+
+    try {
+      debugger;
+      const response = await TransferService.sendCanTransfer({
+        fromAddress: user?.walletAddress ?? "",
+        // toAddressData: data?.creator?.address ?? "",
+        amountCan: Number(data?.pricePerShare * Number(quantity)) ?? 0,
+      });
+
+      // Nếu có transactionHash thì coi như thành công
+      if (response?.transactionHash) {
+        debugger;
+        let result = await NFTService.buyNFTInvestmentList({
+          nftId: data?.id,
+          transactionHash: response?.transactionHash,
+          shares: Number(quantity),
+        });
+        debugger;
+        if (result.success) {
+          setBuyLoading(false);
+          toast.success("Mua cổ phần NFT thành công!");
+          router.push("/nft-investment");
+        } else {
+          setBuyLoading(false);
+          toast.error(
+            "Mua cổ phần NFT thất bại , vui lòng liên hệ admin để được hỗ trợ: " +
+              result.message
+          );
+          console.error("Failed to buy NFT: " + result.message);
+        }
+      } else {
+        setBuyLoading(false);
+        toast.error("Mua NFT thất bại: Không có transaction hash");
+        console.error("Failed to buy NFT: No transaction hash");
+      }
+    } catch (error: any) {
+      setBuyLoading(false);
+    }
+  };
 
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
   const totalShares: number = Number(data?.totalShares ?? 0);
@@ -213,7 +270,10 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12">
+                <Button
+                  onClick={() => setShowConfirmation(true)}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -300,6 +360,52 @@ export default function InvestmentNFTDetailPage() {
             </Card>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+          <DialogContent
+            className="glass border-cyan-500/20"
+            showCloseButton={false}
+          >
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">
+                Xác nhận mua cổ phần
+              </DialogTitle>
+            </DialogHeader>
+            <div className="text-muted-foreground py-4">
+              <p>
+                Bạn có chắc chắn muốn mua{" "}
+                <span className="font-semibold text-cyan-400">{quantity}</span>{" "}
+                cổ phần của NFT &quot;
+                <span className="font-semibold text-white">{data?.name}</span>
+                &quot; với tổng giá{" "}
+                <span className="font-semibold text-purple-400">
+                  {formatAmount(totalCost)} {currency}
+                </span>
+                ?
+              </p>
+            </div>
+            <DialogFooter className="gap-3 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmation(false)}
+                className="flex-1 bg-background/50 hover:bg-red-500/20 border-red-500/30 text-red-400 hover:text-red-300"
+              >
+                Thoát
+              </Button>
+              <Button
+                onClick={() => {
+                  // Xử lý mua cổ phần ở đây
+                  setShowConfirmation(false);
+                  handleBuyNFT();
+                }}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold"
+              >
+                Đồng ý
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

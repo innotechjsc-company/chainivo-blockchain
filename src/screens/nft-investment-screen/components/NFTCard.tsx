@@ -31,14 +31,10 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   const [isLiked, setIsLiked] = useState<boolean>(
     Boolean(nft?.isLike || nft?.isLiked)
   );
-  const sharesSold: number = Number(
-    nft?.sharesSold ?? nft?.soldShares ?? nft?.sold ?? 0
-  );
-  const totalShares: number = Number(
-    nft?.totalShares ?? nft?.supply ?? nft?.maxShares ?? 0
-  );
+  const soldShares: number = Number(nft?.soldShares ?? 0);
+  const totalShares: number = Number(nft?.availableShares ?? 0);
   const progressPercentage =
-    isOtherNFT && totalShares > 0 ? (sharesSold / totalShares) * 100 : 0;
+    totalShares > 0 ? (soldShares / totalShares) * 100 : 0;
 
   const totalValue: number | string | undefined =
     nft?.totalValue ?? nft?.total_price ?? nft?.totalETH ?? nft?.priceTotal;
@@ -232,9 +228,13 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-xs text-muted-foreground">Giá trị tổng</div>
             <div className="text-lg font-bold">
               {totalValue !== undefined
-                ? `${formatNumber(totalValue)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(totalValue)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
                 : nft?.price
-                ? `${formatNumber(nft?.price)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(nft?.price)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
                 : "Thương lượng"}
             </div>
           </div>
@@ -242,7 +242,9 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-xs text-muted-foreground">Giá/cổ phần</div>
             <div className="text-lg font-bold">
               {pricePerShare !== undefined
-                ? `${formatNumber(pricePerShare)} ${(nft?.currency || "ETH").toUpperCase()}`
+                ? `${formatNumber(pricePerShare)} ${(
+                    nft?.currency || "ETH"
+                  ).toUpperCase()}`
                 : "-"}
             </div>
           </div>
@@ -253,7 +255,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           <span>Tiến trình bán</span>
           {totalShares > 0 && (
             <span>
-              {sharesSold}/{totalShares} cổ phần
+              {nft?.soldShares}/{nft?.availableShares} cổ phần
             </span>
           )}
         </div>
