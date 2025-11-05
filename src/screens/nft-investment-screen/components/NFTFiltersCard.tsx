@@ -24,7 +24,7 @@ export const NFTFiltersCard = ({
   onResetFilters,
   onSearch,
 }: NFTFiltersCardProps) => {
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [pendingRange, setPendingRange] = useState<[number, number]>(
     filters.priceRange
   );
@@ -37,6 +37,11 @@ export const NFTFiltersCard = ({
     shares: true,
     price: true,
   });
+
+  // Luôn ẩn bộ lọc khi component mount hoặc load lại
+  useEffect(() => {
+    setShowFilters(false);
+  }, []);
 
   // Toggle section expansion
   const toggleSection = (section: string) => {

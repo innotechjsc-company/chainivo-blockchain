@@ -51,7 +51,7 @@ export default function InvestmentsScreen() {
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
         {/* Investment Hero with Charts & Metrics */}
-        <InvestmentHero />
+        <InvestmentHero phases={phases} />
 
         {/* User Dashboard */}
         <UserDashboardCard

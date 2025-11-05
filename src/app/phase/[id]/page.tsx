@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useEffect } from "react";
+import { useState, use, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [isInvestmentConfirmed, setIsInvestmentConfirmed] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const { user } = useAuth();
+  // Ref for auto-scroll to Investment Calculator
+  const calculatorRef = useRef<HTMLDivElement>(null);
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
   useEffect(() => {
@@ -64,6 +66,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         if (isMounted) {
           if (res.success && res.data) {
             setPhase(res.data);
+            // Auto-scroll to calculator section after data loads
+            setTimeout(() => {
+              calculatorRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }, 500);
           } else {
             setError(res.error || "Không thể tải dữ liệu giai đoạn");
             setPhase(null);
@@ -424,7 +433,10 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         </section>
 
         {/* Investment Calculator & Live Transactions */}
-        <section className="py-16 bg-gradient-to-b from-background to-background/50">
+        <section
+          ref={calculatorRef}
+          className="py-16 bg-gradient-to-b from-background to-background/50"
+        >
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {/* Calculator */}
@@ -556,6 +568,130 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     <Shield className="w-4 h-4" />
                     <span>Bảo mật bởi blockchain technology</span>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass border-primary/40 animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Lợi ích của {phase.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Benefits List */}
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Vẫn còn bonus 10%
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Staking rewards cao hơn
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Partner benefits
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Premium support
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security Badge */}
+                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-white mb-1">
+                          Bảo vệ 100%
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Mọi giao dịch được bảo vệ bởi smart contracts và có
+                          thể kiểm chứng trên blockchain
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Xác nhận đầu tư</DialogTitle>
+                        <DialogDescription>
+                          Bạn có chắc muốn đầu tư {investAmount} USD vào giai
+                          đoạn {phase.name}?
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Số tiền:</span>
+                          <span className="font-medium">
+                            {investAmount} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Giá mỗi token:</span>
+                          <span className="font-medium">
+                            {phase.pricePerToken} USD
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Tổng token nhận:</span>
+                          <span className="font-semibold">
+                            {totalTokens} CAN
+                          </span>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsConfirmOpen(false)}
+                        >
+                          Hủy
+                        </Button>
+                        <Button
+                          disabled={buyLoading}
+                          onClick={() => {
+                            console.log(
+                              `Confirm investing ${investAmount} USD into ${phase.name}`
+                            );
+                            handleInvest();
+                            setIsConfirmOpen(false);
+                          }}
+                        >
+                          {buyLoading ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner className="size-4" />
+                              Đang xử lý...
+                            </span>
+                          ) : (
+                            "Xác nhận"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
 

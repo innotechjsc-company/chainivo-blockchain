@@ -34,14 +34,14 @@ export const NFTMarketHeaderCard = ({
     {
       icon: Package,
       label: "Tổng NFT",
-      value: analytics?.allNFT.toLocaleString(),
+      value: 1250,
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: analytics?.allUserCount,
+      value: 1000,
       trend: "+8.3%",
       trendUp: true,
     },
@@ -82,7 +82,7 @@ export const NFTMarketHeaderCard = ({
                 </div>
               </div>
               <div className="text-3xl font-bold gradient-text mb-1">
-                {stat.value}
+                {stat.value?.toLocaleString?.("en-US") ?? stat.value}
               </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </CardContent>
@@ -102,7 +102,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Khối lượng giao dịch</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {analytics?.allMoney.toLocaleString()}
+              {(100000).toLocaleString("en-US")}
             </div>
           </CardHeader>
           <CardContent className="pb-2">
@@ -134,7 +134,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {analytics?.priceRange.toLocaleString()}
+              {(50000).toLocaleString("en-US")} CAN
             </div>
           </CardHeader>
           <CardContent className="pb-2">

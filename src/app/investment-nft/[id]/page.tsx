@@ -562,11 +562,7 @@ export default function InvestmentNFTDetailPage() {
                       {transactions.map((tx: any, idx: number) => {
                         // Handle buyer address/username
 
-                        const displayBuyer = formatAddress(
-                          tx?.user?.walletAddress
-                        );
-
-                        const displayBuyerEmail = tx?.user?.email || "-";
+                        const displayBuyer = formatAddress(tx?.walletAddress);
 
                         // Handle shares
                         const shares = tx.shares || tx.quantity || 0;

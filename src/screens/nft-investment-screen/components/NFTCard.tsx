@@ -255,7 +255,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           <span>Tiến trình bán</span>
           {totalShares > 0 && (
             <span>
-              {nft?.soldShares}/{nft?.availableShares} cổ phần
+              {nft?.soldShares}/{nft?.availableShares + nft?.soldShares} cổ phần
             </span>
           )}
         </div>
