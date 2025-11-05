@@ -358,7 +358,7 @@ export default function P2PMarketPage() {
                 items.map((item) => (
                   <Card
                     key={item.id}
-                    className="overflow-hidden group hover:shadow-lg transition-shadow"
+                    className="overflow-hidden group hover:shadow-lg transition-shadow h-full flex flex-col"
                   >
                     <div className="relative aspect-[4/5] bg-muted">
                       <img
@@ -378,7 +378,7 @@ export default function P2PMarketPage() {
                         {getLevelBadge(item.level as string)}
                       </Badge>
                     </div>
-                    <CardContent className="p-3 space-y-1">
+                    <CardContent className="p-3 space-y-1 flex-1 flex flex-col">
                       <p className="text-xs text-muted-foreground">
                         {item.collection}
                       </p>
@@ -402,7 +402,7 @@ export default function P2PMarketPage() {
                           {getNFTType(item.type ?? "normal")}
                         </span>
                       </div>
-                      <div className="mt-3">
+                      <div className="mt-auto pt-3">
                         <Button
                           className="w-full h-10 justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-primary/70 
                           text-primary-foreground hover:from-primary/90 hover:to-primary/60 shadow-sm cursor-pointer"

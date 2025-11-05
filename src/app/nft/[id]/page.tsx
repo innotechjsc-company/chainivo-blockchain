@@ -159,7 +159,7 @@ export default function NFTDetailPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Không tìm thấy NFT</h1>
-            <Button onClick={() => router.push("/p2p-market")}>Quay lại</Button>
+            <Button onClick={() => router.back()}>Quay lại</Button>
           </div>
         </main>
       </div>
@@ -327,11 +327,7 @@ export default function NFTDetailPage() {
         </div>
       )}
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => router.push("/p2p-market")}
-        >
+        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -373,7 +369,9 @@ export default function NFTDetailPage() {
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
                 {(() => {
-                  const raw = (nftData as any)?.salePrice;
+                  const raw = (nftData as any)?.salePrice
+                    ? nftData?.salePrice
+                    : nftData?.price;
                   const n =
                     typeof raw === "string" ? parseFloat(raw) : Number(raw);
                   const safe = Number.isFinite(n) ? n : 0;
@@ -466,6 +464,85 @@ export default function NFTDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Documents Section */}
+        {nftData?.documents &&
+          Array.isArray(nftData.documents) &&
+          nftData.documents.length > 0 && (
+            <div className="mt-8">
+              <div className="glass rounded-xl p-6">
+                <h2 className="text-2xl font-bold mb-6">Tài liệu và Tập tin</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {nftData.documents.map((doc: any, idx: number) => {
+                    const docName =
+                      doc?.name || doc?.filename || `Tài liệu ${idx + 1}`;
+                    const docUrl = doc?.url || doc?.link || "";
+                    const docType = doc?.type || doc?.mimeType || "file";
+                    const fileSize = doc?.filesize || doc?.size || 0;
+
+                    // Format file size
+                    const formatFileSize = (bytes: number) => {
+                      if (bytes === 0) return "0 B";
+                      const k = 1024;
+                      const sizes = ["B", "KB", "MB", "GB"];
+                      const i = Math.floor(Math.log(bytes) / Math.log(k));
+                      return (
+                        Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                        " " +
+                        sizes[i]
+                      );
+                    };
+
+                    // Get file icon based on type
+                    const getFileIcon = (type: string) => {
+                      if (type.includes("pdf")) return "📄";
+                      if (type.includes("image")) return "🖼️";
+                      if (type.includes("video")) return "🎥";
+                      if (type.includes("audio")) return "🎵";
+                      if (type.includes("zip") || type.includes("rar"))
+                        return "📦";
+                      return "📎";
+                    };
+
+                    return (
+                      <a
+                        key={idx}
+                        href={docUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                            {getFileIcon(docType)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-white truncate group-hover:text-primary transition-colors">
+                              {docName}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatFileSize(fileSize)}
+                            </p>
+                            {docType && (
+                              <Badge
+                                variant="secondary"
+                                className="mt-2 text-xs bg-primary/20 text-primary"
+                              >
+                                {docType.split("/")[1] || docType}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DollarSign className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Transaction History Section */}
         <div className="mt-8">
