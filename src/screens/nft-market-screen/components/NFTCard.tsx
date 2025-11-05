@@ -224,7 +224,9 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-0 invisible pointer-events-none"
                 }`}
               >
-                {formatNumber(nft.salePrice)}{" "}
+                {nft.salePrice
+                  ? nft.salePrice.toLocaleString("vi-VN")
+                  : nft.price?.toLocaleString("vi-VN")}
                 {nft.currency?.toUpperCase() || "CAN"}
               </div>
 
@@ -236,7 +238,8 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-100 visible"
                 }`}
               >
-                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || "CAN"}
+                {nft.price?.toLocaleString("vi-VN")}{" "}
+                {nft.currency?.toUpperCase() || "CAN"}
               </div>
             </div>
           </div>
