@@ -109,25 +109,27 @@ export default function P2PMarketPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchP2P = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const resp: ApiResponse<any> = await NFTService.getP2PList();
-        if (resp?.success) {
-          setItems(resp?.data?.docs);
-        } else {
-          setItems([]);
-          setError(resp?.message || resp?.error || "Không thể tải danh sách");
-        }
-      } catch (e: any) {
-        setError(e?.message || "Không thể tải danh sách");
+  // Fetch P2P list with optional params
+  const fetchP2P = async (params?: any) => {
+    try {
+      setLoading(true);
+      setError("");
+      const resp: ApiResponse<any> = await NFTService.getP2PList(params);
+      if (resp?.success) {
+        setItems(resp?.data?.docs);
+      } else {
         setItems([]);
-      } finally {
-        setLoading(false);
+        setError(resp?.message || resp?.error || "Không thể tải danh sách");
       }
-    };
+    } catch (e: any) {
+      setError(e?.message || "Không thể tải danh sách");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchP2P();
   }, []);
 
@@ -149,8 +151,8 @@ export default function P2PMarketPage() {
         )
       );
     }
-    if (sort === "price-asc") result.sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") result.sort((a, b) => b.price - a.price);
+    // Items đã được sort trong state khi chọn sort option
+    // Không cần sort lại ở đây
     return result;
   }, [search, sort, selectedCollections]);
 
@@ -176,12 +178,43 @@ export default function P2PMarketPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Sort:</span>
-            <Select value={sort} onValueChange={setSort}>
+            <Select
+              value={sort}
+              onValueChange={(value) => {
+                setSort(value);
+                if (value === "price-asc" || value === "price-desc") {
+                  setLoading(true);
+                  // Sort items trong state
+                  setTimeout(() => {
+                    setItems((prevItems) => {
+                      const sorted = [...prevItems];
+                      if (value === "price-asc") {
+                        sorted.sort((a, b) => {
+                          const priceA = Number(a.price ?? 0) || 0;
+                          const priceB = Number(b.price ?? 0) || 0;
+                          return priceA - priceB;
+                        });
+                      } else if (value === "price-desc") {
+                        sorted.sort((a, b) => {
+                          const priceA = Number(a.price ?? 0) || 0;
+                          const priceB = Number(b.price ?? 0) || 0;
+                          return priceB - priceA;
+                        });
+                      }
+                      return sorted;
+                    });
+                    setLoading(false);
+                  }, 300);
+                } else {
+                  // "recent" - không cần sort
+                  setLoading(false);
+                }
+              }}
+            >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Recently listed" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="recent">Recently listed</SelectItem>
                 <SelectItem value="price-asc">Price: Low to High</SelectItem>
                 <SelectItem value="price-desc">Price: High to Low</SelectItem>
               </SelectContent>
@@ -234,9 +267,12 @@ export default function P2PMarketPage() {
                         <SelectValue placeholder="-- Chọn loại --" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nft">NFT</SelectItem>
-                        <SelectItem value="membership">Membership</SelectItem>
-                        <SelectItem value="mystery-box">Mystery Box</SelectItem>
+                        <SelectItem value="normal">NFT Thường</SelectItem>
+                        <SelectItem value="rank">NFT Hạng</SelectItem>
+                        <SelectItem value="mysteryBox">
+                          NFT Hộp bí ẩn
+                        </SelectItem>
+                        <SelectItem value="investment">NFT Đầu tư</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -251,7 +287,7 @@ export default function P2PMarketPage() {
                         <SelectValue placeholder="-- Chọn đơn vị --" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bnb">BNB</SelectItem>
+                        <SelectItem value="polygon">Polygon</SelectItem>
                         <SelectItem value="can">CAN</SelectItem>
                         <SelectItem value="usdt">USDT</SelectItem>
                       </SelectContent>
@@ -283,12 +319,24 @@ export default function P2PMarketPage() {
                     />
                   </div>
                   <Button
-                    className="w-full"
+                    className="w-full cursor-pointer"
                     onClick={() => {
-                      setSearch("");
-                      setRarity("");
-                      setAssetType("");
-                      setUnit("");
+                      const params: any = {};
+                      if (search.trim()) {
+                        params.name = search.trim();
+                      }
+                      if (rarity) {
+                        params.level = rarity;
+                      }
+                      if (assetType) {
+                        params.type = assetType;
+                      }
+                      if (unit) {
+                        params.currency = unit;
+                      }
+                      fetchP2P(
+                        Object.keys(params).length > 0 ? params : undefined
+                      );
                     }}
                   >
                     Tìm kiếm
