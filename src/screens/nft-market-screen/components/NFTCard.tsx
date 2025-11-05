@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Eye, Heart, ShoppingBag, Plus, Send } from "lucide-react";
+import { ShoppingCart, Eye, Heart, ShoppingBag, Send } from "lucide-react";
 import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
@@ -181,14 +181,13 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-
-        {/* Rarity Badge */}
         <Badge
-          className={`absolute top-4 right-4 z-10 ${
-            rarityColors[nft.rarity as keyof typeof rarityColors]
+          variant="secondary"
+          className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
+            nft.isSale ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
         >
-          {nft.rarity}
+          Đang bán 
         </Badge>
 
         {/* Like/Purchase Button */}
@@ -226,7 +225,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         )}
 
         <div className="text-xs text-muted-foreground mb-3">
-          <span className="font-mono ">{nft?.description}</span>
+          <span className="font-mono ">{nft?.description}</span>/
         </div>
 
         <div className="flex items-center justify-between mb-4">
@@ -264,14 +263,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
 
           {/* Badge container - fixed width */}
           <div className="ml-2 w-20 h-6">
-            <Badge
-              variant="secondary"
-              className={`transition-opacity duration-200 ${
-                nft.isSale ? 'opacity-100 visible' : 'opacity-0 invisible'
-              }`}
-            >
-              Đang bán 
-            </Badge>
+            
           </div>
         </div>
 

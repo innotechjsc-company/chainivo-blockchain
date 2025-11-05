@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMyNFTCollection } from '@/hooks/useMyNFTCollection';
+import type { NFTFilterType } from '@/hooks/useMyNFTCollection';
 import { NFTStatsCards } from './NFTStatsCards';
 import { NFTCard } from '@/screens/nft-market-screen/components/NFTCard';
 import { ListNFTDialog } from './ListNFTDialog';
@@ -82,16 +83,16 @@ export function MyNFTCollection() {
       <NFTStatsCards {...stats} />
 
       {/* Filter Tabs */}
-      <Tabs value={filter} onValueChange={setFilter}>
+      <Tabs value={filter} onValueChange={(value) => setFilter(value as NFTFilterType)}>
         <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="all">
-            Tat ca ({stats.totalNFTs})
+            Tất cả ({stats.totalNFTs})
           </TabsTrigger>
           <TabsTrigger value="sale">
-            Dang ban ({stats.onSale})
+            Đang bán ({stats.onSale})
           </TabsTrigger>
           <TabsTrigger value="not-listed">
-            Chua ban ({stats.notListed})
+            NFT của bạn ({stats.notListed})
           </TabsTrigger>
         </TabsList>
       </Tabs>
