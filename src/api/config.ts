@@ -19,7 +19,8 @@ export const config = {
   API_BASE_URL: getEnvValue(
     "NEXT_PUBLIC_API_BASE_URL_DEV",
     "API_BASE_URL_PROD",
-    "http://localhost:3001"
+    "https://chainivo.online"
+    // "http://localhost:3001"
   ),
 
   FRONTEND_BASE_URL: getEnvValue(
@@ -176,3 +177,4 @@ export const buildBlockchainUrl = (
 };
 
 export const TOKEN_DEAULT_CURRENCY = "CAN";
+export const TOKEN_DEAULT_CURRENCY_INVESTMENT = "USDC";

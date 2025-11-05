@@ -30,6 +30,7 @@ export const useStakingData = () => {
     null
   );
   const [stakingMyPools, setStakingMyPools] = useState<StakingPool[]>([]);
+  const [getEarningPerHour, setGetEarningPerHour] = useState<number>(0);
   const userInfo = useAppSelector((state) => state.auth.user);
   // Fetch staking data
   const fetchStakingData = async () => {
@@ -111,6 +112,12 @@ export const useStakingData = () => {
 
     if (response?.success) {
       setStakingMyPools(response?.data?.stakes as StakingPool[]);
+      setGetEarningPerHour(
+        response?.data?.stakes.reduce(
+          (acc: number, stake: any) => acc + Number(stake.earningPerHour ?? 0),
+          0
+        )
+      );
     } else {
       setStakingMyPools([]);
     }
@@ -384,5 +391,6 @@ export const useStakingData = () => {
     addPendingStake,
     updateStakeStatus,
     removeStake,
+    getEarningPerHour,
   };
 };

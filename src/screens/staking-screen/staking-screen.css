@@ -41,7 +41,8 @@
 }
 
 .staking-form-actions {
-  margin-top: auto;
+  /* Khong day nut xuong cuoi cung nua */
+  margin-top: 1rem;
   padding-top: 1rem;
 }
 

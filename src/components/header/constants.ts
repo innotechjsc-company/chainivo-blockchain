@@ -56,12 +56,11 @@ export const LANGUAGES: Language[] = [
 ];
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
-  { href: "/", label: "Trang chủ" },
+  // { href: "/", label: "Trang chủ" },
   { href: "/investments", label: "Đầu tư" },
-  { href: "/mysterybox", label: "Hộp bí ẩn" },
-  // { href: "/membership", label: "Mua hạng" },
-  { href: "/nftmarket", label: "NFT Market" },
-  { href: "/missions", label: "Nhiệm vụ" },
+  { href: "/nft-investment", label: "Đầu tư NFT" },
+  { href: "/nft-market", label: "NFT Market" },
+  { href: "/p2p-market", label: "P2P Market" },
   { href: "/staking", label: "Staking" },
   { href: "/about", label: "Về chúng tôi" },
 ];

@@ -2,6 +2,24 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Users,
+  DollarSign,
+  Target,
+  TrendingUp,
+  Rocket,
+  ArrowRight,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Phase } from "@/api";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -14,6 +32,7 @@ interface BlockchainData {
 
 interface InvestmentHeroProps {
   className?: string;
+  phases: Phase[];
 }
 
 const CHART_DATA = [
@@ -63,6 +82,7 @@ const chartConfig = {
 
 export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
   className = "",
+  phases,
 }) => {
   const [stats, setStats] = useState<BlockchainData | null>(null);
   const router = useRouter();
@@ -81,7 +101,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
     setStats(mockStats);
   }, []);
 
-  const currentPhase = INVESTMENT_PHASES.find((p) => p.status === "active");
+  const currentPhase = phases.find((p: Phase) => p.status === "active");
+  const activePhase = phases.find((p: Phase) => p.status === "active");
   const circulationRatio = stats
     ? (stats.circulating_supply / stats.total_can_supply) * 100
     : 0;
@@ -120,9 +141,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl animate-[pulse_8s_ease-in-out_infinite]"></div>
       </div>
 
-      {/* <div className="container mx-auto px-4 relative z-10"> */}
-      {/* Title - Compact */}
-      {/* <div className="text-center mb-4 animate-fade-in">
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="text-center mb-4 animate-fade-in">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 animate-[fade-in_0.6s_ease-out]">
             <span className="gradient-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-[gradient_3s_ease_infinite]">
               Đầu tư CAN TOKEN
@@ -131,67 +151,104 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto animate-[fade-in_0.8s_ease-out]">
             Nền tảng đầu tư blockchain an toàn, minh bạch và sinh lời cao
           </p>
-        </div> */}
+        </div>
 
-      {/* Main Grid - Reversed */}
-      {/* <div className="grid lg:grid-cols-3 gap-3 mb-3"> */}
-      {/* Current Phase Progress - LEFT SIDE */}
-      {/* <Card className="glass p-4 hover:shadow-xl hover:shadow-primary/20 transition-all duration-500 border border-primary/30 animate-[fade-in_1s_ease-out] relative overflow-hidden group hover:scale-[1.02]"> */}
-      {/* Animated glow on hover */}
-      {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div> */}
-      {/* <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl group-hover:animate-[pulse_2s_ease-in-out_infinite]"></div> */}
+        {/* Main Grid - Reversed */}
+        <div className="grid lg:grid-cols-3 gap-3 mb-3">
+          {/* Current Phase Progress - LEFT SIDE */}
+          <Card className="glass p-4 hover:shadow-xl hover:shadow-primary/20 transition-all duration-500 border border-primary/30 animate-[fade-in_1s_ease-out] relative overflow-hidden group hover:scale-[1.02]">
+            {/* Animated glow on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl group-hover:animate-[pulse_2s_ease-in-out_infinite]"></div>
 
-      {/* <div className="relative z-10">
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold gradient-text">
                   Phase hiện tại
                 </h3>
                 <Rocket className="w-5 h-5 text-primary animate-[bounce_2s_ease-in-out_infinite]" />
               </div>
-              {currentPhase && (
-                <div className="space-y-4">
-                  <div className="text-center group-hover:scale-105 transition-transform duration-500">
-                    <div className="text-4xl font-bold gradient-text mb-1 animate-[scale-in_0.5s_ease-out]">
-                      Phase {currentPhase.phase}
-                    </div>
-                    <div className="text-lg font-semibold text-primary animate-[fade-in_0.8s_ease-out]">
-                      ${currentPhase.price}/CAN
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Tiến độ bán</span>
-                      <span className="font-bold text-primary">
-                        {currentPhase.progress}%
-                      </span>
-                    </div>
-                    <Progress value={currentPhase.progress} className="h-3" />
-                    <div className="text-xs text-muted-foreground text-center">
-                      {(
-                        (currentPhase.coins * currentPhase.progress) /
-                        100
-                      ).toLocaleString()}{" "}
-                      / {currentPhase.coins.toLocaleString()} CAN
-                    </div>
+              <div className="space-y-4">
+                <div className="text-center group-hover:scale-105 transition-transform duration-500">
+                  <div className="text-4xl font-bold gradient-text mb-1 animate-[scale-in_0.5s_ease-out]">
+                    {phases.find((p: Phase) => p.status === "active")?.name}
                   </div>
-
-                  <Button
-                    size="default"
-                    className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
-                    onClick={() => router.push(`/phase/${currentPhase.phase}`)}
-                  >
-                    <Rocket className="w-4 h-4 mr-2 group-hover/btn:animate-bounce" />
-                    Đầu tư ngay
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
+                  <div className="text-lg font-semibold text-primary animate-[fade-in_0.8s_ease-out]">
+                    {
+                      phases.find((p: Phase) => p.status === "active")
+                        ?.pricePerToken
+                    }
+                    /CAN
+                  </div>
                 </div>
-              )}
-            </div> */}
-      {/* </Card> */}
 
-      {/* Chart Section - RIGHT SIDE */}
-      {/* <Card className="lg:col-span-2 glass p-3 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-[fade-in_1s_ease-out_0.2s] hover:scale-[1.01] group">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Tiến độ bán</span>
+                    <span className="font-bold text-primary">
+                      {(() => {
+                        const activePhase = phases.find(
+                          (p: Phase) => p.status === "active"
+                        );
+                        if (!activePhase || !activePhase.totalTokens)
+                          return "0%";
+                        const progress =
+                          (activePhase.soldTokens / activePhase.totalTokens) *
+                          100;
+                        return `${progress.toFixed(1)}%`;
+                      })()}
+                    </span>
+                  </div>
+                  {currentPhase && (
+                    <>
+                      {/* Custom Progress Bar - Cyan/Primary cho phần đã bán, Accent cho phần chưa bán */}
+                      <div className="relative h-3 bg-accent/30 rounded-full overflow-hidden border border-accent/40">
+                        {/* Phần đã bán - Gradient Cyan to Primary */}
+                        <div
+                          className="h-full bg-gradient-to-r from-cyan-500 to-primary transition-all duration-500"
+                          style={{
+                            width: `${Math.min(
+                              phases.find((p: Phase) => p.status === "active")
+                                ?.soldTokens
+                                ? (currentPhase.soldTokens /
+                                    currentPhase.totalTokens) *
+                                    100
+                                : 0,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground text-center">
+                        ${currentPhase.soldTokens?.toLocaleString() || 0} / $
+                        {currentPhase.totalTokens?.toLocaleString() || 0} CAN`
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <Button
+                  size="default"
+                  className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
+                  onClick={() =>
+                    router.push(
+                      `/phase/${
+                        phases.find((p: Phase) => p.status === "active")?.id
+                      }`
+                    )
+                  }
+                >
+                  <Rocket className="w-4 h-4 mr-2 group-hover/btn:animate-bounce" />
+                  Đầu tư ngay
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Chart Section - RIGHT SIDE */}
+          <Card className="lg:col-span-2 glass p-3 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-[fade-in_1s_ease-out_0.2s] hover:scale-[1.01] group">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold gradient-text">
                 Tăng trưởng người mua & Giá token
@@ -265,11 +322,11 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                 />
               </LineChart>
             </ChartContainer>
-          </Card> */}
-      {/* </div> */}
+          </Card>
+        </div>
 
-      {/* Key Metrics Grid */}
-      {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Card className="glass p-2.5 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:scale-105 animate-[fade-in_1s_ease-out_0.4s] group cursor-pointer">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors duration-300 group-hover:scale-110">
@@ -333,8 +390,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
               </div>
             </div>
           </Card>
-        </div> */}
-      {/* </div> */}
+        </div>
+      </div>
     </section>
   );
 };

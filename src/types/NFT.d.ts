@@ -209,3 +209,81 @@ export interface INFTModel {
 }
 
 export type NFTDocument = INFT;
+
+/**
+ * NFT API Response Types - Theo structure từ backend API
+ */
+export type NFTType = 'normal' | 'rank' | 'mysteryBox' | 'investment';
+export type NFTLevel = '1' | '2' | '3' | '4' | '5';
+export type NFTCurrency = 'can' | 'usdc' | 'usdt' | 'eth';
+
+export interface NFTItem {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  price: number;
+  salePrice: number | null;
+  walletAddress: string;
+  owner: string | null;
+  isSale: boolean;
+  isActive: boolean;
+  type: NFTType;
+  level: NFTLevel;
+  currency: NFTCurrency;
+  viewsCount: number;
+  likesCount: number;
+  isLike?: boolean;
+  createdAt: string;
+  publishedAt: string;
+  updatedAt: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface Analytics {
+  allNFT: number;
+  allUserCount: number;
+  allMoney: number;
+  priceRange: number;
+}
+
+export interface MyNFTsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    nfts: NFTItem[];
+    pagination: Pagination;
+  };
+}
+
+export interface NFTMarketplaceResponse {
+  success: boolean;
+  message: string;
+  data: {
+    nfts: NFTItem[];
+    analytics: Analytics;
+    pagination: Pagination;
+  };
+}
+
+export interface NFTDetailResponse {
+  success: boolean;
+  message: string;
+  data: NFTItem;
+}
+
+export interface NFTStats {
+  totalNFTs: number;
+  onSale: number;
+  notListed: number;
+  totalValue: number;
+  inactive: number;
+}

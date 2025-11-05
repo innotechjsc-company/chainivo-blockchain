@@ -4,10 +4,8 @@ import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService } from "@/services";
 
-const API_BASE_URL = config.API_BASE_URL;
-
 const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: config.API_BASE_URL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -130,6 +128,17 @@ export const API_ENDPOINTS = {
     LIKE: "/api/nft/like",
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
+    POST_FOR_SALE: "/api/nft-market/post-for-sale",
+    P2P_LIST: "/api/nft-market/for-sale",
+    LIST_INVESTMENT: "/api/investment-nft/list",
+    BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
+    BUY_P2P: "/api/nft-market/buy",
+    BUY_P2P_HISTORY_TRANSACTION: (id: string) =>
+      `/api/nft/transaction-history/list?nftId=${id}`,
+    INVESTMENT_NFT_HISTORY_TRANSACTION: (
+      nftId: string
+    ) => `/api/nft-investment-history?where[nft][equals]=${nftId}
+`,
   },
 
   STAKING: {
@@ -169,10 +178,12 @@ export const API_ENDPOINTS = {
   USER: {
     CONNECT_WALLET: "/api/connect-wallet",
     UPDATE_USER_PROFILE: "/api/users/profile",
+    CHANGE_PASSWORD: "/api/user/change-password",
+    UPDATE_PROFILE: "/api/user/update-profile",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
-    // PARTNERS: "/api/about/partners",
+    PARTNERS: "/api/about/partners",
     // ECOSYSTEM: "/api/about/ecosystem",
   },
 } as const;
@@ -180,6 +191,32 @@ export const API_ENDPOINTS = {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface AvatarObject {
+  id: string;
+  url: string;
+  filename: string;
+  alt?: string;
+  caption?: string;
+  mimeType: string;
+  filesize: number;
+  width: number;
+  height: number;
+  type: string;
+}
+
+export interface UpdateProfileResponse {
+  userId: string;
+  name?: string;
+  avatar?: AvatarObject;
+  avatarUrl?: string;  // Backend trả về cả avatarUrl string để dễ sử dụng
+  updatedAt: string;
+}
+export interface ApiTransactionHistoryResponse<T = any> {
+  docs?: T;
   error?: string;
   message?: string;
 }
@@ -219,6 +256,23 @@ export class ApiService {
     }
   }
 
+  static async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.post(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+        message: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
   static async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     try {
       const response = await api.put(endpoint, data);
@@ -227,6 +281,35 @@ export class ApiService {
       return {
         success: false,
         error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.patch(endpoint, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+      };
+    }
+  }
+
+  static async patchFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    try {
+      const response = await api.patch(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
+        message: error.response?.data?.message || error.message,
       };
     }
   }

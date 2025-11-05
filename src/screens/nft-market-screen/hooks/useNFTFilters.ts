@@ -9,6 +9,8 @@ export interface NFTFiltersState {
   rarity: string[];
   priceRange: [number, number];
   type: string;
+  status?: string[];
+  shares?: string[];
 }
 
 export const useNFTFilters = (nfts: NFT[]) => {
@@ -45,56 +47,30 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
 
+  // Ensure we always return an array for downstream components (e.g. Grid uses slice)
+  const normalizeNFTCollection = (input: any): any[] => {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    if (Array.isArray(input.nfts)) return input.nfts;
+    if (Array.isArray(input.items)) return input.items;
+    if (Array.isArray(input.data)) return input.data;
+    if (input.data) return normalizeNFTCollection(input.data);
+    return [];
+  };
+
   const fetchOtherNFTs = async () => {
     try {
-      const response = await NFTService.allNFTInMarketplace();
-
+      const response = await NFTService.getNFTInvestmentList();
       if (response.success) {
         const data: any = response.data as any;
+        const list = normalizeNFTCollection(data);
+        setOtherNFTsData(list);
 
-        // Handle different response structures
-        // Case 1: { nfts: [...], analytics: {...} }
-        // Case 2: { items: [...], analytics: {...} }
-        // Case 3: { data: { nfts: [...], analytics: {...} } }
-        // Case 4: Direct array with analytics at root level
-
-        if (data?.nfts || data?.items) {
-          setOtherNFTsData(data.nfts || data.items || []);
-          if (data.analytics) {
-            console.log(data.analytics);
-            setOtherNFTsAnalytics(data.analytics);
-          }
-        } else if (Array.isArray(data)) {
-          setOtherNFTsData(data);
-          // Analytics might be at response level
-          if ((response as any).analytics) {
-            setOtherNFTsAnalytics((response as any).analytics);
-          }
-        } else if (data?.data) {
-          // Nested structure
-          setOtherNFTsData(
-            data.data?.nfts || data.data?.items || data.data || []
-          );
-          if (data.data?.analytics || data.analytics) {
-            setOtherNFTsAnalytics(data.data?.analytics || data.analytics);
-          }
-        } else {
-          setOtherNFTsData(data || []);
-          // Check if analytics exists at any level
-          if (data?.analytics) {
-            setOtherNFTsAnalytics(data.analytics);
-          } else if ((response as any).analytics) {
-            setOtherNFTsAnalytics((response as any).analytics);
-          }
-        }
-
-        // Debug log to help identify the structure
-        console.log("NFT Marketplace Response:", {
-          hasData: !!data,
-          dataKeys: data ? Object.keys(data) : [],
-          hasAnalytics: !!(data?.analytics || (response as any).analytics),
-          responseKeys: Object.keys(response),
-        });
+        const analytics =
+          (data && (data.analytics || data?.data?.analytics)) ||
+          (response as any).analytics ||
+          null;
+        setOtherNFTsAnalytics(analytics);
       } else {
         toast.error(response.message);
         setOtherNFTsData([]);
@@ -120,6 +96,32 @@ export const useNFTFilters = (nfts: NFT[]) => {
       if (filterCriteria.rarity.length > 0) {
         const nftRarity = String(nft.level || nft.rarity || "");
         if (!filterCriteria.rarity.includes(nftRarity)) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (filterCriteria.status && filterCriteria.status.length > 0) {
+        const nftStatus = nft.isActive ? "active" : "inactive";
+        if (!filterCriteria.status.includes(nftStatus)) {
+          return false;
+        }
+      }
+
+      // Shares availability filter
+      if (filterCriteria.shares && filterCriteria.shares.length > 0) {
+        const remainingShares = Number(
+          nft.remainingShares ?? nft.availableShares ?? 0
+        );
+        const hasAvailableShares = remainingShares > 0;
+
+        if (
+          filterCriteria.shares.includes("available") &&
+          !hasAvailableShares
+        ) {
+          return false;
+        }
+        if (filterCriteria.shares.includes("sold_out") && hasAvailableShares) {
           return false;
         }
       }
@@ -156,9 +158,13 @@ export const useNFTFilters = (nfts: NFT[]) => {
       limit: 24,
       minPrice: String(f.priceRange[0]),
       maxPrice: String(f.priceRange[1]),
-      level: f.rarity.join(","),
+      level: f.rarity.length > 0 ? f.rarity.join(",") : undefined,
       type: f.type !== "all" ? f.type : undefined,
-      isActive: "true",
+      isActive: f.status?.includes("active")
+        ? "true"
+        : f.status?.includes("inactive")
+        ? "false"
+        : undefined,
     };
 
     try {

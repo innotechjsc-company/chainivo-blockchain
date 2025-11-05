@@ -5,36 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
+import { ShoppingCart, Eye, Heart, ShoppingBag, Send } from "lucide-react";
 import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
+import { formatNumber } from "@/utils/formatters";
 
 interface NFTCardProps {
   nft: any;
   type: "tier" | "other";
+  onListForSale?: (nft: any) => void;
 }
 
-const rarityColors = {
-  Common: "bg-gray-500/20 text-gray-300",
-  Rare: "bg-blue-500/20 text-blue-300",
-  Epic: "bg-purple-500/20 text-purple-300",
-  Legendary: "bg-yellow-500/20 text-yellow-300",
-  Mythic: "bg-pink-500/20 text-pink-300",
-  Divine: "bg-red-500/20 text-red-300",
-};
-
-export const NFTCard = ({ nft, type }: NFTCardProps) => {
+export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const router = useRouter();
-  const isOtherNFT = nft.type === "other";
   const [isLiked, setIsLiked] = useState<boolean>(
     Boolean(nft?.isLike || nft?.isLiked)
   );
-  const progressPercentage =
-    isOtherNFT && nft.sharesSold && nft.totalShares
-      ? (nft.sharesSold / nft.totalShares) * 100
-      : 0;
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -180,14 +168,13 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-
-        {/* Rarity Badge */}
         <Badge
-          className={`absolute top-4 right-4 z-10 ${
-            rarityColors[nft.rarity as keyof typeof rarityColors]
+          variant="secondary"
+          className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
+            nft.isSale ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
         >
-          {nft.rarity}
+          Đang bán 
         </Badge>
 
         {/* Like/Purchase Button */}
@@ -223,33 +210,73 @@ export const NFTCard = ({ nft, type }: NFTCardProps) => {
             </span>
           </div>
         )}
-
-        <div className="text-xs text-muted-foreground mb-3">
-          <span className="font-mono ">{nft?.description}</span>
-        </div>
-
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-xs text-muted-foreground">Giá</div>
-            <div className="text-xl font-bold text-primary">
-              {nft?.price ?? "Thương lượng"}
+          <div className="flex-1">
+            {/* Label dong theo trang thai */}
+            <div className="text-xs text-muted-foreground">
+              {nft.isSale && nft.salePrice ? "Giá đang bán" : "Gia gốc hiện tại "}     
+            </div>
+
+            {/* Container co dinh chieu cao - chua 2 gia tri */}
+            <div className="relative h-8">
+              {/* Gia ban - absolute position */}
+              <div
+                className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
+                  nft.isSale && nft.salePrice
+                    ? 'opacity-100 visible'
+                    : 'opacity-0 invisible pointer-events-none'
+                }`}
+              >
+                {formatNumber(nft.salePrice)} {nft.currency?.toUpperCase() || 'CAN'}
+              </div>
+
+              {/* Gia goc - absolute position (cung vi tri) */}
+              <div
+                className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
+                  nft.isSale && nft.salePrice
+                    ? 'opacity-0 invisible pointer-events-none'
+                    : 'opacity-100 visible'
+                }`}
+                >
+                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || 'CAN'}
+              
+              </div>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button
-            variant="default"
-            className="flex-1 gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/nft/${nft.id}?type=${type}`);
-            }}
-          >
-            {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-            {type === "other" ? "Mua ngay" : "Đã sở hữu"}
-          </Button>
+          {/* Button chinh: Mua ngay / Dang ban / Da so huu */}
+          {type === "tier" && !nft.isSale && onListForSale ? (
+            // NFT cua toi va chua ban -> hien nut "Dang ban"
+            <Button
+              variant="default"
+              className="flex-1 gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onListForSale(nft);
+              }}
+            >
+              <Send className="w-4 h-4" />
+              Đăng bán 
+            </Button>
+          ) : (
+            // NFT dang ban hoac NFT cua nguoi khac
+            <Button
+              variant="default"
+              className="flex-1 gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/nft/${nft.id}?type=${type}`);
+              }}
+            >
+              {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
+              {type === "other" ? "Mua ngay" : "Đã sở hữu"}
+            </Button>
+          )}
+
+          {/* Button xem chi tiet */}
           <Button
             variant="outline"
             size="icon"

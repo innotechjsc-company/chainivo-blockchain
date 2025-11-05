@@ -6,6 +6,10 @@ export class AboutService {
   static async getLeaders(): Promise<ApiResponse<Leader[]>> {
     return ApiService.get<Leader[]>(API_ENDPOINTS.ABOUT.LEADERS);
   }
+  static async getPartners(): Promise<ApiResponse<Leader[]>> {
+    return ApiService.get<Leader[]>(API_ENDPOINTS.ABOUT.PARTNERS);
+  }
+
 }
 
 export default AboutService;
