@@ -78,13 +78,13 @@ export function MyNFTCollection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className=" space-y-6 ">
       {/* Stats Cards */}
       <NFTStatsCards {...stats} />
 
       {/* Filter Tabs */}
       <Tabs value={filter} onValueChange={(value) => setFilter(value as NFTFilterType)}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
           <TabsTrigger value="all">
             Tất cả ({stats.totalNFTs})
           </TabsTrigger>
