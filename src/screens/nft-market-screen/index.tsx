@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { NFTMarketHeaderCard, NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 export default function NFTMarketScreen() {
-  const [isLoading, setIsLoading] = useState(true);
   const { nfts } = useNFTData();
   const { stats, volumeData, priceData } = useNFTStats();
   const {
@@ -21,61 +21,16 @@ export default function NFTMarketScreen() {
     otherNFTsAnalytics,
     searchMarketplace,
     searchNFTs,
+    // use hook loading to drive global loading
+    loading,
   } = useNFTFilters(nfts);
 
-  // Set loading to false when data is loaded
-  useEffect(() => {
-    // Check if all data is loaded
-    if (nfts && nfts.length >= 0 && stats && volumeData && priceData) {
-      setIsLoading(false);
-    }
-  }, [nfts, stats, volumeData, priceData]);
+  const isLoading = loading;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Loading Spinner */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="glass border border-cyan-500/20 rounded-lg p-8 flex flex-col items-center gap-4 max-w-sm">
-            {/* Spinner */}
-            <svg
-              className="animate-spin h-12 w-12 text-cyan-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-
-            {/* Text */}
-            <div className="text-center space-y-2">
-              <h3 className="text-white font-semibold text-lg">
-                Đang tải NFT Marketplace
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Vui lòng chờ trong giây lát...
-              </p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      )}
+      {isLoading && <LoadingSpinner />}
 
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Market Header */}
