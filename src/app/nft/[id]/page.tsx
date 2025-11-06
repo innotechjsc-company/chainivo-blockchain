@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -18,47 +13,63 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAppSelector } from "@/stores";
-import {
-  ArrowLeft,
-  Heart,
-  Share2,
-  ShoppingCart,
-  TrendingUp,
-  Clock,
-  User,
-  ShoppingBag,
-  DollarSign,
-  TrendingDown,
-  Eye,
-} from "lucide-react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
+import { ArrowLeft, ShoppingCart, Clock, DollarSign } from "lucide-react";
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
-import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
-const rarityColors = {
-  Common: "bg-gray-500/20 text-gray-300",
-  Rare: "bg-blue-500/20 text-blue-300",
-  Epic: "bg-purple-500/20 text-purple-300",
-  Legendary: "bg-yellow-500/20 text-yellow-300",
-  Mythic: "bg-pink-500/20 text-pink-300",
-  Divine: "bg-red-500/20 text-red-300",
-};
+function CollapsibleDescription({ html }: { html: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [halfHeight, setHalfHeight] = useState<number>(0);
+  const descRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const compute = () => {
+      const full = el.scrollHeight || 0;
+      setHalfHeight(Math.max(0, Math.floor(full / 2)));
+    };
+    const id = window.setTimeout(compute, 0);
+    window.addEventListener("resize", compute);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", compute);
+    };
+  }, [html]);
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          ref={descRef}
+          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
+          style={{
+            maxHeight: isExpanded
+              ? "none"
+              : halfHeight
+              ? `${halfHeight}px`
+              : "6rem",
+            overflow: "hidden",
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+        {!isExpanded && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+        )}
+      </div>
+      <button
+        type="button"
+        className="text-primary text-sm font-medium hover:underline cursor-pointer"
+        onClick={() => setIsExpanded((v) => !v)}
+      >
+        {isExpanded ? "Thu gọn" : "Xem thêm"}
+      </button>
+    </div>
+  );
+}
 
 // Chart configuration for shadcn/ui
 
@@ -146,11 +157,7 @@ export default function NFTDetailPage() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!nftData) {
@@ -355,9 +362,15 @@ export default function NFTDetailPage() {
               <h1 className="text-4xl font-bold mb-2">
                 {nftData.name ?? "Không rõ"}
               </h1>
-              <p className="text-muted-foreground mb-3">
-                {nftData.description ?? "Không có mô tả"}
-              </p>
+              <div>
+                <p> Mô tả : </p>
+                <CollapsibleDescription
+                  html={String(nftData?.description || "").replace(
+                    /\n/g,
+                    "<br/>"
+                  )}
+                />
+              </div>
               <p>
                 {user?.walletAddress === nftData?.walletAddress
                   ? "NFT của bạn"
@@ -465,84 +478,81 @@ export default function NFTDetailPage() {
           </div>
         </div>
 
-        {/* Documents Section */}
-        {nftData?.documents &&
-          Array.isArray(nftData.documents) &&
-          nftData.documents.length > 0 && (
-            <div className="mt-8">
-              <div className="glass rounded-xl p-6">
-                <h2 className="text-2xl font-bold mb-6">Tài liệu và Tập tin</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {nftData.documents.map((doc: any, idx: number) => {
-                    const docName =
-                      doc?.name || doc?.filename || `Tài liệu ${idx + 1}`;
-                    const docUrl = doc?.url || doc?.link || "";
-                    const docType = doc?.type || doc?.mimeType || "file";
-                    const fileSize = doc?.filesize || doc?.size || 0;
+        {Array.isArray(nftData.documents) && nftData.documents.length > 0 && (
+          <div className="mt-8">
+            <div className="glass rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-6">Tài liệu và Tập tin</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nftData.documents.map((doc: any, idx: number) => {
+                  const docName =
+                    doc?.name || doc?.filename || `Tài liệu ${idx + 1}`;
+                  const docUrl = doc?.url || doc?.link || "";
+                  const docType = doc?.type || doc?.mimeType || "file";
+                  const fileSize = doc?.filesize || doc?.size || 0;
 
-                    // Format file size
-                    const formatFileSize = (bytes: number) => {
-                      if (bytes === 0) return "0 B";
-                      const k = 1024;
-                      const sizes = ["B", "KB", "MB", "GB"];
-                      const i = Math.floor(Math.log(bytes) / Math.log(k));
-                      return (
-                        Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
-                        " " +
-                        sizes[i]
-                      );
-                    };
-
-                    // Get file icon based on type
-                    const getFileIcon = (type: string) => {
-                      if (type.includes("pdf")) return "📄";
-                      if (type.includes("image")) return "🖼️";
-                      if (type.includes("video")) return "🎥";
-                      if (type.includes("audio")) return "🎵";
-                      if (type.includes("zip") || type.includes("rar"))
-                        return "📦";
-                      return "📎";
-                    };
-
+                  // Format file size
+                  const formatFileSize = (bytes: number) => {
+                    if (bytes === 0) return "0 B";
+                    const k = 1024;
+                    const sizes = ["B", "KB", "MB", "GB"];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
                     return (
-                      <a
-                        key={idx}
-                        href={docUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                            {getFileIcon(docType)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate group-hover:text-primary transition-colors">
-                              {docName}
-                            </h3>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatFileSize(fileSize)}
-                            </p>
-                            {docType && (
-                              <Badge
-                                variant="secondary"
-                                className="mt-2 text-xs bg-primary/20 text-primary"
-                              >
-                                {docType.split("/")[1] || docType}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                            <DollarSign className="w-4 h-4" />
-                          </div>
-                        </div>
-                      </a>
+                      Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                      " " +
+                      sizes[i]
                     );
-                  })}
-                </div>
+                  };
+
+                  // Get file icon based on type
+                  const getFileIcon = (type: string) => {
+                    if (type.includes("pdf")) return "📄";
+                    if (type.includes("image")) return "🖼️";
+                    if (type.includes("video")) return "🎥";
+                    if (type.includes("audio")) return "🎵";
+                    if (type.includes("zip") || type.includes("rar"))
+                      return "📦";
+                    return "📎";
+                  };
+
+                  return (
+                    <a
+                      key={idx}
+                      href={docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                          {getFileIcon(docType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-white truncate group-hover:text-primary transition-colors">
+                            {docName}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatFileSize(fileSize)}
+                          </p>
+                          {docType && (
+                            <Badge
+                              variant="secondary"
+                              className="mt-2 text-xs bg-primary/20 text-primary"
+                            >
+                              {docType.split("/")[1] || docType}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DollarSign className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
         {/* Transaction History Section */}
         <div className="mt-8">

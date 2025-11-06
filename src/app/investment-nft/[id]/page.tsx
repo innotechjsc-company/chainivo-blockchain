@@ -445,64 +445,9 @@ export default function InvestmentNFTDetailPage() {
               </div>
               <div>
                 <p> Mô tả : </p>
-                {(() => {
-                  const [isExpanded, setIsExpanded] = useState(false);
-                  const [halfHeight, setHalfHeight] = useState<number>(0);
-                  const descRef = useRef<HTMLDivElement | null>(null);
-
-                  // Compute half of content height when description changes
-                  useEffect(() => {
-                    const el = descRef.current;
-                    if (!el) return;
-                    // Force reflow after content set
-                    const compute = () => {
-                      const full = el.scrollHeight || 0;
-                      setHalfHeight(Math.max(0, Math.floor(full / 2)));
-                    };
-                    // Delay slightly to ensure DOM painted
-                    const id = window.setTimeout(compute, 0);
-                    window.addEventListener("resize", compute);
-                    return () => {
-                      window.clearTimeout(id);
-                      window.removeEventListener("resize", compute);
-                    };
-                  }, [data?.description]);
-
-                  const html = String(data?.description || "").replace(
-                    /\n/g,
-                    "<br/>"
-                  );
-
-                  return (
-                    <div>
-                      <div className="relative">
-                        <div
-                          ref={descRef}
-                          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
-                          style={{
-                            maxHeight: isExpanded
-                              ? "none"
-                              : halfHeight
-                              ? `${halfHeight}px`
-                              : "6rem",
-                            overflow: "hidden",
-                          }}
-                          dangerouslySetInnerHTML={{ __html: html }}
-                        />
-                        {!isExpanded && (
-                          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        className="text-primary text-sm font-medium hover:underline cursor-pointer"
-                        onClick={() => setIsExpanded((v) => !v)}
-                      >
-                        {isExpanded ? "Thu gọn" : "Xem thêm"}
-                      </button>
-                    </div>
-                  );
-                })()}
+                <CollapsibleDescription
+                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
+                />
               </div>
             </div>
 
@@ -631,7 +576,7 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1">
-                      Mức độ
+                      Độ hiếm
                     </div>
                     <div className="text-sm font-semibold text-white">
                       {getLevelBadge(data?.level as string)}
@@ -659,6 +604,30 @@ export default function InvestmentNFTDetailPage() {
                   )}
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1">
+                      Đã bán
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {formatAmount(data?.soldShares)} phần
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Còn lại
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {formatAmount(data?.availableShares)} phần
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Đơn vị tiền tệ
+                    </div>
+                    <div className="text-sm font-semibold text-white uppercase">
+                      {data?.currency || "CAN"}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
                       Trạng thái
                     </div>
                     <div className="text-sm font-semibold">
@@ -677,6 +646,42 @@ export default function InvestmentNFTDetailPage() {
                       {formatAmount(data?.totalInvestors)} người
                     </div>
                   </div>
+                  {data?.createdAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Ngày tạo
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(data.createdAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(data.createdAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                  {data?.updatedAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Cập nhật
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(data.updatedAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(data.updatedAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -796,6 +801,57 @@ export default function InvestmentNFTDetailPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function CollapsibleDescription({ html }: { html: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [halfHeight, setHalfHeight] = useState<number>(0);
+  const descRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const compute = () => {
+      const full = el.scrollHeight || 0;
+      setHalfHeight(Math.max(0, Math.floor(full / 2)));
+    };
+    const id = window.setTimeout(compute, 0);
+    window.addEventListener("resize", compute);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", compute);
+    };
+  }, [html]);
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          ref={descRef}
+          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
+          style={{
+            maxHeight: isExpanded
+              ? "none"
+              : halfHeight
+              ? `${halfHeight}px`
+              : "6rem",
+            overflow: "hidden",
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+        {!isExpanded && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+        )}
+      </div>
+      <button
+        type="button"
+        className="text-primary text-sm font-medium hover:underline cursor-pointer"
+        onClick={() => setIsExpanded((v) => !v)}
+      >
+        {isExpanded ? "Thu gọn" : "Xem thêm"}
+      </button>
     </div>
   );
 }
