@@ -25,18 +25,9 @@ export function AvatarUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
-  // DEBUG: Log props khi component render
-  console.log('[DEBUG AvatarUpload] Props received:', {
-    currentAvatar,
-    userName,
-    disabled,
-    error,
-  });
-
   // Clear preview khi currentAvatar thay đổi (sau khi upload thành công)
   useEffect(() => {
     if (currentAvatar && previewUrl) {
-      console.log('[DEBUG AvatarUpload] Clearing preview because currentAvatar changed');
       setPreviewUrl(null);
     }
   }, [currentAvatar, previewUrl]);
@@ -104,14 +95,6 @@ export function AvatarUpload({
 
   const displayAvatar = previewUrl || currentAvatar || constants.user.DEFAULT_AVATAR;
   const initials = userName?.[0]?.toUpperCase() || 'U';
-
-  // DEBUG: Log avatar display logic
-  console.log('[DEBUG AvatarUpload] Avatar display logic:', {
-    previewUrl,
-    currentAvatar,
-    defaultAvatar: constants.user.DEFAULT_AVATAR,
-    displayAvatar,
-  });
 
   return (
     <div className="flex flex-col items-center gap-4">

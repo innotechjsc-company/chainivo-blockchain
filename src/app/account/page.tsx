@@ -45,27 +45,20 @@ export default function AccountManagementPage() {
   const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
-    console.log('[DEBUG useEffect] Triggered. user from Redux:', user);
-
     // Simulate loading user profile
     const timer = setTimeout(() => {
       // Get avatar from localStorage or Redux
       const userInfo = LocalStorageService.getUserInfo();
-      console.log('[DEBUG useEffect] localStorage userInfo:', userInfo);
-
       const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
-      console.log('[DEBUG useEffect] Final avatarUrl:', avatarUrl);
-      console.log('[DEBUG useEffect] Source: userInfo.avatarUrl =', userInfo?.avatarUrl, ', user.avatarUrl =', user?.avatarUrl);
 
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatarUrl: avatarUrl, //
+        avatarUrl: avatarUrl,
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
       };
-      console.log('[DEBUG useEffect] Setting profile to:', mockProfile);
       setProfile(mockProfile);
       setUsername(mockProfile.name);
       setLoading(false);
@@ -152,12 +145,6 @@ export default function AccountManagementPage() {
       // Call API
       const response = await UserService.updateProfile(formData);
 
-      // DEBUG: Check response structure
-      console.log('[DEBUG handleUpdateProfile] Full response:', response);
-      console.log('[DEBUG handleUpdateProfile] response.success:', response.success);
-      console.log('[DEBUG handleUpdateProfile] response.data:', response.data);
-      console.log('[DEBUG handleUpdateProfile] response.data type:', typeof response.data);
-
       if (response.success) {
         const updateData: any = {};
         let avatarUrl: string | null = null;
@@ -168,29 +155,15 @@ export default function AccountManagementPage() {
 
         const actualData = (response.data as any)?.data || response.data;
 
-        // DEBUG: Check actualData structure
-        console.log('[DEBUG handleUpdateProfile] actualData:', actualData);
-        console.log('[DEBUG handleUpdateProfile] actualData.avatarUrl:', actualData?.avatarUrl);
-        console.log('[DEBUG handleUpdateProfile] actualData.avatar:', actualData?.avatar);
-        console.log('[DEBUG handleUpdateProfile] actualData.avatar?.url:', actualData?.avatar?.url);
-
         if (hasAvatarChange && actualData?.avatarUrl) {
-          console.log('[DEBUG handleUpdateProfile] Branch 1: actualData.avatarUrl exists');
           avatarUrl = actualData.avatarUrl;
           updateData.avatarUrl = avatarUrl;
         } else if (hasAvatarChange && actualData?.avatar?.url) {
-          console.log('[DEBUG handleUpdateProfile] Branch 2: actualData.avatar.url exists');
           avatarUrl = actualData.avatar.url;
           updateData.avatarUrl = avatarUrl;
-        } else {
-          console.log('[DEBUG handleUpdateProfile] Branch 3: No avatar URL found');
         }
 
-        console.log('[DEBUG handleUpdateProfile] Final avatarUrl:', avatarUrl);
-        console.log('[DEBUG handleUpdateProfile] Final updateData:', updateData);
-
         // Update Redux store
-        console.log('[DEBUG handleUpdateProfile] Dispatching updateProfile to Redux with:', updateData);
         dispatch(updateProfile(updateData));
 
         // Update local profile state
@@ -199,12 +172,10 @@ export default function AccountManagementPage() {
           name: hasNameChange ? trimmedName : (profile?.name || ''),
           avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : (profile?.avatarUrl || null),
         };
-        console.log('[DEBUG handleUpdateProfile] Updating local profile state to:', newProfileState);
         setProfile(newProfileState as Profile);
 
         // Update localStorage with new user info (including avatar URL)
         const currentUserInfo = LocalStorageService.getUserInfo();
-        console.log('[DEBUG handleUpdateProfile] Current localStorage userInfo:', currentUserInfo);
 
         if (currentUserInfo) {
           const updatedUserInfo = {
@@ -215,7 +186,6 @@ export default function AccountManagementPage() {
                 ? avatarUrl
                 : currentUserInfo.avatarUrl,
           };
-          console.log('[DEBUG handleUpdateProfile] Updating localStorage with:', updatedUserInfo);
           LocalStorageService.setUserInfo(updatedUserInfo);
         }
 

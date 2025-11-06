@@ -81,15 +81,8 @@ const authSlice = createSlice({
 
     // Update user profile
     updateProfile: (state, action: PayloadAction<Partial<AuthUser>>) => {
-      console.log('[DEBUG Redux updateProfile] Current user state:', state.user);
-      console.log('[DEBUG Redux updateProfile] Payload received:', action.payload);
-
       if (state.user) {
-        const updatedUser = { ...state.user, ...action.payload };
-        console.log('[DEBUG Redux updateProfile] Updated user state:', updatedUser);
-        state.user = updatedUser;
-      } else {
-        console.log('[DEBUG Redux updateProfile] No user in state, skipping update');
+        state.user = { ...state.user, ...action.payload };
       }
     },
 
