@@ -33,7 +33,7 @@ export const useAuth = (onSignOut?: () => void) => {
         can_balance: 0,
         total_invested: 0,
         membership_tier: user.role || "bronze",
-        avatar_url: user.avatarUrl || null,  // Sử dụng avatarUrl từ AuthUser
+        avatarUrl: user.avatarUrl || null, // Dung camelCase nhat quan
       }
     : null;
 
