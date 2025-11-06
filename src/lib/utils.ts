@@ -32,3 +32,9 @@ export function getNFTType(type: string) {
       return "NFT hộp bí ẩn";
   }
 }
+
+export const formatAmount = (value: unknown) => {
+  const num = Number(value || 0);
+  if (Number.isNaN(num)) return String(value ?? "-");
+  return num.toLocaleString("en-US");
+};
