@@ -22,6 +22,8 @@ import {
 import { toast } from "sonner";
 import TransferService from "@/services/TransferService";
 import { useAppSelector } from "@/stores";
+import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 export default function InvestmentNFTDetailPage() {
   const params = useParams();
@@ -185,48 +187,7 @@ export default function InvestmentNFTDetailPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Loading Spinner - Initial Data Load */}
-        {loading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="glass border border-cyan-500/20 rounded-lg p-8 flex flex-col items-center gap-4 max-w-sm">
-              {/* Spinner */}
-              <svg
-                className="animate-spin h-12 w-12 text-cyan-400"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-
-              {/* Text */}
-              <div className="text-center space-y-2">
-                <h3 className="text-white font-semibold text-lg">
-                  Đang tải NFT
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Vui lòng chờ trong giây lát...
-                </p>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
 
         <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -235,48 +196,265 @@ export default function InvestmentNFTDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Image and stats */}
           <div className="lg:col-span-7 space-y-4">
-            <Card className="glass overflow-hidden">
-              <div className="relative aspect-square rounded-2xl overflow-hidden flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+            <Card className="border-0 shadow-none bg-transparent">
+              <div className="relative w-full h-full mx-auto rounded-lg overflow-hidden flex items-center justify-center">
                 <img
                   src={imageSrc}
                   alt={data?.name || "NFT"}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   onError={(e) =>
                     ((e.target as HTMLImageElement).src = "/nft-box.jpg")
                   }
                 />
                 <button
-                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-background/70 backdrop-blur flex items-center justify-center"
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-background/70 backdrop-blur flex items-center justify-center mr-2"
                   aria-label="like"
                 >
-                  <Heart className="w-4 h-4" />
+                  {data?.level && (
+                    <Badge variant="secondary">
+                      {getLevelBadge(data.level)}
+                    </Badge>
+                  )}
                 </button>
               </div>
             </Card>
+            <div>
+              <div className="glass rounded-xl p-6">
+                <h2 className="text-2xl font-bold mb-6">Tài liệu và tập tin</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {data?.documents?.length > 0 &&
+                    data?.documents?.map((doc: any, idx: number) => {
+                      const docName =
+                        doc?.name || doc?.filename || `Tai lieu ${idx + 1}`;
+                      const docUrl = doc?.url || doc?.link || "";
+                      const docType = doc?.type || doc?.mimeType || "file";
+                      const fileSize = doc?.filesize || doc?.size || 0;
+
+                      const formatFileSize = (bytes: number) => {
+                        if (!bytes) return "0 B";
+                        const k = 1024;
+                        const sizes = ["B", "KB", "MB", "GB"];
+                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                        return `${
+                          Math.round((bytes / Math.pow(k, i)) * 100) / 100
+                        } ${sizes[i]}`;
+                      };
+
+                      const getFileIcon = (type: string) => {
+                        const t = (type || "").toLowerCase();
+                        if (t.includes("pdf")) return "📄";
+                        if (t.includes("image")) return "🖼️";
+                        if (t.includes("video")) return "🎥";
+                        if (t.includes("audio")) return "🎵";
+                        if (t.includes("zip") || t.includes("rar")) return "📦";
+                        return "📎";
+                      };
+
+                      return (
+                        <a
+                          key={idx}
+                          href={docUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                              {getFileIcon(docType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                                {docName}
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatFileSize(fileSize)}
+                              </p>
+                              {docType && (
+                                <div className="mt-2 inline-flex text-xs px-2 py-1 rounded bg-primary/20 text-primary">
+                                  {(
+                                    docType.split("/")[1] || docType
+                                  ).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
+                </div>
+                {data?.documents?.length === 0 && (
+                  <div className="text-center text-muted-foreground justify-center items-center py-12">
+                    <p>Không có tài liệu</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-12">
+              <Card className="glass">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
+                  {transactionsLoading ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>Đang tải lịch sử giao dịch...</p>
+                    </div>
+                  ) : Array.isArray(transactions) &&
+                    transactions?.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border/50">
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Người mua
+                            </th>
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Số cổ phần
+                            </th>
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Tổng tiền
+                            </th>
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Thời gian
+                            </th>
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Trạng thái
+                            </th>
+                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                              Hash giao dịch
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {transactions.map((tx: any, idx: number) => {
+                            // Handle buyer address/username
+
+                            const displayBuyer = formatAddress(
+                              tx?.walletAddress
+                            );
+
+                            // Handle shares
+                            const shares = tx.shares || tx.quantity || 0;
+
+                            // Handle total price
+                            const totalPrice =
+                              tx.totalPrice ||
+                              tx.total_price ||
+                              tx.price ||
+                              tx.amount ||
+                              0;
+                            const txCurrency = (
+                              tx.currency ||
+                              currency ||
+                              "CAN"
+                            ).toUpperCase();
+
+                            // Handle timestamp
+                            const timestamp =
+                              tx.createdAt || tx.created_at || tx.date || "-";
+                            let formattedDate = "-";
+                            if (timestamp !== "-") {
+                              try {
+                                formattedDate = new Date(
+                                  timestamp
+                                ).toLocaleString("vi-VN");
+                              } catch {
+                                formattedDate = timestamp;
+                              }
+                            }
+
+                            // Handle transaction hash
+                            const txHash =
+                              tx.transactionHash ||
+                              tx.transaction_hash ||
+                              tx.txHash ||
+                              "-";
+
+                            // Handle status
+                            const status = tx.status || "success";
+                            const statusColor =
+                              status === "success" || status === "completed"
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : status === "pending"
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400";
+                            const statusLabel =
+                              status === "success"
+                                ? "Thành công"
+                                : status === "pending"
+                                ? "Đang xử lý"
+                                : "Thất bại";
+
+                            return (
+                              <tr
+                                key={idx}
+                                className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                              >
+                                <td className="py-3 px-4 font-medium text-white">
+                                  {displayBuyer}
+                                </td>
+                                <td className="py-3 px-4 text-cyan-400 font-semibold">
+                                  {formatAmount(shares)} CP
+                                </td>
+                                <td className="py-3 px-4 font-semibold">
+                                  {formatAmount(totalPrice)} {txCurrency}
+                                </td>
+                                <td className="py-3 px-4 text-muted-foreground">
+                                  {formattedDate}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <Badge className={`text-xs ${statusColor}`}>
+                                    {statusLabel}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4 text-xs font-mono">
+                                  {txHash !== "-" ? (
+                                    <a
+                                      href={`https://www.oklink.com/amoy/tx/${txHash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
+                                    >
+                                      {formatAddress(txHash)}
+                                    </a>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>Chưa có lịch sử giao dịch</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Right: Detail card */}
           <div className="lg:col-span-5 space-y-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold">
+                <h1 className="text-3xl font-bold">
                   {data?.name || "NFT Investment"}
                 </h1>
-                {data?.level && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-red-500/20 text-red-400 border-red-500/30"
-                  >
-                    {getLevelBadge(data.level)}
-                  </Badge>
-                )}
               </div>
-              {data?.description && (
-                <p className="text-muted-foreground mb-3 leading-relaxed">
-                  {data.description}
-                </p>
-              )}
+              <div>
+                <p> Mô tả : </p>
+                <div
+                  className="text-muted-foreground mb-3 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: String(data?.description || "").replace(
+                      /\n/g,
+                      "<br/>"
+                    ),
+                  }}
+                />
+              </div>
             </div>
 
             <Card className="glass">
@@ -524,149 +702,6 @@ export default function InvestmentNFTDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Transaction History Section */}
-        <div className="mt-12">
-          <Card className="glass">
-            <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
-              {transactionsLoading ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>Đang tải lịch sử giao dịch...</p>
-                </div>
-              ) : Array.isArray(transactions) ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Người mua
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Số cổ phần
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Tổng tiền
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Thời gian
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Trạng thái
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Hash giao dịch
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map((tx: any, idx: number) => {
-                        // Handle buyer address/username
-
-                        const displayBuyer = formatAddress(tx?.walletAddress);
-
-                        // Handle shares
-                        const shares = tx.shares || tx.quantity || 0;
-
-                        // Handle total price
-                        const totalPrice =
-                          tx.totalPrice ||
-                          tx.total_price ||
-                          tx.price ||
-                          tx.amount ||
-                          0;
-                        const txCurrency = (
-                          tx.currency ||
-                          currency ||
-                          "CAN"
-                        ).toUpperCase();
-
-                        // Handle timestamp
-                        const timestamp =
-                          tx.createdAt || tx.created_at || tx.date || "-";
-                        let formattedDate = "-";
-                        if (timestamp !== "-") {
-                          try {
-                            formattedDate = new Date(timestamp).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            formattedDate = timestamp;
-                          }
-                        }
-
-                        // Handle transaction hash
-                        const txHash =
-                          tx.transactionHash ||
-                          tx.transaction_hash ||
-                          tx.txHash ||
-                          "-";
-
-                        // Handle status
-                        const status = tx.status || "success";
-                        const statusColor =
-                          status === "success" || status === "completed"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : status === "pending"
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400";
-                        const statusLabel =
-                          status === "success"
-                            ? "Thành công"
-                            : status === "pending"
-                            ? "Đang xử lý"
-                            : "Thất bại";
-
-                        return (
-                          <tr
-                            key={idx}
-                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
-                          >
-                            <td className="py-3 px-4 font-medium text-white">
-                              {displayBuyer}
-                            </td>
-                            <td className="py-3 px-4 text-cyan-400 font-semibold">
-                              {formatAmount(shares)} CP
-                            </td>
-                            <td className="py-3 px-4 font-semibold">
-                              {formatAmount(totalPrice)} {txCurrency}
-                            </td>
-                            <td className="py-3 px-4 text-muted-foreground">
-                              {formattedDate}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge className={`text-xs ${statusColor}`}>
-                                {statusLabel}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4 text-xs font-mono">
-                              {txHash !== "-" ? (
-                                <a
-                                  href={`https://www.oklink.com/amoy/tx/${txHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
-                                >
-                                  {formatAddress(txHash)}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>Chưa có lịch sử giao dịch</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Loading Spinner Overlay */}
         {buyLoading && (

@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Eye } from "lucide-react";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface CollectionItem {
   id: string;
@@ -160,16 +161,7 @@ export default function P2PMarketPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 bg-background/90 rounded-lg border border-primary/20">
-            <Spinner className="h-6 w-6 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              Đang tải dữ liệu ...
-            </span>
-          </div>
-        </div>
-      )}
+      {loading && <LoadingSpinner />}
       <main className="container mx-auto px-4 pt-24 pb-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -277,23 +269,6 @@ export default function P2PMarketPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Don vi giao dich (Currency) */}
-                  {/* <div className="space-y-2">
-                    <span className="text-sm font-medium">
-                      Đơn vị giao dịch
-                    </span>
-                    <Select value={unit} onValueChange={setUnit}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="-- Chọn đơn vị --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="polygon">Polygon</SelectItem>
-                        <SelectItem value="can">CAN</SelectItem>
-                        <SelectItem value="usdt">USDT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div> */}
 
                   {/* Khoang gia (Price Range) */}
                   <div className="space-y-3">

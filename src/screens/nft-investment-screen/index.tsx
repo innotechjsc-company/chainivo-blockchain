@@ -72,7 +72,7 @@ export default function NFTInvestmentScreen() {
             <div className="mb-8">
               <NFTGridCard
                 nfts={otherNFTsData}
-                title="Danh sách NFT đầu tư"
+                title="Danh sách NFT đầu tư "
                 initialCount={6}
               />
             </div>
