@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -445,15 +445,64 @@ export default function InvestmentNFTDetailPage() {
               </div>
               <div>
                 <p> Mô tả : </p>
-                <div
-                  className="text-muted-foreground mb-3 leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: String(data?.description || "").replace(
-                      /\n/g,
-                      "<br/>"
-                    ),
-                  }}
-                />
+                {(() => {
+                  const [isExpanded, setIsExpanded] = useState(false);
+                  const [halfHeight, setHalfHeight] = useState<number>(0);
+                  const descRef = useRef<HTMLDivElement | null>(null);
+
+                  // Compute half of content height when description changes
+                  useEffect(() => {
+                    const el = descRef.current;
+                    if (!el) return;
+                    // Force reflow after content set
+                    const compute = () => {
+                      const full = el.scrollHeight || 0;
+                      setHalfHeight(Math.max(0, Math.floor(full / 2)));
+                    };
+                    // Delay slightly to ensure DOM painted
+                    const id = window.setTimeout(compute, 0);
+                    window.addEventListener("resize", compute);
+                    return () => {
+                      window.clearTimeout(id);
+                      window.removeEventListener("resize", compute);
+                    };
+                  }, [data?.description]);
+
+                  const html = String(data?.description || "").replace(
+                    /\n/g,
+                    "<br/>"
+                  );
+
+                  return (
+                    <div>
+                      <div className="relative">
+                        <div
+                          ref={descRef}
+                          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
+                          style={{
+                            maxHeight: isExpanded
+                              ? "none"
+                              : halfHeight
+                              ? `${halfHeight}px`
+                              : "6rem",
+                            overflow: "hidden",
+                          }}
+                          dangerouslySetInnerHTML={{ __html: html }}
+                        />
+                        {!isExpanded && (
+                          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="text-primary text-sm font-medium hover:underline cursor-pointer"
+                        onClick={() => setIsExpanded((v) => !v)}
+                      >
+                        {isExpanded ? "Thu gọn" : "Xem thêm"}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -501,7 +550,7 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                   <div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                      {formatAmount(data?.pricePerShare)}{" "}
+                      {formatAmount(data?.pricePerShare)}
                       {data?.currency?.toUpperCase()}
                     </div>
                   </div>
