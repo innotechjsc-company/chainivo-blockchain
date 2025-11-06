@@ -11,6 +11,7 @@ import {
 import { User, Settings, LogOut, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
+import { constants } from "@/api/constants";
 
 interface UserMenuProps {
   userProfile: UserProfile | null;
@@ -28,7 +29,9 @@ export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
           className="hidden md:flex items-center space-x-2 h-auto py-2 cursor-pointer"
         >
           <Avatar className="w-8 h-8">
-            <AvatarImage src={userProfile?.avatar_url || ""} />
+            <AvatarImage
+              src={userProfile?.avatarUrl || constants.user.DEFAULT_AVATAR}
+            />
             <AvatarFallback>
               {userProfile?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>

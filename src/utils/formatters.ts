@@ -3,57 +3,70 @@
  */
 
 /**
- * Format so - gioi han hien thi toi da 8 chu so
+ * Format so voi dau phan cach hang nghin (.) va thap phan (,)
+ * Neu so qua lon (>= 1 ty hoac >= 9 chu so): rut gon thanh K/M/B
  *
  * @param value - Gia tri can format (number, null, undefined)
+ * @param decimals - So chu so thap phan (mac dinh: 0)
  * @returns String da format
  *
  * @example
- * formatNumber(1234) → "1234"
- * formatNumber(12345678) → "12345678"
+ * formatNumber(1234) → "1.234"
+ * formatNumber(1234567) → "1.234.567"
+ * formatNumber(1234.56, 2) → "1.234,56"
  * formatNumber(123456789) → "123M"
- * formatNumber(1234567) → "1.2M"
- * formatNumber(12345) → "12.3K"
- * formatNumber(1234567890) → "1.2B"
+ * formatNumber(1234567890) → "1,2B"
+ * formatNumber(12345) → "12.345"
  */
-export function formatNumber(value: number | null | undefined): string {
+export function formatNumber(
+  value: number | null | undefined,
+  decimals: number = 0
+): string {
   // Xu ly gia tri null/undefined
-  if (!value && value !== 0) return "0";
+  if (value === null || value === undefined) return "0";
+  if (isNaN(value)) return "0";
 
-  const valueStr = value.toString();
+  const absValue = Math.abs(value);
+  const isNegative = value < 0;
 
-  // Neu nho hon hoac bang 8 chu so: hien thi day du
-  if (valueStr.length <= 8) {
-    return valueStr;
-  }
-
-  // Neu lon hon 8 chu so: rut gon theo don vi
-  // Billions (1,000,000,000+)
-  if (value >= 1_000_000_000) {
-    const billions = value / 1_000_000_000;
-    return billions >= 10
+  // Neu >= 1 billion: rut gon thanh B
+  if (absValue >= 1_000_000_000) {
+    const billions = absValue / 1_000_000_000;
+    const formatted = billions >= 10
       ? `${Math.floor(billions)}B`
-      : `${billions.toFixed(1)}B`;
+      : `${billions.toFixed(1).replace('.', ',')}B`;
+    return isNegative ? `-${formatted}` : formatted;
   }
 
-  // Millions (1,000,000+)
-  if (value >= 1_000_000) {
-    const millions = value / 1_000_000;
-    return millions >= 10
+  // Neu >= 1 million: rut gon thanh M
+  if (absValue >= 1_000_000) {
+    const millions = absValue / 1_000_000;
+    const formatted = millions >= 10
       ? `${Math.floor(millions)}M`
-      : `${millions.toFixed(1)}M`;
+      : `${millions.toFixed(1).replace('.', ',')}M`;
+    return isNegative ? `-${formatted}` : formatted;
   }
 
-  // Thousands (1,000+)
-  if (value >= 1_000) {
-    const thousands = value / 1_000;
-    return thousands >= 10
+  // Neu >= 10,000: rut gon thanh K
+  if (absValue >= 10_000) {
+    const thousands = absValue / 1_000;
+    const formatted = thousands >= 10
       ? `${Math.floor(thousands)}K`
-      : `${thousands.toFixed(1)}K`;
+      : `${thousands.toFixed(1).replace('.', ',')}K`;
+    return isNegative ? `-${formatted}` : formatted;
   }
 
-  // Fallback: cat 8 ky tu dau + "..."
-  return valueStr.slice(0, 8) + "...";
+  // Neu < 10,000: format day du voi dau phan cach
+  const fixedValue = decimals > 0 ? absValue.toFixed(decimals) : Math.round(absValue);
+  const [integerPart, decimalPart] = fixedValue.toString().split(".");
+
+  // Them dau phan cach hang nghin (.) cho phan nguyen
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // Neu co phan thap phan, them dau phay (,)
+  let result = decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger;
+
+  return isNegative ? `-${result}` : result;
 }
 
 /**

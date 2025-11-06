@@ -49,6 +49,7 @@ export {
   setUser as setAuthUser,
   updateProfile as updateAuthProfile,
   initializeAuth,
+  refreshUserProfile, // Async thunk de refresh avatar va user profile
 } from "./authSlice";
 export type { AuthUser } from "./authSlice";
 export {

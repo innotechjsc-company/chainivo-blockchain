@@ -1,5 +1,6 @@
 import { ApiService, API_ENDPOINTS } from "../api";
 import { LocalStorageService } from "@/services";
+import { UserService } from "./user-service";
 
 export interface LoginCredentials {
   email: string;
@@ -139,33 +140,74 @@ export class AuthService {
 
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log('[DEBUG AuthService.login] Starting login...');
       const response = await ApiService.post<AuthResponse>(
         API_ENDPOINTS.AUTH.LOGIN,
         credentials
       );
 
+      console.log('[DEBUG AuthService.login] Login response:', response);
+      console.log('[DEBUG AuthService.login] response.data:', response.data);
+
       // Handle new Payload CMS response format
       if (response.data) {
         const authData = response.data as AuthResponse;
+
+        console.log('[DEBUG AuthService.login] authData:', authData);
+        console.log('[DEBUG AuthService.login] authData.user:', authData.user);
+        console.log('[DEBUG AuthService.login] authData.user.avatar:', (authData.user as any)?.avatar);
 
         if (authData.token && authData.user) {
           // Store token with expiration
           this.setToken(authData.token, authData.exp);
 
-          // Store user info with all fields
+          // Goi API getCurrentUserProfile de lay avatar day du tu backend
+          // Vi response login co the khong chua avatar.url
+          let avatarUrl = authData.user.avatarUrl || "";
+
+          console.log('[DEBUG AuthService.login] Initial avatarUrl from login:', avatarUrl);
+          console.log('[DEBUG AuthService.login] Calling getCurrentUserProfile to fetch full avatar...');
+
+          try {
+            const profileResponse = await UserService.getCurrentUserProfile();
+            console.log('[DEBUG AuthService.login] getCurrentUserProfile response:', profileResponse);
+
+            // Backend tra ve nested data: {success, data: {success, data: {avatarUrl}}}
+            const userData = (profileResponse.data as any)?.data || profileResponse.data;
+            console.log('[DEBUG AuthService.login] userData after unwrap:', userData);
+
+            if (profileResponse.success && userData?.avatarUrl) {
+              avatarUrl = userData.avatarUrl;
+              console.log('[DEBUG AuthService.login] Got avatarUrl from getCurrentUserProfile:', avatarUrl);
+            } else {
+              console.warn('[DEBUG AuthService.login] getCurrentUserProfile did not return avatarUrl');
+            }
+          } catch (error) {
+            console.warn("Khong the lay avatar tu getCurrentUserProfile:", error);
+            // Van tiep tuc login, chi thieu avatar thoi
+          }
+
+          // Store user info with all fields including avatar URL
           const userInfo = {
             id: authData.user.id,
             email: authData.user.email,
             name: authData.user.name || "",
             walletAddress: authData.user.walletAddress || "",
             role: authData.user.role || "user",
-            avatarUrl: authData.user.avatarUrl || "",
+            avatarUrl, // Avatar URL da duoc lay tu getUserProfile API
             createdAt: authData.user.createdAt,
             updatedAt: authData.user.updatedAt,
           };
           this.setUserInfo(userInfo);
 
-          return authData;
+          // Return authData voi avatarUrl da fetch de frontend nhan duoc
+          return {
+            ...authData,
+            user: {
+              ...authData.user,
+              avatarUrl, // Them avatarUrl da fetch tu getUserProfile
+            },
+          };
         }
       }
 

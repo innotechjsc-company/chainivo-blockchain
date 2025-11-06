@@ -1,4 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { AuthService } from "@/api/services/auth-service";
+import { UserService } from "@/api/services/user-service";
 
 export interface AuthUser {
   id: string;
@@ -26,6 +28,22 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
 };
+
+// Async thunk de refresh user profile va avatar
+export const refreshUserProfile = createAsyncThunk(
+  'auth/refreshUserProfile',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await UserService.getUserProfile(userId);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return rejectWithValue('Khong the lay thong tin user');
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Loi khi refresh profile');
+    }
+  }
+);
 
 // Slice
 const authSlice = createSlice({
@@ -63,8 +81,15 @@ const authSlice = createSlice({
 
     // Update user profile
     updateProfile: (state, action: PayloadAction<Partial<AuthUser>>) => {
+      console.log('[DEBUG Redux updateProfile] Current user state:', state.user);
+      console.log('[DEBUG Redux updateProfile] Payload received:', action.payload);
+
       if (state.user) {
-        state.user = { ...state.user, ...action.payload };
+        const updatedUser = { ...state.user, ...action.payload };
+        console.log('[DEBUG Redux updateProfile] Updated user state:', updatedUser);
+        state.user = updatedUser;
+      } else {
+        console.log('[DEBUG Redux updateProfile] No user in state, skipping update');
       }
     },
 
@@ -82,10 +107,38 @@ const authSlice = createSlice({
     },
 
     // Initialize auth from storage
+    // Logic nay duoc goi khi app reload de restore authentication state
     initializeAuth: (state) => {
-      // AuthService will handle getting token from localStorage
-      // This action can be called from app initialization
+      // Kiem tra token va user info trong localStorage
+      // Neu hop le thi restore vao Redux state
+      // Logic cu the duoc xu ly boi redux-persist auto-restore
+      // Action nay chi can trigger validation neu can
+
+      // NOTE: redux-persist se tu dong restore state.user va state.token
+      // Nen khong can manual logic tai day
+      // Neu muon validate token expiry, nen dung async thunk thay vi reducer
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Handle refreshUserProfile async thunk
+      .addCase(refreshUserProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(refreshUserProfile.fulfilled, (state, action) => {
+        // Cap nhat user profile moi, bao gom avatarUrl
+        if (state.user) {
+          state.user = {
+            ...state.user,
+            ...action.payload,
+          };
+        }
+        state.isLoading = false;
+      })
+      .addCase(refreshUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
