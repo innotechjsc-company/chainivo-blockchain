@@ -3,20 +3,24 @@
  */
 
 /**
- * Format so voi dau phan cach hang nghin (.) va thap phan (,)
- * Neu so qua lon (>= 1 ty hoac >= 9 chu so): rut gon thanh K/M/B
+ * Format so voi dau phan cach hang nghin (,) va thap phan (.)
+ * Neu so qua lon (>= 10K): rut gon thanh K/M/B voi dau phan cach
  *
  * @param value - Gia tri can format (number, null, undefined)
  * @param decimals - So chu so thap phan (mac dinh: 0)
  * @returns String da format
  *
  * @example
- * formatNumber(1234) → "1.234"
- * formatNumber(1234567) → "1.234.567"
- * formatNumber(1234.56, 2) → "1.234,56"
+ * formatNumber(1234) → "1,234"
+ * formatNumber(9999) → "9,999"
+ * formatNumber(10000) → "10K"
+ * formatNumber(15500) → "15.5K"
+ * formatNumber(1234567) → "1.2M"
+ * formatNumber(12345678) → "12M"
  * formatNumber(123456789) → "123M"
- * formatNumber(1234567890) → "1,2B"
- * formatNumber(12345) → "12.345"
+ * formatNumber(1234567890) → "1.2B"
+ * formatNumber(12345678901) → "12B"
+ * formatNumber(1234.56, 2) → "1,234.56"
  */
 export function formatNumber(
   value: number | null | undefined,
@@ -32,39 +36,42 @@ export function formatNumber(
   // Neu >= 1 billion: rut gon thanh B
   if (absValue >= 1_000_000_000) {
     const billions = absValue / 1_000_000_000;
-    const formatted = billions >= 10
-      ? `${Math.floor(billions)}B`
-      : `${billions.toFixed(1).replace('.', ',')}B`;
-    return isNegative ? `-${formatted}` : formatted;
+    // Format phan so truoc, roi them 'B'
+    const numberPart = billions >= 10
+      ? Math.floor(billions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : billions.toFixed(1);
+    return isNegative ? `-${numberPart}B` : `${numberPart}B`;
   }
 
   // Neu >= 1 million: rut gon thanh M
   if (absValue >= 1_000_000) {
     const millions = absValue / 1_000_000;
-    const formatted = millions >= 10
-      ? `${Math.floor(millions)}M`
-      : `${millions.toFixed(1).replace('.', ',')}M`;
-    return isNegative ? `-${formatted}` : formatted;
+    // Format phan so truoc, roi them 'M'
+    const numberPart = millions >= 10
+      ? Math.floor(millions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : millions.toFixed(1);
+    return isNegative ? `-${numberPart}M` : `${numberPart}M`;
   }
 
   // Neu >= 10,000: rut gon thanh K
   if (absValue >= 10_000) {
     const thousands = absValue / 1_000;
-    const formatted = thousands >= 10
-      ? `${Math.floor(thousands)}K`
-      : `${thousands.toFixed(1).replace('.', ',')}K`;
-    return isNegative ? `-${formatted}` : formatted;
+    // Format phan so truoc, roi them 'K'
+    const numberPart = thousands >= 10
+      ? Math.floor(thousands).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : thousands.toFixed(1);
+    return isNegative ? `-${numberPart}K` : `${numberPart}K`;
   }
 
   // Neu < 10,000: format day du voi dau phan cach
   const fixedValue = decimals > 0 ? absValue.toFixed(decimals) : Math.round(absValue);
   const [integerPart, decimalPart] = fixedValue.toString().split(".");
 
-  // Them dau phan cach hang nghin (.) cho phan nguyen
-  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // Them dau phan cach hang nghin (,) cho phan nguyen
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // Neu co phan thap phan, them dau phay (,)
-  let result = decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger;
+  // Neu co phan thap phan, them dau cham (.)
+  let result = decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 
   return isNegative ? `-${result}` : result;
 }

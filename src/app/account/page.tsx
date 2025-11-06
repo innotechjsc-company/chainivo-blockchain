@@ -301,7 +301,10 @@ export default function AccountManagementPage() {
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
               </TabsTrigger>
-              <TabsTrigger value="my-nft">NFT của tôi</TabsTrigger>
+              <TabsTrigger value="my-nft">
+                <User className="w-4 h-4 mr-2" />
+                NFT của tôi
+              </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
