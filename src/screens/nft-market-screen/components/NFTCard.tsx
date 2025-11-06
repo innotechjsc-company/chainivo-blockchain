@@ -216,7 +216,6 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
 
             {/* Container co dinh chieu cao - chua 2 gia tri */}
             <div className="relative h-8">
-              {/* Gia ban - absolute position */}
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
@@ -224,13 +223,10 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-0 invisible pointer-events-none"
                 }`}
               >
-                {nft.salePrice
-                  ? nft.salePrice.toLocaleString("vi-VN")
-                  : nft.price?.toLocaleString("vi-VN")}
+                {formatNumber(nft.salePrice || nft.price)}{" "}
                 {nft.currency?.toUpperCase() || "CAN"}
               </div>
 
-              {/* Gia goc - absolute position (cung vi tri) */}
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
@@ -238,7 +234,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-100 visible"
                 }`}
               >
-                {nft.price?.toLocaleString("vi-VN")}{" "}
+                {formatNumber(nft.price)}
                 {nft.currency?.toUpperCase() || "CAN"}
               </div>
             </div>

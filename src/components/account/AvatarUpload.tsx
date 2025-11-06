@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X } from 'lucide-react';
+import { constants } from '@/api/constants';
 
 interface AvatarUploadProps {
   currentAvatar?: string;
@@ -23,6 +24,13 @@ export function AvatarUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+
+  // Clear preview khi currentAvatar thay đổi (sau khi upload thành công)
+  useEffect(() => {
+    if (currentAvatar && previewUrl) {
+      setPreviewUrl(null);
+    }
+  }, [currentAvatar, previewUrl]);
 
   // File validation constants
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -85,13 +93,13 @@ export function AvatarUpload({
     fileInputRef.current?.click();
   };
 
-  const displayAvatar = previewUrl || currentAvatar;
+  const displayAvatar = previewUrl || currentAvatar || constants.user.DEFAULT_AVATAR;
   const initials = userName?.[0]?.toUpperCase() || 'U';
 
   return (
     <div className="flex flex-col items-center gap-4">
       <Avatar className="w-24 h-24">
-        <AvatarImage src={displayAvatar || ''} alt={userName} />
+        <AvatarImage src={displayAvatar} alt={userName} />
         <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
       </Avatar>
 

@@ -54,7 +54,7 @@ export default function AccountManagementPage() {
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatarUrl: avatarUrl, //
+        avatarUrl: avatarUrl,
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -167,19 +167,16 @@ export default function AccountManagementPage() {
         dispatch(updateProfile(updateData));
 
         // Update local profile state
-        setProfile((prev) =>
-          prev
-            ? {
-                ...prev,
-                name: hasNameChange ? trimmedName : prev.name,
-                avatarUrl:
-                  hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl, //
-              }
-            : null
-        );
+        const newProfileState = {
+          ...profile,
+          name: hasNameChange ? trimmedName : (profile?.name || ''),
+          avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : (profile?.avatarUrl || null),
+        };
+        setProfile(newProfileState as Profile);
 
         // Update localStorage with new user info (including avatar URL)
         const currentUserInfo = LocalStorageService.getUserInfo();
+
         if (currentUserInfo) {
           const updatedUserInfo = {
             ...currentUserInfo,
