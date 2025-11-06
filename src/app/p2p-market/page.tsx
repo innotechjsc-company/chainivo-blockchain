@@ -18,7 +18,7 @@ import type { ApiResponse } from "@/api/api";
 import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
 import { Eye } from "lucide-react";
-import { getLevelBadge, getNFTType } from "@/lib/utils";
+import { formatAmount, getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 
@@ -50,7 +50,7 @@ const mockCollections: CollectionItem[] = [
 
 export default function P2PMarketPage() {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("recent");
+  const [sort, setSort] = useState("all");
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [items, setItems] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -176,7 +176,12 @@ export default function P2PMarketPage() {
               value={sort}
               onValueChange={(value) => {
                 setSort(value);
-                if (value === "price-asc" || value === "price-desc") {
+                if (value === "all") {
+                  setLoading(true);
+                  fetchP2P()
+                    .catch(() => {})
+                    .finally(() => setLoading(false));
+                } else if (value === "price-asc" || value === "price-desc") {
                   setLoading(true);
                   // Sort items trong state
                   setTimeout(() => {
@@ -206,11 +211,12 @@ export default function P2PMarketPage() {
               }}
             >
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="Recently listed" />
+                <SelectValue placeholder="Tất cả" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="price-asc">Giá từ thấp đến cao</SelectItem>
+                <SelectItem value="price-desc">Giá từ cao đến thấp</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -328,14 +334,14 @@ export default function P2PMarketPage() {
 
           {/* Grid */}
           <section className="col-span-12 md:col-span-9 lg:col-span-9">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {items.length > 0 ? (
                 items.map((item) => (
                   <Card
                     key={item.id}
-                    className="overflow-hidden group hover:shadow-lg transition-shadow h-full flex flex-col"
+                    className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col"
                   >
-                    <div className="relative aspect-[4/5] bg-muted">
+                    <div className="relative h-64 overflow-hidden">
                       <img
                         src={getNFTImage(item)}
                         alt={item.name}
@@ -345,42 +351,47 @@ export default function P2PMarketPage() {
                           t.src = "/nft-box.jpg";
                         }}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
                       <Badge
-                        className={`absolute top-2 right-2 bg-background/80 ${getLevelTextClass(
+                        className={`absolute top-4 right-4 z-10 bg-background/80 ${getLevelTextClass(
                           item.level as string
                         )} backdrop-blur-sm border`}
                       >
                         {getLevelBadge(item.level as string)}
                       </Badge>
                     </div>
-                    <CardContent className="p-3 space-y-1 flex-1 flex flex-col">
-                      <p className="text-xs text-muted-foreground">
+                    <CardContent className="p-4 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold mb-2 truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mb-3">
                         {item.collection}
                       </p>
-                      <p className="text-sm font-semibold truncate">
-                        {item.name}
-                      </p>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          Giá bán
-                        </span>
-                        <span className="text-sm font-bold">
-                          {Number(item.salePrice ?? 0).toLocaleString("vi-VN")}{" "}
-                          {item.currency.toUpperCase()}
-                        </span>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <div className="text-xs text-muted-foreground">
+                            Giá bán
+                          </div>
+                          <div className="text-lg font-bold flex items-center gap-2">
+                            <div className="truncate max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                              {formatAmount(item.salePrice)}
+                            </div>
+                            {item.currency.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">
+                            Loại NFT
+                          </div>
+                          <div className="text-lg font-bold">
+                            {getNFTType(item.type ?? "normal")}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          Loại NFT
-                        </span>
-                        <span className="text-sm font-bold">
-                          {getNFTType(item.type ?? "normal")}
-                        </span>
-                      </div>
-                      <div className="mt-auto pt-3">
+                      <div className="flex gap-2 mt-auto">
                         <Button
-                          className="w-full h-10 justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-primary/70 
-                          text-primary-foreground hover:from-primary/90 hover:to-primary/60 shadow-sm cursor-pointer"
+                          className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
                           size="sm"
                           onClick={() => {
                             router.push(`/nft/${item.id}?type=other`);

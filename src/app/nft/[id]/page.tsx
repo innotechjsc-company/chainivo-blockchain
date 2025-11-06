@@ -19,6 +19,7 @@ import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { Card, CardContent } from "@/components/ui/card";
 
 function CollapsibleDescription({ html }: { html: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -433,32 +434,83 @@ export default function NFTDetailPage() {
               )}
             </div>
             {/* Attributes */}
-            <div className="glass rounded-xl p-4">
-              <h3 className="text-lg font-semibold mb-2">Thuộc tính NFT</h3>
-              <div
-                className="grid gap-3"
-                style={{
-                  gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`,
-                }}
-              >
-                <div className="bg-muted/20 rounded-lg p-3 text-center">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Độ hiếm:
+            <Card className="glass">
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-4 text-white">
+                  Thông tin chi tiết
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Loại NFT
+                    </div>
+                    <div className="text-sm font-semibold text-white capitalize">
+                      {getNFTType(nftData.type as string)}
+                    </div>
                   </div>
-                  <div className="font-semibold">
-                    {getLevelBadge(nftData.level as string)}
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Độ hiếm
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {getLevelBadge(nftData.level as string)}
+                    </div>
                   </div>
+                  {Boolean(nftData?.price) && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Giá bán
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          const n = Number(nftData?.price);
+                          return Number.isFinite(n)
+                            ? n.toLocaleString("vi-VN")
+                            : String(nftData?.price);
+                        })()}{" "}
+                        {TOKEN_DEAULT_CURRENCY}
+                      </div>
+                    </div>
+                  )}
+                  {nftData?.createdAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Ngày tạo
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(nftData.createdAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(nftData.createdAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                  {nftData?.updatedAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Cập nhật
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(nftData.updatedAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(nftData.updatedAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="bg-muted/20 rounded-lg p-3 text-center">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Loại NFT:
-                  </div>
-                  <div className="font-semibold">
-                    {getNFTType(nftData.type as string)}
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Metadata (if exists) */}
             {nftData.metadata && (
