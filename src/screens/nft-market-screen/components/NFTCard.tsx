@@ -20,9 +20,6 @@ interface NFTCardProps {
 
 export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const router = useRouter();
-  const [isLiked, setIsLiked] = useState<boolean>(
-    Boolean(nft?.isLike || nft?.isLiked)
-  );
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -85,17 +82,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
 
   const nftImage = getNFTImage(nft);
 
-  const refreshLikeState = async () => {
-    try {
-      const id = String(nft.id ?? nft._id ?? nft.tokenId);
-      const resp = await NFTService.getNFTByTemplateId(id);
-      if (resp?.success && resp?.data) {
-        setIsLiked(
-          Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
-        );
-      }
-    } catch {}
-  };
+
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -112,9 +99,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         );
       }
 
-      if (response.success) {
-        await refreshLikeState();
-      }
+
       // Optionally, you could trigger a re-fetch or optimistic UI update here
     } catch (err) {
       console.error("Failed to like NFT", err);
@@ -126,18 +111,14 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
       let response = await NFTService.unlikeNft(
         String(nft.id ?? nft._id ?? nft.tokenId)
       );
-      if (response.success) {
-        await refreshLikeState();
-      }
+
       // Optionally, you could trigger a re-fetch or optimistic UI update here
     } catch (err) {
       console.error("Failed to like NFT", err);
     }
   };
 
-  useEffect(() => {
-    setIsLiked(Boolean(nft?.isLike || nft?.isLiked));
-  }, [nft]);
+
 
   const formatAddress = (address?: string) => {
     if (!address) return "";
@@ -182,14 +163,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-          onClick={isLiked ? handleUnlike : handleLike}
         >
-          <Heart
-            className={`w-4 h-4`}
-            fill={isLiked ? "currentColor" : "none"}
-            color={isLiked ? "#ec4899" : undefined}
-            stroke={isLiked ? "#ec4899" : "white"}
-          />
         </Button>
       </div>
 

@@ -286,7 +286,7 @@ export default function AccountManagementPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-8xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">
             <span className="gradient-text">Quản lý tài khoản</span>
           </h1>
