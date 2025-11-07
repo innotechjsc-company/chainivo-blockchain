@@ -339,9 +339,9 @@ export default function P2PMarketPage() {
                 items.map((item) => (
                   <Card
                     key={item.id}
-                    className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col"
+                    className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
                   >
-                    <div className="relative h-64 overflow-hidden">
+                    <div className="relative h-64 overflow-hidden w-full">
                       <img
                         src={getNFTImage(item)}
                         alt={item.name}
@@ -374,8 +374,8 @@ export default function P2PMarketPage() {
                             Giá bán
                           </div>
                           <div className="text-lg font-bold flex items-center gap-2">
-                            <div className="truncate max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                              {formatAmount(item.salePrice)}
+                            <div className="truncate max-w-full ">
+                              {formatAmount((item as any)?.salePrice)}
                             </div>
                             {item.currency.toUpperCase()}
                           </div>
