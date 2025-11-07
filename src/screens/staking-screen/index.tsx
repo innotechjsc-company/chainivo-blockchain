@@ -15,6 +15,7 @@ import { ActiveStakesList } from "./components/ActiveStakesList";
 import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -142,7 +143,7 @@ export const StakingScreen = () => {
 
   // Loading state - chỉ hiển thị khi đang fetch data lần đầu và chưa có data
   if (dataLoading && !stakingStats && !dataError) {
-    return <LoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
   // Error state

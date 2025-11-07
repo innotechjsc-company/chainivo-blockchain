@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useMyNFTCollection } from '@/hooks/useMyNFTCollection';
-import type { NFTFilterType } from '@/hooks/useMyNFTCollection';
-import { NFTStatsCards } from './NFTStatsCards';
-import { NFTCard } from '@/screens/nft-market-screen/components/NFTCard';
-import { ListNFTDialog } from './ListNFTDialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import type { NFTItem } from '@/types/NFT';
+import { useState } from "react";
+import { useMyNFTCollection } from "@/hooks/useMyNFTCollection";
+import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
+import { NFTStatsCards } from "./NFTStatsCards";
+import { NFTCard } from "@/screens/nft-market-screen/components/NFTCard";
+import { ListNFTDialog } from "./ListNFTDialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import type { NFTItem } from "@/types/NFT";
+import { useRouter } from "next/navigation";
 
 // Loading Skeleton Component
 function LoadingSkeleton() {
@@ -28,7 +29,7 @@ function LoadingSkeleton() {
       <div className="h-10 w-full max-w-md bg-muted animate-pulse rounded" />
 
       {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i} className="glass overflow-hidden">
             <div className="aspect-square bg-muted animate-pulse" />
@@ -45,18 +46,22 @@ function LoadingSkeleton() {
 
 export function MyNFTCollection() {
   // Su dung hook fetch NFT collection
-  const { nfts, stats, loading, error, filter, setFilter, refetch } = useMyNFTCollection();
+  const { nfts, stats, loading, error, filter, setFilter, refetch } =
+    useMyNFTCollection();
 
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const router = useRouter();
   // Handler mo dialog dang ban NFT
   const handleListForSale = (nft: NFTItem) => {
     setSelectedNFT(nft);
     setDialogOpen(true);
   };
 
+  const onClickMyNFT = (id: string) => {
+    router.push(`/nft/${id}?type=tier`);
+  };
   // Loading state
   if (loading) {
     return <LoadingSkeleton />;
@@ -78,38 +83,37 @@ export function MyNFTCollection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className=" space-y-6 ">
       {/* Stats Cards */}
       <NFTStatsCards {...stats} />
 
       {/* Filter Tabs */}
-      <Tabs value={filter} onValueChange={(value) => setFilter(value as NFTFilterType)}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="all">
-            Tất cả ({stats.totalNFTs})
-          </TabsTrigger>
-          <TabsTrigger value="sale">
-            Đang bán ({stats.onSale})
-          </TabsTrigger>
+      <Tabs
+        value={filter}
+        onValueChange={(value) => setFilter(value as NFTFilterType)}
+      >
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+          <TabsTrigger value="all">Tất cả ({stats.totalNFTs})</TabsTrigger>
+          <TabsTrigger value="sale">Đang bán ({stats.onSale})</TabsTrigger>
           <TabsTrigger value="not-listed">
             NFT của bạn ({stats.notListed})
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* NFT Grid */}
       {nfts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Khong co NFT nao</p>
+          <p className="text-muted-foreground">Không có NFT nào</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {nfts.map((nft) => (
             <NFTCard
               key={nft.id}
               nft={nft}
               type="tier"
               onListForSale={handleListForSale}
+              onClick={() => onClickMyNFT(nft.id)}
             />
           ))}
         </div>

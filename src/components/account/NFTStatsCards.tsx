@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Package, ShoppingBag, DollarSign, AlertCircle } from 'lucide-react';
-import { formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 interface NFTStatsCardsProps {
   totalNFTs: number;

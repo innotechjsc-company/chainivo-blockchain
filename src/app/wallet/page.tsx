@@ -449,49 +449,51 @@ export default function WalletConnectPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {wallets.map((wallet) => (
-              <Card
-                key={wallet.id}
-                className={`p-6 glass transition-all ${
-                  connected === wallet.id
-                    ? "opacity-50 cursor-not-allowed"
-                    : isLoading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer hover:scale-105"
-                }`}
-                onClick={() =>
-                  !isLoading &&
-                  connected !== wallet.id &&
-                  handleConnect(wallet.id)
-                }
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 flex items-center justify-center text-4xl">
-                    {wallet.icon}
+            {wallets
+              .filter((wallet) => wallet.id === "metamask")
+              .map((wallet) => (
+                <Card
+                  key={wallet.id}
+                  className={`p-6 glass transition-all ${
+                    connected === wallet.id
+                      ? "opacity-50 cursor-not-allowed"
+                      : isLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer hover:scale-105"
+                  }`}
+                  onClick={() =>
+                    !isLoading &&
+                    connected !== wallet.id &&
+                    handleConnect(wallet.id)
+                  }
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 flex items-center justify-center text-4xl">
+                      {wallet.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
+                        {wallet.name}
+                        {!isMetaMaskInstalled && wallet.id === "metamask" && (
+                          <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                            Cần cài đặt
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {wallet.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      {isLoading && wallet.id === "metamask" ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                      ) : connected === wallet.id ? (
+                        <Check className="w-6 h-6 text-green-500" />
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
-                      {wallet.name}
-                      {!isMetaMaskInstalled && wallet.id === "metamask" && (
-                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                          Cần cài đặt
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {wallet.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    {isLoading && wallet.id === "metamask" ? (
-                      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                    ) : connected === wallet.id ? (
-                      <Check className="w-6 h-6 text-green-500" />
-                    ) : null}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
           </div>
 
           <div className="mt-8 glass rounded-xl p-6">

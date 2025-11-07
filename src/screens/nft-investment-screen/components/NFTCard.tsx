@@ -9,7 +9,7 @@ import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
-import { getLevelBadge } from "@/lib/utils";
+import { formatAmount, getLevelBadge } from "@/lib/utils";
 
 interface NFTInvestmentCardProps {
   nft: any;
@@ -183,10 +183,10 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer p-0">
       {/* Image */}
       <div
-        className="relative h-64 overflow-hidden"
+        className="relative h-64 overflow-hidden w-full"
         onClick={() => router.push(`/investment-nft/${nft.id}`)}
       >
         <img
@@ -228,11 +228,11 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-xs text-muted-foreground">Giá trị tổng</div>
             <div className="text-lg font-bold">
               {totalValue !== undefined
-                ? `${formatNumber(totalValue)} ${(
+                ? `${formatAmount(totalValue)} ${(
                     nft?.currency || "ETH"
                   ).toUpperCase()}`
                 : nft?.price
-                ? `${formatNumber(nft?.price)} ${(
+                ? `${formatAmount(nft?.price)} ${(
                     nft?.currency || "ETH"
                   ).toUpperCase()}`
                 : "Thương lượng"}

@@ -12,6 +12,7 @@ import { Missions } from "@/screens/home-screen/missions/Missions";
 import { NewsEvents } from "@/screens/home-screen/news-events/NewsEvents";
 import { Footer } from "@/components/footer/Footer";
 import { LocalStorageService } from "@/services";
+import { autoConnect } from "@/lib/utils";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -41,6 +42,10 @@ export default function Home() {
     setUser(null);
     setIsAuthenticated(false);
   };
+
+  useEffect(() => {
+    autoConnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
