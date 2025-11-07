@@ -41,7 +41,7 @@ export function ListNFTDialog({
 
     // Validation
     if (!price || isNaN(priceValue) || priceValue <= 0) {
-      ToastService.error('Vui long nhap gia ban hop le (lon hon 0)');
+      ToastService.error('Vui lòng nhập giá bán hợp lệ (lớn hơn 0)');
       return;
     }
 
@@ -54,17 +54,17 @@ export function ListNFTDialog({
       });
 
       if (response.success) {
-        ToastService.success('Dang ban NFT thanh cong!', {
-          description: `${nft.name} da duoc them vao marketplace`,
+        ToastService.success('Đăng bán NFT thành công!', {
+          description: `${nft.name} đã được thêm vào marketplace`,
         });
         setPrice('');
         onOpenChange(false);
         onSuccess(); // Trigger refetch danh sach NFT
       } else {
-        ToastService.error(response.error || 'Khong the dang ban NFT');
+        ToastService.error(response.error || 'Không thể đăng bán NFT');
       }
     } catch (error: any) {
-      ToastService.error('Da xay ra loi khi dang ban NFT');
+      ToastService.error('Đã xảy ra lỗi khi đăng bán NFT');
       console.error('List NFT error:', error);
     } finally {
       setLoading(false);
@@ -84,9 +84,9 @@ export function ListNFTDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Dang ban NFT</DialogTitle>
+          <DialogTitle>Đăng bán NFT</DialogTitle>
           <DialogDescription>
-            Nhap gia ban cho <span className="font-semibold">{nft.name}</span>
+            Nhập giá bán cho <span className="font-semibold">{nft.name}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -102,7 +102,7 @@ export function ListNFTDialog({
               <div className="flex-1">
                 <p className="font-medium">{nft.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  Gia goc: {nft.price} {nft.currency.toUpperCase()}
+                  Giá gốc: {nft.price} {nft.currency.toUpperCase()}
                 </p>
               </div>
             </div>
@@ -110,12 +110,12 @@ export function ListNFTDialog({
             {/* Price Input */}
             <div className="grid gap-2">
               <Label htmlFor="price">
-                Gia ban <span className="text-red-500">*</span>
+                Giá bán <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="price"
                 type="number"
-                placeholder="Nhap gia ban"
+                placeholder="Nhập giá bán"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 disabled={loading}
@@ -124,7 +124,7 @@ export function ListNFTDialog({
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Don vi: {nft.currency.toUpperCase()}
+                Đơn vị: {nft.currency.toUpperCase()}
               </p>
             </div>
           </div>
@@ -136,10 +136,10 @@ export function ListNFTDialog({
               onClick={handleClose}
               disabled={loading}
             >
-              Huy
+              Hủy
             </Button>
             <Button type="submit" disabled={loading || !price}>
-              {loading ? 'Dang xu ly...' : 'Xac nhan'}
+              {loading ? 'Đang xử lý...' : 'Xác nhận'}
             </Button>
           </DialogFooter>
         </form>

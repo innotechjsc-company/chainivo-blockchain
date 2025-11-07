@@ -6,20 +6,20 @@ import { RewardDisplay } from "./RewardDisplay";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
 
 interface MysteryBoxAnimationWrapperProps {
-  // Control khi nao bat dau animation
+  // Control khi nào bắt đầu animation
   isOpen: boolean;
 
-  // Thong tin hien thi
+  // Thông tin hiển thị
   boxName?: string;
   boxImage?: string;
 
-  // Callback goi API de mo hop
+  // Callback gọi API để mở hộp
   onOpenBox: () => Promise<OpenBoxResponse>;
 
-  // Callback khi hoan tat tat ca (animation + reward display)
+  // Callback khi hoàn tất tất cả (animation + reward display)
   onComplete: () => void;
 
-  // Callback khi co loi
+  // Callback khi có lỗi
   onError?: (error: string) => void;
 
   // Custom titles cho animation phases
@@ -41,13 +41,13 @@ export const MysteryBoxAnimationWrapper = ({
   openingTitle,
   revealTitle,
 }: MysteryBoxAnimationWrapperProps) => {
-  // State quan ly animation va API
+  // State quản lý animation và API
   const [isApiComplete, setIsApiComplete] = useState(false);
   const [reward, setReward] = useState<OpenBoxResponse | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
   const [showReward, setShowReward] = useState(false);
 
-  // Reset state khi dong
+  // Reset state khi đóng
   useEffect(() => {
     if (!isOpen) {
       setIsApiComplete(false);
@@ -57,13 +57,13 @@ export const MysteryBoxAnimationWrapper = ({
     }
   }, [isOpen]);
 
-  // Tu dong goi API khi isOpen = true
+  // Tự động gọi API khi isOpen = true
   useEffect(() => {
     if (isOpen && !showAnimation) {
       setShowAnimation(true);
       setIsApiComplete(false);
 
-      // Goi API mo hop
+      // Gọi API mở hộp
       onOpenBox()
         .then((response) => {
           setReward(response);
@@ -72,7 +72,7 @@ export const MysteryBoxAnimationWrapper = ({
         .catch((error) => {
           console.error("Error opening mystery box:", error);
           onError?.(error.message || "Không thể mở hộp quà");
-          // Dong animation khi co loi
+          // Đóng animation khi có lỗi
           setShowAnimation(false);
           setIsApiComplete(false);
         });
@@ -81,7 +81,7 @@ export const MysteryBoxAnimationWrapper = ({
 
   return (
     <>
-      {/* Animation mo hop */}
+      {/* Animation mở hộp */}
       <BoxOpeningAnimation
         isOpen={showAnimation}
         boxName={boxName}
@@ -92,18 +92,18 @@ export const MysteryBoxAnimationWrapper = ({
         openingTitle={openingTitle}
         revealTitle={revealTitle}
         onAnimationComplete={() => {
-          // Animation xong → hien reward display
+          // Animation xong → hiển reward display
           setShowAnimation(false);
           setShowReward(true);
         }}
       />
 
-      {/* Hien thi phan thuong */}
+      {/* Hiển thị phần thưởng */}
       <RewardDisplay
         isOpen={showReward}
         reward={reward}
         onClose={() => {
-          // Dong reward display va trigger completion callback
+          // Đóng reward display và trigger completion callback
           setShowReward(false);
           setReward(null);
           onComplete();

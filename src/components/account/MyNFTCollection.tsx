@@ -62,22 +62,22 @@ export function MyNFTCollection() {
 
   const router = useRouter();
 
-  // Handler mo dialog dang ban NFT
+  // Handler mở dialog đăng bán NFT
   const handleListForSale = (nft: NFTItem) => {
     setSelectedNFT(nft);
     setDialogOpen(true);
   };
 
-  // Handler bat dau mo hop (trigger animation)
+  // Handler bắt đầu mở hộp (trigger animation)
   const handleOpenBox = (nft: NFTItem) => {
     setSelectedBoxNFT(nft);
     setIsOpeningBox(true);
   };
 
-  // Handler goi API mo hop (duoc goi boi MysteryBoxAnimationWrapper)
+  // Handler gọi API mở hộp (được gọi bởi MysteryBoxAnimationWrapper)
   const handleOpenBoxAPI = async (): Promise<OpenBoxResponse> => {
     if (!selectedBoxNFT) {
-      throw new Error('Khong co hop nao duoc chon');
+      throw new Error('Không có hộp nào được chọn');
     }
 
     // Goi API mo hop
@@ -86,28 +86,28 @@ export function MyNFTCollection() {
     if (response.success && response.data) {
       return response.data;
     } else {
-      throw new Error(response.error || response.message || 'Co loi xay ra khi mo hop');
+      throw new Error(response.error || response.message || 'Có lỗi xảy ra khi mở hộp');
     }
   };
 
-  // Handler khi hoan tat tat ca (animation + reward display)
+  // Handler khi hoàn tất tất cả (animation + reward display)
   const handleOpenBoxComplete = () => {
     setIsOpeningBox(false);
     setSelectedBoxNFT(null);
 
-    // Refetch NFT collection de cap nhat danh sach
+    // Refetch NFT collection để cập nhật danh sách
     refetch();
 
-    ToastService.success('Phan thuong da duoc chuyen vao tai khoan cua ban!');
+    ToastService.success('Phần thưởng đã được chuyển vào tài khoản của bạn!');
   };
 
-  // Handler khi co loi
+  // Handler khi có lỗi
   const handleOpenBoxError = (error: string) => {
     setIsOpeningBox(false);
     ToastService.error(error);
   };
 
-  // Handler chung cho action clicks tu NFTCard
+  // Handler chung cho action clicks từ NFTCard
   const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open') => {
     if (action === 'sell') {
       handleListForSale(nft);
@@ -131,7 +131,7 @@ export function MyNFTCollection() {
         <div className="flex items-center gap-3 text-destructive">
           <AlertCircle className="w-5 h-5" />
           <div>
-            <p className="font-semibold">Khong the tai danh sach NFT</p>
+            <p className="font-semibold">Không thể tải danh sách NFT</p>
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         </div>
@@ -199,10 +199,10 @@ export function MyNFTCollection() {
         onOpenBox={handleOpenBoxAPI}
         onComplete={handleOpenBoxComplete}
         onError={handleOpenBoxError}
-        initialTitle="Dang chuan bi..."
-        shakeTitle="Dang mo hop..."
-        openingTitle="Dang mo hop qua cua ban!"
-        revealTitle="Chuc mung!"
+        initialTitle="Đang chuẩn bị..."
+        shakeTitle="Đang mở hộp..."
+        openingTitle="Đang mở hộp quà của bạn!"
+        revealTitle="Chúc mừng!"
       />
     </div>
   );

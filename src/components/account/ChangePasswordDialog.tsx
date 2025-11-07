@@ -150,7 +150,7 @@ export function ChangePasswordDialog({
 
       if (response.success) {
         ToastService.success('Thay đổi mật khẩu thành công ', {
-          description: 'Mật khẩu của bạn đã dược cập nhật ',
+          description: 'Mật khẩu của bạn đã được cập nhật ',
         });
         handleClose();
       } else {

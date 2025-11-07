@@ -40,12 +40,12 @@ export function AvatarUpload({
   const validateFile = (file: File): string | null => {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return 'Kich thuoc anh phai nho hon 5MB';
+      return 'Kích thước ảnh phải nhỏ hơn 5MB';
     }
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return 'Chi ho tro: jpeg, png, gif, webp, svg';
+      return 'Chỉ hỗ trợ: jpeg, png, gif, webp, svg';
     }
 
     return null;
@@ -144,7 +144,7 @@ export function AvatarUpload({
       {fileError && <p className="text-sm text-red-500">{fileError}</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
       {previewUrl && (
-        <p className="text-xs text-green-500">Anh moi se duoc upload khi cap nhat</p>
+        <p className="text-xs text-green-500">Ảnh mới sẽ được upload khi cập nhật</p>
       )}
     </div>
   );
