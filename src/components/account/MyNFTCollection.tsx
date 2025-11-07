@@ -28,7 +28,7 @@ function LoadingSkeleton() {
       <div className="h-10 w-full max-w-md bg-muted animate-pulse rounded" />
 
       {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i} className="glass overflow-hidden">
             <div className="aspect-square bg-muted animate-pulse" />
@@ -78,13 +78,13 @@ export function MyNFTCollection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className=" space-y-6 ">
       {/* Stats Cards */}
       <NFTStatsCards {...stats} />
 
       {/* Filter Tabs */}
       <Tabs value={filter} onValueChange={(value) => setFilter(value as NFTFilterType)}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
           <TabsTrigger value="all">
             Tất cả ({stats.totalNFTs})
           </TabsTrigger>
@@ -103,7 +103,7 @@ export function MyNFTCollection() {
           <p className="text-muted-foreground">Khong co NFT nao</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {nfts.map((nft) => (
             <NFTCard
               key={nft.id}

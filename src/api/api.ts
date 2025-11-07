@@ -191,6 +191,10 @@ export const API_ENDPOINTS = {
     PARTNERS: "/api/about/partners",
     // ECOSYSTEM: "/api/about/ecosystem",
   },
+
+  TRANSACTION: {
+    LIST: "/api/list-transaction",
+  },
 } as const;
 
 export interface ApiResponse<T = any> {
