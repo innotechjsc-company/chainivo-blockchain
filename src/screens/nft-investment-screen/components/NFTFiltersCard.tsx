@@ -98,30 +98,16 @@ export const NFTFiltersCard = ({
     onFiltersChange({ ...filters, rarity: newRarity });
   };
 
-  const toggleType = (type: string) => {
-    onFiltersChange({ ...filters, type });
-  };
-
-  const toggleStatus = (status: string) => {
-    const newStatus = (filters.status || []).includes(status)
-      ? (filters.status || []).filter((s) => s !== status)
-      : [...(filters.status || []), status];
-    onFiltersChange({ ...filters, status: newStatus });
-  };
-
-  const toggleShares = (shares: string) => {
-    const newShares = (filters.shares || []).includes(shares)
-      ? (filters.shares || []).filter((s) => s !== shares)
-      : [...(filters.shares || []), shares];
-    onFiltersChange({ ...filters, shares: newShares });
-  };
-
   const handleApplyFilters = async () => {
+    // Cập nhật filters với khoảng giá đã chọn
     const updatedFilters = { ...filters, priceRange: pendingRange };
     onFiltersChange(updatedFilters);
+
     if (onSearch) {
       try {
-        // Gọi searchMarketplace với filters đã cập nhật, đặc biệt là level (rarity)
+        // Gọi searchMarketplace với filters đã cập nhật, bao gồm:
+        // - level (rarity/độ hiếm) từ filters.rarity
+        // - minPrice và maxPrice từ pendingRange (khoảng giá)
         const success = await onSearch(updatedFilters);
         if (success) {
           // Đóng bộ lọc sau khi tìm kiếm thành công (optional)
@@ -268,14 +254,14 @@ export const NFTFiltersCard = ({
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>
                       <span className="text-cyan-400 font-semibold">
-                        {pendingRange[0].toLocaleString()}
+                        {pendingRange[0].toLocaleString("vi-VN")}
                       </span>
                       {" CAN"}
                     </span>
                     <span>~</span>
                     <span>
                       <span className="text-purple-400 font-semibold">
-                        {pendingRange[1].toLocaleString()}
+                        {pendingRange[1].toLocaleString("vi-VN")}
                       </span>
                       {" CAN"}
                     </span>
@@ -293,6 +279,10 @@ export const NFTFiltersCard = ({
                     }
                     className="w-full"
                   />
+                  <div className="text-xs text-muted-foreground text-center pt-1">
+                    Khoảng giá: {pendingRange[0].toLocaleString("vi-VN")} -{" "}
+                    {pendingRange[1].toLocaleString("vi-VN")} CAN
+                  </div>
                 </div>
               )}
             </div>

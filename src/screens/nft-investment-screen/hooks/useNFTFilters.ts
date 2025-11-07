@@ -219,12 +219,21 @@ export const useNFTFilters = (nfts: NFT[]) => {
   ): Promise<boolean> => {
     const f = { ...filters, ...(override || {}) };
 
-    // Tạo params với level từ rarity (độ hiếm)
+    // Tạo params với level từ rarity (độ hiếm) và khoảng giá
     const params: any = {
       page: 1,
       limit: 24,
-      minPrice: String(f.priceRange[0]),
-      maxPrice: String(f.priceRange[1]),
+      // Truyền khoảng giá lên API - minPrice và maxPrice từ priceRange
+      // Chỉ gửi nếu khoảng giá khác giá trị mặc định (0 - 10000 hoặc 0 - 1000000)
+      ...(f.priceRange &&
+      f.priceRange.length === 2 &&
+      (f.priceRange[0] !== 0 ||
+        (f.priceRange[1] !== 10000 && f.priceRange[1] !== 1000000))
+        ? {
+            minPrice: String(f.priceRange[0]),
+            maxPrice: String(f.priceRange[1]),
+          }
+        : {}),
       // Truyền level (độ hiếm) lên API - join các level đã chọn bằng dấu phẩy
       level: f.rarity.length > 0 ? f.rarity.join(",") : undefined,
       type: f.type !== "all" ? f.type : undefined,
@@ -250,66 +259,18 @@ export const useNFTFilters = (nfts: NFT[]) => {
         limit: 9,
         ...params,
       });
-      let marketplaceResults: any[] = [];
-
+      debugger;
+      let finalResults: any[] = [];
       if (response.success) {
-        const data: any = response.data as any;
-        // Lấy danh sách NFT từ response - hỗ trợ nhiều cấu trúc
-        if (Array.isArray(data)) {
-          marketplaceResults = data;
-        } else if (data?.nfts && Array.isArray(data.nfts)) {
-          marketplaceResults = data.nfts;
-        } else if (data?.items && Array.isArray(data.items)) {
-          marketplaceResults = data.items;
-        } else if (data?.docs && Array.isArray(data.docs)) {
-          marketplaceResults = data.docs;
-        } else if (data?.data && Array.isArray(data.data)) {
-          marketplaceResults = data.data;
-        } else {
-          marketplaceResults = [];
-        }
+        finalResults = (response.data as any).data || [];
+
+        setSearchNFTs(finalResults);
       } else {
         toast.error(response.message || "Không thể tìm kiếm NFT");
         setSearchNFTs([]);
         setLoading(false);
         return false;
       }
-
-      // Filter userNFTs based on the same criteria
-      const filteredUserNFTs = filterNFTsByCriteria(userNFTs, f);
-
-      // Merge results from both sources
-      // Use a Map to avoid duplicates based on id/_id/tokenId
-      const mergedResults = new Map<string, any>();
-
-      // Add marketplace results
-      marketplaceResults.forEach((nft: any) => {
-        const id = String(nft.id || nft._id || nft.tokenId || "");
-        if (id && !mergedResults.has(id)) {
-          mergedResults.set(id, nft);
-        } else if (!id) {
-          // If no ID, add with a unique key
-          const uniqueKey = `marketplace-${mergedResults.size}`;
-          mergedResults.set(uniqueKey, nft);
-        }
-      });
-
-      // Add filtered user NFTs
-      filteredUserNFTs.forEach((nft: any) => {
-        const id = String(nft.id || nft._id || nft.tokenId || "");
-        if (id && !mergedResults.has(id)) {
-          mergedResults.set(id, nft);
-        } else if (!id) {
-          // If no ID, add with a unique key
-          const uniqueKey = `user-${mergedResults.size}`;
-          mergedResults.set(uniqueKey, nft);
-        }
-      });
-
-      // Convert Map to Array
-      const finalResults = Array.from(mergedResults.values());
-
-      setSearchNFTs(finalResults);
 
       // Hiển thị thông báo kết quả tìm kiếm
       if (finalResults.length > 0) {

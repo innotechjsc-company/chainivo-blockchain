@@ -91,7 +91,7 @@ export const NFTGridCard = ({
     <div className="mb-12">
       <h2 className="text-2xl font-bold mb-6 gradient-text">{title}</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ">
         {displayedNFTs.map((nft, index) => (
           <div
             key={nft.id}
@@ -106,7 +106,8 @@ export const NFTGridCard = ({
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-2 mt-6">
+      {/* Pagination - chỉ hiển thị khi có nhiều hơn 1 trang */}
+      <div className="flex items-center justify-center gap-2 mt-12">
         <Button
           variant="outline"
           size="sm"
