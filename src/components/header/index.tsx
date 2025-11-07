@@ -259,9 +259,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                       >
                         <span
                           className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-background ${
-                            isWalletConnected
-                              ? "bg-emerald-500"
-                              : "bg-red-500"
+                            isWalletConnected ? "bg-emerald-500" : "bg-red-500"
                           }`}
                         />
                         <Wallet className="w-4 h-4 mr-2" />
@@ -286,9 +284,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                       <Button className="hidden md:flex cursor-pointer relative">
                         <span
                           className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${
-                            isWalletConnected
-                              ? "bg-emerald-500"
-                              : "bg-red-500"
+                            isWalletConnected ? "bg-emerald-500" : "bg-red-500"
                           }`}
                         />
                         <Wallet className="w-4 h-4 mr-2" />

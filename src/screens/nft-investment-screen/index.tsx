@@ -6,6 +6,7 @@ import { useNFTData } from "./hooks/useNFTData";
 import { useNFTFilters } from "./hooks/useNFTFilters";
 import { useNFTStats } from "./hooks/useNFTStats";
 import { Spinner } from "@/components/ui/spinner";
+import { autoConnect } from "@/lib/utils";
 
 export default function NFTInvestmentScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -31,6 +32,10 @@ export default function NFTInvestmentScreen() {
   useEffect(() => {
     setIsLoading(loading);
   }, [loading]);
+
+  useEffect(() => {
+    autoConnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
