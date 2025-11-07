@@ -23,6 +23,9 @@ export default function NFTMarketScreen() {
     searchNFTs,
     // use hook loading to drive global loading
     loading,
+    fetchOtherNFTs,
+    currentPage,
+    totalPages,
   } = useNFTFilters(nfts);
 
   const isLoading = loading;
@@ -63,6 +66,9 @@ export default function NFTMarketScreen() {
                   nfts={otherNFTsData}
                   title="NFT Marketplace"
                   initialCount={6}
+                  totalPages={totalPages}
+                  currentPage={currentPage}
+                  onPageChange={(page) => fetchOtherNFTs(page, 1)}
                 />
               </div>
             )}

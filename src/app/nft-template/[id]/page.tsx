@@ -48,8 +48,8 @@ import {
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
-import { LoadingSkeleton } from "./components/LoadingSkeleton";
-import { getLevelBadge } from "@/lib/utils";
+import { formatAmount, getLevelBadge } from "@/lib/utils";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -269,9 +269,8 @@ export default function NFTDetailPage() {
     }
   };
 
-  // Show LoadingSkeleton when buying NFT
   if (buyLoading) {
-    return <LoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -334,28 +333,12 @@ export default function NFTDetailPage() {
                   )}
                 />
               </div>
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <span className="text-xs text-muted-foreground">
-                    Chủ sở hữu:{" "}
-                  </span>
-                  <span className="font-mono">
-                    {nftData?.owner?.email ?? "Khách hàng"}
-                  </span>
-                </div>
-              </div>
             </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
-                {(() => {
-                  const raw = (nftData as any)?.price;
-                  const n =
-                    typeof raw === "string" ? parseFloat(raw) : Number(raw);
-                  const safe = Number.isFinite(n) ? n : 0;
-                  return safe.toLocaleString("vi-VN");
-                })()}{" "}
+                {formatAmount((nftData as any)?.price)}
                 {TOKEN_DEAULT_CURRENCY}
               </div>
 

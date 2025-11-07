@@ -57,7 +57,7 @@ export const autoConnect = async () => {
       // Prompt connect if not yet connected
       try {
         await eth.request({ method: "eth_requestAccounts" });
-        debugger;
+
         accounts = await eth.request({ method: "eth_accounts" });
       } catch (_err) {
         return;

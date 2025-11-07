@@ -25,6 +25,8 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const [otherNFTsData, setOtherNFTsData] = useState<any[]>([]);
   const [otherNFTsAnalytics, setOtherNFTsAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   const fetchUserNFTs = async () => {
@@ -58,13 +60,63 @@ export const useNFTFilters = (nfts: NFT[]) => {
     return [];
   };
 
-  const fetchOtherNFTs = async () => {
+  const fetchOtherNFTs = async (page: number = 1, limit: number = 1) => {
     try {
-      const response = await NFTService.allNFTInMarketplace();
+      setLoading(true);
+      const response = await NFTService.allNFTInMarketplace({
+        page,
+        limit,
+      });
+
       if (response.success) {
         const data: any = response.data as any;
-        const list = normalizeNFTCollection(data);
+
+        // Lấy danh sách NFT - kiểm tra nhiều cấu trúc có thể
+        let list: any[] = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (data?.docs && Array.isArray(data.docs)) {
+          list = data.docs;
+        } else if (data?.nfts && Array.isArray(data.nfts)) {
+          list = data.nfts;
+        } else if (data?.items && Array.isArray(data.items)) {
+          list = data.items;
+        } else if (data?.data && Array.isArray(data.data)) {
+          list = data.data;
+        } else {
+          list = normalizeNFTCollection(data);
+        }
+
         setOtherNFTsData(list);
+
+        // Lấy thông tin pagination từ response - ưu tiên data.totalPages
+        const totalPagesFromData =
+          data?.totalPages ||
+          data?.data?.totalPages ||
+          data?.total_pages ||
+          data?.data?.total_pages;
+
+        // Nếu có pagination object
+        const pagination =
+          data?.pagination ||
+          data?.data?.pagination ||
+          (response as any).pagination;
+
+        if (totalPagesFromData) {
+          // Ưu tiên sử dụng data.totalPages
+          setTotalPages(totalPagesFromData);
+          setCurrentPage(data?.page || data?.data?.page || page);
+        } else if (pagination) {
+          // Fallback: sử dụng pagination object
+          setTotalPages(pagination.totalPages || pagination.total_pages || 1);
+          setCurrentPage(pagination.page || page);
+        } else {
+          // Fallback cuối cùng: tính toán từ data nếu không có pagination object
+          const totalItems =
+            data?.total || data?.data?.total || data?.totalDocs || list.length;
+          setTotalPages(Math.max(1, Math.ceil(totalItems / limit)));
+          setCurrentPage(page);
+        }
 
         const analytics =
           (data && (data.analytics || data?.data?.analytics)) ||
@@ -72,12 +124,19 @@ export const useNFTFilters = (nfts: NFT[]) => {
           null;
         setOtherNFTsAnalytics(analytics);
       } else {
-        toast.error(response.message);
+        toast.error(response.message || "Không thể tải dữ liệu");
         setOtherNFTsData([]);
+        setTotalPages(1);
+        setCurrentPage(1);
       }
     } catch (error) {
       console.error("Error fetching NFTs:", error);
+      toast.error("Lỗi khi tải dữ liệu NFT");
       setOtherNFTsData([]);
+      setTotalPages(1);
+      setCurrentPage(1);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,13 +282,10 @@ export const useNFTFilters = (nfts: NFT[]) => {
   };
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        await Promise.all([fetchOtherNFTs(), fetchUserNFTs()]);
+        await Promise.all([fetchOtherNFTs(1, 1), fetchUserNFTs()]);
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
@@ -294,5 +350,8 @@ export const useNFTFilters = (nfts: NFT[]) => {
     searchMarketplace,
     searchNFTs,
     loading,
+    fetchOtherNFTs,
+    currentPage,
+    totalPages,
   };
 };
