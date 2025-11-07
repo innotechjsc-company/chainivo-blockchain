@@ -238,6 +238,8 @@ export interface NFTItem {
   publishedAt: string;
   updatedAt: string;
   purchaseDate: string;
+  shares: number;
+  pricePerShare: number;
 }
 
 export interface Pagination {

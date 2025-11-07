@@ -36,47 +36,57 @@ export function getNFTType(type: string) {
   }
 }
 
-export const formatAmount = (value: unknown) => {
-  const num = Number(value || 0);
-  if (Number.isNaN(num)) return String(value ?? "-");
+export const formatAmount = (valueInput: unknown) => {
+  const value = Number(valueInput || 0);
+  const decimals = 0;
+ // Xu ly gia tri null/undefined
+ if (value === null || value === undefined) return "0";
+ if (isNaN(value)) return "0";
 
-  // Nếu nhỏ hơn 1,000,000 (6 số 0) thì giữ nguyên format với dấu phẩy
-  if (num < 1000000) {
-    return num.toLocaleString("en-US");
-  }
+ const absValue = Math.abs(value);
+ const isNegative = value < 0;
 
-  // Nếu từ 1,000,000 (6 số 0) đến dưới 1,000,000,000 (9 số 0) → format thành "XM" hoặc "X.XM" (million)
-  if (num >= 1000000 && num < 1000000000) {
-    const millions = num / 1000000;
-    // Làm tròn đến 1 chữ số thập phân, nhưng nếu là số nguyên thì không hiển thị .0
-    const rounded = Math.round(millions * 10) / 10;
-    return rounded % 1 === 0 ? `${rounded} ` : `${rounded.toFixed(1)} Triệu`;
-  }
+ // Neu >= 1 billion: rut gon thanh B
+ if (absValue >= 1_000_000_000) {
+   const billions = absValue / 1_000_000_000;
+   // Format phan so truoc, roi them 'B'
+   const numberPart = billions >= 10
+     ? Math.floor(billions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+     : billions.toFixed(1);
+   return isNegative ? `-${numberPart}B` : `${numberPart}B`;
+ }
 
-  // Nếu từ 1,000,000,000 (9 số 0) đến dưới 1,000,000,000,000 (12 số 0) → format thành "XB" hoặc "X.XB" (billion)
-  if (num >= 1000000000 && num < 1000000000000) {
-    const billions = num / 1000000000;
-    // Làm tròn đến 1 chữ số thập phân, nhưng nếu là số nguyên thì không hiển thị .0
-    const rounded = Math.round(billions * 10) / 10;
-    return rounded % 1 === 0 ? `${rounded} Tỷ` : `${rounded.toFixed(1)} Tỷ`;
-  }
+ // Neu >= 1 million: rut gon thanh M
+ if (absValue >= 1_000_000) {
+   const millions = absValue / 1_000_000;
+   // Format phan so truoc, roi them 'M'
+   const numberPart = millions >= 10
+     ? Math.floor(millions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+     : millions.toFixed(1);
+   return isNegative ? `-${numberPart}M` : `${numberPart}M`;
+ }
 
-  // Nếu từ 1,000,000,000,000 (12 số 0) đến dưới 1,000,000,000,000,000 (15 số 0) → format thành "XT" hoặc "X.XT" (trillion)
-  if (num >= 1000000000000 && num < 1000000000000000) {
-    const trillions = num / 1000000000000;
-    // Làm tròn đến 1 chữ số thập phân, nhưng nếu là số nguyên thì không hiển thị .0
-    const rounded = Math.round(trillions * 10) / 10;
-    return rounded % 1 === 0
-      ? `${rounded} Nghìn tỷ`
-      : `${rounded.toFixed(1)} Nghìn tỷ`;
-  }
+ // Neu >= 10,000: rut gon thanh K
+ if (absValue >= 10_000) {
+   const thousands = absValue / 1_000;
+   // Format phan so truoc, roi them 'K'
+   const numberPart = thousands >= 10
+     ? Math.floor(thousands).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+     : thousands.toFixed(1);
+   return isNegative ? `-${numberPart}K` : `${numberPart}K`;
+ }
 
-  // Nếu từ 1,000,000,000,000,000 (15 số 0) trở lên → format thành "XQ" hoặc "X.XQ" (quadrillion)
-  const quadrillions = num / 1000000000000000;
-  const rounded = Math.round(quadrillions * 10) / 10;
-  return rounded % 1 === 0
-    ? `${rounded} Triệu tỷ`
-    : `${rounded.toFixed(1)} Triệu tỷ`;
+ // Neu < 10,000: format day du voi dau phan cach
+ const fixedValue = decimals > 0 ? absValue.toFixed(decimals) : Math.round(absValue);
+ const [integerPart, decimalPart] = fixedValue.toString().split(".");
+
+ // Them dau phan cach hang nghin (,) cho phan nguyen
+ const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+ // Neu co phan thap phan, them dau cham (.)
+ let result = decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+
+ return isNegative ? `-${result}` : result;
 };
 
 export const autoConnect = async () => {
