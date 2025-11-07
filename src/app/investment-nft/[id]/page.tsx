@@ -530,8 +530,18 @@ export default function InvestmentNFTDetailPage() {
                     min={0}
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value || 0))}
-                    className="bg-background/50 border-cyan-500/30 focus:border-cyan-500/60"
+                    className={`bg-background/50 border-cyan-500/30 focus:border-cyan-500/60 ${
+                      quantity > totalShares
+                        ? "border-red-500 focus:border-red-400"
+                        : ""
+                    }`}
                   />
+                  {quantity > totalShares && (
+                    <div className="text-xs text-red-400">
+                      Cổ phần bạn muốn đầu tư hiện tại đã vượt qua cổ phần được
+                      mở bán
+                    </div>
+                  )}
                   <div className="text-xs text-muted-foreground">
                     Tổng: {formatAmount(totalCost)} {currency}
                   </div>
