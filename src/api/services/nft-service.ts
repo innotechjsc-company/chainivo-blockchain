@@ -281,8 +281,8 @@ export class NFTService {
       API_ENDPOINTS.NFT.BUY_P2P_HISTORY_TRANSACTION(id)
     );
   }
-  static async getNFTInvestmentList(): Promise<ApiResponse<any[]>> {
-    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT);
+  static async getNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
+    return ApiService.get<any[]>(API_ENDPOINTS.NFT.LIST_INVESTMENT, data);
   }
   static async buyNFTInvestmentList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.post<any[]>(API_ENDPOINTS.NFT.BUY_INVESTMENT_NFT, data);

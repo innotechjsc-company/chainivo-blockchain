@@ -26,6 +26,9 @@ export default function NFTInvestmentScreen() {
     searchMarketplace,
     searchNFTs,
     loading,
+    fetchOtherNFTs,
+    currentPage,
+    totalPages,
   } = useNFTFilters(nfts);
 
   // Sync component loading state with hook loading state
@@ -79,6 +82,9 @@ export default function NFTInvestmentScreen() {
                 nfts={otherNFTsData}
                 title="Danh sách NFT đầu tư "
                 initialCount={6}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={(page) => fetchOtherNFTs(page, 1)}
               />
             </div>
           </>
