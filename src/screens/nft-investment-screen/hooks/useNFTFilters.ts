@@ -146,72 +146,14 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
 
-  // Helper function to filter NFTs based on filters
-  const filterNFTsByCriteria = (
-    nftsToFilter: any[],
-    filterCriteria: NFTFiltersState
-  ): any[] => {
-    return nftsToFilter.filter((nft: any) => {
-      // Type filter
-      if (filterCriteria.type !== "all" && nft.type !== filterCriteria.type) {
-        return false;
-      }
-
-      // Rarity filter (check level or rarity field)
-      if (filterCriteria.rarity.length > 0) {
-        const nftRarity = String(nft.level || nft.rarity || "");
-        if (!filterCriteria.rarity.includes(nftRarity)) {
-          return false;
-        }
-      }
-
-      // Status filter
-      if (filterCriteria.status && filterCriteria.status.length > 0) {
-        const nftStatus = nft.isActive ? "active" : "inactive";
-        if (!filterCriteria.status.includes(nftStatus)) {
-          return false;
-        }
-      }
-
-      // Shares availability filter
-      if (filterCriteria.shares && filterCriteria.shares.length > 0) {
-        const remainingShares = Number(
-          nft.remainingShares ?? nft.availableShares ?? 0
-        );
-        const hasAvailableShares = remainingShares > 0;
-
-        if (
-          filterCriteria.shares.includes("available") &&
-          !hasAvailableShares
-        ) {
-          return false;
-        }
-        if (filterCriteria.shares.includes("sold_out") && hasAvailableShares) {
-          return false;
-        }
-      }
-
-      // Price range filter
-      const priceValue =
-        nft.price ||
-        nft.currentPrice?.amount ||
-        nft.currentPrice?.price?.amount ||
-        0;
-      const numericPrice =
-        typeof priceValue === "string"
-          ? parseFloat(priceValue)
-          : Number(priceValue);
-
-      if (
-        !isNaN(numericPrice) &&
-        (numericPrice < filterCriteria.priceRange[0] ||
-          numericPrice > filterCriteria.priceRange[1])
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+  const GetInfoNFT = async () => {
+    const response = await NFTService.getInfoNFT();
+    if (response.success) {
+      setOtherNFTsAnalytics((response.data as any).metrics);
+      return response.data;
+    } else {
+      return null;
+    }
   };
 
   const searchMarketplace = async (
@@ -298,6 +240,10 @@ export const useNFTFilters = (nfts: NFT[]) => {
       }
     };
     fetchData();
+  }, [userInfo]);
+
+  useEffect(() => {
+    GetInfoNFT();
   }, [userInfo]);
 
   const filteredNFTs = useMemo(() => {

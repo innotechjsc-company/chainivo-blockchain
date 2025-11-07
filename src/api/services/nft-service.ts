@@ -94,6 +94,10 @@ export class NFTService {
     return ApiService.get<NFT>(API_ENDPOINTS.NFT.DETAIL(id));
   }
 
+  static async getInfoNFT(): Promise<ApiResponse<NFT>> {
+    return ApiService.get<NFT>(API_ENDPOINTS.NFT.INFO);
+  }
+
   // So huu NFT (ownership)
   static async getNFTOwnerships(
     params?: GetNFTOwnershipsParams

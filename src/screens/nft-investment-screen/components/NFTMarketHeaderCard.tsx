@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatNumber } from "@/utils/formatters";
 import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
 
 interface NFTStats {
@@ -30,18 +31,20 @@ export const NFTMarketHeaderCard = ({
   priceData,
   analytics,
 }: NFTMarketHeaderCardProps) => {
+  console.log("analytics", analytics);
+
   const statItems = [
     {
       icon: Package,
       label: "Tổng NFT",
-      value: 1250,
+      value: analytics?.totalNFTs?.totalDocs,
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: 1000,
+      value: analytics?.activeUsers?.totalDocs,
       trend: "+8.3%",
       trendUp: true,
     },
@@ -102,7 +105,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Khối lượng giao dịch</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {(100000).toLocaleString("en-US")}
+              {formatNumber(analytics?.totalVolume?.toString() ?? "0")}
             </div>
           </CardHeader>
           <CardContent className="pb-2">
@@ -134,7 +137,8 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {(50000).toLocaleString("en-US")} CAN
+              {formatNumber(analytics?.averageFloorPrice?.toString() ?? "0")}{" "}
+              CAN
             </div>
           </CardHeader>
           <CardContent className="pb-2">
