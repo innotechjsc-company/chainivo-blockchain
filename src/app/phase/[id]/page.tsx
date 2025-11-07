@@ -35,6 +35,7 @@ import { useAuth } from "@/components/header/hooks/useAuth";
 import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/services/ToastService";
+import { formatAmount } from "@/lib/utils";
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -132,7 +133,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
   const calculateTokens = () => {
     const amount = parseFloat(investAmount) || 0;
-    const tokens = amount * phase.pricePerToken;
+    const tokens = amount / phase.pricePerToken;
     return {
       baseTokens: tokens.toFixed(2),
       totalTokens: tokens.toFixed(2),
@@ -491,7 +492,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     <div className="border-t border-primary/20 pt-3 flex justify-between">
                       <span className="font-semibold">Tổng nhận được:</span>
                       <span className="text-2xl font-bold gradient-text">
-                        {totalTokens} CAN
+                        {formatAmount(totalTokens)} CAN
                       </span>
                     </div>
                   </div>
