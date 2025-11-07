@@ -222,7 +222,7 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                       </div>
                       <div className="text-xs text-muted-foreground text-center">
                         ${currentPhase.soldTokens?.toLocaleString() || 0} / $
-                        {currentPhase.totalTokens?.toLocaleString() || 0} CAN`
+                        {currentPhase.totalTokens?.toLocaleString() || 0} CAN
                       </div>
                     </>
                   )}

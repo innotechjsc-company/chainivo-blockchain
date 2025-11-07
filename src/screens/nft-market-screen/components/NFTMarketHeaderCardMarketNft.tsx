@@ -1,7 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatNumber } from "@/utils/formatters";
 import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface NFTStats {
   totalNFTs: string;
@@ -17,31 +19,37 @@ interface ChartData {
   value: number;
 }
 
-interface NFTMarketHeaderCardProps {
+interface NFTMarketHeaderCardMarketNftProps {
   stats: NFTStats;
   volumeData: ChartData[];
   priceData: ChartData[];
   analytics?: any; // Analytics data from otherNFTsData
 }
 
-export const NFTMarketHeaderCard = ({
+export const NFTMarketHeaderCardMarketNft = ({
   stats,
   volumeData,
   priceData,
   analytics,
-}: NFTMarketHeaderCardProps) => {
+}: NFTMarketHeaderCardMarketNftProps) => {
+  const [dataAnalytics, setDataAnalytics] = useState<any>(null);
+  useEffect(() => {
+    if (analytics?.totalNFTs) {
+      setDataAnalytics(analytics);
+    }
+  }, [analytics]);
   const statItems = [
     {
       icon: Package,
       label: "Tổng NFT",
-      value: analytics?.totalNFTs,
+      value: dataAnalytics?.totalNFTs,
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: "1,352",
+      value: dataAnalytics?.activeUsers,
       trend: "+8.3%",
       trendUp: true,
     },
@@ -102,7 +110,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Khối lượng giao dịch</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {(100000).toLocaleString("en-US")}
+              {formatNumber(dataAnalytics?.totalVolume?.toString() ?? "0")}
             </div>
           </CardHeader>
           <CardContent className="pb-2">
@@ -134,7 +142,10 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {(50000).toLocaleString("en-US")} CAN
+              {formatNumber(
+                dataAnalytics?.averageFloorPrice?.toString() ?? "0"
+              )}{" "}
+              CAN
             </div>
           </CardHeader>
           <CardContent className="pb-2">

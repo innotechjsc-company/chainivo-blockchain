@@ -108,13 +108,13 @@ export const CoinStakingForm = ({
     if (selectedPoolData) {
       if (stakeAmount < selectedPoolData.minStake) {
         toast.error(
-          `Số lượng stake tối thiểu là ${selectedPoolData.minStake} CAN`
+          `Số lượng stake tối thiểu là ${selectedPoolData.minStake} CAN
         );
         return;
       }
       if (stakeAmount > selectedPoolData.maxStake) {
         toast.error(
-          `Số lượng stake tối đa là ${selectedPoolData.maxStake} CAN`
+          `Số lượng stake tối đa là ${selectedPoolData.maxStake} CAN
         );
         return;
       }

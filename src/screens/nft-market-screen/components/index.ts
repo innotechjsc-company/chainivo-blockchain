@@ -1,4 +1,4 @@
-export { NFTMarketHeaderCard } from "./NFTMarketHeaderCard";
+export { NFTMarketHeaderCardMarketNft } from "./NFTMarketHeaderCardMarketNft";
 export { NFTFiltersCard } from "./NFTFiltersCard";
 export { NFTGridCard } from "./NFTGridCard";
 export { NFTCard } from "./NFTCard";
