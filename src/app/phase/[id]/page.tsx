@@ -746,7 +746,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 className="animate-fade-in"
                 style={{ animationDelay: "0.2s" }}
               >
-                <LiveTransactionFeed phaseId={phase.phaseId} limit={8} />
+                <LiveTransactionFeed phaseId={phase.id} limit={8} />
               </div>
             </div>
           </div>
@@ -773,7 +773,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
             const tx: any = isInvestmentConfirmed;
             const usdcAmount = parseFloat(tx?.amount || investAmount || "0");
             const canReceived = phase?.pricePerToken
-              ? (usdcAmount * Number(phase.pricePerToken)).toFixed(2)
+              ? (usdcAmount / Number(phase.pricePerToken)).toFixed(2)
               : "0";
             const gasPriceWei = String(
               tx?.gasPrice || tx?.rawReceipt?.effectiveGasPrice || "0"

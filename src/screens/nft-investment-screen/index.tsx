@@ -36,10 +36,6 @@ export default function NFTInvestmentScreen() {
     setIsLoading(loading);
   }, [loading]);
 
-  useEffect(() => {
-    autoConnect();
-  }, []);
-
   return (
     <div className="min-h-screen bg-background">
       {isLoading && (

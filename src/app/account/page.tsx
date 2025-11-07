@@ -24,6 +24,7 @@ import { TransactionTable } from "@/components/account/TransactionTable";
 import { TransactionPagination } from "@/components/account/TransactionPagination";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { Spinner } from "@/components/ui/spinner";
+import MyNFTScreen from "@/screens/my-nft-screen";
 
 interface Profile {
   name: string;
@@ -189,8 +190,11 @@ export default function AccountManagementPage() {
         // Update local profile state
         const newProfileState = {
           ...profile,
-          name: hasNameChange ? trimmedName : (profile?.name || ''),
-          avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : (profile?.avatarUrl || null),
+          name: hasNameChange ? trimmedName : profile?.name || "",
+          avatarUrl:
+            hasAvatarChange && avatarUrl
+              ? avatarUrl
+              : profile?.avatarUrl || null,
         };
         setProfile(newProfileState as Profile);
 
@@ -312,7 +316,7 @@ export default function AccountManagementPage() {
           </h1>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-8">
+            <TabsList className="grid w-full grid-cols-6 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -324,6 +328,10 @@ export default function AccountManagementPage() {
               <TabsTrigger value="my-nft">
                 <User className="w-4 h-4 mr-2" />
                 NFT của tôi
+              </TabsTrigger>
+              <TabsTrigger value="nft-co-phan">
+                <User className="w-4 h-4 mr-2" />
+                NFT cổ phần
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
@@ -455,6 +463,13 @@ export default function AccountManagementPage() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="nft-co-phan">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
+                <MyNFTScreen />
+              </Card>
+            </TabsContent>
+
             <TabsContent value="history">
               <Card className="p-6 glass space-y-6">
                 <h3 className="text-xl font-bold">Lịch sử giao dịch</h3>
@@ -473,7 +488,9 @@ export default function AccountManagementPage() {
                 {txHistoryLoading && (
                   <div className="flex items-center justify-center py-12">
                     <Spinner className="w-8 h-8 mr-2" />
-                    <span className="text-muted-foreground">Dang tai giao dich...</span>
+                    <span className="text-muted-foreground">
+                      Dang tai giao dich...
+                    </span>
                   </div>
                 )}
 

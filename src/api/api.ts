@@ -195,6 +195,9 @@ export const API_ENDPOINTS = {
 
   TRANSACTION: {
     LIST: "/api/list-transaction",
+    GET_BY_PHASE_ID: (phaseId: string) =>
+      `/api/investment/get-transactions/${phaseId}`,
+    GET_NEW_TRANSACTIONS: "/api/investment/get-transactions/new-transaction",
   },
 } as const;
 
