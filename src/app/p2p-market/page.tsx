@@ -65,9 +65,9 @@ export default function P2PMarketPage() {
   const [rarity, setRarity] = useState<string>("");
   const [assetType, setAssetType] = useState<string>("");
   const [unit, setUnit] = useState<string>("");
-  const [pendingRange, setPendingRange] = useState<[number, number]>([
-    0, 1000000,
-  ]);
+  const [pendingRange, setPendingRange] = useState<[number, number]>([0, 0]);
+  const [isPriceRangeActive, setIsPriceRangeActive] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const router = useRouter();
   // Build full image URL from backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -122,7 +122,7 @@ export default function P2PMarketPage() {
   const fetchP2P = async (
     params?: any,
     page: number = 1,
-    limit: number = 6
+    limit: number = 9
   ) => {
     try {
       setLoading(true);
@@ -197,7 +197,7 @@ export default function P2PMarketPage() {
   };
 
   useEffect(() => {
-    fetchP2P(undefined, 1, 1);
+    fetchP2P(undefined, 1, 9);
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -244,7 +244,7 @@ export default function P2PMarketPage() {
                   setLoading(true);
                   setCurrentPage(1);
                   setCurrentFilterParams(undefined);
-                  fetchP2P(undefined, 1, 1)
+                  fetchP2P(undefined, 1, 9)
                     .catch(() => {})
                     .finally(() => setLoading(false));
                 } else if (value === "price-asc" || value === "price-desc") {
@@ -357,12 +357,15 @@ export default function P2PMarketPage() {
                       max={1000000}
                       step={1}
                       value={pendingRange}
-                      onValueChange={(v) =>
-                        setPendingRange([
-                          Math.round((v as [number, number])[0]),
-                          Math.round((v as [number, number])[1]),
-                        ])
-                      }
+                      onValueChange={(v) => {
+                        const [min, max] = v as [number, number];
+                        const roundedMin = Math.round(min);
+                        const roundedMax = Math.round(max);
+                        setPendingRange([roundedMin, roundedMax]);
+                        setIsPriceRangeActive(
+                          !(roundedMin === 0 && roundedMax === 0)
+                        );
+                      }}
                       className="w-full"
                     />
                   </div>
@@ -382,7 +385,11 @@ export default function P2PMarketPage() {
                       if (unit) {
                         params.currency = unit;
                       }
-                      if (pendingRange && pendingRange.length === 2) {
+                      if (
+                        isPriceRangeActive &&
+                        pendingRange &&
+                        pendingRange.length === 2
+                      ) {
                         params.minPrice = pendingRange[0];
                         params.maxPrice = pendingRange[1];
                       }
@@ -390,11 +397,33 @@ export default function P2PMarketPage() {
                         Object.keys(params).length > 0 ? params : undefined;
                       setCurrentFilterParams(finalParams);
                       setCurrentPage(1);
-                      fetchP2P(finalParams, 1, 1);
+                      fetchP2P(finalParams, 1, 9);
+                      setHasSearched(true);
                     }}
                   >
                     Tìm kiếm
                   </Button>
+                  {hasSearched && (
+                    <Button
+                      variant="outline"
+                      className="w-full cursor-pointer"
+                      onClick={() => {
+                        setSearch("");
+                        setRarity("");
+                        setAssetType("");
+                        setUnit("");
+                        setPendingRange([0, 0]);
+                        setIsPriceRangeActive(false);
+                        setCurrentFilterParams(undefined);
+                        setCurrentPage(1);
+                        setSort("all");
+                        fetchP2P(undefined, 1, 9);
+                        setHasSearched(false);
+                      }}
+                    >
+                      Xoá tìm kiếm
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -496,7 +525,7 @@ export default function P2PMarketPage() {
                 onClick={() => {
                   const newPage = Math.max(1, currentPage - 1);
                   setCurrentPage(newPage);
-                  fetchP2P(currentFilterParams, newPage, 1);
+                  fetchP2P(currentFilterParams, newPage, 9);
                 }}
                 disabled={currentPage === 1}
                 className="gap-2"
@@ -518,7 +547,7 @@ export default function P2PMarketPage() {
                         onClick={() => {
                           if (pageNum !== currentPage) {
                             setCurrentPage(pageNum);
-                            fetchP2P(currentFilterParams, pageNum, 1);
+                            fetchP2P(currentFilterParams, pageNum, 9);
                           }
                         }}
                         className={`h-9 w-9 p-0 ${
@@ -538,7 +567,7 @@ export default function P2PMarketPage() {
                 onClick={() => {
                   const newPage = Math.min(totalPages, currentPage + 1);
                   setCurrentPage(newPage);
-                  fetchP2P(currentFilterParams, newPage, 1);
+                  fetchP2P(currentFilterParams, newPage, 9);
                   if (typeof window !== "undefined") {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }
