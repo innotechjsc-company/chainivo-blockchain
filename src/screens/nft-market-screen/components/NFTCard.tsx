@@ -18,6 +18,8 @@ interface NFTCardProps {
   type: "tier" | "other";
   onListForSale?: (nft: any) => void;
   onClick?: (id: string) => void;
+  onLikeChange?: (id: string, isLiked: boolean) => void;
+  isLiked?: boolean;
 }
 
 export const NFTCard = ({
@@ -25,8 +27,51 @@ export const NFTCard = ({
   type,
   onListForSale,
   onClick,
+  onLikeChange,
+  isLiked: controlledIsLiked,
 }: NFTCardProps) => {
   const router = useRouter();
+  const nftId = String(nft?.id ?? nft?._id ?? nft?.tokenId ?? "");
+  const [isLiked, setIsLiked] = useState<boolean>(
+    controlledIsLiked ?? Boolean(nft?.isLike || nft?.isLiked)
+  );
+  const [isLiking, setIsLiking] = useState(false);
+
+  useEffect(() => {
+    if (controlledIsLiked !== undefined) {
+      setIsLiked(controlledIsLiked);
+    } else {
+      setIsLiked(Boolean(nft?.isLike || nft?.isLiked));
+    }
+  }, [controlledIsLiked, nft]);
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(nftId);
+    } else if (nftId) {
+      router.push(`/nft-template/${nftId}`);
+    }
+  };
+
+  const toggleLike = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!nftId || isLiking) return;
+
+    try {
+      setIsLiking(true);
+      const nextState = !isLiked;
+      const apiMethod = nextState ? NFTService.likeNft : NFTService.unlikeNft;
+      const response = await apiMethod(nftId);
+      if (response?.success) {
+        setIsLiked(nextState);
+        onLikeChange?.(nftId, nextState);
+      }
+    } catch (error) {
+      console.error("Failed to toggle like", error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -105,9 +150,7 @@ export const NFTCard = ({
   return (
     <Card
       className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
-      onClick={() => {
-        onClick?.(nft?.id ?? "");
-      }}
+      onClick={handleCardClick}
     >
       {/* Image */}
       <div className="relative h-64 overflow-hidden w-full">
@@ -131,7 +174,7 @@ export const NFTCard = ({
           </Badge>
         )}
 
-        {/* Badge "Đang bán" - hiển thị bên dưới level badge nếu có level, nếu không thì ở vị trí top-4 */}
+        {/* Badge "Đang bán" */}
         <Badge
           variant="secondary"
           className={`absolute ${
@@ -143,12 +186,22 @@ export const NFTCard = ({
           Đang bán
         </Badge>
 
-        {/* Like/Purchase Button */}
+        {/* Like Button */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-        ></Button>
+          className={`absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer transition-colors ${
+            isLiked ? "text-red-500" : "text-foreground"
+          }`}
+          aria-label={isLiked ? "Bỏ thích NFT" : "Thích NFT"}
+          onClick={toggleLike}
+          disabled={isLiking}
+        >
+          <Heart
+            className="w-4 h-4"
+            fill={isLiked ? "currentColor" : "transparent"}
+          />
+        </Button>
       </div>
 
       {/* Info */}
@@ -157,12 +210,13 @@ export const NFTCard = ({
 
         {nft?.owner?.address && (
           <div className="text-xs text-muted-foreground mb-3">
-            Người bán:{" "}
+            Người bán: {""}
             <span className="font-mono text-foreground">
               {formatAddress(nft?.owner?.address)}
             </span>
           </div>
         )}
+
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1">
             {/* Label dong theo trang thai */}
@@ -198,7 +252,7 @@ export const NFTCard = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           {/* Button chinh: Mua ngay / Dang ban / Da so huu */}
           {type === "tier" && !nft.isSale && onListForSale ? (
             // NFT cua toi va chua ban -> hien nut "Dang ban"
@@ -207,7 +261,7 @@ export const NFTCard = ({
               className="flex-1 gap-2"
               onClick={(e) => {
                 e.stopPropagation();
-                onClick?.(nft?.id ?? "");
+                onListForSale(nft);
               }}
             >
               <Send className="w-4 h-4" />
@@ -220,24 +274,16 @@ export const NFTCard = ({
               className="flex-1 gap-2 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                onClick?.(nft?.id ?? "");
+                if (onClick) {
+                  onClick(nftId);
+                } else if (nftId) {
+                  router.push(`/nft-template/${nftId}?type=${type}`);
+                }
               }}
             >
               Xem chi tiết
             </Button>
           )}
-
-          {/* Button xem chi tiet */}
-          {/* <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/nft-template/${nft.id}`);
-            }}
-          >
-            <Eye className="w-4 h-4" />
-          </Button> */}
         </div>
       </CardContent>
     </Card>

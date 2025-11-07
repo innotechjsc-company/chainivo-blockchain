@@ -292,6 +292,8 @@ export interface NFTItem {
 
   // General flags
   isFeatured?: boolean;
+  shares: number;
+  pricePerShare: number;
 }
 
 export interface Pagination {

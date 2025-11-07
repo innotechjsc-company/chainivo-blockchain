@@ -374,6 +374,8 @@ export class NFTService {
 
     const nfts = rawNFTs.map((item: any) => {
       const nft = item.nft || {};
+      const shares = o?.shares || 0;
+      const pricePerShare = nft?.pricePerShare || 0;
       const imageObj = nft?.image;
 
       // Extract image URL - handle nested object structure
@@ -442,6 +444,8 @@ export class NFTService {
 
         // General flags
         isFeatured: !!nft.isFeatured,
+        shares: shares,
+        pricePerShare: pricePerShare,
       } as MyNFTsResponse["data"]["nfts"][number];
     });
 

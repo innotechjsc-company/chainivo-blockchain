@@ -1,4 +1,5 @@
-import { ApiService } from "../api";
+import { Transaction } from "@/stores/types";
+import { API_ENDPOINTS, ApiService } from "../api";
 import type { ApiResponse } from "../api";
 
 export interface Phase {
@@ -57,9 +58,24 @@ export class PhaseService {
     // Delegates to ApiService endpoint mapping for investment phases
     return ApiService.getPhases();
   }
-
   static async getPhaseById(id: string): Promise<ApiResponse<Phase>> {
     return ApiService.getPhaseDetail(id);
+  }
+
+  static async getTransactionHistoryByPhaseId(
+    id: string
+  ): Promise<ApiResponse<Transaction[]>> {
+    return ApiService.get(API_ENDPOINTS.TRANSACTION.GET_BY_PHASE_ID(id));
+  }
+
+  static async getNewTransactions(params: {
+    phaseId: string;
+    lastTransactionId?: string;
+  }): Promise<ApiResponse<Transaction[]>> {
+    return ApiService.get(
+      API_ENDPOINTS.TRANSACTION.GET_NEW_TRANSACTIONS,
+      params
+    );
   }
 
   static async createInvestment(data: {
@@ -73,7 +89,6 @@ export class PhaseService {
     };
     return ApiService.buyToken(payload);
   }
-
 }
 
 export default PhaseService;

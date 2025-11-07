@@ -32,7 +32,6 @@ export const NFTMarketHeaderCard = ({
   analytics,
 }: NFTMarketHeaderCardProps) => {
   console.log("analytics", analytics);
-
   const statItems = [
     {
       icon: Package,

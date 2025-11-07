@@ -287,7 +287,8 @@ export default function NFTDetailPage() {
       const response = await TransferService.sendCanTransfer({
         fromAddress: user?.walletAddress ?? "",
         // toAddressData: nftData?.creator?.address ?? "",
-        amountCan: Number(nftData?.salePrice) ?? 0,
+        amountCan:
+          Number(nftData?.salePrice ? nftData?.salePrice : nftData?.price) ?? 0,
       });
 
       // Nếu có transactionHash thì coi như thành công

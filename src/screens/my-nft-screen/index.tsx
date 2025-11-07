@@ -40,7 +40,7 @@ export default function MyNFTScreen(): JSX.Element {
         );
         setNfts(investmentNFTs);
       } catch (err: unknown) {
-        setError("Khong the tai danh sach NFT");
+        setError("Khong the tai danh sach NFT co phan");
       } finally {
         setIsLoading(false);
       }
@@ -81,9 +81,8 @@ export default function MyNFTScreen(): JSX.Element {
     }
 
     if (!nfts.length) {
-      return <div className="py-10 text-center">Khong co NFT dau tu nao</div>;
+      return <div className="py-10 text-center">Không có NFT đầu tư nào</div>;
     }
-
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
@@ -98,10 +97,5 @@ export default function MyNFTScreen(): JSX.Element {
     );
   }, [isLoading, error, nfts]);
 
-  return (
-    <div className="container mx-auto px-4 pt-4 pb-8">
-      <h1 className="text-2xl font-bold mb-6 pt-20">NFT Cổ phần</h1>
-      {content}
-    </div>
-  );
+  return <div className="container mx-auto px-4 pt-4 pb-8">{content}</div>;
 }
