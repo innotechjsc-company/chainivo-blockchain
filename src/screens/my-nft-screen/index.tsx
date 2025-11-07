@@ -66,10 +66,7 @@ export default function MyNFTScreen(): JSX.Element {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
-          <div
-            key={nft.id}
-            className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
-          >
+          <div key={nft.id} className="rounded-lg border overflow-hidden">
             <img
               src={nft.image}
               alt={nft.name}
