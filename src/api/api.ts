@@ -118,6 +118,7 @@ export const API_ENDPOINTS = {
     PHASES: "/api/investment/phases",
     PHASE_DETAIL: (id: string) => `/api/investment/phases/${id}`,
     BUY_TOKEN: "/api/investment/buy-token",
+    GET_ALL_INFO_OF_PHASE: "/api/home/statistic-can",
   },
 
   NFT: {

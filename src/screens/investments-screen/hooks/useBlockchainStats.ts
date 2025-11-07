@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import createInvestment from "@/api/services/phase-service";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -19,28 +20,20 @@ export const useBlockchainStats = () => {
       try {
         setLoading(true);
         setError(null);
-
-        // Mock data for demonstration
-        // TODO: Replace with actual API call
-        const mockStats: BlockchainData = {
-          total_can_supply: 100000000,
-          circulating_supply: 45000000,
-          total_holders: 12500,
-          total_transactions: 850000,
-          current_phase: 2,
-          total_value_locked: 2500000,
-        };
-
-        // Simulate loading delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setStats(mockStats);
+        const response = await createInvestment.getALLInfoOfPhase();
+        if (response.success && response.data) {
+          setStats(response.data as any);
+        } else {
+          setStats(null);
+          setError("Không có dữ liệu thống kê");
+        }
       } catch (err) {
         setError(
           err instanceof Error
             ? err.message
-            : "Failed to fetch blockchain stats"
+            : "Khong the lay thong ke blockchain"
         );
+        setStats(null);
       } finally {
         setLoading(false);
       }

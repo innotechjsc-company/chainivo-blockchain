@@ -33,7 +33,7 @@ export const useTransactionHistory = () => {
         setError(
           response.message ||
             response.error ||
-            "Khong the lay lich su giao dich"
+            "Không thể lấy lịch sử giao dịch"
         );
       }
     } catch (err) {
