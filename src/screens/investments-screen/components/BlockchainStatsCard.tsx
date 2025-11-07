@@ -1,19 +1,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatAmount } from "@/lib/utils";
 import { TrendingUp, Users, Layers, DollarSign } from "lucide-react";
-
-interface BlockchainData {
-  total_can_supply: number;
-  circulating_supply: number;
-  total_holders: number;
-  total_transactions: number;
-  current_phase: number;
-  total_value_locked: number;
-}
+import { useEffect } from "react";
 
 interface BlockchainStatsCardProps {
-  stats: BlockchainData;
+  stats: any;
   loading?: boolean;
 }
 
@@ -46,6 +39,11 @@ export const BlockchainStatsCard = ({
     );
   }
 
+  useEffect(() => {
+    console.log(stats);
+    debugger;
+  }, [stats]);
+
   return (
     <section className="py-16 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
@@ -70,10 +68,10 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold gradient-text">
-                {(stats.total_can_supply / 1_000_000).toFixed(1)}M
+                {formatAmount(stats.totalSupply)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.circulating_supply.toLocaleString()} đang lưu thông
+                {stats.totalSupply.toLocaleString()} đang lưu thông
               </p>
             </CardContent>
           </Card>
@@ -87,7 +85,7 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary">
-                {stats.total_holders.toLocaleString()}
+                {stats.totalHolders.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Người dùng đang nắm giữ
@@ -104,7 +102,7 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-accent">
-                {(stats.total_transactions / 1_000_000).toFixed(2)}M
+                {stats.totalTransactions}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Transactions trên network
@@ -121,7 +119,7 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold gradient-text">
-                ${(stats.total_value_locked / 1_000_000).toFixed(1)}M
+                ${(stats.totalValueLocked / 1_000_000).toFixed(1)}M
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Giá trị bị khóa trong hệ thống
@@ -138,7 +136,7 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary">
-                Phase {stats.current_phase}
+                {stats.investmentPhase.name || "Không có"}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Investment phase đang mở
@@ -155,11 +153,7 @@ export const BlockchainStatsCard = ({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-accent">
-                {(
-                  (stats.circulating_supply / stats.total_can_supply) *
-                  100
-                ).toFixed(1)}
-                %
+                {stats.circulatingSupply}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Circulating supply ratio

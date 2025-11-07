@@ -338,8 +338,7 @@ export default function NFTDetailPage() {
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
-                {formatAmount((nftData as any)?.price)}
-                {TOKEN_DEAULT_CURRENCY}
+                {formatAmount((nftData as any)?.price)} {TOKEN_DEAULT_CURRENCY}
               </div>
 
               <div className="flex gap-2">

@@ -63,7 +63,7 @@ export default function InvestmentsScreen() {
 
         {/* Transaction History */}
         <TransactionHistoryCard
-          transactions={transactions}
+          transactions={transactions as any[]}
           loading={transactionsLoading}
           error={transactionsError}
         />

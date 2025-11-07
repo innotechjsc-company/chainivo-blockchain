@@ -1,10 +1,10 @@
-import { ApiService, API_ENDPOINTS } from '../api';
-import type { ApiResponse } from '../api';
+import { ApiService, API_ENDPOINTS } from "../api";
+import type { ApiResponse } from "../api";
 import type {
   TransactionHistoryResponse,
   TransactionType,
   Currency,
-} from '@/types/TransactionHistory';
+} from "@/types/TransactionHistory";
 
 // Query params cho API
 export interface GetTransactionHistoryParams {
@@ -26,6 +26,14 @@ export class TransactionService {
     return ApiService.get<TransactionHistoryResponse>(
       API_ENDPOINTS.TRANSACTION.LIST,
       params
+    );
+  }
+
+  static async getTransactionHistoryByWalletAddress(): Promise<
+    ApiResponse<TransactionHistoryResponse>
+  > {
+    return ApiService.get<TransactionHistoryResponse>(
+      API_ENDPOINTS.TRANSACTION.TRANSACTION_HISTORY
     );
   }
 }
