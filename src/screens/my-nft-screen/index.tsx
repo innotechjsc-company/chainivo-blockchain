@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/stores";
 import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
-import { LoadingSpinner } from "@/lib/loadingSpinner";
-import { formatNumber } from "@/utils/formatters";
-import { formatAmount, getLevelBadge } from "@/lib/utils";
+import { NFTCard } from "@/components/nft";
 
 // Trang quan ly NFT cua toi (chi hien thi NFT dau tu)
 export default function MyNFTScreen(): JSX.Element {
@@ -51,9 +49,31 @@ export default function MyNFTScreen(): JSX.Element {
     fetchMyNFTs();
   }, [isAuthenticated]);
 
+  const handleNFTAction = (nft: NFTItem, action: "sell" | "buy" | "open") => {
+    console.log(`Action ${action} on NFT:`, nft.id);
+    // TODO: Implement action handlers (sell, buy, open mystery box)
+  };
+
   const content = useMemo(() => {
     if (isLoading) {
-      return <LoadingSpinner />;
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
+            >
+              <div className="w-full h-56 bg-gray-100 dark:bg-white/10 animate-pulse" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 w-3/4 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-4 w-full bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-4 w-5/6 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
     }
 
     if (error) {
@@ -66,57 +86,12 @@ export default function MyNFTScreen(): JSX.Element {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
-          <div
+          <NFTCard
             key={nft.id}
-            className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
-          >
-            <img
-              src={nft.image}
-              alt={nft.name}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <div className="text-base font-semibold line-clamp-1">
-                {nft.name}
-              </div>
-              <div className="mt-1 text-sm text-gray-500 line-clamp-2">
-                {nft.description}
-              </div>
-              <div className="mt-3 text-sm">
-                <span className="text-gray-500">Giá hiện tại: </span>
-                <span className="font-medium">
-                  {typeof nft.salePrice === "number"
-                    ? formatAmount(nft.salePrice)
-                      ? formatAmount(nft.price)
-                      : formatAmount(nft.price)
-                    : formatAmount(nft.price)}
-                </span>
-                <span className="ml-1 uppercase">{nft.currency}</span>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <div className="text-gray-500">Ngày mua</div>
-                  <div className="font-medium">
-                    {new Date(
-                      nft.purchaseDate || nft.createdAt
-                    ).toLocaleDateString()}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Cấp độ</div>
-                  <div className="font-medium">{getLevelBadge(nft.level)}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Số lượng đầu tư cổ phần</div>
-                  <div className="font-medium">
-                    {formatNumber(nft.shares)} ={" "}
-                    {formatNumber(nft.pricePerShare || 0 * nft.shares || 0)}{" "}
-                    {nft.currency}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            nft={nft}
+            showActions={true}
+            onActionClick={handleNFTAction}
+          />
         ))}
       </div>
     );

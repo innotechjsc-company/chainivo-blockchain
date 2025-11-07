@@ -118,6 +118,7 @@ export const API_ENDPOINTS = {
     PHASES: "/api/investment/phases",
     PHASE_DETAIL: (id: string) => `/api/investment/phases/${id}`,
     BUY_TOKEN: "/api/investment/buy-token",
+    GET_ALL_INFO_OF_PHASE: "/api/home/statistic-can",
   },
 
   NFT: {
@@ -144,6 +145,7 @@ export const API_ENDPOINTS = {
       `/api/nft/transaction-history/list?nftId=${id}`,
     INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
+    OPEN_BOX: "/api/nft/open-box",
   },
 
   STAKING: {
@@ -195,6 +197,7 @@ export const API_ENDPOINTS = {
 
   TRANSACTION: {
     LIST: "/api/list-transaction",
+    TRANSACTION_HISTORY: "/api/investment/get-transactions",
     GET_BY_PHASE_ID: (phaseId: string) =>
       `/api/investment/get-transactions/${phaseId}`,
     GET_NEW_TRANSACTIONS: "/api/investment/get-transactions/new-transaction",

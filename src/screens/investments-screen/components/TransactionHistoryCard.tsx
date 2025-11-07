@@ -3,16 +3,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
+import { formatAmount } from "@/lib/utils";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface Transaction {
   id: string;
   transaction_type: string;
-  amount: number;
+  investmentAmount: number;
   price_per_token: number;
   total_value: number;
   phase: number;
   status: string;
-  created_at: string;
+  createdAt: string;
+  tokensBought: number;
+  paymentCurrency: string;
 }
 
 interface TransactionHistoryCardProps {
@@ -95,31 +99,21 @@ export const TransactionHistoryCard = ({
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            tx.transaction_type === "buy"
-                              ? "bg-green-500/20"
-                              : "bg-red-500/20"
-                          }`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center "bg-green-500/20" `}
                         >
-                          {tx.transaction_type === "buy" ? (
-                            <ArrowDownRight className="w-5 h-5 text-green-400" />
-                          ) : (
-                            <ArrowUpRight className="w-5 h-5 text-red-400" />
-                          )}
+                          <ArrowDownRight className="w-5 h-5 text-green-400" />
                         </div>
                         <div>
                           <p className="font-semibold">
-                            {tx.transaction_type === "buy" ? "Mua" : "Bán"}{" "}
-                            {tx.amount.toLocaleString()} CAN
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Phase {tx.phase} • ${tx.price_per_token} / token
+                            Đầu tư {formatAmount(tx.investmentAmount)}{" "}
+                            {tx?.paymentCurrency?.toUpperCase()}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-lg">
-                          ${tx.total_value.toLocaleString()}
+                          {formatAmount(tx.tokensBought)}{" "}
+                          {TOKEN_DEAULT_CURRENCY}
                         </p>
                         <div className="flex items-center gap-2 justify-end mt-1">
                           <Badge
@@ -137,7 +131,7 @@ export const TransactionHistoryCard = ({
                               : "Thất bại"}
                           </Badge>
                           <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(tx.created_at))}
+                            {formatDistanceToNow(new Date(tx?.createdAt ?? ""))}
                           </p>
                         </div>
                       </div>
