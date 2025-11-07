@@ -30,3 +30,8 @@ export type { AnalyticsOverview, PhaseAnalytics, InvestorAnalytics, NFTAnalytics
 
 export { WalletService } from './wallet-service';
 export type { WalletBalances, TransactionStatus, TokenPurchaseData } from './wallet-service';
+
+export { UserService } from './user-service';
+
+export { TransactionService } from './transaction-service';
+export type { GetTransactionHistoryParams } from './transaction-service';

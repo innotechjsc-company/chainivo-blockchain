@@ -10,7 +10,7 @@ import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
-import { formatNumber } from "@/utils/formatters";
+import { formatCurrency, formatNumber } from "@/utils/formatters";
 
 interface NFTCardProps {
   nft: any;
@@ -20,9 +20,6 @@ interface NFTCardProps {
 
 export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   const router = useRouter();
-  const [isLiked, setIsLiked] = useState<boolean>(
-    Boolean(nft?.isLike || nft?.isLiked)
-  );
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -85,60 +82,6 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
 
   const nftImage = getNFTImage(nft);
 
-  const refreshLikeState = async () => {
-    try {
-      const id = String(nft.id ?? nft._id ?? nft.tokenId);
-      const resp = await NFTService.getNFTByTemplateId(id);
-      if (resp?.success && resp?.data) {
-        setIsLiked(
-          Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
-        );
-      }
-    } catch {}
-  };
-
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      let status = nft.isLike;
-      let response: any;
-      if (status) {
-        response = await NFTService.unlikeNft(
-          String(nft.id ?? nft._id ?? nft.tokenId)
-        );
-      } else {
-        response = await NFTService.likeNft(
-          String(nft.id ?? nft._id ?? nft.tokenId)
-        );
-      }
-
-      if (response.success) {
-        await refreshLikeState();
-      }
-      // Optionally, you could trigger a re-fetch or optimistic UI update here
-    } catch (err) {
-      console.error("Failed to like NFT", err);
-    }
-  };
-  const handleUnlike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      let response = await NFTService.unlikeNft(
-        String(nft.id ?? nft._id ?? nft.tokenId)
-      );
-      if (response.success) {
-        await refreshLikeState();
-      }
-      // Optionally, you could trigger a re-fetch or optimistic UI update here
-    } catch (err) {
-      console.error("Failed to like NFT", err);
-    }
-  };
-
-  useEffect(() => {
-    setIsLiked(Boolean(nft?.isLike || nft?.isLiked));
-  }, [nft]);
-
   const formatAddress = (address?: string) => {
     if (!address) return "";
     const start = address.slice(0, 6);
@@ -182,14 +125,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-          onClick={isLiked ? handleUnlike : handleLike}
         >
-          <Heart
-            className={`w-4 h-4`}
-            fill={isLiked ? "currentColor" : "none"}
-            color={isLiked ? "#ec4899" : undefined}
-            stroke={isLiked ? "#ec4899" : "white"}
-          />
         </Button>
       </div>
 
@@ -216,7 +152,6 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
 
             {/* Container co dinh chieu cao - chua 2 gia tri */}
             <div className="relative h-8">
-              {/* Gia ban - absolute position */}
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
@@ -224,11 +159,9 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-0 invisible pointer-events-none"
                 }`}
               >
-                {formatNumber(nft.salePrice)}{" "}
-                {nft.currency?.toUpperCase() || "CAN"}
+                {formatCurrency(Number(nft.salePrice || nft.price))}
               </div>
 
-              {/* Gia goc - absolute position (cung vi tri) */}
               <div
                 className={`absolute top-0 left-0 text-xl font-bold text-primary transition-opacity duration-200 ${
                   nft.isSale && nft.salePrice
@@ -236,7 +169,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                     : "opacity-100 visible"
                 }`}
               >
-                {formatNumber(nft.price)} {nft.currency?.toUpperCase() || "CAN"}
+                {formatCurrency(Number(nft.price))}
               </div>
             </div>
           </div>
@@ -268,13 +201,13 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
                 router.push(`/nft/${nft.id}?type=${type}`);
               }}
             >
-              {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-              {type === "other" ? "Mua ngay" : "Đã sở hữu"}
+              
+              Xem chi tiết 
             </Button>
           )}
 
           {/* Button xem chi tiet */}
-          <Button
+          {/* <Button
             variant="outline"
             size="icon"
             onClick={(e) => {
@@ -283,7 +216,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             }}
           >
             <Eye className="w-4 h-4" />
-          </Button>
+          </Button> */}
         </div>
       </CardContent>
     </Card>
