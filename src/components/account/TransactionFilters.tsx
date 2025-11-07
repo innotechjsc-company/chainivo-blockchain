@@ -43,7 +43,7 @@ export function TransactionFilters({
         onValueChange={(value) => onFilterChange('transactionType', value)}
       >
         <SelectTrigger className="w-full md:w-[180px]">
-          <SelectValue placeholder="Loai giao dich" />
+          <SelectValue placeholder="Loại giao dịch" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Tất cả</SelectItem>
@@ -62,7 +62,7 @@ export function TransactionFilters({
         onValueChange={(value) => onFilterChange('currency', value)}
       >
         <SelectTrigger className="w-full md:w-[150px]">
-          <SelectValue placeholder="Tien te" />
+          <SelectValue placeholder="Tiền tệ" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Tất cả</SelectItem>

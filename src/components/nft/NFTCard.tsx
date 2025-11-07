@@ -8,6 +8,7 @@ import InvestmentProgressBar from './InvestmentProgressBar';
 import CountdownTimer from './CountdownTimer';
 import MysteryRewardsPreview from './MysteryRewardsPreview';
 import { Button } from '@/components/ui/button';
+import { formatNumber } from '@/utils/formatters';
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -15,7 +16,7 @@ interface NFTCardProps {
   onActionClick?: (nft: NFTItem, action: 'sell' | 'buy' | 'open') => void;
   className?: string;
 
-  // Props de tuong thich nguoc voi NFTCard cu
+  // Props để tương thích ngược với NFTCard cũ
   type?: 'tier' | 'other';
   onListForSale?: (nft: NFTItem) => void;
   onClick?: (id: string) => void;
@@ -42,10 +43,10 @@ export default function NFTCard({
 }: NFTCardProps) {
   const borderClass = LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES['1'];
 
-  // Neu co props cu (type, onListForSale, onClick), tu dong enable showActions
+  // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || (type !== undefined);
 
-  // Safety: Convert image to string neu la object
+  // Safety: Convert image to string nếu là object
   const imageUrl = typeof nft.image === 'string'
     ? nft.image
     : (nft.image as any)?.url || '';
@@ -64,40 +65,31 @@ export default function NFTCard({
             : false)
     : false;
 
-  // Debug mystery box
-  if (nft.type === 'mysteryBox') {
-    console.log('🎁 NFTCard Mystery Box:', {
-      name: nft.name,
-      'nft.isOpenable': nft.isOpenable,
-      'calculated isOpenable': isMysteryBoxOpenable,
-      rewards: nft.rewards,
-      shouldShowActions: shouldShowActions,
-    });
-  }
+
 
   const handleAction = (e: React.MouseEvent, action: 'sell' | 'buy' | 'open') => {
-    // Ngan chan event bubble len card parent (tranh trigger onClick cua card)
+    // Ngăn chặn event bubble lên card parent (tránh trigger onClick của card)
     e.stopPropagation();
 
-    // Xu ly callback moi
+    // Xử lý callback mới
     if (onActionClick) {
       onActionClick(nft, action);
     }
 
-    // Xu ly callback cu (tuong thich nguoc)
+    // Xử lý callback cũ (tương thích ngược)
     if (action === 'sell' && onListForSale) {
       onListForSale(nft);
     }
   };
 
-  // Handler cho onClick cu
+  // Handler cho onClick cũ
   const handleCardClick = () => {
     if (onClick) {
       onClick(nft.id);
     }
   };
 
-  // Render action button dua vao type
+  // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
 
@@ -123,13 +115,13 @@ export default function NFTCard({
             {isMysteryBoxOpenable ? (
               <>
                 <span className="text-lg">🎁</span>
-                <span>Mo hop qua</span>
+                <span>Mở hộp quà</span>
                 <span className="text-lg">✨</span>
               </>
             ) : (
               <>
                 <span>🔒</span>
-                <span>Chua the mo</span>
+                <span>Chưa thể mở</span>
               </>
             )}
           </Button>
@@ -152,7 +144,7 @@ export default function NFTCard({
                 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400
               "
             >
-              Da het han
+              Đã hết hạn
             </Button>
           );
         }
@@ -174,7 +166,7 @@ export default function NFTCard({
               }
             `}
           >
-            {isAvailable ? '💰 Dau tu' : 'Da het co phan'}
+            {isAvailable ? '💰 Đầu tư' : 'Đã hết cổ phần'}
           </Button>
         );
 
@@ -182,9 +174,16 @@ export default function NFTCard({
       case 'rank':
       default:
         if (nft.isSale) {
+          // NFT đã đăng bán -> hiển thị button "Xem chi tiết"
           return (
             <Button
-              onClick={(e) => handleAction(e, 'buy')}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Dùng onClick callback để xem chi tiết NFT
+                if (onClick) {
+                  onClick(nft.id);
+                }
+              }}
               className="
                 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
                 transition-all disabled:pointer-events-none disabled:opacity-50
@@ -195,10 +194,11 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Mua ngay
+              Xem chi tiết
             </Button>
           );
         }
+        // NFT đang sở hữu -> hiển thị button đăng bán
         return (
           <Button
             onClick={(e) => handleAction(e, 'sell')}
@@ -209,10 +209,10 @@ export default function NFTCard({
               outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
               aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
               h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              border border-input bg-background hover:bg-accent hover:text-accent-foreground
+              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             "
           >
-            Dang ban
+            Đăng bán
           </Button>
         );
     }
@@ -230,7 +230,7 @@ export default function NFTCard({
       `}
       onClick={onClick ? handleCardClick : undefined}
     >
-      {/* Badges overlay tren anh */}
+      {/* Badges overlay trên ảnh */}
       <div className="relative">
         <img
           src={imageUrl}
@@ -238,37 +238,37 @@ export default function NFTCard({
           className="w-full h-56 object-cover"
         />
 
-        {/* Badges tren goc trai */}
+        {/* Badges trên góc trái */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           <LevelBadge level={nft.level} />
           <NFTTypeBadge type={nft.type} />
         </div>
 
-        {/* Status badges tren goc phai */}
+        {/* Status badges trên góc phải */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
           {nft.isFeatured && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-              ⭐ Noi bat
+              ⭐ Nổi bật
             </div>
           )}
 
-          {/* Mystery Box: Hien thi trang thai mo hop */}
+          {/* Mystery Box: Hiển thị trạng thái mở hộp */}
           {nft.type === 'mysteryBox' && isMysteryBoxOpenable && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
-              ✨ San sang mo
+              ✨ Sẵn sàng mở
             </div>
           )}
 
-          {/* Cac loai NFT khac: Hien thi trang thai ban */}
+          {/* Các loại NFT khác: Hiển thị trạng thái bán */}
           {nft.type !== 'mysteryBox' && nft.isSale && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500 text-white">
-              Dang ban
+              Đang bán
             </div>
           )}
 
           {nft.isActive && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
-              Hoat dong
+              Hoạt động
             </div>
           )}
         </div>
@@ -276,28 +276,28 @@ export default function NFTCard({
 
       {/* Card content */}
       <div className="p-4 space-y-3">
-        {/* Ten NFT */}
+        {/* Tên NFT */}
         <h3 className="text-lg font-bold line-clamp-1 text-gray-900 dark:text-gray-100">
           {nft.name}
         </h3>
 
-        {/* Mo ta */}
+        {/* Mô tả */}
         {nft.description && (
           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
             {nft.description}
           </p>
         )}
 
-        {/* Mystery Box layout - rieng biet */}
+        {/* Mystery Box layout - riêng biệt */}
         {nft.type === 'mysteryBox' ? (
           <div className="space-y-3">
-            {/* Gia hop */}
+            {/* Giá hộp */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Gia hop:
+                Giá hộp:
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {nft.price}{' '}
+                {formatNumber(nft.price)}{' '}
                 <span className="text-sm uppercase">{nft.currency}</span>
               </span>
             </div>
@@ -310,7 +310,7 @@ export default function NFTCard({
               <MysteryRewardsPreview rewards={nft.rewards} />
             ) : (
               <div className="text-xs text-gray-500 dark:text-gray-400 italic">
-                Mo hop de nhan phan thuong bat ngo!
+                Mở hộp để nhận phần thưởng bất ngờ!
               </div>
             )}
 
@@ -319,13 +319,13 @@ export default function NFTCard({
           </div>
         ) : (
           <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-3">
-            {/* Gia cho cac loai NFT khac */}
+            {/* Giá cho các loại NFT khác */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {nft.type === 'investment' ? 'Gia/co phan:' : 'Gia:'}
+                {nft.type === 'investment' ? 'Giá/cổ phần:' : 'Giá:'}
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {nft.salePrice ?? nft.price}{' '}
+                {formatNumber(nft.salePrice ?? nft.price)}{' '}
                 <span className="text-sm uppercase">{nft.currency}</span>
               </span>
             </div>
@@ -355,11 +355,11 @@ export default function NFTCard({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                   <span>👁️</span>
-                  <span>{nft.viewsCount}</span>
+                  <span>{formatNumber(nft.viewsCount)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                   <span>{nft.isLike ? '❤️' : '🤍'}</span>
-                  <span>{nft.likesCount}</span>
+                  <span>{formatNumber(nft.likesCount)}</span>
                 </div>
               </div>
             )}

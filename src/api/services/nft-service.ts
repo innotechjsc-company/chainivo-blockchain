@@ -184,18 +184,6 @@ export class NFTService {
         imageUrl = imageObj.url || "";
       }
 
-      // Debug logs cho mystery box
-      if (nft.type === "mysteryBox") {
-        console.log("🎁 [getNFTsByOwner] Mystery Box Debug:", {
-          name: nft.name,
-          type: nft.type,
-          imageUrl: imageUrl,
-          rawRewards: nft.rewards,
-          isOpenable: checkIsOpenable(nft.rewards),
-          transformedRewards: transformRewards(nft.rewards, nft.currency),
-        });
-      }
-
       return {
         id: nft.id || nft._id,
         name: nft.name || "",
@@ -400,18 +388,6 @@ export class NFTService {
         imageUrl = imageObj;
       } else if (imageObj && typeof imageObj === "object") {
         imageUrl = imageObj.url || "";
-      }
-
-      // Debug logs cho mystery box
-      if (nft.type === "mysteryBox") {
-        console.log("🎁 Mystery Box Debug:", {
-          name: nft.name,
-          imageObj: imageObj,
-          imageUrl: imageUrl,
-          rawRewards: nft.rewards,
-          isOpenable: checkIsOpenable(nft.rewards),
-          transformedRewards: transformRewards(nft.rewards, nft.currency),
-        });
       }
 
       return {
