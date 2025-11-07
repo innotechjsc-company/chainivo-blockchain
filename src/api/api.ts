@@ -144,6 +144,7 @@ export const API_ENDPOINTS = {
       `/api/nft/transaction-history/list?nftId=${id}`,
     INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
+    OPEN_BOX: "/api/nft/open-box",
   },
 
   STAKING: {
@@ -195,6 +196,9 @@ export const API_ENDPOINTS = {
 
   TRANSACTION: {
     LIST: "/api/list-transaction",
+    GET_BY_PHASE_ID: (phaseId: string) =>
+      `/api/investment/get-transactions/${phaseId}`,
+    GET_NEW_TRANSACTIONS: "/api/investment/get-transactions/new-transaction",
   },
 } as const;
 

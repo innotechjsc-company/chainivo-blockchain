@@ -201,7 +201,6 @@ export const useNFTFilters = (nfts: NFT[]) => {
         limit: 9,
         ...params,
       });
-      debugger;
       let finalResults: any[] = [];
       if (response.success) {
         finalResults = (response.data as any).data || [];
