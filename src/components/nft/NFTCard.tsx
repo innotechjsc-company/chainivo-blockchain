@@ -182,9 +182,16 @@ export default function NFTCard({
       case 'rank':
       default:
         if (nft.isSale) {
+          // NFT đã đăng bán -> hiển thị button "Xem chi tiết"
           return (
             <Button
-              onClick={(e) => handleAction(e, 'buy')}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Dùng onClick callback để xem chi tiết NFT
+                if (onClick) {
+                  onClick(nft.id);
+                }
+              }}
               className="
                 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
                 transition-all disabled:pointer-events-none disabled:opacity-50
@@ -195,10 +202,11 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Mua ngay
+              Xem chi tiết
             </Button>
           );
         }
+        // NFT đang sở hữu -> hiển thị button đăng bán
         return (
           <Button
             onClick={(e) => handleAction(e, 'sell')}
@@ -209,10 +217,10 @@ export default function NFTCard({
               outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
               aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
               h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              border border-input bg-background hover:bg-accent hover:text-accent-foreground
+              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             "
           >
-            Đang bán
+            Đăng bán
           </Button>
         );
     }
