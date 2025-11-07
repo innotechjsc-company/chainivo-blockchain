@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/stores";
 import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { formatNumber } from "@/utils/formatters";
+import { formatAmount, getLevelBadge } from "@/lib/utils";
 
 // Trang quan ly NFT cua toi (chi hien thi NFT dau tu)
 export default function MyNFTScreen(): JSX.Element {
@@ -39,7 +42,7 @@ export default function MyNFTScreen(): JSX.Element {
         );
         setNfts(investmentNFTs);
       } catch (err: unknown) {
-        setError("Khong the tai danh sach NFT");
+        setError("Khong the tai danh sach NFT co phan");
       } finally {
         setIsLoading(false);
       }
@@ -50,24 +53,7 @@ export default function MyNFTScreen(): JSX.Element {
 
   const content = useMemo(() => {
     if (isLoading) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-gray-100 overflow-hidden bg-neutral-50 dark:bg-white/5 dark:border-white/10"
-            >
-              <div className="w-full h-48 bg-gray-100 dark:bg-white/10 animate-pulse" />
-              <div className="p-4 space-y-3">
-                <div className="h-5 w-3/4 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
-                <div className="h-4 w-full bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
-                <div className="h-4 w-5/6 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
-                <div className="h-5 w-1/3 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
-      );
+      return <LoadingSpinner />;
     }
 
     if (error) {
@@ -75,9 +61,8 @@ export default function MyNFTScreen(): JSX.Element {
     }
 
     if (!nfts.length) {
-      return <div className="py-10 text-center">Khong co NFT dau tu nao</div>;
+      return <div className="py-10 text-center">Không có NFT đầu tư nào</div>;
     }
-
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
@@ -98,11 +83,13 @@ export default function MyNFTScreen(): JSX.Element {
                 {nft.description}
               </div>
               <div className="mt-3 text-sm">
-                <span className="text-gray-500">Gia hien tai: </span>
+                <span className="text-gray-500">Giá hiện tại: </span>
                 <span className="font-medium">
                   {typeof nft.salePrice === "number"
-                    ? nft.salePrice
-                    : nft.price}
+                    ? formatAmount(nft.salePrice)
+                      ? formatAmount(nft.price)
+                      : formatAmount(nft.price)
+                    : formatAmount(nft.price)}
                 </span>
                 <span className="ml-1 uppercase">{nft.currency}</span>
               </div>
@@ -117,26 +104,17 @@ export default function MyNFTScreen(): JSX.Element {
                 </div>
                 <div>
                   <div className="text-gray-500">Cấp độ</div>
-                  <div className="font-medium">{nft.level}</div>
+                  <div className="font-medium">{getLevelBadge(nft.level)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Lượt xem</div>
-                  <div className="font-medium">{nft.viewsCount}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Lượt thích</div>
-                  <div className="font-medium">{nft.likesCount}</div>
+                  <div className="text-gray-500">Số lượng đầu tư cổ phần</div>
+                  <div className="font-medium">
+                    {formatNumber(nft.shares)} ={" "}
+                    {formatNumber(nft.pricePerShare || 0 * nft.shares || 0)}{" "}
+                    {nft.currency}
+                  </div>
                 </div>
               </div>
-              {nft.isSale ? (
-                <div className="mt-2 inline-block text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20">
-                  Đang bán
-                </div>
-              ) : (
-                <div className="mt-2 inline-block text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 dark:bg-white/10">
-                  Không bán
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -144,10 +122,5 @@ export default function MyNFTScreen(): JSX.Element {
     );
   }, [isLoading, error, nfts]);
 
-  return (
-    <div className="container mx-auto px-4 pt-4 pb-8">
-      <h1 className="text-2xl font-bold mb-6 pt-20">NFT Cổ phần</h1>
-      {content}
-    </div>
-  );
+  return <div className="container mx-auto px-4 pt-4 pb-8">{content}</div>;
 }
