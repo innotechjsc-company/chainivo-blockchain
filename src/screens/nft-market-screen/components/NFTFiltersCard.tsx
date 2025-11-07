@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { NFTFiltersState } from "../hooks";
+import { formatCurrency } from "@/utils/formatters";
 
 interface NFTFiltersCardProps {
   filters: NFTFiltersState;
@@ -24,29 +24,45 @@ export const NFTFiltersCard = ({
   onResetFilters,
   onSearch,
 }: NFTFiltersCardProps) => {
-  const [showFilters, setShowFilters] = useState(true);
-  const [pendingRange, setPendingRange] = useState<[number, number]>(
-    filters.priceRange
-  );
-
+  const [showFilters, setShowFilters] = useState(false);
+  const [pendingRange, setPendingRange] = useState<[number, number]>([0, 0]);
+  const [pendingRarity, setPendingRarity] = useState<string[]>(filters.rarity);
   const rarityOptions = [
-    { label: "Thường", value: "1", color: "bg-gray-500/20 text-gray-300" },
-    { label: "Vàng", value: "2", color: "bg-yellow-500/20 text-yellow-300" },
-    { label: "Bạch kim", value: "3", color: "bg-blue-500/20 text-blue-300" },
-    { label: "Kim cương", value: "4", color: "bg-pink-500/20 text-pink-300" },
+    { label: "Thường ", value: "1", color: "bg-gray-500/20 text-gray-300" },
+    {
+      label: "Bạc ",
+      value: "2",
+      color: "bg-gray-500/20 text-gray-300",
+    },
+    {
+      label: "Vàng ",
+      value: "3",
+      color: "bg-yellow-500/20 text-yellow-300",
+    },
+    {
+      label: "Bạch kim ",
+      value: "4",
+      color: "bg-blue-500/20 text-blue-300",
+    },
+    {
+      label: "Kim cương ",
+      value: "5",
+      color: "bg-pink-500/20 text-pink-300",
+    },
   ];
 
   const toggleRarity = (rarity: string) => {
-    const newRarity = filters.rarity.includes(rarity)
-      ? filters.rarity.filter((r) => r !== rarity)
-      : [...filters.rarity, rarity];
-    onFiltersChange({ ...filters, rarity: newRarity });
-    // Removed automatic API call - only update local state
+    // Single-select: nếu click vào rarity đã chọn thì bỏ chọn, nếu chọn item khác thì thay thế
+    setPendingRarity((prev) => (prev.includes(rarity) ? [] : [rarity]));
   };
 
   const handleApplyFilters = async () => {
     // Update filters with pending price range
-    const updatedFilters = { ...filters, priceRange: pendingRange };
+    const updatedFilters = {
+      ...filters,
+      priceRange: pendingRange,
+      rarity: pendingRarity,
+    };
     onFiltersChange(updatedFilters);
 
     // Call API only when user clicks apply button
@@ -62,6 +78,10 @@ export const NFTFiltersCard = ({
   useEffect(() => {
     setPendingRange(filters.priceRange);
   }, [filters.priceRange]);
+
+  useEffect(() => {
+    setPendingRarity(filters.rarity);
+  }, [filters.rarity]);
 
   return (
     <div className="mb-8">
@@ -123,14 +143,18 @@ export const NFTFiltersCard = ({
             <div>
               <label className="text-sm font-semibold mb-3 block">
                 Độ hiếm (
-                {filters.rarity.length > 0 ? filters.rarity.length : "Tất cả"})
+                {pendingRarity.length > 0
+                  ? rarityOptions.find((opt) => opt.value === pendingRarity[0])
+                      ?.label || pendingRarity.length
+                  : "Tất cả"}
+                )
               </label>
               <div className="flex flex-wrap gap-2">
                 {rarityOptions.map((option) => (
                   <Badge
                     key={option.value}
                     className={`cursor-pointer transition-all ${
-                      filters.rarity.includes(option.value)
+                      pendingRarity.includes(option.value)
                         ? option.color
                         : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
                     }`}
@@ -145,7 +169,8 @@ export const NFTFiltersCard = ({
             {/* Price Range Filter */}
             <div>
               <label className="text-sm font-semibold mb-3 block">
-                Khoảng giá: {pendingRange[0]} CAN - {pendingRange[1]} CAN
+                Khoảng giá: {formatCurrency(pendingRange[0])} CAN -{" "}
+                {formatCurrency(pendingRange[1])} CAN
               </label>
               <Slider
                 min={0}

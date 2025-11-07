@@ -68,7 +68,7 @@ export default function NFTMarketScreen() {
                   initialCount={6}
                   totalPages={totalPages}
                   currentPage={currentPage}
-                  onPageChange={(page) => fetchOtherNFTs(page, 1)}
+                  onPageChange={(page) => fetchOtherNFTs(page, 9)}
                 />
               </div>
             )}
