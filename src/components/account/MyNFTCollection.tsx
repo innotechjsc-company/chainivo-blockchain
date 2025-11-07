@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useMyNFTCollection } from "@/hooks/useMyNFTCollection";
 import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
-import { NFTCard } from "@/screens/nft-market-screen/components/NFTCard";
+import { NFTCard, MysteryBoxAnimationWrapper } from "@/components/nft";
 import { ListNFTDialog } from "./ListNFTDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import type { NFTItem } from "@/types/NFT";
 import { useRouter } from "next/navigation";
+import { NFTService } from "@/api/services/nft-service";
+import { ToastService } from "@/services/ToastService";
+import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
 
 // Loading Skeleton Component
 function LoadingSkeleton() {
@@ -52,11 +55,65 @@ export function MyNFTCollection() {
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // State cho Open Box Animation
+  const [selectedBoxNFT, setSelectedBoxNFT] = useState<NFTItem | null>(null);
+  const [isOpeningBox, setIsOpeningBox] = useState(false);
+
   const router = useRouter();
+
   // Handler mo dialog dang ban NFT
   const handleListForSale = (nft: NFTItem) => {
     setSelectedNFT(nft);
     setDialogOpen(true);
+  };
+
+  // Handler bat dau mo hop (trigger animation)
+  const handleOpenBox = (nft: NFTItem) => {
+    setSelectedBoxNFT(nft);
+    setIsOpeningBox(true);
+  };
+
+  // Handler goi API mo hop (duoc goi boi MysteryBoxAnimationWrapper)
+  const handleOpenBoxAPI = async (): Promise<OpenBoxResponse> => {
+    if (!selectedBoxNFT) {
+      throw new Error('Khong co hop nao duoc chon');
+    }
+
+    // Goi API mo hop
+    const response = await NFTService.openBox(selectedBoxNFT.id);
+
+    if (response.success && response.data) {
+      return response.data;
+    } else {
+      throw new Error(response.error || response.message || 'Co loi xay ra khi mo hop');
+    }
+  };
+
+  // Handler khi hoan tat tat ca (animation + reward display)
+  const handleOpenBoxComplete = () => {
+    setIsOpeningBox(false);
+    setSelectedBoxNFT(null);
+
+    // Refetch NFT collection de cap nhat danh sach
+    refetch();
+
+    ToastService.success('Phan thuong da duoc chuyen vao tai khoan cua ban!');
+  };
+
+  // Handler khi co loi
+  const handleOpenBoxError = (error: string) => {
+    setIsOpeningBox(false);
+    ToastService.error(error);
+  };
+
+  // Handler chung cho action clicks tu NFTCard
+  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open') => {
+    if (action === 'sell') {
+      handleListForSale(nft);
+    } else if (action === 'open') {
+      handleOpenBox(nft);
+    }
   };
 
   const onClickMyNFT = (id: string) => {
@@ -112,6 +169,7 @@ export function MyNFTCollection() {
               key={nft.id}
               nft={nft}
               type="tier"
+              onActionClick={handleActionClick}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
             />
@@ -125,6 +183,26 @@ export function MyNFTCollection() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSuccess={refetch}
+      />
+
+      {/* Mystery Box Animation Wrapper */}
+      <MysteryBoxAnimationWrapper
+        isOpen={isOpeningBox}
+        boxName={selectedBoxNFT?.name}
+        boxImage={
+          selectedBoxNFT?.image && typeof selectedBoxNFT.image === "object"
+            ? (selectedBoxNFT.image as any).url
+            : typeof selectedBoxNFT?.image === "string"
+            ? selectedBoxNFT.image
+            : undefined
+        }
+        onOpenBox={handleOpenBoxAPI}
+        onComplete={handleOpenBoxComplete}
+        onError={handleOpenBoxError}
+        initialTitle="Dang chuan bi..."
+        shakeTitle="Dang mo hop..."
+        openingTitle="Dang mo hop qua cua ban!"
+        revealTitle="Chuc mung!"
       />
     </div>
   );

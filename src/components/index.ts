@@ -35,6 +35,17 @@ export type { RadioGroupProps, RadioOption } from "./inputs/RadioGroup";
 // Export UI components
 export { ThemeToggle } from "./theme-toggle";
 
+// Export NFT components
+export {
+  NFTCard,
+  LevelBadge,
+  NFTTypeBadge,
+  InvestmentProgressBar,
+  CountdownTimer,
+  MysteryRewardsPreview,
+} from "./nft";
+export { default as OpenBoxDialog } from "./nft/OpenBoxDialog";
+
 // Export shadcn UI components (for direct use if needed)
 export { Button as UIButton, buttonVariants } from "./ui/button";
 export { Input as UIInput } from "./ui/input";

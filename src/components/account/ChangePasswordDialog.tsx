@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert } from '@/components/ui/alert';
 import { UserService } from '@/api/services/user-service';
 import { ToastService } from '@/services/ToastService';
 import { Eye, EyeOff } from 'lucide-react';
@@ -38,7 +37,11 @@ export function ChangePasswordDialog({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [showPassword, setShowPassword] = useState<PasswordVisibility>({
     old: false,
     new: false,
@@ -48,67 +51,91 @@ export function ChangePasswordDialog({
   // Validation: Password strength
   const validatePasswordStrength = (password: string): string | null => {
     if (password.length < 8 || password.length > 128) {
-      return 'Mat khau phai co do dai tu 8 den 128 ky tu';
+      return 'Mật khẩu phải có độ dài từ 8 đến 128 ký tự';
     }
 
     if (!/[A-Z]/.test(password)) {
-      return 'Mat khau phai chua it nhat mot chu cai viet hoa';
+      return 'Mật khẩu phải chứa ít nhất một chữ cái viết hoa';
     }
 
     if (!/[a-z]/.test(password)) {
-      return 'Mat khau phai chua it nhat mot chu cai viet thuong';
+      return 'Mật khẩu phải chứa ít nhất một chữ cái viết thường';
     }
 
     if (!/[0-9]/.test(password)) {
-      return 'Mat khau phai chua it nhat mot chu so';
+      return 'Mật khẩu phải chứa ít nhất một chữ số';
     }
 
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return 'Mat khau phai chua it nhat mot ky tu dac biet';
+      return 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt';
     }
 
     return null;
   };
 
   // Validation: Full form validation
-  const validateForm = (): string | null => {
-    // Check required fields
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      return 'Vui long dien day du thong tin';
+  const validateForm = (): boolean => {
+    const newErrors = {
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    };
+
+    let isValid = true;
+
+    // Check old password
+    if (!oldPassword) {
+      newErrors.oldPassword = 'Vui lòng nhập mật khẩu hiện tại';
+      isValid = false;
     }
 
-    // Check password match
-    if (newPassword !== confirmPassword) {
-      return 'Mat khau xac nhan khong khop';
+    // Check new password
+    if (!newPassword) {
+      newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
+      isValid = false;
+    } else {
+      // Check password strength
+      const strengthError = validatePasswordStrength(newPassword);
+      if (strengthError) {
+        newErrors.newPassword = strengthError;
+        isValid = false;
+      } else if (oldPassword && oldPassword === newPassword) {
+        // Check if new password is same as old password
+        newErrors.newPassword = 'Mật khẩu mới không được trùng với mật khẩu cũ';
+        isValid = false;
+      } else if (userEmail && newPassword.toLowerCase().includes(userEmail.toLowerCase())) {
+        // Check if password contains email
+        newErrors.newPassword = 'Mật khẩu không được chứa địa chỉ email';
+        isValid = false;
+      }
     }
 
-    // Check password strength
-    const strengthError = validatePasswordStrength(newPassword);
-    if (strengthError) {
-      return strengthError;
+    // Check confirm password
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
+      isValid = false;
+    } else if (newPassword && newPassword !== confirmPassword) {
+      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      isValid = false;
     }
 
-    // Check if new password is same as old password
-    if (oldPassword === newPassword) {
-      return 'Mat khau moi khong duoc trung voi mat khau cu';
-    }
-
-    // Check if password contains email
-    if (userEmail && newPassword.toLowerCase().includes(userEmail.toLowerCase())) {
-      return 'Mat khau khong duoc chua dia chi email';
-    }
-
-    return null;
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+
+    // Clear previous errors
+    setErrors({
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
 
     // Client-side validation
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    const isValid = validateForm();
+    if (!isValid) {
       return;
     }
 
@@ -122,31 +149,33 @@ export function ChangePasswordDialog({
       });
 
       if (response.success) {
-        ToastService.success('Thay doi mat khau thanh cong', {
-          description: 'Mat khau cua ban da duoc cap nhat',
+        ToastService.success('Thay đổi mật khẩu thành công ', {
+          description: 'Mật khẩu của bạn đã dược cập nhật ',
         });
         handleClose();
       } else {
         // Handle API errors
-        const errorMessage = response.error || response.message || 'Co loi xay ra';
+        const errorMessage = response.error || response.message || 'Có lỗi xảy ra ';
 
         // Check for specific error codes/messages
         if (errorMessage.includes('401') || errorMessage.includes('password') || errorMessage.includes('incorrect')) {
-          setError('Mat khau hien tai khong dung');
+          setErrors((prev) => ({
+            ...prev,
+            oldPassword: 'Mật khẩu hiện tại không đúng',
+          }));
         } else if (errorMessage.includes('429') || errorMessage.includes('many requests')) {
-          setError('Qua nhieu yeu cau. Vui long thu lai sau 15 phut');
+          ToastService.error('Quá nhiều yêu cầu', {
+            description: 'Vui lòng thử lại sau 15 phút',
+          });
         } else {
-          setError(errorMessage);
+          ToastService.error('Thay đổi mật khẩu thất bại', {
+            description: errorMessage,
+          });
         }
-
-        ToastService.error('Thay doi mat khau that bai', {
-          description: errorMessage,
-        });
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Loi he thong';
-      setError(errorMessage);
-      ToastService.error('Loi he thong', {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Lỗi hệ thống';
+      ToastService.error('Lỗi hệ thống', {
         description: errorMessage,
       });
     } finally {
@@ -158,7 +187,11 @@ export function ChangePasswordDialog({
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setError('');
+    setErrors({
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
     setShowPassword({ old: false, new: false, confirm: false });
     onOpenChange(false);
   };
@@ -173,10 +206,10 @@ export function ChangePasswordDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Thay doi mat khau</DialogTitle>
-          <DialogDescription>
-            Nhap mat khau hien tai va mat khau moi cua ban. Mat khau phai co it nhat 8 ky tu, bao gom chu hoa, chu thuong, so va ky tu dac biet.
+        <DialogHeader className="text-left">
+          <DialogTitle className="leading-normal">Thay đổi mật khẩu </DialogTitle>
+          <DialogDescription className="leading-normal">
+            Nhập mật khẩu hiện tại và mật khẩu mới của bạn. Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.
           </DialogDescription>
         </DialogHeader>
 
@@ -184,16 +217,21 @@ export function ChangePasswordDialog({
           <div className="grid gap-4 py-4">
             {/* Old Password */}
             <div className="grid gap-2">
-              <Label htmlFor="oldPassword">Mat khau hien tai</Label>
+              <Label htmlFor="oldPassword">Mật khẩu hiện tại</Label>
               <div className="relative">
                 <Input
                   id="oldPassword"
                   type={showPassword.old ? 'text' : 'password'}
                   value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Nhap mat khau hien tai"
+                  onChange={(e) => {
+                    setOldPassword(e.target.value);
+                    if (errors.oldPassword) {
+                      setErrors((prev) => ({ ...prev, oldPassword: '' }));
+                    }
+                  }}
+                  placeholder="Nhập mật khẩu hiện tại"
                   disabled={loading}
-                  className="pr-10"
+                  className={`pr-10 ${errors.oldPassword ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 />
                 <button
                   type="button"
@@ -208,20 +246,28 @@ export function ChangePasswordDialog({
                   )}
                 </button>
               </div>
+              {errors.oldPassword && (
+                <p className="text-destructive text-sm">{errors.oldPassword}</p>
+              )}
             </div>
 
             {/* New Password */}
             <div className="grid gap-2">
-              <Label htmlFor="newPassword">Mat khau moi</Label>
+              <Label htmlFor="newPassword">Mật khẩu mới</Label>
               <div className="relative">
                 <Input
                   id="newPassword"
                   type={showPassword.new ? 'text' : 'password'}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Nhap mat khau moi"
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (errors.newPassword) {
+                      setErrors((prev) => ({ ...prev, newPassword: '' }));
+                    }
+                  }}
+                  placeholder="Nhập mật khẩu mới"
                   disabled={loading}
-                  className="pr-10"
+                  className={`pr-10 ${errors.newPassword ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 />
                 <button
                   type="button"
@@ -236,20 +282,28 @@ export function ChangePasswordDialog({
                   )}
                 </button>
               </div>
+              {errors.newPassword && (
+                <p className="text-destructive text-sm">{errors.newPassword}</p>
+              )}
             </div>
 
             {/* Confirm Password */}
             <div className="grid gap-2">
-              <Label htmlFor="confirmPassword">Xac nhan mat khau moi</Label>
+              <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showPassword.confirm ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Nhap lai mat khau moi"
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (errors.confirmPassword) {
+                      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
+                    }
+                  }}
+                  placeholder="Nhập lại mật khẩu mới"
                   disabled={loading}
-                  className="pr-10"
+                  className={`pr-10 ${errors.confirmPassword ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 />
                 <button
                   type="button"
@@ -264,14 +318,10 @@ export function ChangePasswordDialog({
                   )}
                 </button>
               </div>
+              {errors.confirmPassword && (
+                <p className="text-destructive text-sm">{errors.confirmPassword}</p>
+              )}
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <Alert variant="destructive" className="text-sm">
-                {error}
-              </Alert>
-            )}
           </div>
 
           <DialogFooter>
@@ -281,10 +331,10 @@ export function ChangePasswordDialog({
               onClick={handleClose}
               disabled={loading}
             >
-              Huy
+              Hủy
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Dang xu ly...' : 'Xac nhan'}
+              {loading ? 'Đang xử lý...' : 'Xác nhận'}
             </Button>
           </DialogFooter>
         </form>
