@@ -508,12 +508,9 @@ export default function AccountManagementPage() {
                     <div>
                       <div className="font-semibold">Email</div>
                       <div className="text-sm text-muted-foreground">
-                        user@example.com
+                        {user?.email}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Thay đổi
-                    </Button>
                   </div>
 
                   <div className="flex items-center justify-between p-4 glass rounded-lg">
