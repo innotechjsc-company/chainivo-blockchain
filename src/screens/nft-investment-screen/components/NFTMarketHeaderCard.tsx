@@ -37,14 +37,14 @@ export const NFTMarketHeaderCard = ({
     {
       icon: Package,
       label: "Tổng NFT",
-      value: analytics?.totalNFTs?.totalDocs,
+      value: analytics?.totalNFTs,
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: analytics?.activeUsers?.totalDocs,
+      value: analytics?.activeUsers,
       trend: "+8.3%",
       trendUp: true,
     },

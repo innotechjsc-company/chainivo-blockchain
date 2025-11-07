@@ -437,6 +437,9 @@ export default function P2PMarketPage() {
                   <Card
                     key={item.id}
                     className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
+                    onClick={() => {
+                      router.push(`/nft/${item.id}?type=other`);
+                    }}
                   >
                     <div className="relative h-64 overflow-hidden w-full">
                       <img
