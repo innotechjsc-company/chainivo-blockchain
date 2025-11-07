@@ -60,7 +60,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
     return [];
   };
 
-  const fetchOtherNFTs = async (page: number = 1, limit: number = 6) => {
+  const fetchOtherNFTs = async (page: number = 1, limit: number = 9) => {
     try {
       setLoading(true);
       const response = await NFTService.getNFTInvestmentList({
@@ -218,11 +218,14 @@ export const useNFTFilters = (nfts: NFT[]) => {
     override?: Partial<NFTFiltersState>
   ): Promise<boolean> => {
     const f = { ...filters, ...(override || {}) };
+
+    // Tạo params với level từ rarity (độ hiếm)
     const params: any = {
       page: 1,
       limit: 24,
       minPrice: String(f.priceRange[0]),
       maxPrice: String(f.priceRange[1]),
+      // Truyền level (độ hiếm) lên API - join các level đã chọn bằng dấu phẩy
       level: f.rarity.length > 0 ? f.rarity.join(",") : undefined,
       type: f.type !== "all" ? f.type : undefined,
       isActive: f.status?.includes("active")
@@ -232,16 +235,44 @@ export const useNFTFilters = (nfts: NFT[]) => {
         : undefined,
     };
 
+    // Loại bỏ các params undefined để không gửi lên API
+    Object.keys(params).forEach((key) => {
+      if (params[key] === undefined || params[key] === null) {
+        delete params[key];
+      }
+    });
+
     try {
-      // Search in marketplace
-      const response = await NFTService.allNFTInMarketplace(params);
+      setLoading(true);
+      // Search in marketplace với level (độ hiếm)
+      const response = await NFTService.getNFTInvestmentList({
+        page: 1,
+        limit: 9,
+        ...params,
+      });
       let marketplaceResults: any[] = [];
 
       if (response.success) {
         const data: any = response.data as any;
-        marketplaceResults = data?.nfts || data?.items || data || [];
+        // Lấy danh sách NFT từ response - hỗ trợ nhiều cấu trúc
+        if (Array.isArray(data)) {
+          marketplaceResults = data;
+        } else if (data?.nfts && Array.isArray(data.nfts)) {
+          marketplaceResults = data.nfts;
+        } else if (data?.items && Array.isArray(data.items)) {
+          marketplaceResults = data.items;
+        } else if (data?.docs && Array.isArray(data.docs)) {
+          marketplaceResults = data.docs;
+        } else if (data?.data && Array.isArray(data.data)) {
+          marketplaceResults = data.data;
+        } else {
+          marketplaceResults = [];
+        }
       } else {
-        toast.error(response.message);
+        toast.error(response.message || "Không thể tìm kiếm NFT");
+        setSearchNFTs([]);
+        setLoading(false);
+        return false;
       }
 
       // Filter userNFTs based on the same criteria
@@ -279,17 +310,28 @@ export const useNFTFilters = (nfts: NFT[]) => {
       const finalResults = Array.from(mergedResults.values());
 
       setSearchNFTs(finalResults);
+
+      // Hiển thị thông báo kết quả tìm kiếm
+      if (finalResults.length > 0) {
+        toast.success(`Tìm thấy ${finalResults.length} NFT phù hợp`);
+      } else {
+        toast.info("Không tìm thấy NFT nào phù hợp với bộ lọc");
+      }
+
+      setLoading(false);
       return true;
     } catch (error) {
       console.error("Error searching marketplace:", error);
       toast.error("Lỗi khi tìm kiếm NFT.");
+      setSearchNFTs([]);
+      setLoading(false);
       return false;
     }
   };
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await Promise.all([fetchOtherNFTs(1, 1), fetchUserNFTs()]);
+        await Promise.all([fetchOtherNFTs(1, 9), fetchUserNFTs()]);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -326,6 +368,8 @@ export const useNFTFilters = (nfts: NFT[]) => {
   const otherNFTs = filteredNFTs.filter((nft) => nft.type === "other");
 
   const resetFilters = () => {
+    // Xóa kết quả tìm kiếm khi reset filters để hiển thị lại danh sách mặc định
+    setSearchNFTs([]);
     setFilters({
       rarity: [],
       priceRange: [0, 10000],

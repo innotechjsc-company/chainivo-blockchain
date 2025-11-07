@@ -58,20 +58,25 @@ export const NFTFiltersCard = ({
   ];
 
   const rarityOptions = [
-    { label: "Thường (1★)", value: "1", color: "bg-gray-500/20 text-gray-300" },
+    { label: "Thường ", value: "1", color: "bg-gray-500/20 text-gray-300" },
     {
-      label: "Vàng (2★)",
+      label: "Bạc ",
       value: "2",
+      color: "bg-gray-500/20 text-gray-300",
+    },
+    {
+      label: "Vàng ",
+      value: "3",
       color: "bg-yellow-500/20 text-yellow-300",
     },
     {
-      label: "Bạch kim (3★)",
-      value: "3",
+      label: "Bạch kim ",
+      value: "4",
       color: "bg-blue-500/20 text-blue-300",
     },
     {
-      label: "Kim cương (4★)",
-      value: "4",
+      label: "Kim cương ",
+      value: "5",
       color: "bg-pink-500/20 text-pink-300",
     },
   ];
@@ -116,7 +121,12 @@ export const NFTFiltersCard = ({
     onFiltersChange(updatedFilters);
     if (onSearch) {
       try {
-        await onSearch(updatedFilters);
+        // Gọi searchMarketplace với filters đã cập nhật, đặc biệt là level (rarity)
+        const success = await onSearch(updatedFilters);
+        if (success) {
+          // Đóng bộ lọc sau khi tìm kiếm thành công (optional)
+          // setShowFilters(false);
+        }
       } catch (e) {
         console.error("Error applying filters:", e);
       }
@@ -188,48 +198,6 @@ export const NFTFiltersCard = ({
       {showFilters && (
         <Card className="glass border-cyan-500/20">
           <CardContent className="p-6 space-y-4">
-            {/* Type Filter Section */}
-            <div className="border-b border-border/30 pb-4">
-              <button
-                onClick={() => toggleSection("type")}
-                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
-              >
-                <label className="text-sm font-semibold cursor-pointer">
-                  Loại NFT
-                  {getActiveCount("type") > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
-                    >
-                      {getActiveCount("type")}
-                    </Badge>
-                  )}
-                </label>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    expandedSections.type ? "rotate-0" : "-rotate-90"
-                  }`}
-                />
-              </button>
-              {expandedSections.type && (
-                <div className="flex flex-wrap gap-2">
-                  {typeOptions.map((option) => (
-                    <Badge
-                      key={option.value}
-                      className={`cursor-pointer transition-all ${
-                        filters.type === option.value
-                          ? "bg-cyan-500/30 text-cyan-300 border-cyan-500/50"
-                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
-                      }`}
-                      onClick={() => toggleType(option.value)}
-                    >
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Rarity Filter Section */}
             <div className="border-b border-border/30 pb-4">
               <button
@@ -264,91 +232,6 @@ export const NFTFiltersCard = ({
                           : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
                       }`}
                       onClick={() => toggleRarity(option.value)}
-                    >
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Status Filter Section */}
-            <div className="border-b border-border/30 pb-4">
-              <button
-                onClick={() => toggleSection("status")}
-                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
-              >
-                <label className="text-sm font-semibold cursor-pointer">
-                  Trạng thái
-                  {getActiveCount("status") > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
-                    >
-                      {getActiveCount("status")}
-                    </Badge>
-                  )}
-                </label>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    expandedSections.status ? "rotate-0" : "-rotate-90"
-                  }`}
-                />
-              </button>
-              {expandedSections.status && (
-                <div className="flex flex-wrap gap-2">
-                  {statusOptions.map((option) => (
-                    <Badge
-                      key={option.value}
-                      className={`cursor-pointer transition-all gap-1 ${
-                        (filters.status || []).includes(option.value)
-                          ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
-                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
-                      }`}
-                      onClick={() => toggleStatus(option.value)}
-                    >
-                      <span>{option.icon}</span>
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Shares Filter Section */}
-            <div className="border-b border-border/30 pb-4">
-              <button
-                onClick={() => toggleSection("shares")}
-                className="w-full flex items-center justify-between mb-3 hover:text-cyan-400 transition-colors"
-              >
-                <label className="text-sm font-semibold cursor-pointer">
-                  Tính sẵn có
-                  {getActiveCount("shares") > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 bg-cyan-500/20 text-cyan-300 text-xs"
-                    >
-                      {getActiveCount("shares")}
-                    </Badge>
-                  )}
-                </label>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    expandedSections.shares ? "rotate-0" : "-rotate-90"
-                  }`}
-                />
-              </button>
-              {expandedSections.shares && (
-                <div className="flex flex-wrap gap-2">
-                  {sharesOptions.map((option) => (
-                    <Badge
-                      key={option.value}
-                      className={`cursor-pointer transition-all ${
-                        (filters.shares || []).includes(option.value)
-                          ? "bg-violet-500/30 text-violet-300 border-violet-500/50"
-                          : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
-                      }`}
-                      onClick={() => toggleShares(option.value)}
                     >
                       {option.label}
                     </Badge>

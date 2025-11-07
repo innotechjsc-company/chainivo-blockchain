@@ -17,7 +17,7 @@ import { NFTService } from "@/api/services/nft-service";
 import type { ApiResponse } from "@/api/api";
 import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
-import { Eye } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatAmount, getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -55,6 +55,12 @@ export default function P2PMarketPage() {
   const [items, setItems] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  // Lưu filter params hiện tại để dùng khi chuyển trang
+  const [currentFilterParams, setCurrentFilterParams] =
+    useState<any>(undefined);
   // filter states
   const [rarity, setRarity] = useState<string>("");
   const [assetType, setAssetType] = useState<string>("");
@@ -113,27 +119,85 @@ export default function P2PMarketPage() {
   };
 
   // Fetch P2P list with optional params
-  const fetchP2P = async (params?: any) => {
+  const fetchP2P = async (
+    params?: any,
+    page: number = 1,
+    limit: number = 6
+  ) => {
     try {
       setLoading(true);
       setError("");
-      const resp: ApiResponse<any> = await NFTService.getP2PList(params);
+
+      // Thêm pagination params
+      const requestParams = {
+        ...params,
+        page,
+        limit,
+      };
+
+      const resp: ApiResponse<any> = await NFTService.getP2PList(requestParams);
       if (resp?.success) {
-        setItems(resp?.data?.docs);
+        const data: any = resp.data as any;
+
+        // Lấy danh sách items - kiểm tra nhiều cấu trúc có thể
+        let list: any[] = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (data?.docs && Array.isArray(data.docs)) {
+          list = data.docs;
+        } else if (data?.items && Array.isArray(data.items)) {
+          list = data.items;
+        } else if (data?.data && Array.isArray(data.data)) {
+          list = data.data;
+        } else {
+          list = [];
+        }
+
+        setItems(list);
+
+        // Lấy thông tin pagination từ response
+        const totalPagesFromData =
+          data?.totalPages ||
+          data?.data?.totalPages ||
+          data?.total_pages ||
+          data?.data?.total_pages;
+
+        const pagination =
+          data?.pagination ||
+          data?.data?.pagination ||
+          (resp as any).pagination;
+
+        if (totalPagesFromData) {
+          setTotalPages(totalPagesFromData);
+          setCurrentPage(data?.page || data?.data?.page || page);
+        } else if (pagination) {
+          setTotalPages(pagination.totalPages || pagination.total_pages || 1);
+          setCurrentPage(pagination.page || page);
+        } else {
+          // Fallback: tính toán từ data nếu không có pagination object
+          const totalItems =
+            data?.total || data?.data?.total || data?.totalDocs || list.length;
+          setTotalPages(Math.max(1, Math.ceil(totalItems / limit)));
+          setCurrentPage(page);
+        }
       } else {
         setItems([]);
         setError(resp?.message || resp?.error || "Không thể tải danh sách");
+        setTotalPages(1);
+        setCurrentPage(1);
       }
     } catch (e: any) {
       setError(e?.message || "Không thể tải danh sách");
       setItems([]);
+      setTotalPages(1);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchP2P();
+    fetchP2P(undefined, 1, 1);
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -168,7 +232,7 @@ export default function P2PMarketPage() {
           <div className="text-sm text-muted-foreground">
             {loading
               ? "Loading..."
-              : `${filteredItems.length.toLocaleString()} Results`}
+              : `${items.length.toLocaleString()} Results`}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Sort:</span>
@@ -178,7 +242,9 @@ export default function P2PMarketPage() {
                 setSort(value);
                 if (value === "all") {
                   setLoading(true);
-                  fetchP2P()
+                  setCurrentPage(1);
+                  setCurrentFilterParams(undefined);
+                  fetchP2P(undefined, 1, 1)
                     .catch(() => {})
                     .finally(() => setLoading(false));
                 } else if (value === "price-asc" || value === "price-desc") {
@@ -320,9 +386,11 @@ export default function P2PMarketPage() {
                         params.minPrice = pendingRange[0];
                         params.maxPrice = pendingRange[1];
                       }
-                      fetchP2P(
-                        Object.keys(params).length > 0 ? params : undefined
-                      );
+                      const finalParams =
+                        Object.keys(params).length > 0 ? params : undefined;
+                      setCurrentFilterParams(finalParams);
+                      setCurrentPage(1);
+                      fetchP2P(finalParams, 1, 1);
                     }}
                   >
                     Tìm kiếm
@@ -419,6 +487,68 @@ export default function P2PMarketPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newPage = Math.max(1, currentPage - 1);
+                  setCurrentPage(newPage);
+                  fetchP2P(currentFilterParams, newPage, 1);
+                }}
+                disabled={currentPage === 1}
+                className="gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Trước
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => {
+                    const isActive = pageNum === currentPage;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (pageNum !== currentPage) {
+                            setCurrentPage(pageNum);
+                            fetchP2P(currentFilterParams, pageNum, 1);
+                          }
+                        }}
+                        className={`h-9 w-9 p-0 ${
+                          isActive ? "bg-primary text-primary-foreground" : ""
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  }
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newPage = Math.min(totalPages, currentPage + 1);
+                  setCurrentPage(newPage);
+                  fetchP2P(currentFilterParams, newPage, 1);
+                  if (typeof window !== "undefined") {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+                disabled={currentPage === totalPages}
+                className="gap-2"
+              >
+                Sau
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </section>
         </div>
