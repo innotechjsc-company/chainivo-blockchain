@@ -136,6 +136,7 @@ export const useAuthForm = (type: "login" | "register") => {
           id: response.user.id,
           email: response.user.email,
           name: response.user.name || "",
+          avatarUrl: response.user.avatarUrl || "", // Include avatarUrl tu AuthService.login()
           walletAddress: response.user.walletAddress || "",
           role: response.user.role || "user",
           createdAt: response.user.createdAt,

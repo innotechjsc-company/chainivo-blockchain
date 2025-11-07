@@ -185,11 +185,16 @@ export const API_ENDPOINTS = {
     UPDATE_USER_PROFILE: "/api/users/profile",
     CHANGE_PASSWORD: "/api/user/change-password",
     UPDATE_PROFILE: "/api/user/update-profile",
+    GET_PROFILE: "/api/user/profile",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
     PARTNERS: "/api/about/partners",
     // ECOSYSTEM: "/api/about/ecosystem",
+  },
+
+  TRANSACTION: {
+    LIST: "/api/list-transaction",
   },
 } as const;
 

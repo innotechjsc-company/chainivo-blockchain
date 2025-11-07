@@ -18,6 +18,12 @@ import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog"
 import { AvatarUpload } from "@/components/account/AvatarUpload";
 import { updateProfile } from "@/stores/authSlice";
 import { MyNFTCollection } from "@/components/account/MyNFTCollection";
+import { TransactionStatsCards } from "@/components/account/TransactionStatsCards";
+import { TransactionFilters } from "@/components/account/TransactionFilters";
+import { TransactionTable } from "@/components/account/TransactionTable";
+import { TransactionPagination } from "@/components/account/TransactionPagination";
+import { useTransactionHistory } from "@/hooks/useTransactionHistory";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Profile {
   name: string;
@@ -44,6 +50,20 @@ export default function AccountManagementPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
+  // Transaction History hook
+  const {
+    transactions: txHistoryTransactions,
+    stats: txStats,
+    loading: txHistoryLoading,
+    error: txHistoryError,
+    filters: txFilters,
+    setFilter: setTxFilter,
+    resetFilters: resetTxFilters,
+    pagination: txPagination,
+    goToPage: txGoToPage,
+    refetch: refetchTxHistory,
+  } = useTransactionHistory();
+
   useEffect(() => {
     // Simulate loading user profile
     const timer = setTimeout(() => {
@@ -54,7 +74,7 @@ export default function AccountManagementPage() {
       // Mock profile data
       const mockProfile: Profile = {
         name: user?.name as string,
-        avatarUrl: avatarUrl, //
+        avatarUrl: avatarUrl,
         can_balance: 12500,
         membership_tier: "gold",
         total_invested: 25000,
@@ -167,19 +187,16 @@ export default function AccountManagementPage() {
         dispatch(updateProfile(updateData));
 
         // Update local profile state
-        setProfile((prev) =>
-          prev
-            ? {
-                ...prev,
-                name: hasNameChange ? trimmedName : prev.name,
-                avatarUrl:
-                  hasAvatarChange && avatarUrl ? avatarUrl : prev.avatarUrl, //
-              }
-            : null
-        );
+        const newProfileState = {
+          ...profile,
+          name: hasNameChange ? trimmedName : (profile?.name || ''),
+          avatarUrl: hasAvatarChange && avatarUrl ? avatarUrl : (profile?.avatarUrl || null),
+        };
+        setProfile(newProfileState as Profile);
 
         // Update localStorage with new user info (including avatar URL)
         const currentUserInfo = LocalStorageService.getUserInfo();
+
         if (currentUserInfo) {
           const updatedUserInfo = {
             ...currentUserInfo,
@@ -289,7 +306,7 @@ export default function AccountManagementPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-8xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">
             <span className="gradient-text">Quản lý tài khoản</span>
           </h1>
@@ -304,7 +321,10 @@ export default function AccountManagementPage() {
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
               </TabsTrigger>
-              <TabsTrigger value="my-nft">NFT của tôi</TabsTrigger>
+              <TabsTrigger value="my-nft">
+                <User className="w-4 h-4 mr-2" />
+                NFT của tôi
+              </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
@@ -436,54 +456,46 @@ export default function AccountManagementPage() {
             </TabsContent>
 
             <TabsContent value="history">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-4">Lịch sử giao dịch</h3>
-                {txLoading ? (
-                  <div className="text-sm text-muted-foreground">
-                    Đang tải giao dịch...
+              <Card className="p-6 glass space-y-6">
+                <h3 className="text-xl font-bold">Lịch sử giao dịch</h3>
+
+                {/* Transaction Stats Cards */}
+                <TransactionStatsCards {...txStats} />
+
+                {/* Filters */}
+                <TransactionFilters
+                  filters={txFilters}
+                  onFilterChange={setTxFilter}
+                  onReset={resetTxFilters}
+                />
+
+                {/* Loading State */}
+                {txHistoryLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner className="w-8 h-8 mr-2" />
+                    <span className="text-muted-foreground">Dang tai giao dich...</span>
                   </div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    Không có giao dịch.
+                )}
+
+                {/* Error State */}
+                {txHistoryError && (
+                  <div className="text-center py-12">
+                    <p className="text-red-500 mb-4">{txHistoryError}</p>
+                    <Button variant="outline" onClick={refetchTxHistory}>
+                      Thu lai
+                    </Button>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactions.map((tx) => (
-                      <div
-                        key={tx._id}
-                        className="flex items-center justify-between p-4 glass rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                            <Wallet className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <div className="font-semibold break-all">
-                              {tx.name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(
-                                tx.transactions?.[0]?.timestamp
-                              )?.toLocaleString("vi-VN")}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${
-                              tx.status?.toLowerCase?.() === "active"
-                                ? "bg-green-100 text-green-700 border-green-200"
-                                : tx.status?.toLowerCase?.() === "pending"
-                                ? "bg-yellow-100 text-orange-600 border-yellow-200"
-                                : "bg-orange-100 text-red-600 border-orange-200"
-                            }`}
-                          >
-                            {tx.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                )}
+
+                {/* Transaction Table */}
+                {!txHistoryLoading && !txHistoryError && (
+                  <>
+                    <TransactionTable transactions={txHistoryTransactions} />
+                    <TransactionPagination
+                      pagination={txPagination}
+                      onPageChange={txGoToPage}
+                    />
+                  </>
                 )}
               </Card>
             </TabsContent>

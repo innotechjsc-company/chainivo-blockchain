@@ -16,17 +16,31 @@ import { autoConnect } from "@/lib/utils";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check for user in LocalStorageService (legacy)
+    // Kiểm tra token và user trong LocalStorageService
+    const token = LocalStorageService.getToken();
     const storedUser = LocalStorageService.getUser();
-    if (storedUser) {
+
+    if (token && storedUser) {
       setUser(storedUser);
+      setIsAuthenticated(true);
+    } else {
+      // Clear dữ liệu nếu token không hợp lệ
+      setUser(null);
+      setIsAuthenticated(false);
+      if (!token && storedUser) {
+        // Nếu có user nhưng không có token, clear hết
+        LocalStorageService.clearAuthData();
+      }
     }
   }, []);
 
   const handleSignOut = () => {
+    LocalStorageService.clearAuthData();
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   useEffect(() => {
@@ -41,7 +55,7 @@ export default function Home() {
         <BlockchainStats />
         <InvestmentPhases />
         {/* <MembershipTiers /> */}
-        <NFTMarketplace />
+        {/* <NFTMarketplace /> */}
         <Missions />
         {/* <NewsEvents /> */}
       </main>
