@@ -1,6 +1,11 @@
 import { ApiService, API_ENDPOINTS } from "../api";
 import type { ApiResponse, ApiTransactionHistoryResponse } from "../api";
-import type { MyNFTsResponse, APIRewardItem, TokenReward, NFTReward } from "@/types/NFT";
+import type {
+  MyNFTsResponse,
+  APIRewardItem,
+  TokenReward,
+  NFTReward,
+} from "@/types/NFT";
 
 export interface NFT {
   _id: string;
@@ -80,11 +85,13 @@ export interface GetMyNFTsParams {
 // Helper function: Transform rewards tu API format sang component format
 function transformRewards(
   apiRewards: APIRewardItem[] | undefined,
-  nftCurrency: string = 'can'
-): {
-  tokens?: TokenReward[];
-  nfts?: NFTReward[];
-} | undefined {
+  nftCurrency: string = "can"
+):
+  | {
+      tokens?: TokenReward[];
+      nfts?: NFTReward[];
+    }
+  | undefined {
   if (!apiRewards || !Array.isArray(apiRewards) || apiRewards.length === 0) {
     return undefined;
   }
@@ -93,23 +100,27 @@ function transformRewards(
   const nfts: NFTReward[] = [];
 
   apiRewards.forEach((reward) => {
-    if (reward.rewardType === 'token' && reward.tokenMinQuantity && reward.tokenMaxQuantity) {
+    if (
+      reward.rewardType === "token" &&
+      reward.tokenMinQuantity &&
+      reward.tokenMaxQuantity
+    ) {
       tokens.push({
         currency: nftCurrency as any, // Lay currency tu NFT
         minAmount: reward.tokenMinQuantity,
         maxAmount: reward.tokenMaxQuantity,
         probability: undefined, // API chua co field nay
       });
-    } else if (reward.rewardType === 'nft' && reward.rank) {
+    } else if (reward.rewardType === "nft" && reward.rank) {
       const imageUrl = reward.nftTemplate?.image
-        ? (typeof reward.nftTemplate.image === 'string'
-            ? reward.nftTemplate.image
-            : reward.nftTemplate.image?.url || '')
-        : '';
+        ? typeof reward.nftTemplate.image === "string"
+          ? reward.nftTemplate.image
+          : reward.nftTemplate.image?.url || ""
+        : "";
 
       nfts.push({
         id: reward.id,
-        name: reward.nftTemplate?.name || 'NFT Reward',
+        name: reward.nftTemplate?.name || "NFT Reward",
         image: imageUrl,
         rarity: reward.rank as any, // rank la string "1", "2", "3"...
         probability: undefined, // API chua co field nay
@@ -129,7 +140,7 @@ function checkIsOpenable(apiRewards: APIRewardItem[] | undefined): boolean {
     return false;
   }
   // Neu co it nhat 1 reward isOpenable = true thi mystery box co the mo
-  return apiRewards.some(reward => reward.isOpenable === true);
+  return apiRewards.some((reward) => reward.isOpenable === true);
 }
 
 export class NFTService {
@@ -139,10 +150,7 @@ export class NFTService {
   static async getNFTsByOwner(
     params?: GetMyNFTsParams
   ): Promise<ApiResponse<MyNFTsResponse["data"]>> {
-    const res = await ApiService.get<any>(
-      API_ENDPOINTS.NFT.MY_NFT,
-      params
-    );
+    const res = await ApiService.get<any>(API_ENDPOINTS.NFT.MY_NFT, params);
 
     if (!res.success || !res.data) {
       return res as ApiResponse<MyNFTsResponse["data"]>;
@@ -177,8 +185,8 @@ export class NFTService {
       }
 
       // Debug logs cho mystery box
-      if (nft.type === 'mysteryBox') {
-        console.log('🎁 [getNFTsByOwner] Mystery Box Debug:', {
+      if (nft.type === "mysteryBox") {
+        console.log("🎁 [getNFTsByOwner] Mystery Box Debug:", {
           name: nft.name,
           type: nft.type,
           imageUrl: imageUrl,
@@ -229,8 +237,12 @@ export class NFTService {
         pricePerShare: nft.pricePerShare,
 
         // Mystery Box NFT fields
-        isOpenable: nft.type === 'mysteryBox' ? checkIsOpenable(nft.rewards) : undefined,
-        rewards: nft.type === 'mysteryBox' ? transformRewards(nft.rewards, nft.currency) : undefined,
+        isOpenable:
+          nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,
+        rewards:
+          nft.type === "mysteryBox"
+            ? transformRewards(nft.rewards, nft.currency)
+            : undefined,
 
         // General flags
         isFeatured: !!nft.isFeatured,
@@ -320,8 +332,12 @@ export class NFTService {
         pricePerShare: nft.pricePerShare,
 
         // Mystery Box NFT fields
-        isOpenable: nft.type === 'mysteryBox' ? checkIsOpenable(nft.rewards) : undefined,
-        rewards: nft.type === 'mysteryBox' ? transformRewards(nft.rewards, nft.currency) : undefined,
+        isOpenable:
+          nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,
+        rewards:
+          nft.type === "mysteryBox"
+            ? transformRewards(nft.rewards, nft.currency)
+            : undefined,
 
         // General flags
         isFeatured: nft.isFeatured,
@@ -374,7 +390,7 @@ export class NFTService {
 
     const nfts = rawNFTs.map((item: any) => {
       const nft = item.nft || {};
-      const shares = o?.shares || 0;
+      const shares = item?.shares || 0;
       const pricePerShare = nft?.pricePerShare || 0;
       const imageObj = nft?.image;
 
@@ -387,8 +403,8 @@ export class NFTService {
       }
 
       // Debug logs cho mystery box
-      if (nft.type === 'mysteryBox') {
-        console.log('🎁 Mystery Box Debug:', {
+      if (nft.type === "mysteryBox") {
+        console.log("🎁 Mystery Box Debug:", {
           name: nft.name,
           imageObj: imageObj,
           imageUrl: imageUrl,
@@ -439,13 +455,16 @@ export class NFTService {
         pricePerShare: nft.pricePerShare,
 
         // Mystery Box NFT fields
-        isOpenable: nft.type === 'mysteryBox' ? checkIsOpenable(nft.rewards) : undefined,
-        rewards: nft.type === 'mysteryBox' ? transformRewards(nft.rewards, nft.currency) : undefined,
+        isOpenable:
+          nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,
+        rewards:
+          nft.type === "mysteryBox"
+            ? transformRewards(nft.rewards, nft.currency)
+            : undefined,
 
         // General flags
         isFeatured: !!nft.isFeatured,
         shares: shares,
-        pricePerShare: pricePerShare,
       } as MyNFTsResponse["data"]["nfts"][number];
     });
 

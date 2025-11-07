@@ -27,6 +27,7 @@ import { TransferService } from "@/services";
 import { useAppSelector } from "@/stores";
 import { toast } from "sonner";
 import { LoadingSkeleton } from "@/screens/staking-screen/components/LoadingSkeleton";
+import { formatNumber } from "@/utils/formatters";
 
 interface NFTStakingFormProps {
   availableNFTs: AvailableNFT[];
@@ -512,13 +513,13 @@ export const NFTStakingForm = ({
                   <div>
                     <p className="text-xs text-muted-foreground">Min Stake</p>
                     <p className="text-sm font-bold text-green-500">
-                      {selectedPoolData.minStake || "-"} CAN
+                      {formatNumber(selectedPoolData.minStake.toString())}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Max Stake</p>
                     <p className="text-sm font-bold text-green-500">
-                      {selectedPoolData.maxStake || "-"} CAN
+                      {formatNumber(selectedPoolData.maxStake.toString())}
                     </p>
                   </div>
                   <div>
