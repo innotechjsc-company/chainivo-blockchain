@@ -3,7 +3,23 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
-import { Wallet, Menu, LogIn, UserPlus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Wallet,
+  Menu,
+  LogIn,
+  UserPlus,
+  RefreshCw,
+  X,
+  Globe,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Hooks
@@ -31,6 +47,7 @@ interface HeaderProps {
 export const Header = ({ session, onSignOut }: HeaderProps) => {
   // Local state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -44,6 +61,72 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   };
   const handleLogin = () => {
     router.push("/auth?tab=login");
+  };
+
+  // Kết nối lại MetaMask với ví của user
+  const handleReconnect = async () => {
+    if (!user?.walletAddress) return;
+
+    try {
+      const eth = (window as any)?.ethereum;
+      if (!eth?.isMetaMask) {
+        console.error("MetaMask is not installed");
+        return;
+      }
+
+      // Yêu cầu kết nối MetaMask
+      const accounts: string[] = await eth.request({
+        method: "eth_requestAccounts",
+      });
+
+      if (accounts && accounts.length > 0) {
+        const connectedAddress = accounts[0].toLowerCase();
+        const userAddress = user.walletAddress.toLowerCase();
+
+        if (connectedAddress === userAddress) {
+          LocalStorageService.setWalletConnectionStatus(true);
+          dispatch(setWalletBalance(user.walletAddress));
+          // Update state để trigger re-render
+          setIsWalletConnected(true);
+          // Refresh balance
+          await getBalance();
+        } else {
+          console.error("Connected wallet does not match user wallet");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to reconnect wallet:", error);
+    }
+  };
+
+  // Ngắt kết nối MetaMask
+  const handleDisconnect = async () => {
+    try {
+      const eth = (window as any)?.ethereum;
+      if (!eth?.isMetaMask) return;
+
+      // Thử revoke permissions (nếu được hỗ trợ)
+      try {
+        await eth.request({
+          method: "wallet_revokePermissions",
+          params: [
+            {
+              eth_accounts: {},
+            },
+          ],
+        });
+      } catch (_err) {
+        // Bỏ qua nếu không hỗ trợ hoặc thất bại
+      }
+
+      // Xóa trạng thái kết nối
+      LocalStorageService.removeWalletConnectionStatus();
+      LocalStorageService.clearWalletData();
+      // Update state để trigger re-render
+      setIsWalletConnected(false);
+    } catch (error) {
+      console.error("Failed to disconnect wallet:", error);
+    }
   };
 
   const getBalance = async () => {
@@ -86,12 +169,56 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
     }
   };
 
+  // Sync wallet connection status với localStorage
+  useEffect(() => {
+    setIsWalletConnected(LocalStorageService.isConnectedToWallet());
+  }, [user?.walletAddress]);
+
   useEffect(() => {
     console.log("user", user);
     if (user) {
       getBalance();
     }
   }, [user]);
+
+  // Auto-connect MetaMask if user has a saved walletAddress
+  useEffect(() => {
+    const autoConnect = async () => {
+      try {
+        if (!user?.walletAddress) return;
+        const eth = (window as any)?.ethereum;
+        if (!eth?.isMetaMask) return;
+
+        // Check existing accounts
+        let accounts: string[] = await eth.request({ method: "eth_accounts" });
+        if (!accounts || accounts.length === 0) {
+          // Prompt connect if not yet connected
+          try {
+            await eth.request({ method: "eth_requestAccounts" });
+            accounts = await eth.request({ method: "eth_accounts" });
+          } catch (_err) {
+            // user rejected or not available, skip silently
+            return;
+          }
+        }
+
+        if (
+          accounts?.[0] &&
+          accounts[0].toLowerCase() === user.walletAddress.toLowerCase()
+        ) {
+          LocalStorageService.setWalletConnectionStatus(true);
+          // Optionally refresh balances
+          dispatch(setWalletBalance(user.walletAddress));
+          // Update state để trigger re-render
+          setIsWalletConnected(true);
+        }
+      } catch (_e) {
+        // ignore auto-connect errors
+      }
+    };
+
+    autoConnect();
+  }, [user?.walletAddress, dispatch]);
   // Compose UI from components
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] glass border-b border-border/50 backdrop-blur-xl">
@@ -114,14 +241,74 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   currentLanguage={language}
                   onLanguageChange={handleLanguageChange}
                 />
-                <Button
-                  variant="default"
-                  className="hidden md:flex cursor-pointer"
-                  onClick={() => router.push("/wallet")}
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  {user?.walletAddress ? "Đã kết nối ví" : "Kết nối ví"}
-                </Button>
+                {!user?.walletAddress ? (
+                  <Button
+                    variant="default"
+                    className="hidden md:flex cursor-pointer"
+                    onClick={() => router.push("/wallet")}
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    "Kết nối ví"
+                  </Button>
+                ) : !isWalletConnected ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="default"
+                        className="hidden md:flex cursor-pointer relative"
+                      >
+                        <span
+                          className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-background ${
+                            isWalletConnected
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+                        <Wallet className="w-4 h-4 mr-2" />
+                        {user?.walletAddress?.slice(0, 6)}...
+                        {user?.walletAddress?.slice(-4)}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={handleReconnect}>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Kết nối lại
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDisconnect}>
+                        <X className="w-4 h-4 mr-2" />
+                        Ngắt kết nối
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="hidden md:flex cursor-pointer relative">
+                        <span
+                          className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${
+                            isWalletConnected
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+                        <Wallet className="w-4 h-4 mr-2" />
+                        {user?.walletAddress?.slice(0, 6)}...
+                        {user?.walletAddress?.slice(-4)}{" "}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleReconnect}>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Kết nối lại
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDisconnect}>
+                        <X className="w-4 h-4 mr-2" />
+                        Ngắt kết nối
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 <UserMenu userProfile={userProfile} onSignOut={handleSignOut} />
               </>
             ) : (
