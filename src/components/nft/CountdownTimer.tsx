@@ -40,7 +40,7 @@ export default function CountdownTimer({
   );
 
   useEffect(() => {
-    // Cap nhat moi giay
+    // Cập nhật mỗi giây
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(endDate));
     }, 1000);
@@ -52,7 +52,7 @@ export default function CountdownTimer({
     return (
       <div className={`flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium ${className}`}>
         <span>⏱️</span>
-        <span>Da het han</span>
+        <span>Đã hết hạn</span>
       </div>
     );
   }
@@ -60,9 +60,9 @@ export default function CountdownTimer({
   return (
     <div className={`flex items-center gap-1.5 text-xs ${className}`}>
       <span>⏱️</span>
-      <span className="text-gray-600 dark:text-gray-400">Con:</span>
+      <span className="text-gray-600 dark:text-gray-400">Còn:</span>
       <span className="font-medium text-gray-900 dark:text-gray-100">
-        {timeLeft.days > 0 && `${timeLeft.days} ngay `}
+        {timeLeft.days > 0 && `${timeLeft.days} ngày `}
         {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
       </span>
     </div>

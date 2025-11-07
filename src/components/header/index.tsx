@@ -175,7 +175,6 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
   }, [user?.walletAddress]);
 
   useEffect(() => {
-    console.log("user", user);
     if (user) {
       getBalance();
     }

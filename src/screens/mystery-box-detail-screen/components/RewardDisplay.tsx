@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Coins, Image as ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatNumber } from "@/utils/formatters";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
 
 interface RewardDisplayProps {
@@ -15,14 +18,21 @@ export const RewardDisplay = ({
   onClose,
   reward,
 }: RewardDisplayProps) => {
-  if (!isOpen || !reward) return null;
+  const [mounted, setMounted] = useState(false);
 
-  const isTokenReward = reward.reward.rewardType === "token";
-  const isNFTReward = reward.reward.rewardType === "nft";
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl mx-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+  if (!isOpen || !reward || !mounted) return null;
+
+  const rewardData = reward.reward;
+  const isTokenReward = rewardData?.type === "token";
+  const isNFTReward = rewardData?.type === "nft";
+
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-yellow-500 animate-pulse" />
@@ -51,37 +61,37 @@ export const RewardDisplay = ({
           </div>
 
           {/* Token Reward */}
-          {isTokenReward && reward.reward.rewardType === "token" && (
+          {isTokenReward && (
             <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-6 mb-6">
               <div className="text-center">
                 <p className="text-gray-400 text-sm mb-2">Bạn nhận được</p>
                 <div className="flex items-center justify-center gap-3">
                   <Coins className="w-8 h-8 text-yellow-400" />
                   <span className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500">
-                    {reward.reward.tokenQuantity.toLocaleString()}
+                    {formatNumber((rewardData as import("@/api/services/mystery-box-service").TokenReward).amount)}
                   </span>
                 </div>
                 <p className="text-xl font-semibold text-yellow-400 mt-2">
-                  Token
+                  {(rewardData as import("@/api/services/mystery-box-service").TokenReward).description || 'Phần thưởng Token'}
                 </p>
               </div>
             </div>
           )}
 
           {/* NFT Reward */}
-          {isNFTReward && reward.reward.rewardType === "nft" && (
+          {isNFTReward && (
             <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-6 mb-6">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* NFT Image */}
                 <div className="flex-shrink-0">
                   <div className="relative w-full md:w-48 h-48 rounded-lg overflow-hidden bg-gray-800 border-2 border-purple-500/50">
                     <img
-                      src={reward.reward.nft.image.url}
-                      alt={reward.reward.nft.image.alt}
+                      src={(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.image.url}
+                      alt={(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.image.alt || (rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.name}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-2 right-2 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">
-                      Level {reward.reward.nft.level}
+                      Level {(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.level}
                     </div>
                   </div>
                 </div>
@@ -90,39 +100,16 @@ export const RewardDisplay = ({
                 <div className="flex-1">
                   <div className="mb-3">
                     <span className="inline-block px-3 py-1 bg-purple-600/20 text-purple-400 text-xs font-semibold rounded-full mb-2">
-                      {reward.reward.nft.type.toUpperCase()}
+                      {(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.type.toUpperCase()}
                     </span>
                     <h3 className="text-2xl font-bold text-white">
-                      {reward.reward.nft.name}
+                      {(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).nft.name}
                     </h3>
                   </div>
 
                   <p className="text-gray-400 text-sm mb-4">
-                    {reward.reward.nft.description}
+                    {(rewardData as import("@/api/services/mystery-box-service").NFTRewardData).description}
                   </p>
-
-                  <div className="flex items-center gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Giá trị:</span>
-                      <span className="text-white font-semibold ml-2">
-                        {reward.reward.nft.price.toLocaleString()} Token
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Trạng thái:</span>
-                      <span
-                        className={`ml-2 font-semibold ${
-                          reward.reward.nft.status === "available"
-                            ? "text-green-400"
-                            : "text-yellow-400"
-                        }`}
-                      >
-                        {reward.reward.nft.status === "available"
-                          ? "Sẵn sàng"
-                          : reward.reward.nft.status}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -158,4 +145,6 @@ export const RewardDisplay = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

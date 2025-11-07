@@ -24,13 +24,13 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
   const user = useSelector((state: RootState) => state.auth.user);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
-  // Xac dinh direction (sent/received)
+  // Xác định direction (sent/received)
   const getDirection = (tx: TransactionHistoryItem): TransactionDirection => {
     if (!user?.walletAddress) return 'received';
     return tx.from.toLowerCase() === user.walletAddress.toLowerCase() ? 'sent' : 'received';
   };
 
-  // Badge mau cho transaction type
+  // Badge màu cho transaction type
   const getTypeBadgeClass = (type: string) => {
     const colors: Record<string, string> = {
       investment: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -54,13 +54,13 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
     }
   };
 
-  // Format address: rut gon
+  // Format address: rút gọn
   const formatAddress = (address: string) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Check neu address la user wallet
+  // Check nếu address là user wallet
   const isUserWallet = (address: string) => {
     if (!user?.walletAddress) return false;
     return address.toLowerCase() === user.walletAddress.toLowerCase();
@@ -70,9 +70,9 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12 glass rounded-lg">
-        <div className="text-muted-foreground mb-2">Chua co giao dich nao</div>
+        <div className="text-muted-foreground mb-2">Chưa có giao dịch nào</div>
         <div className="text-sm text-muted-foreground">
-          Hay thu dieu chinh bo loc hoac bat dau giao dich dau tien cua ban!
+          Hãy thử điều chỉnh bộ lọc hoặc bắt đầu giao dịch đầu tiên của bạn!
         </div>
       </div>
     );
@@ -125,7 +125,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                   <TableCell>
                     <div className="space-y-1">
                       <div className="flex items-center gap-1 text-sm">
-                        <span className="text-muted-foreground">Tu:</span>
+                        <span className="text-muted-foreground">Từ:</span>
                         <code
                           className={`text-xs ${
                             isUserWallet(tx.from)
@@ -137,7 +137,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                         </code>
                       </div>
                       <div className="flex items-center gap-1 text-sm">
-                        <span className="text-muted-foreground">Den:</span>
+                        <span className="text-muted-foreground">Đến:</span>
                         <code
                           className={`text-xs ${
                             isUserWallet(tx.to)
@@ -171,7 +171,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                         <button
                           onClick={() => copyToClipboard(tx.transactionHash)}
                           className="p-1 hover:bg-muted rounded transition-colors"
-                          title="Sao chep"
+                          title="Sao chép"
                         >
                           {copiedHash === tx.transactionHash ? (
                             <Check className="w-3 h-3 text-green-500" />
@@ -181,7 +181,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-yellow-600">Dang xu ly...</span>
+                      <span className="text-xs text-yellow-600">Đang xử lý...</span>
                     )}
                   </TableCell>
 

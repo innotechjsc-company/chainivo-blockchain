@@ -15,25 +15,25 @@ export function TransactionPagination({
 }: TransactionPaginationProps) {
   const { page, totalPages, hasNextPage, hasPrevPage, totalDocs } = pagination;
 
-  // Neu chi co 1 trang hoac khong co data thi khong hien pagination
+  // Nếu chỉ có 1 trang hoặc không có data thì không hiện pagination
   if (totalPages <= 1 || totalDocs === 0) return null;
 
-  // Tinh toan cac trang de hien thi (max 5 page buttons)
+  // Tính toán các trang để hiển thị (max 5 page buttons)
   const getPageNumbers = () => {
     const pages: number[] = [];
     const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
-      // Neu tong pages <= 5 thi hien tat ca
+      // Nếu tổng pages <= 5 thì hiện tất cả
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Neu tong pages > 5 thi hien 5 pages xung quanh current page
+      // Nếu tổng pages > 5 thì hiện 5 pages xung quanh current page
       let startPage = Math.max(1, page - 2);
       let endPage = Math.min(totalPages, startPage + maxVisible - 1);
 
-      // Dieu chinh startPage neu endPage la totalPages
+      // Điều chỉnh startPage nếu endPage là totalPages
       if (endPage === totalPages) {
         startPage = Math.max(1, endPage - maxVisible + 1);
       }
@@ -52,7 +52,7 @@ export function TransactionPagination({
     <div className="flex items-center justify-between pt-4">
       {/* Page Info */}
       <div className="text-sm text-muted-foreground">
-        Trang {page} / {totalPages} · Tong {totalDocs} giao dich
+        Trang {page} / {totalPages} · Tổng {totalDocs} giao dịch
       </div>
 
       {/* Pagination Controls */}
