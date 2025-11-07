@@ -489,13 +489,13 @@ export default function InvestmentNFTDetailPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs text-muted-foreground mb-1">
+                    <div className="text-xs text-muted-foreground mb-1 mr-1">
                       Đơn giá
                     </div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                      {formatAmount(data?.pricePerShare)}
+                      {formatAmount(data?.pricePerShare)}{" "}
                       {data?.currency?.toUpperCase()}
                     </div>
                   </div>

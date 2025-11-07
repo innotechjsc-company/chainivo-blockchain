@@ -59,24 +59,17 @@ export const NFTGridCard = ({
 
   // Xử lý chuyển trang
   const handlePrevious = () => {
-    if (currentPage > 1 && currentPage !== localCurrentPage) {
-      handlePageClick(localCurrentPage);
-    }
+    handlePageClick(localCurrentPage - 1);
   };
 
   const handleNext = () => {
-    if (currentPage !== localCurrentPage) {
-      debugger;
-      handlePageClick(localCurrentPage);
-    }
+    handlePageClick(localCurrentPage + 1);
   };
 
   const handlePageClick = (page: number) => {
     if (page === currentPage) {
-      debugger;
       return;
     }
-    debugger;
     onPageChange?.(page);
   };
 
