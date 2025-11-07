@@ -49,6 +49,16 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
 
+  const GetInfoNFT = async () => {
+    const response = await NFTService.getInfoNFT();
+    if (response.success) {
+      setOtherNFTsAnalytics((response.data as any).metrics);
+    } else {
+      toast.error(response.message);
+      setOtherNFTsAnalytics([]);
+    }
+  };
+
   // Ensure we always return an array for downstream components (e.g. Grid uses slice)
   const normalizeNFTCollection = (input: any): any[] => {
     if (!input) return [];
@@ -190,6 +200,10 @@ export const useNFTFilters = (nfts: NFT[]) => {
       }
     };
     fetchData();
+  }, [userInfo]);
+
+  useEffect(() => {
+    GetInfoNFT();
   }, [userInfo]);
 
   const filteredNFTs = useMemo(() => {

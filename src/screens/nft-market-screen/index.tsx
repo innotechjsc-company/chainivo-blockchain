@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { NFTMarketHeaderCard, NFTFiltersCard, NFTGridCard } from "./components";
+import { NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { NFTMarketHeaderCard } from "./components/NFTMarketHeaderCard";
 
 export default function NFTMarketScreen() {
   const { nfts } = useNFTData();

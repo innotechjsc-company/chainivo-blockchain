@@ -16,6 +16,16 @@ interface NFTGridCardProps {
   onPageChange?: (page: number) => void;
 }
 
+const resolveNFTId = (item: NFT): string => {
+  const meta = item as unknown as Record<string, unknown>;
+  return String(meta?.id ?? meta?._id ?? meta?.tokenId ?? "");
+};
+
+const resolveLikeStatus = (item: NFT): boolean => {
+  const meta = item as unknown as Record<string, unknown>;
+  return Boolean(meta?.isLike ?? meta?.isLiked);
+};
+
 export const NFTGridCard = ({
   nfts,
   title,
@@ -25,6 +35,7 @@ export const NFTGridCard = ({
   onPageChange,
 }: NFTGridCardProps) => {
   const router = useRouter();
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   // Sử dụng props nếu có, nếu không thì dùng local state
   const [localCurrentPage, setLocalCurrentPage] = useState(1);
   const isControlled =
@@ -36,6 +47,21 @@ export const NFTGridCard = ({
   const totalPages = isControlled
     ? propTotalPages!
     : Math.max(1, Math.ceil(nfts.length / initialCount));
+
+  useEffect(() => {
+    const next: Record<string, boolean> = {};
+    nfts.forEach((item) => {
+      const id = resolveNFTId(item);
+      if (!id) return;
+      next[id] = resolveLikeStatus(item);
+    });
+    setLikedMap(next);
+  }, [nfts]);
+
+  const handleLikeChange = (id: string, isLiked: boolean) => {
+    if (!id) return;
+    setLikedMap((prev) => ({ ...prev, [id]: isLiked }));
+  };
 
   // Tính toán phân trang (chỉ dùng khi không có props)
   const itemsPerPage = initialCount;
@@ -100,19 +126,25 @@ export const NFTGridCard = ({
       <h2 className="text-2xl font-bold mb-6 gradient-text">{title}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {displayedNFTs.map((nft, index) => (
-          <div
-            key={nft.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${index * 0.05}s` }}
-          >
-            <NFTCard
-              nft={nft}
-              type={title === "NFT của tôi" ? "tier" : "other"}
-              onClick={onClickNFT}
-            />
-          </div>
-        ))}
+        {displayedNFTs.map((nft, index) => {
+          const id = resolveNFTId(nft);
+          const isLiked = likedMap[id] ?? resolveLikeStatus(nft);
+          return (
+            <div
+              key={nft.id}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              <NFTCard
+                nft={nft}
+                type={title === "NFT của tôi" ? "tier" : "other"}
+                onClick={onClickNFT}
+                onLikeChange={handleLikeChange}
+                isLiked={isLiked}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Phân trang */}
