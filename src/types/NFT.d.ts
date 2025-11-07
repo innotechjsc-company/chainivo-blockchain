@@ -217,6 +217,40 @@ export type NFTType = 'normal' | 'rank' | 'mysteryBox' | 'investment';
 export type NFTLevel = '1' | '2' | '3' | '4' | '5';
 export type NFTCurrency = 'can' | 'usdc' | 'usdt' | 'eth';
 
+// Interface cho NFT rewards trong mystery box
+export interface NFTReward {
+  id: string;
+  name: string;
+  image: string;
+  rarity: NFTLevel;
+  probability?: number; // Probability percentage (0-100)
+}
+
+// Interface cho token rewards trong mystery box
+export interface TokenReward {
+  currency: NFTCurrency;
+  minAmount: number;
+  maxAmount: number;
+  probability?: number;
+}
+
+// Interface cho rewards raw data tu API
+export interface APIRewardItem {
+  id: string;
+  rewardType: 'token' | 'nft';
+  isOpenable: boolean;
+  // Token reward fields
+  tokenMinQuantity?: number;
+  tokenMaxQuantity?: number;
+  // NFT reward fields
+  rank?: string;
+  nftTemplate?: {
+    id: string;
+    name: string;
+    image?: any;
+  };
+}
+
 export interface NFTItem {
   id: string;
   name: string;
@@ -238,6 +272,26 @@ export interface NFTItem {
   publishedAt: string;
   updatedAt: string;
   purchaseDate: string;
+
+  // Investment NFT fields
+  isFractional?: boolean;
+  totalShares?: number;
+  soldShares?: number;
+  availableShares?: number;
+  totalInvestors?: number;
+  investmentStartDate?: string;
+  investmentEndDate?: string;
+  pricePerShare?: number;
+
+  // Mystery Box NFT fields
+  isOpenable?: boolean;
+  rewards?: {
+    tokens?: TokenReward[];
+    nfts?: NFTReward[];
+  };
+
+  // General flags
+  isFeatured?: boolean;
 }
 
 export interface Pagination {

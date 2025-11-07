@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useMyNFTCollection } from "@/hooks/useMyNFTCollection";
 import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
-import { NFTCard } from "@/screens/nft-market-screen/components/NFTCard";
+import { NFTCard } from "@/components/nft";
 import { ListNFTDialog } from "./ListNFTDialog";
+import OpenBoxDialog from "@/components/nft/OpenBoxDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import type { NFTItem } from "@/types/NFT";
 import { useRouter } from "next/navigation";
+import { NFTService } from "@/api/services/nft-service";
+import { ToastService } from "@/services/ToastService";
 
 // Loading Skeleton Component
 function LoadingSkeleton() {
@@ -52,11 +55,63 @@ export function MyNFTCollection() {
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // State cho Open Box Dialog
+  const [selectedBoxNFT, setSelectedBoxNFT] = useState<NFTItem | null>(null);
+  const [openBoxDialogOpen, setOpenBoxDialogOpen] = useState(false);
+
   const router = useRouter();
+
   // Handler mo dialog dang ban NFT
   const handleListForSale = (nft: NFTItem) => {
     setSelectedNFT(nft);
     setDialogOpen(true);
+  };
+
+  // Handler mo dialog xac nhan mo hop
+  const handleOpenBox = (nft: NFTItem) => {
+    setSelectedBoxNFT(nft);
+    setOpenBoxDialogOpen(true);
+  };
+
+  // Handler xac nhan mo hop (goi API)
+  const handleConfirmOpenBox = async () => {
+    if (!selectedBoxNFT) return;
+
+    try {
+      // Goi API mo hop
+      const response = await NFTService.openBox(selectedBoxNFT.id);
+
+      if (response.success) {
+        // Thanh cong
+        ToastService.success('Mo hop thanh cong! Phan thuong da duoc chuyen vao tai khoan cua ban.');
+
+        // Dong dialog
+        setOpenBoxDialogOpen(false);
+        setSelectedBoxNFT(null);
+
+        // Refetch NFT collection de cap nhat danh sach
+        await refetch();
+      } else {
+        // That bai
+        const errorMessage = response.error || response.message || 'Co loi xay ra khi mo hop';
+        ToastService.error(errorMessage);
+      }
+    } catch (error: any) {
+      // Loi exception
+      console.error('Error opening box:', error);
+      const errorMessage = error?.message || 'Khong the mo hop. Vui long thu lai sau.';
+      ToastService.error(errorMessage);
+    }
+  };
+
+  // Handler chung cho action clicks tu NFTCard
+  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open') => {
+    if (action === 'sell') {
+      handleListForSale(nft);
+    } else if (action === 'open') {
+      handleOpenBox(nft);
+    }
   };
 
   const onClickMyNFT = (id: string) => {
@@ -112,6 +167,7 @@ export function MyNFTCollection() {
               key={nft.id}
               nft={nft}
               type="tier"
+              onActionClick={handleActionClick}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
             />
@@ -125,6 +181,14 @@ export function MyNFTCollection() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSuccess={refetch}
+      />
+
+      {/* Open Box Dialog */}
+      <OpenBoxDialog
+        nft={selectedBoxNFT}
+        open={openBoxDialogOpen}
+        onOpenChange={setOpenBoxDialogOpen}
+        onConfirm={handleConfirmOpenBox}
       />
     </div>
   );
