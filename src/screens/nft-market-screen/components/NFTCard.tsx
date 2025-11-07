@@ -11,6 +11,7 @@ import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
 import { formatCurrency, formatNumber } from "@/utils/formatters";
+import { getLevelBadge } from "@/lib/utils";
 
 interface NFTCardProps {
   nft: any;
@@ -96,10 +97,10 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0">
       {/* Image */}
       <div
-        className="relative h-64 overflow-hidden"
+        className="relative h-64 overflow-hidden w-full"
         onClick={() => router.push(`/nft-template/${nft.id}`)}
       >
         <img
@@ -111,9 +112,23 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+
+        {/* Level Badge - góc phải trên */}
+        {nft?.level && (
+          <Badge
+            variant="secondary"
+            className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm border"
+          >
+            {getLevelBadge(nft.level as string)}
+          </Badge>
+        )}
+
+        {/* Badge "Đang bán" - hiển thị bên dưới level badge nếu có level, nếu không thì ở vị trí top-4 */}
         <Badge
           variant="secondary"
-          className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
+          className={`absolute ${
+            nft?.level ? "top-14" : "top-4"
+          } right-4 z-10 transition-opacity duration-200 ${
             nft.isSale ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
         >
@@ -125,8 +140,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-        >
-        </Button>
+        ></Button>
       </div>
 
       {/* Info */}
@@ -195,14 +209,13 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             // NFT dang ban hoac NFT cua nguoi khac
             <Button
               variant="default"
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/nft/${nft.id}?type=${type}`);
+                router.push(`/nft-template/${nft.id}?type=${type}`);
               }}
             >
-              
-              Xem chi tiết 
+              Xem chi tiết
             </Button>
           )}
 

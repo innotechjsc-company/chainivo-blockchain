@@ -6,6 +6,7 @@ import { useNFTData } from "./hooks/useNFTData";
 import { useNFTFilters } from "./hooks/useNFTFilters";
 import { useNFTStats } from "./hooks/useNFTStats";
 import { Spinner } from "@/components/ui/spinner";
+import { autoConnect } from "@/lib/utils";
 
 export default function NFTInvestmentScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -25,12 +26,19 @@ export default function NFTInvestmentScreen() {
     searchMarketplace,
     searchNFTs,
     loading,
+    fetchOtherNFTs,
+    currentPage,
+    totalPages,
   } = useNFTFilters(nfts);
 
   // Sync component loading state with hook loading state
   useEffect(() => {
     setIsLoading(loading);
   }, [loading]);
+
+  useEffect(() => {
+    autoConnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,19 +69,26 @@ export default function NFTInvestmentScreen() {
           onResetFilters={resetFilters}
           onSearch={searchMarketplace}
         />
+        {/* Hiển thị kết quả tìm kiếm nếu có */}
         {searchNFTs.length > 0 ? (
-          <NFTGridCard
-            nfts={searchNFTs}
-            title="Kết quả tìm kiếm"
-            initialCount={3}
-          />
+          <div className="mb-8">
+            <NFTGridCard
+              nfts={searchNFTs}
+              title={`Kết quả tìm kiếm (${searchNFTs.length} NFT)`}
+              initialCount={searchNFTs.length}
+            />
+          </div>
         ) : (
           <>
+            {/* Hiển thị danh sách NFT đầu tư mặc định nếu không có kết quả tìm kiếm */}
             <div className="mb-8">
               <NFTGridCard
                 nfts={otherNFTsData}
-                title="Danh sách NFT đầu tư"
+                title="Danh sách NFT đầu tư "
                 initialCount={6}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={(page) => fetchOtherNFTs(page, 9)}
               />
             </div>
           </>

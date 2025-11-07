@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,8 @@ import {
 import { NFT, NFTService } from "@/api/services/nft-service";
 import { toast, TransferService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
-import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { formatAmount, getLevelBadge } from "@/lib/utils";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 const rarityColors = {
   Common: "bg-gray-500/20 text-gray-300",
@@ -247,7 +248,7 @@ export default function NFTDetailPage() {
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
         await NFTService.transferNFT({
-          nftId: nftData?.id,
+          templateId: nftData?.id,
           transactionHash: response?.transactionHash,
         });
         setBuyLoading(false);
@@ -268,9 +269,8 @@ export default function NFTDetailPage() {
     }
   };
 
-  // Show LoadingSkeleton when buying NFT
   if (buyLoading) {
-    return <LoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -324,56 +324,36 @@ export default function NFTDetailPage() {
               <h1 className="text-4xl font-bold mb-2">
                 {nftData.name ?? "Không rõ"}
               </h1>
-              <p className="text-muted-foreground mb-3">
-                {nftData.description ?? "Không có mô tả"}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <span className="text-xs text-muted-foreground">
-                    Chủ sở hữu:{" "}
-                  </span>
-                  <span className="font-mono">
-                    {nftData?.owner?.email ?? "Khách hàng"}
-                  </span>
-                </div>
+              <div>
+                <p> Mô tả : </p>
+                <CollapsibleDescription
+                  html={String(nftData?.description || "").replace(
+                    /\n/g,
+                    "<br/>"
+                  )}
+                />
               </div>
             </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
               <div className="text-3xl font-bold gradient-text">
-                {(() => {
-                  const raw = (nftData as any)?.price;
-                  const n =
-                    typeof raw === "string" ? parseFloat(raw) : Number(raw);
-                  const safe = Number.isFinite(n) ? n : 0;
-                  return safe.toLocaleString("vi-VN");
-                })()}{" "}
+                {formatAmount((nftData as any)?.price)}
                 {TOKEN_DEAULT_CURRENCY}
               </div>
-              <div className="mt-2 text-xs">
-                {nftData.isForSale ? "Đang mở bán" : "Không còn bán"}
-              </div>
+
               <div className="flex gap-2">
                 <Button
                   variant="default"
                   className="flex-1 gap-2 mt-2 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (type === "other") {
-                      setConfirmDialogOpen(true);
-                    } else {
-                      toast.success("Bạn đã sở hữu NFT này");
-                    }
+                    setConfirmDialogOpen(true);
                   }}
                   disabled={buyLoading}
                 >
                   {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-                  {buyLoading
-                    ? "Đang xử lý..."
-                    : type === "other"
-                    ? "Mua ngay"
-                    : "Đã sở hữu"}
+                  {buyLoading ? "Đang xử lý..." : "Mua ngay"}
                 </Button>
               </div>
               {buyLoading && (
@@ -384,31 +364,87 @@ export default function NFTDetailPage() {
                 </div>
               )}
             </div>
-            {/* Attributes */}
-            {Array.isArray(nftData.attributes) &&
-              nftData.attributes.length > 0 && (
-                <div className="glass rounded-xl p-4">
-                  <h3 className="text-lg font-semibold mb-2">Thuộc tính NFT</h3>
-                  <div
-                    className="grid gap-3"
-                    style={{
-                      gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`,
-                    }}
-                  >
-                    {nftData.attributes.map((attr: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="bg-muted/20 rounded-lg p-3 text-center"
-                      >
-                        <div className="text-xs text-muted-foreground mb-1">
-                          {attr.trait_type ?? "Không rõ"}
-                        </div>
-                        <div className="font-semibold">{attr.value ?? "-"}</div>
-                      </div>
-                    ))}
+            <Card className="glass">
+              <CardContent className="p-5">
+                <h3 className="font-semibold mb-4 text-white">
+                  Thông tin chi tiết
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Loại NFT
+                    </div>
+                    <div className="text-sm font-semibold text-white capitalize">
+                      {nftData?.type || "—"}
+                    </div>
                   </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Độ hiếm
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {getLevelBadge(nftData?.level as string)}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Đơn vị tiền tệ
+                    </div>
+                    <div className="text-sm font-semibold text-white uppercase">
+                      {nftData?.currency || "CAN"}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Trạng thái
+                    </div>
+                    <div className="text-sm font-semibold">
+                      {nftData?.isActive ? (
+                        <span className="text-emerald-400">✓ Hoạt động</span>
+                      ) : (
+                        <span className="text-red-400">✗ Tạm dừng</span>
+                      )}
+                    </div>
+                  </div>
+                  {nftData?.createdAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Ngày tạo
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(nftData.createdAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(nftData.createdAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                  {nftData?.updatedAt && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Cập nhật
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          try {
+                            return new Date(nftData.updatedAt).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            return String(nftData.updatedAt);
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
             {/* Metadata (if exists) */}
             {nftData.metadata && (
@@ -545,6 +581,57 @@ export default function NFTDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function CollapsibleDescription({ html }: { html: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [halfHeight, setHalfHeight] = useState<number>(0);
+  const descRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const compute = () => {
+      const full = el.scrollHeight || 0;
+      setHalfHeight(Math.max(0, Math.floor(full / 2)));
+    };
+    const id = window.setTimeout(compute, 0);
+    window.addEventListener("resize", compute);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", compute);
+    };
+  }, [html]);
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          ref={descRef}
+          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
+          style={{
+            maxHeight: isExpanded
+              ? "none"
+              : halfHeight
+              ? `${halfHeight}px`
+              : "6rem",
+            overflow: "hidden",
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+        {!isExpanded && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+        )}
+      </div>
+      <button
+        type="button"
+        className="text-primary text-sm font-medium hover:underline cursor-pointer"
+        onClick={() => setIsExpanded((v) => !v)}
+      >
+        {isExpanded ? "Thu gọn" : "Xem thêm"}
+      </button>
     </div>
   );
 }

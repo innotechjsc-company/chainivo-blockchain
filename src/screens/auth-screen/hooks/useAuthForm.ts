@@ -15,6 +15,7 @@ import {
   type AuthResponse,
   type RegisterResponse,
 } from "@/api/services/auth-service";
+import { autoConnect } from "@/lib/utils";
 
 interface ValidationErrors {
   email?: string;
@@ -148,6 +149,7 @@ export const useAuthForm = (type: "login" | "register") => {
         // Check if user has wallet address
         if (response.user.walletAddress) {
           console.log("[AUTH] User has wallet address, redirecting to home");
+          await autoConnect();
           router.push("/");
         } else {
           console.log("[AUTH] User has no wallet, redirecting to wallet page");
