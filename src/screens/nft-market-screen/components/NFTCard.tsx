@@ -17,9 +17,15 @@ interface NFTCardProps {
   nft: any;
   type: "tier" | "other";
   onListForSale?: (nft: any) => void;
+  onClick?: (id: string) => void;
 }
 
-export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
+export const NFTCard = ({
+  nft,
+  type,
+  onListForSale,
+  onClick,
+}: NFTCardProps) => {
   const router = useRouter();
 
   // Function to get NFT image from API backend or fallback to default
@@ -97,12 +103,14 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0">
+    <Card
+      className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
+      onClick={() => {
+        onClick?.(nft?.id ?? "");
+      }}
+    >
       {/* Image */}
-      <div
-        className="relative h-64 overflow-hidden w-full"
-        onClick={() => router.push(`/nft-template/${nft.id}`)}
-      >
+      <div className="relative h-64 overflow-hidden w-full">
         <img
           src={nftImage}
           alt={nft.name || "NFT"}
@@ -199,7 +207,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
               className="flex-1 gap-2"
               onClick={(e) => {
                 e.stopPropagation();
-                onListForSale(nft);
+                onClick?.(nft?.id ?? "");
               }}
             >
               <Send className="w-4 h-4" />
@@ -212,7 +220,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
               className="flex-1 gap-2 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/nft-template/${nft.id}?type=${type}`);
+                onClick?.(nft?.id ?? "");
               }}
             >
               Xem chi tiết

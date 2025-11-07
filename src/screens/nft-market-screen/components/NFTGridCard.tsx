@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NFTCard } from "./NFTCard";
 import { NFT } from "../hooks";
+import { useRouter } from "next/navigation";
 
 interface NFTGridCardProps {
   nfts: NFT[];
@@ -23,6 +24,7 @@ export const NFTGridCard = ({
   currentPage: propCurrentPage,
   onPageChange,
 }: NFTGridCardProps) => {
+  const router = useRouter();
   // Sử dụng props nếu có, nếu không thì dùng local state
   const [localCurrentPage, setLocalCurrentPage] = useState(1);
   const isControlled =
@@ -89,6 +91,10 @@ export const NFTGridCard = ({
     return null;
   }
 
+  const onClickNFT = (id: string) => {
+    router.push(`/nft-template/${id}?type=tier`);
+  };
+
   return (
     <div className="mb-12">
       <h2 className="text-2xl font-bold mb-6 gradient-text">{title}</h2>
@@ -103,6 +109,7 @@ export const NFTGridCard = ({
             <NFTCard
               nft={nft}
               type={title === "NFT của tôi" ? "tier" : "other"}
+              onClick={onClickNFT}
             />
           </div>
         ))}
