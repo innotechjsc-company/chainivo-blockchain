@@ -219,13 +219,6 @@ export const NFTCard = ({
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1">
-            {/* Label dong theo trang thai */}
-            <div className="text-xs text-muted-foreground">
-              {nft.isSale && nft.salePrice
-                ? "Giá đang bán"
-                : "Gia gốc hiện tại "}
-            </div>
-
             {/* Container co dinh chieu cao - chua 2 gia tri */}
             <div className="relative h-8">
               <div

@@ -89,6 +89,9 @@ export class PhaseService {
     };
     return ApiService.buyToken(payload);
   }
+  static async getALLInfoOfPhase(): Promise<ApiResponse<any[]>> {
+    return ApiService.get(API_ENDPOINTS.INVESTMENT.GET_ALL_INFO_OF_PHASE);
+  }
 }
 
 export default PhaseService;

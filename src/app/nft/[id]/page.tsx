@@ -512,22 +512,6 @@ export default function NFTDetailPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Metadata (if exists) */}
-            {nftData.metadata && (
-              <div className="glass rounded-xl p-4">
-                <h3 className="text-lg font-semibold mb-2">Metadata</h3>
-                <pre className="bg-muted text-xs rounded p-2 overflow-auto max-h-60">
-                  {(() => {
-                    try {
-                      return JSON.stringify(nftData.metadata, null, 2);
-                    } catch {
-                      return "Không đọc được metadata";
-                    }
-                  })()}
-                </pre>
-              </div>
-            )}
           </div>
         </div>
 
