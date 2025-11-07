@@ -19,7 +19,7 @@ export default function MysteryRewardsPreview({
   if (!rewards || (!rewards.tokens?.length && !rewards.nfts?.length)) {
     return (
       <div className={`text-xs text-gray-500 dark:text-gray-400 ${className}`}>
-        Khong co thong tin phan thuong
+        Không có thông tin phần thưởng 
       </div>
     );
   }

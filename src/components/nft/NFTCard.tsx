@@ -107,24 +107,30 @@ export default function NFTCard({
           <Button
             onClick={(e) => handleAction(e, 'open')}
             disabled={!isMysteryBoxOpenable}
-            className={`w-full ${
-              isMysteryBoxOpenable
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:bg-gradient-to-r from-purple-700 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300'
-                : ''
-            }`}
-            variant={isMysteryBoxOpenable ? 'default' : 'secondary'}
+            className={`
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+              ${isMysteryBoxOpenable
+                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl'
+                : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+              }
+            `}
           >
             {isMysteryBoxOpenable ? (
-              <span className="flex items-center gap-2">
+              <>
                 <span className="text-lg">🎁</span>
                 <span>Mo hop qua</span>
                 <span className="text-lg">✨</span>
-              </span>
+              </>
             ) : (
-              <span className="flex items-center gap-2">
+              <>
                 <span>🔒</span>
                 <span>Chua the mo</span>
-              </span>
+              </>
             )}
           </Button>
         );
@@ -137,7 +143,15 @@ export default function NFTCard({
 
         if (isExpired) {
           return (
-            <Button className="w-full" disabled variant="secondary">
+            <Button
+              disabled
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                outline-none h-9 px-4 py-2 w-full gap-2
+                bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400
+              "
+            >
               Da het han
             </Button>
           );
@@ -147,7 +161,18 @@ export default function NFTCard({
           <Button
             onClick={(e) => handleAction(e, 'buy')}
             disabled={!isAvailable}
-            className="w-full"
+            className={`
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+              ${isAvailable
+                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white'
+                : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+              }
+            `}
           >
             {isAvailable ? '💰 Dau tu' : 'Da het co phan'}
           </Button>
@@ -160,8 +185,15 @@ export default function NFTCard({
           return (
             <Button
               onClick={(e) => handleAction(e, 'buy')}
-              className="w-full"
-              variant="default"
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2
+                bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
+              "
             >
               Mua ngay
             </Button>
@@ -170,8 +202,15 @@ export default function NFTCard({
         return (
           <Button
             onClick={(e) => handleAction(e, 'sell')}
-            className="w-full"
-            variant="outline"
+            className="
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+              border border-input bg-background hover:bg-accent hover:text-accent-foreground
+            "
           >
             Dang ban
           </Button>
