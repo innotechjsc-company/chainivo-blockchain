@@ -153,10 +153,10 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0">
       {/* Image */}
       <div
-        className="relative h-64 overflow-hidden"
+        className="relative h-64 overflow-hidden w-full"
         onClick={() => router.push(`/nft-template/${nft.id}`)}
       >
         <img

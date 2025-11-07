@@ -183,10 +183,10 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer">
+    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer p-0">
       {/* Image */}
       <div
-        className="relative h-64 overflow-hidden"
+        className="relative h-64 overflow-hidden w-full"
         onClick={() => router.push(`/investment-nft/${nft.id}`)}
       >
         <img
