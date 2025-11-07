@@ -59,13 +59,17 @@ export interface NFTReward {
 }
 
 export interface TokenReward {
-  rewardType: "token";
-  tokenQuantity: number;
+  type: "token";
+  amount: number;
+  description?: string;
+  transactionHash?: string;
 }
 
 export interface NFTRewardData {
-  rewardType: "nft";
+  type: "nft";
   nft: NFTReward;
+  description?: string;
+  transactionHash?: string;
 }
 
 export type BoxReward = TokenReward | NFTRewardData;

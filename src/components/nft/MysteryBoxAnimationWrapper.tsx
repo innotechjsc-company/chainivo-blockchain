@@ -46,6 +46,7 @@ export const MysteryBoxAnimationWrapper = ({
   const [reward, setReward] = useState<OpenBoxResponse | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
   const [showReward, setShowReward] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Reset state khi đóng
   useEffect(() => {
@@ -54,12 +55,14 @@ export const MysteryBoxAnimationWrapper = ({
       setReward(null);
       setShowAnimation(false);
       setShowReward(false);
+      setHasStarted(false);
     }
   }, [isOpen]);
 
   // Tự động gọi API khi isOpen = true
   useEffect(() => {
-    if (isOpen && !showAnimation) {
+    if (isOpen && !hasStarted) {
+      setHasStarted(true);
       setShowAnimation(true);
       setIsApiComplete(false);
 
@@ -77,7 +80,7 @@ export const MysteryBoxAnimationWrapper = ({
           setIsApiComplete(false);
         });
     }
-  }, [isOpen, showAnimation, onOpenBox, onError]);
+  }, [isOpen, hasStarted, onOpenBox, onError]);
 
   return (
     <>
