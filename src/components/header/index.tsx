@@ -263,8 +263,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                           }`}
                         />
                         <Wallet className="w-4 h-4 mr-2" />
-                        {user?.walletAddress?.slice(0, 6)}...
-                        {user?.walletAddress?.slice(-4)}
+                        Kết nối ví
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
