@@ -56,7 +56,7 @@ export default function NFTMarketScreen() {
           <NFTGridCard
             nfts={searchNFTs}
             title="Kết quả tìm kiếm"
-            initialCount={3}
+            initialCount={9}
           />
         ) : (
           <>
@@ -65,7 +65,7 @@ export default function NFTMarketScreen() {
                 <NFTGridCard
                   nfts={otherNFTsData}
                   title="NFT Marketplace"
-                  initialCount={6}
+                  initialCount={9}
                   totalPages={totalPages}
                   currentPage={currentPage}
                   onPageChange={(page) => fetchOtherNFTs(page, 9)}
@@ -76,13 +76,15 @@ export default function NFTMarketScreen() {
         )}
 
         {/* No Results */}
-        {tierNFTs.length === 0 && otherNFTs.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-xl text-muted-foreground">
-              Không tìm thấy NFT phù hợp với bộ lọc
-            </p>
-          </div>
-        )}
+        {tierNFTs.length === 0 &&
+          otherNFTs.length === 0 &&
+          searchNFTs.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-xl text-muted-foreground">
+                Không tìm thấy NFT phù hợp với bộ lọc
+              </p>
+            </div>
+          )}
       </main>
     </div>
   );
