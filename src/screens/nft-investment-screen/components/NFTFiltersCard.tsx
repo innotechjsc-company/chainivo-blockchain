@@ -92,9 +92,10 @@ export const NFTFiltersCard = ({
   ];
 
   const toggleRarity = (rarity: string) => {
+    // Single-select: nếu click vào rarity đã chọn thì bỏ chọn, nếu click vào rarity khác thì thay thế
     const newRarity = filters.rarity.includes(rarity)
-      ? filters.rarity.filter((r) => r !== rarity)
-      : [...filters.rarity, rarity];
+      ? [] // Bỏ chọn nếu đã được chọn
+      : [rarity]; // Chỉ chọn rarity mới, thay thế tất cả các lựa chọn trước đó
     onFiltersChange({ ...filters, rarity: newRarity });
   };
 
