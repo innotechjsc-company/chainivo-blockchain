@@ -21,6 +21,7 @@ import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatAmount, getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { formatNumber } from "@/utils/formatters";
 
 interface CollectionItem {
   id: string;
@@ -475,7 +476,9 @@ export default function P2PMarketPage() {
                           </div>
                           <div className="text-lg font-bold flex items-center gap-2">
                             <div className="truncate max-w-full ">
-                              {formatAmount((item as any)?.salePrice)}
+                              {(item as any)?.salePrice
+                                ? formatNumber((item as any)?.salePrice)
+                                : formatNumber((item as any)?.price)}
                             </div>
                             {item.currency.toUpperCase()}
                           </div>
