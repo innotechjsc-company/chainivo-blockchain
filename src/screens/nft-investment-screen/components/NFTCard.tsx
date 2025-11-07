@@ -7,9 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Eye, Heart, ShoppingBag, Plus } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { config } from "@/api/config";
 import { formatAmount, getLevelBadge } from "@/lib/utils";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 
 interface NFTInvestmentCardProps {
   nft: any;
@@ -176,6 +178,55 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
     return Number(formatted).toLocaleString("en-US");
   };
 
+  const investmentStartDate = useMemo(() => {
+    if (!nft?.investmentStartDate) {
+      return null;
+    }
+
+    const parsed = dayjs(nft.investmentStartDate);
+    return parsed.isValid() ? parsed : null;
+  }, [nft?.investmentStartDate]);
+
+  const investmentEndDate = useMemo(() => {
+    if (!nft?.investmentEndDate) {
+      return null;
+    }
+
+    const parsed = dayjs(nft.investmentEndDate);
+    return parsed.isValid() ? parsed : null;
+  }, [nft?.investmentEndDate]);
+
+  const isBeforeStart = useMemo(() => {
+    if (!investmentStartDate) {
+      return false;
+    }
+
+    return dayjs().valueOf() < investmentStartDate.valueOf();
+  }, [investmentStartDate]);
+
+  const isAfterEnd = useMemo(() => {
+    if (!investmentEndDate) {
+      return false;
+    }
+
+    return dayjs().valueOf() > investmentEndDate.valueOf();
+  }, [investmentEndDate]);
+
+  const handleRestrictedInvestment = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (isBeforeStart || isAfterEnd) {
+      const message = isBeforeStart
+        ? "NFT này chưa bắt đầu đầu tư. Vui lòng chọn NFT khác."
+        : "NFT này đã kết thúc đầu tư. Vui lòng chọn NFT khác.";
+
+      toast.error(message);
+      return;
+    }
+
+    router.push(`/investment-nft/${nft.id}`);
+  };
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     // Fallback to default image if the image fails to load
     const target = e.target as HTMLImageElement;
@@ -269,10 +320,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           <Button
             variant="default"
             className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/investment-nft/${nft.id}`);
-            }}
+            onClick={handleRestrictedInvestment}
           >
             <ShoppingCart className="w-4 h-4" />
             Mua cổ phần
@@ -280,10 +328,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           <Button
             variant="outline"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/investment-nft/${nft.id}`);
-            }}
+            onClick={handleRestrictedInvestment}
           >
             <Plus className="w-4 h-4" />
           </Button>

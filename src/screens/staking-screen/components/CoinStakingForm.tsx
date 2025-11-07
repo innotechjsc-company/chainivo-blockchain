@@ -469,19 +469,20 @@ export const CoinStakingForm = ({
                       Total Staked
                     </p>
                     <p className="text-sm font-bold text-green-500">
-                      {selectedPoolData.totalStaked}
+                      {formatNumber(selectedPoolData.totalStaked.toString())}{" "}
+                      CAN
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Min Stake</p>
                     <p className="text-sm font-bold text-green-500">
-                      {selectedPoolData.minStake} CAN
+                      {formatNumber(selectedPoolData.minStake.toString())} CAN
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Max Stake</p>
                     <p className="text-sm font-bold text-green-500">
-                      {selectedPoolData.maxStake} CAN
+                      {formatNumber(selectedPoolData.maxStake.toString())} CAN
                     </p>
                   </div>
                   <div>
