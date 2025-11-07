@@ -22,11 +22,8 @@ export const useTransactionHistory = () => {
         return;
       }
 
-      const response = await TransactionService.getTransactionHistory({
-        walletAddress: user.walletAddress,
-        limit: 10,
-        page: 1,
-      });
+      const response =
+        await TransactionService.getTransactionHistoryByWalletAddress();
 
       if (response.success && response.data?.transactions) {
         const latestTransactions = [...response.data.transactions].slice(0, 5);
