@@ -8,6 +8,7 @@ import InvestmentProgressBar from './InvestmentProgressBar';
 import CountdownTimer from './CountdownTimer';
 import MysteryRewardsPreview from './MysteryRewardsPreview';
 import { Button } from '@/components/ui/button';
+import { formatNumber } from '@/utils/formatters';
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -64,16 +65,7 @@ export default function NFTCard({
             : false)
     : false;
 
-  // Debug mystery box
-  if (nft.type === 'mysteryBox') {
-    console.log('🎁 NFTCard Mystery Box:', {
-      name: nft.name,
-      'nft.isOpenable': nft.isOpenable,
-      'calculated isOpenable': isMysteryBoxOpenable,
-      rewards: nft.rewards,
-      shouldShowActions: shouldShowActions,
-    });
-  }
+
 
   const handleAction = (e: React.MouseEvent, action: 'sell' | 'buy' | 'open') => {
     // Ngăn chặn event bubble lên card parent (tránh trigger onClick của card)
@@ -305,7 +297,7 @@ export default function NFTCard({
                 Giá hộp:
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {nft.price}{' '}
+                {formatNumber(nft.price)}{' '}
                 <span className="text-sm uppercase">{nft.currency}</span>
               </span>
             </div>
@@ -333,7 +325,7 @@ export default function NFTCard({
                 {nft.type === 'investment' ? 'Giá/cổ phần:' : 'Giá:'}
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {nft.salePrice ?? nft.price}{' '}
+                {formatNumber(nft.salePrice ?? nft.price)}{' '}
                 <span className="text-sm uppercase">{nft.currency}</span>
               </span>
             </div>
@@ -363,11 +355,11 @@ export default function NFTCard({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                   <span>👁️</span>
-                  <span>{nft.viewsCount}</span>
+                  <span>{formatNumber(nft.viewsCount)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                   <span>{nft.isLike ? '❤️' : '🤍'}</span>
-                  <span>{nft.likesCount}</span>
+                  <span>{formatNumber(nft.likesCount)}</span>
                 </div>
               </div>
             )}

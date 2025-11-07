@@ -73,7 +73,6 @@ export const MysteryBoxAnimationWrapper = ({
           setIsApiComplete(true);
         })
         .catch((error) => {
-          console.error("Error opening mystery box:", error);
           onError?.(error.message || "Không thể mở hộp quà");
           // Đóng animation khi có lỗi
           setShowAnimation(false);
