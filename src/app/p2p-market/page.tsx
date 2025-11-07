@@ -17,9 +17,10 @@ import { NFTService } from "@/api/services/nft-service";
 import type { ApiResponse } from "@/api/api";
 import { config } from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
-import { Eye } from "lucide-react";
-import { getLevelBadge, getNFTType } from "@/lib/utils";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatAmount, getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface CollectionItem {
   id: string;
@@ -49,18 +50,24 @@ const mockCollections: CollectionItem[] = [
 
 export default function P2PMarketPage() {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("recent");
+  const [sort, setSort] = useState("all");
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [items, setItems] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  // Lưu filter params hiện tại để dùng khi chuyển trang
+  const [currentFilterParams, setCurrentFilterParams] =
+    useState<any>(undefined);
   // filter states
   const [rarity, setRarity] = useState<string>("");
   const [assetType, setAssetType] = useState<string>("");
   const [unit, setUnit] = useState<string>("");
-  const [pendingRange, setPendingRange] = useState<[number, number]>([
-    0, 1000000,
-  ]);
+  const [pendingRange, setPendingRange] = useState<[number, number]>([0, 0]);
+  const [isPriceRangeActive, setIsPriceRangeActive] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const router = useRouter();
   // Build full image URL from backend or fallback to default
   const getNFTImage = (nft: any): string => {
@@ -112,27 +119,85 @@ export default function P2PMarketPage() {
   };
 
   // Fetch P2P list with optional params
-  const fetchP2P = async (params?: any) => {
+  const fetchP2P = async (
+    params?: any,
+    page: number = 1,
+    limit: number = 9
+  ) => {
     try {
       setLoading(true);
       setError("");
-      const resp: ApiResponse<any> = await NFTService.getP2PList(params);
+
+      // Thêm pagination params
+      const requestParams = {
+        ...params,
+        page,
+        limit,
+      };
+
+      const resp: ApiResponse<any> = await NFTService.getP2PList(requestParams);
       if (resp?.success) {
-        setItems(resp?.data?.docs);
+        const data: any = resp.data as any;
+
+        // Lấy danh sách items - kiểm tra nhiều cấu trúc có thể
+        let list: any[] = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (data?.docs && Array.isArray(data.docs)) {
+          list = data.docs;
+        } else if (data?.items && Array.isArray(data.items)) {
+          list = data.items;
+        } else if (data?.data && Array.isArray(data.data)) {
+          list = data.data;
+        } else {
+          list = [];
+        }
+
+        setItems(list);
+
+        // Lấy thông tin pagination từ response
+        const totalPagesFromData =
+          data?.totalPages ||
+          data?.data?.totalPages ||
+          data?.total_pages ||
+          data?.data?.total_pages;
+
+        const pagination =
+          data?.pagination ||
+          data?.data?.pagination ||
+          (resp as any).pagination;
+
+        if (totalPagesFromData) {
+          setTotalPages(totalPagesFromData);
+          setCurrentPage(data?.page || data?.data?.page || page);
+        } else if (pagination) {
+          setTotalPages(pagination.totalPages || pagination.total_pages || 1);
+          setCurrentPage(pagination.page || page);
+        } else {
+          // Fallback: tính toán từ data nếu không có pagination object
+          const totalItems =
+            data?.total || data?.data?.total || data?.totalDocs || list.length;
+          setTotalPages(Math.max(1, Math.ceil(totalItems / limit)));
+          setCurrentPage(page);
+        }
       } else {
         setItems([]);
         setError(resp?.message || resp?.error || "Không thể tải danh sách");
+        setTotalPages(1);
+        setCurrentPage(1);
       }
     } catch (e: any) {
       setError(e?.message || "Không thể tải danh sách");
       setItems([]);
+      setTotalPages(1);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchP2P();
+    fetchP2P(undefined, 1, 9);
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -160,23 +225,14 @@ export default function P2PMarketPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 bg-background/90 rounded-lg border border-primary/20">
-            <Spinner className="h-6 w-6 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              Đang tải dữ liệu ...
-            </span>
-          </div>
-        </div>
-      )}
+      {loading && <LoadingSpinner />}
       <main className="container mx-auto px-4 pt-24 pb-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-muted-foreground">
             {loading
               ? "Loading..."
-              : `${filteredItems.length.toLocaleString()} Results`}
+              : `${items.length.toLocaleString()} Results`}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Sort:</span>
@@ -184,7 +240,14 @@ export default function P2PMarketPage() {
               value={sort}
               onValueChange={(value) => {
                 setSort(value);
-                if (value === "price-asc" || value === "price-desc") {
+                if (value === "all") {
+                  setLoading(true);
+                  setCurrentPage(1);
+                  setCurrentFilterParams(undefined);
+                  fetchP2P(undefined, 1, 9)
+                    .catch(() => {})
+                    .finally(() => setLoading(false));
+                } else if (value === "price-asc" || value === "price-desc") {
                   setLoading(true);
                   // Sort items trong state
                   setTimeout(() => {
@@ -214,11 +277,12 @@ export default function P2PMarketPage() {
               }}
             >
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="Recently listed" />
+                <SelectValue placeholder="Tất cả" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="price-asc">Giá từ thấp đến cao</SelectItem>
+                <SelectItem value="price-desc">Giá từ cao đến thấp</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -278,23 +342,6 @@ export default function P2PMarketPage() {
                     </Select>
                   </div>
 
-                  {/* Don vi giao dich (Currency) */}
-                  {/* <div className="space-y-2">
-                    <span className="text-sm font-medium">
-                      Đơn vị giao dịch
-                    </span>
-                    <Select value={unit} onValueChange={setUnit}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="-- Chọn đơn vị --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="polygon">Polygon</SelectItem>
-                        <SelectItem value="can">CAN</SelectItem>
-                        <SelectItem value="usdt">USDT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div> */}
-
                   {/* Khoang gia (Price Range) */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -310,12 +357,15 @@ export default function P2PMarketPage() {
                       max={1000000}
                       step={1}
                       value={pendingRange}
-                      onValueChange={(v) =>
-                        setPendingRange([
-                          Math.round((v as [number, number])[0]),
-                          Math.round((v as [number, number])[1]),
-                        ])
-                      }
+                      onValueChange={(v) => {
+                        const [min, max] = v as [number, number];
+                        const roundedMin = Math.round(min);
+                        const roundedMax = Math.round(max);
+                        setPendingRange([roundedMin, roundedMax]);
+                        setIsPriceRangeActive(
+                          !(roundedMin === 0 && roundedMax === 0)
+                        );
+                      }}
                       className="w-full"
                     />
                   </div>
@@ -335,17 +385,45 @@ export default function P2PMarketPage() {
                       if (unit) {
                         params.currency = unit;
                       }
-                      if (pendingRange && pendingRange.length === 2) {
+                      if (
+                        isPriceRangeActive &&
+                        pendingRange &&
+                        pendingRange.length === 2
+                      ) {
                         params.minPrice = pendingRange[0];
                         params.maxPrice = pendingRange[1];
                       }
-                      fetchP2P(
-                        Object.keys(params).length > 0 ? params : undefined
-                      );
+                      const finalParams =
+                        Object.keys(params).length > 0 ? params : undefined;
+                      setCurrentFilterParams(finalParams);
+                      setCurrentPage(1);
+                      fetchP2P(finalParams, 1, 9);
+                      setHasSearched(true);
                     }}
                   >
                     Tìm kiếm
                   </Button>
+                  {hasSearched && (
+                    <Button
+                      variant="outline"
+                      className="w-full cursor-pointer"
+                      onClick={() => {
+                        setSearch("");
+                        setRarity("");
+                        setAssetType("");
+                        setUnit("");
+                        setPendingRange([0, 0]);
+                        setIsPriceRangeActive(false);
+                        setCurrentFilterParams(undefined);
+                        setCurrentPage(1);
+                        setSort("all");
+                        fetchP2P(undefined, 1, 9);
+                        setHasSearched(false);
+                      }}
+                    >
+                      Xoá tìm kiếm
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -353,14 +431,17 @@ export default function P2PMarketPage() {
 
           {/* Grid */}
           <section className="col-span-12 md:col-span-9 lg:col-span-9">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {items.length > 0 ? (
                 items.map((item) => (
                   <Card
                     key={item.id}
-                    className="overflow-hidden group hover:shadow-lg transition-shadow h-full flex flex-col"
+                    className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
+                    onClick={() => {
+                      router.push(`/nft/${item.id}?type=other`);
+                    }}
                   >
-                    <div className="relative aspect-[4/5] bg-muted">
+                    <div className="relative h-64 overflow-hidden w-full">
                       <img
                         src={getNFTImage(item)}
                         alt={item.name}
@@ -370,42 +451,47 @@ export default function P2PMarketPage() {
                           t.src = "/nft-box.jpg";
                         }}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
                       <Badge
-                        className={`absolute top-2 right-2 bg-background/80 ${getLevelTextClass(
+                        className={`absolute top-4 right-4 z-10 bg-background/80 ${getLevelTextClass(
                           item.level as string
                         )} backdrop-blur-sm border`}
                       >
                         {getLevelBadge(item.level as string)}
                       </Badge>
                     </div>
-                    <CardContent className="p-3 space-y-1 flex-1 flex flex-col">
-                      <p className="text-xs text-muted-foreground">
+                    <CardContent className="p-4 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold mb-2 truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mb-3">
                         {item.collection}
                       </p>
-                      <p className="text-sm font-semibold truncate">
-                        {item.name}
-                      </p>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          Giá bán
-                        </span>
-                        <span className="text-sm font-bold">
-                          {Number(item.salePrice ?? 0).toLocaleString("vi-VN")}{" "}
-                          {item.currency.toUpperCase()}
-                        </span>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <div className="text-xs text-muted-foreground">
+                            Giá bán
+                          </div>
+                          <div className="text-lg font-bold flex items-center gap-2">
+                            <div className="truncate max-w-full ">
+                              {formatAmount((item as any)?.salePrice)}
+                            </div>
+                            {item.currency.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">
+                            Loại NFT
+                          </div>
+                          <div className="text-lg font-bold">
+                            {getNFTType(item.type ?? "normal")}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          Loại NFT
-                        </span>
-                        <span className="text-sm font-bold">
-                          {getNFTType(item.type ?? "normal")}
-                        </span>
-                      </div>
-                      <div className="mt-auto pt-3">
+                      <div className="flex gap-2 mt-auto">
                         <Button
-                          className="w-full h-10 justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-primary/70 
-                          text-primary-foreground hover:from-primary/90 hover:to-primary/60 shadow-sm cursor-pointer"
+                          className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
                           size="sm"
                           onClick={() => {
                             router.push(`/nft/${item.id}?type=other`);
@@ -433,6 +519,68 @@ export default function P2PMarketPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newPage = Math.max(1, currentPage - 1);
+                  setCurrentPage(newPage);
+                  fetchP2P(currentFilterParams, newPage, 9);
+                }}
+                disabled={currentPage === 1}
+                className="gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Trước
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => {
+                    const isActive = pageNum === currentPage;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (pageNum !== currentPage) {
+                            setCurrentPage(pageNum);
+                            fetchP2P(currentFilterParams, pageNum, 9);
+                          }
+                        }}
+                        className={`h-9 w-9 p-0 ${
+                          isActive ? "bg-primary text-primary-foreground" : ""
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  }
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newPage = Math.min(totalPages, currentPage + 1);
+                  setCurrentPage(newPage);
+                  fetchP2P(currentFilterParams, newPage, 9);
+                  if (typeof window !== "undefined") {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+                disabled={currentPage === totalPages}
+                className="gap-2"
+              >
+                Sau
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </section>
         </div>

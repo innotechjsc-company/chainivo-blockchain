@@ -11,14 +11,21 @@ import NFTService from "@/api/services/nft-service";
 import { useEffect, useState } from "react";
 import { config } from "@/api/config";
 import { formatCurrency, formatNumber } from "@/utils/formatters";
+import { getLevelBadge } from "@/lib/utils";
 
 interface NFTCardProps {
   nft: any;
   type: "tier" | "other";
   onListForSale?: (nft: any) => void;
+  onClick?: (id: string) => void;
 }
 
-export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
+export const NFTCard = ({
+  nft,
+  type,
+  onListForSale,
+  onClick,
+}: NFTCardProps) => {
   const router = useRouter();
 
   // Function to get NFT image from API backend or fallback to default
@@ -96,12 +103,14 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
   };
 
   return (
-    <Card className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col">
+    <Card
+      className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
+      onClick={() => {
+        onClick?.(nft?.id ?? "");
+      }}
+    >
       {/* Image */}
-      <div
-        className="relative h-64 overflow-hidden"
-        onClick={() => router.push(`/nft-template/${nft.id}`)}
-      >
+      <div className="relative h-64 overflow-hidden w-full">
         <img
           src={nftImage}
           alt={nft.name || "NFT"}
@@ -111,9 +120,23 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
         {/* Overlay for better content visibility */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+
+        {/* Level Badge - góc phải trên */}
+        {nft?.level && (
+          <Badge
+            variant="secondary"
+            className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm border"
+          >
+            {getLevelBadge(nft.level as string)}
+          </Badge>
+        )}
+
+        {/* Badge "Đang bán" - hiển thị bên dưới level badge nếu có level, nếu không thì ở vị trí top-4 */}
         <Badge
           variant="secondary"
-          className={`absolute top-4 right-4 z-10 transition-opacity duration-200 ${
+          className={`absolute ${
+            nft?.level ? "top-14" : "top-4"
+          } right-4 z-10 transition-opacity duration-200 ${
             nft.isSale ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
         >
@@ -125,8 +148,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background cursor-pointer"
-        >
-        </Button>
+        ></Button>
       </div>
 
       {/* Info */}
@@ -185,7 +207,7 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
               className="flex-1 gap-2"
               onClick={(e) => {
                 e.stopPropagation();
-                onListForSale(nft);
+                onClick?.(nft?.id ?? "");
               }}
             >
               <Send className="w-4 h-4" />
@@ -195,14 +217,13 @@ export const NFTCard = ({ nft, type, onListForSale }: NFTCardProps) => {
             // NFT dang ban hoac NFT cua nguoi khac
             <Button
               variant="default"
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/nft/${nft.id}?type=${type}`);
+                onClick?.(nft?.id ?? "");
               }}
             >
-              
-              Xem chi tiết 
+              Xem chi tiết
             </Button>
           )}
 

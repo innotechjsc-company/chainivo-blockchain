@@ -123,6 +123,7 @@ export const API_ENDPOINTS = {
   NFT: {
     LIST: "/api/nft/marketplace/for-sale",
     DETAIL: (id: string) => `/api/nft/${id}`,
+    INFO: `/api/nft/analytic`,
     DETAIL_TEMPLATE: (id: string) => `/api/nft-template/${id}`,
     BUY: "/api/nft/marketplace/buy",
     MY_NFT: "/api/nft/my-nft",
