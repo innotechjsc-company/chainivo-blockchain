@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Gift, Sparkles, Star } from "lucide-react";
 
 interface BoxOpeningAnimationProps {
@@ -26,10 +27,15 @@ export const BoxOpeningAnimation = ({
   openingTitle = "Đang mở hộp quà!",
   revealTitle = "Chúc mừng!",
 }: BoxOpeningAnimationProps) => {
+  const [mounted, setMounted] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "shake" | "opening" | "reveal"
   >("initial");
   const [progressWidth, setProgressWidth] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -77,11 +83,11 @@ export const BoxOpeningAnimation = ({
     };
   }, [isOpen, onAnimationComplete, isApiComplete]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl px-4">
+  const animationContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-auto">
         {/* Floating particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(20)].map((_, i) => (
@@ -268,4 +274,6 @@ export const BoxOpeningAnimation = ({
       `}</style>
     </div>
   );
+
+  return createPortal(animationContent, document.body);
 };
