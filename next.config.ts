@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* 
+   * Next.js tự động load env vars từ:
+   * - .env.local (highest priority)
+   * - .env.development hoặc .env.production (based on NODE_ENV)
+   * - .env
+   * 
+   * Không cần hard-code env vars ở đây trừ khi có lý do đặc biệt
+   */
 };
 
 export default nextConfig;

@@ -15,7 +15,7 @@ import { getLevelBadge } from "@/lib/utils";
 
 interface NFTCardProps {
   nft: any;
-  type: "tier" | "other";
+  type: "normal" | "rank" | "mysteryBox" | "investment";
   onListForSale?: (nft: any) => void;
   onClick?: (id: string) => void;
   onLikeChange?: (id: string, isLiked: boolean) => void;
@@ -147,6 +147,17 @@ export const NFTCard = ({
     target.src = "/nft-box.jpg";
   };
 
+  // Function to get NFT type label
+  const getNFTTypeLabel = (type: string): string => {
+    const typeMap: Record<string, string> = {
+      normal: 'NFT Thường',
+      rank: 'NFT Hạng',
+      mysteryBox: 'NFT Hộp bí ẩn',
+      investment: 'NFT Đầu tư',
+    };
+    return typeMap[type] || 'NFT';
+  };
+
   return (
     <Card
       className="glass overflow-hidden hover:scale-105 transition-all group cursor-pointer h-full flex flex-col p-0"
@@ -206,7 +217,15 @@ export const NFTCard = ({
 
       {/* Info */}
       <CardContent className="p-4 flex-1 flex flex-col">
-        <h3 className="text-lg font-bold mb-2 truncate">{nft.name}</h3>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <h3 className="text-lg font-bold truncate flex-1">{nft.name}</h3>
+          <Badge
+            variant="outline"
+            className="shrink-0 bg-background/80 backdrop-blur-sm border-primary/20 text-xs"
+          >
+            {getNFTTypeLabel(type)}
+          </Badge>
+        </div>
 
         {nft?.owner?.address && (
           <div className="text-xs text-muted-foreground mb-3">
@@ -246,22 +265,6 @@ export const NFTCard = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-auto">
-          {/* Button chinh: Mua ngay / Dang ban / Da so huu */}
-          {type === "tier" && !nft.isSale && onListForSale ? (
-            // NFT cua toi va chua ban -> hien nut "Dang ban"
-            <Button
-              variant="default"
-              className="flex-1 gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onListForSale(nft);
-              }}
-            >
-              <Send className="w-4 h-4" />
-              Đăng bán
-            </Button>
-          ) : (
-            // NFT dang ban hoac NFT cua nguoi khac
             <Button
               variant="default"
               className="flex-1 gap-2 cursor-pointer"
@@ -276,7 +279,6 @@ export const NFTCard = ({
             >
               Xem chi tiết
             </Button>
-          )}
         </div>
       </CardContent>
     </Card>
