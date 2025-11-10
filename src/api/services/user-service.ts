@@ -1,4 +1,10 @@
-import { API_ENDPOINTS, ApiResponse, ApiService, UpdateProfileResponse, AvatarObject } from "../api";
+import {
+  API_ENDPOINTS,
+  ApiResponse,
+  ApiService,
+  UpdateProfileResponse,
+  AvatarObject,
+} from "../api";
 
 // Interface cho response tu PayloadCMS GET /api/users/{userId}
 interface PayloadUserResponse {
@@ -15,6 +21,10 @@ interface PayloadUserResponse {
 export class UserService {
   static async getBalance(walletAddress: string): Promise<ApiResponse<any>> {
     return ApiService.getWalletBalance(walletAddress);
+  }
+
+  static async getMe(): Promise<ApiResponse<any>> {
+    return ApiService.get(API_ENDPOINTS.USER.GET_ME);
   }
 
   static async updateWalletAddress(data: {
@@ -52,16 +62,18 @@ export class UserService {
    * Su dung JWT token de xac dinh user
    * @returns User profile voi avatarUrl da duoc parse tu avatar.url
    */
-  static async getCurrentUserProfile(): Promise<ApiResponse<{
-    id: string;
-    email: string;
-    name?: string;
-    avatarUrl?: string;
-    walletAddress?: string;
-    role?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  }>> {
+  static async getCurrentUserProfile(): Promise<
+    ApiResponse<{
+      id: string;
+      email: string;
+      name?: string;
+      avatarUrl?: string;
+      walletAddress?: string;
+      role?: string;
+      createdAt?: string;
+      updatedAt?: string;
+    }>
+  > {
     try {
       const response = await ApiService.get<{
         id: string;
@@ -76,10 +88,10 @@ export class UserService {
 
       return response;
     } catch (error: any) {
-      console.error('Error fetching user profile:', error);
+      console.error("Error fetching user profile:", error);
       return {
         success: false,
-        error: error?.message || 'Loi khi lay thong tin user',
+        error: error?.message || "Loi khi lay thong tin user",
       };
     }
   }
@@ -90,23 +102,25 @@ export class UserService {
    * @param userId - ID cua user
    * @returns User profile voi avatarUrl da duoc parse tu avatar.url
    */
-  static async getUserProfile(userId: string): Promise<ApiResponse<{
-    id: string;
-    email: string;
-    name?: string;
-    avatarUrl?: string; // Da parse tu avatar.url
-    walletAddress?: string;
-    role?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  }>> {
+  static async getUserProfile(userId: string): Promise<
+    ApiResponse<{
+      id: string;
+      email: string;
+      name?: string;
+      avatarUrl?: string; // Da parse tu avatar.url
+      walletAddress?: string;
+      role?: string;
+      createdAt?: string;
+      updatedAt?: string;
+    }>
+  > {
     try {
       const response = await ApiService.get<PayloadUserResponse>(
         `/api/users/${userId}?depth=1`
       );
 
       if (response.success && response.data) {
-        const avatarUrl = response.data.avatar?.url || '';
+        const avatarUrl = response.data.avatar?.url || "";
 
         return {
           success: true,
@@ -125,10 +139,10 @@ export class UserService {
 
       return response as any;
     } catch (error: any) {
-      console.error('Error fetching user profile:', error);
+      console.error("Error fetching user profile:", error);
       return {
         success: false,
-        error: error?.message || 'Loi khi lay thong tin user',
+        error: error?.message || "Loi khi lay thong tin user",
       };
     }
   }

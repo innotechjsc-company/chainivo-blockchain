@@ -149,6 +149,7 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: "/api/user/change-password",
     UPDATE_PROFILE: "/api/user/update-profile",
     GET_PROFILE: "/api/user/profile",
+    GET_ME: "/api/users/me",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
