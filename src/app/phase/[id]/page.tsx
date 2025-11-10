@@ -133,14 +133,36 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
   const calculateTokens = () => {
     const amount = parseFloat(investAmount) || 0;
-    const tokens = amount / phase.pricePerToken;
+
+    // Tính base tokens (chưa tính bonus)
+    const baseTokens = amount / phase.pricePerToken;
+
+    // Xử lý bonus - kiểm tra undefined, null, NaN và clamp 0-100%
+    let bonus = phase.bonus ?? 0; // Default 0 nếu undefined/null
+    if (typeof bonus !== 'number' || isNaN(bonus)) {
+      bonus = 0;
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Phase bonus không hợp lệ, sử dụng mặc định 0%');
+      }
+    }
+    // Clamp bonus trong khoảng [0, 100]
+    const validBonus = Math.max(0, Math.min(100, bonus));
+
+    // Tính bonus tokens
+    const bonusTokens = baseTokens * (validBonus / 100);
+
+    // Tính tổng tokens
+    const totalTokens = baseTokens + bonusTokens;
+
     return {
-      baseTokens: tokens.toFixed(2),
-      totalTokens: tokens.toFixed(2),
+      baseTokens: baseTokens.toFixed(2),
+      bonusTokens: bonusTokens.toFixed(2),
+      totalTokens: totalTokens.toFixed(2),
+      bonus: validBonus,
     };
   };
 
-  const { baseTokens, totalTokens } = calculateTokens();
+  const { baseTokens, bonusTokens, totalTokens, bonus } = calculateTokens();
   const totalTokensSupply = phase.totalTokens || 0;
   const soldTokens = phase.soldTokens || 0;
   const progressPercent =
@@ -485,9 +507,11 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   <div className="space-y-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Base tokens:
+                        Bonus ({bonus.toFixed(1)}%):
                       </span>
-                      <span className="font-bold">{baseTokens} CAN</span>
+                      <span className={bonus > 0 ? "font-bold text-emerald-400" : "text-muted-foreground"}>
+                        {formatAmount(bonusTokens)} CAN
+                      </span>
                     </div>
                     <div className="border-t border-primary/20 pt-3 flex justify-between">
                       <span className="font-semibold">Tổng nhận được:</span>
@@ -564,18 +588,17 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                               </span>
                             </div>
                             <div className="flex justify-between border-t pt-2">
+                              <span>Bonus ({bonus.toFixed(1)}%):</span>
+                              <span className="font-medium">
+                                {formatAmount(bonusTokens)} CAN
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-2">
                               <span>Tổng token nhận:</span>
                               <span className="font-semibold">
                                 {totalTokens} CAN
                               </span>
                             </div>
-                            {/* phí gas */}
-                            {/* <div className="flex justify-between border-t pt-2">
-                              <span>Phí gas ước tính:</span>
-                              <span className="font-semibold">
-                                {gasPrice} {nativeSymbol}
-                              </span>
-                            </div> */}
                           </div>
                         );
                       })()}
@@ -703,6 +726,12 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                           </span>
                         </div>
                         <div className="flex justify-between border-t pt-2">
+                          <span>Bonus ({bonus.toFixed(1)}%):</span>
+                          <span className="font-medium">
+                            {formatAmount(bonusTokens)} CAN
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
                           <span>Tổng token nhận:</span>
                           <span className="font-semibold">
                             {totalTokens} CAN
@@ -772,9 +801,22 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
           {(() => {
             const tx: any = isInvestmentConfirmed;
             const usdcAmount = parseFloat(tx?.amount || investAmount || "0");
-            const canReceived = phase?.pricePerToken
-              ? (usdcAmount / Number(phase.pricePerToken)).toFixed(2)
-              : "0";
+
+            // Tinh can received voi bonus - ap dung cong thuc co bonus
+            let canReceived = "0";
+            if (phase?.pricePerToken) {
+              const baseTokens = usdcAmount / Number(phase.pricePerToken);
+              // Xu ly bonus - kiem tra undefined, null, NaN va clamp 0-100%
+              let phaseBonus = phase.bonus ?? 0;
+              if (typeof phaseBonus !== 'number' || isNaN(phaseBonus)) {
+                phaseBonus = 0;
+              }
+              const validBonus = Math.max(0, Math.min(100, phaseBonus));
+              const bonusTokens = baseTokens * (validBonus / 100);
+              const totalCanReceived = baseTokens + bonusTokens;
+              canReceived = totalCanReceived.toFixed(2);
+            }
+
             const gasPriceWei = String(
               tx?.gasPrice || tx?.rawReceipt?.effectiveGasPrice || "0"
             );

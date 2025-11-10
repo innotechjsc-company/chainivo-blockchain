@@ -54,7 +54,11 @@ export default function MyNFTScreen(): JSX.Element {
     action: "sell" | "buy" | "open" | "cancel"
   ) => {
     console.log(`Action ${action} on NFT:`, nft.id);
-    // TODO: Implement action handlers (sell, buy, open mystery box)
+    // TODO: Implement action handlers (sell, buy, open mystery box, cancel listing)
+    // - open: Open mystery box -> fetch rewards
+    // - sell: List NFT for sale
+    // - buy: Purchase NFT from marketplace
+    // - cancel: Cancel NFT listing
   };
 
   const content = useMemo(() => {
