@@ -552,6 +552,12 @@ export default function InvestmentNFTDetailPage() {
 
                 <Button
                   onClick={() => {
+                    if (!user) {
+                      toast.error(
+                        "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
+                      );
+                      return;
+                    }
                     const isConnected =
                       LocalStorageService.isConnectedToWallet();
                     if (!isConnected) {
@@ -560,7 +566,7 @@ export default function InvestmentNFTDetailPage() {
                     }
                     setShowConfirmation(true);
                   }}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
-import { LocalStorageService } from "@/services";
+import { LocalStorageService, ToastService } from "@/services";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -49,56 +49,20 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu lỗi 401 và chưa retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        // Nếu đang refresh, đưa request vào queue
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
+    // Neu loi 401 -> thong bao va chuyen ve trang login
+    if (error.response?.status === 401) {
       try {
-        // Gọi API refresh token
-        const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
-        const { refreshedToken, exp, user } = response.data;
-
-        // Lưu token mới vào LocalStorageService
-        LocalStorageService.setToken(refreshedToken, exp);
-        if (user) {
-          LocalStorageService.setUserInfo(user);
-        }
-
-        // Update token cho các requests trong queue
-        processQueue(null, refreshedToken);
-
-        // Retry request gốc với token mới
-        originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh token thất bại -> clear storage và redirect
-        processQueue(refreshError, null);
         LocalStorageService.clearAuthData();
-
-        // Chỉ redirect nếu đang ở browser (không phải SSR)
-        if (typeof window !== "undefined") {
-          // window.location.href = "/auth?tab=login";
-        }
-
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+      } catch {}
+      if (typeof window !== "undefined") {
+        try {
+          ToastService.error(
+            "Phien dang nhap da het han, vui long dang nhap lai de tiep tuc"
+          );
+        } catch {}
+        window.location.href = "/auth?tab=login";
       }
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
