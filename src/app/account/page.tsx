@@ -113,6 +113,28 @@ export default function AccountManagementPage() {
     fetchCanBalance();
   }, []);
 
+  // Lay thong tin user tu backend va hien thi len input ten hien thi
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await UserService.getMe();
+        const raw = (response as any)?.data || response;
+        const data = raw?.data || raw?.user || raw?.profile || raw;
+        const name =
+          data?.name || data?.username || user?.name || user?.email || "";
+        if (isMounted && name) {
+          setUsername(name);
+        }
+      } catch (_e) {
+        // ignore
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     const sectionParam = searchParams.get("section");
     if (sectionParam && sectionParam !== tabValue) {
@@ -284,7 +306,7 @@ export default function AccountManagementPage() {
       console.error("Failed to copy address:", err);
     }
   };
-  const referralCode = user?.id || user?.email || "";
+  const referralCode = ((user as any)?.refCode as string) || "";
   const handleCopyReferral = async () => {
     try {
       if (!referralCode) return;
@@ -293,39 +315,6 @@ export default function AccountManagementPage() {
       console.error("Failed to copy referral code:", err);
     }
   };
-
-  const getRecentMetaMaskTransactions = async () => {
-    try {
-      if (!user?.walletAddress) return [] as any[];
-      setTxLoading(true);
-
-      const [nftsRes, rewardsRes] = await Promise.all([
-        NFTService.getNFTsByOwner({ ownerAddress: user.walletAddress }),
-        StakingService.getStakesByOwner(user.walletAddress),
-      ]);
-      let transactions = [];
-      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      transactions.push(...nfts, ...stakes);
-      setTransactions(transactions);
-    } catch (error) {
-      console.error("Error fetching NFTs and rewards:", error);
-      setTransactions([]);
-      return [] as any[];
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getRecentMetaMaskTransactions();
-  }, [user?.walletAddress]);
 
   if (loading) {
     return (
