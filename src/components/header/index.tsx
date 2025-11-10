@@ -16,9 +16,11 @@ import {
   Menu,
   LogIn,
   UserPlus,
+  Globe,
+  Image,
+  Sparkles,
   RefreshCw,
   X,
-  Globe,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -63,7 +65,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
     router.push("/auth?tab=login");
   };
 
-  // Kết nối lại MetaMask với ví của user
+  // Ket noi lai MetaMask voi vi cua user
   const handleReconnect = async () => {
     if (!user?.walletAddress) return;
 
@@ -74,7 +76,6 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
         return;
       }
 
-      // Yêu cầu kết nối MetaMask
       const accounts: string[] = await eth.request({
         method: "eth_requestAccounts",
       });
@@ -86,9 +87,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
         if (connectedAddress === userAddress) {
           LocalStorageService.setWalletConnectionStatus(true);
           dispatch(setWalletBalance(user.walletAddress));
-          // Update state để trigger re-render
           setIsWalletConnected(true);
-          // Refresh balance
           await getBalance();
         } else {
           console.error("Connected wallet does not match user wallet");
@@ -99,13 +98,12 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
     }
   };
 
-  // Ngắt kết nối MetaMask
+  // Ngat ket noi MetaMask
   const handleDisconnect = async () => {
     try {
       const eth = (window as any)?.ethereum;
       if (!eth?.isMetaMask) return;
 
-      // Thử revoke permissions (nếu được hỗ trợ)
       try {
         await eth.request({
           method: "wallet_revokePermissions",
@@ -116,13 +114,11 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
           ],
         });
       } catch (_err) {
-        // Bỏ qua nếu không hỗ trợ hoặc thất bại
+        // Bo qua neu khong ho tro
       }
 
-      // Xóa trạng thái kết nối
       LocalStorageService.removeWalletConnectionStatus();
       LocalStorageService.clearWalletData();
-      // Update state để trigger re-render
       setIsWalletConnected(false);
     } catch (error) {
       console.error("Failed to disconnect wallet:", error);
@@ -240,70 +236,36 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   currentLanguage={language}
                   onLanguageChange={handleLanguageChange}
                 />
-                {!user?.walletAddress ? (
-                  <Button
-                    variant="default"
-                    className="hidden md:flex cursor-pointer"
-                    onClick={() => router.push("/wallet")}
-                  >
-                    <Wallet className="w-4 h-4 mr-2" />
-                    "Kết nối ví"
-                  </Button>
-                ) : !isWalletConnected ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="default"
-                        className="hidden md:flex cursor-pointer relative"
-                      >
-                        <span
-                          className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-background ${
-                            isWalletConnected ? "bg-emerald-500" : "bg-red-500"
-                          }`}
-                        />
-                        <Wallet className="w-4 h-4 mr-2" />
-                        Kết nối ví
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={handleReconnect}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Kết nối lại
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDisconnect}>
-                        <X className="w-4 h-4 mr-2" />
-                        Ngắt kết nối
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button className="hidden md:flex cursor-pointer relative">
-                        <span
-                          className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${
-                            isWalletConnected ? "bg-emerald-500" : "bg-red-500"
-                          }`}
-                        />
-                        <Wallet className="w-4 h-4 mr-2" />
-                        {user?.walletAddress?.slice(0, 6)}...
-                        {user?.walletAddress?.slice(-4)}{" "}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleReconnect}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Kết nối lại
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDisconnect}>
-                        <X className="w-4 h-4 mr-2" />
-                        Ngắt kết nối
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                <UserMenu userProfile={userProfile} onSignOut={handleSignOut} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="hidden md:flex cursor-pointer relative">
+                      Ví của tôi
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/wallet")}>
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Ví
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/mynft")}>
+                      <Image className="w-4 h-4 mr-2" />
+                      NFT của tôi
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/nft-investment")}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      NFT cổ phần giúp tôi
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <UserMenu
+                  userProfile={userProfile}
+                  onSignOut={handleSignOut}
+                  onReconnect={handleReconnect}
+                  onDisconnect={handleDisconnect}
+                />
               </>
             ) : (
               <>
