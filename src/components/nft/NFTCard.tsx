@@ -13,7 +13,7 @@ import { formatNumber } from '@/utils/formatters';
 interface NFTCardProps {
   nft: NFTItem;
   showActions?: boolean;
-  onActionClick?: (nft: NFTItem, action: 'sell' | 'buy' | 'open') => void;
+  onActionClick?: (nft: NFTItem, action: 'sell' | 'buy' | 'open' | 'cancel') => void;
   className?: string;
 
   // Props để tương thích ngược với NFTCard cũ
@@ -95,17 +95,11 @@ export default function NFTCard({
 
     switch (nft.type) {
       case 'mysteryBox':
-        // Nếu Mystery Box đã đăng bán → chỉ hiển thị "Xem chi tiết"
+        // Nếu Mystery Box đã đăng bán → hiển thị button hủy đăng bán
         if (nft.isSale) {
           return (
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Dùng onClick callback để xem chi tiết NFT
-                if (onClick) {
-                  onClick(nft.id);
-                }
-              }}
+              onClick={(e) => handleAction(e, 'cancel')}
               className="
                 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
                 transition-all disabled:pointer-events-none disabled:opacity-50
@@ -116,7 +110,7 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Huỷ 
+              Huỷ
             </Button>
           );
         }
@@ -218,16 +212,10 @@ export default function NFTCard({
       case 'rank':
       default:
         if (nft.isSale) {
-          // NFT đã đăng bán -> hiển thị button "Xem chi tiết"
+          // NFT đã đăng bán -> hiển thị button hủy đăng bán
           return (
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Dùng onClick callback để xem chi tiết NFT
-                if (onClick) {
-                  onClick(nft.id);
-                }
-              }}
+              onClick={(e) => handleAction(e, 'cancel')}
               className="
                 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
                 transition-all disabled:pointer-events-none disabled:opacity-50
