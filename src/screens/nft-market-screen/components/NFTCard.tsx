@@ -150,12 +150,12 @@ export const NFTCard = ({
   // Function to get NFT type label
   const getNFTTypeLabel = (type: string): string => {
     const typeMap: Record<string, string> = {
-      normal: 'NFT Thường',
-      rank: 'NFT Hạng',
-      mysteryBox: 'NFT Hộp bí ẩn',
-      investment: 'NFT Đầu tư',
+      normal: "NFT Thường",
+      rank: "NFT Hạng",
+      mysteryBox: "NFT Hộp bí ẩn",
+      investment: "NFT Đầu tư",
     };
-    return typeMap[type] || 'NFT';
+    return typeMap[type] || "NFT";
   };
 
   return (
@@ -265,20 +265,20 @@ export const NFTCard = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-auto">
-            <Button
-              variant="default"
-              className="flex-1 gap-2 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onClick) {
-                  onClick(nftId);
-                } else if (nftId) {
-                  router.push(`/nft-template/${nftId}?type=${type}`);
-                }
-              }}
-            >
-              Xem chi tiết
-            </Button>
+          <Button
+            variant="default"
+            className="flex-1 gap-2 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClick) {
+                onClick(nftId);
+              } else if (nftId) {
+                router.push(`/nft-template/${nftId}?type=${type}`);
+              }
+            }}
+          >
+            Xem chi tiết
+          </Button>
         </div>
       </CardContent>
     </Card>

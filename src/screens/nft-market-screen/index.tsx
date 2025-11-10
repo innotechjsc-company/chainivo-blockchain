@@ -12,21 +12,20 @@ export default function NFTMarketScreen() {
   const {
     filters,
     setFilters,
-    tierNFTs,
-    otherNFTs,
     resetFilters,
     hasActiveFilters,
-    fetchUserNFTs,
-    userNFTs,
     otherNFTsData,
     otherNFTsAnalytics,
     searchMarketplace,
     searchNFTs,
-    // use hook loading to drive global loading
     loading,
     fetchOtherNFTs,
     currentPage,
     totalPages,
+    fetchMysteryBoxNFTs,
+    mysteryBoxData,
+    mysteryBoxTotalPages,
+    mysteryBoxCurrentPage,
   } = useNFTFilters(nfts);
 
   const isLoading = loading;
@@ -61,7 +60,7 @@ export default function NFTMarketScreen() {
           />
         ) : (
           <>
-            {filters.type !== "tier" && otherNFTs.length > 0 && (
+            {otherNFTsData.length > 0 && (
               <div className="mb-8">
                 <NFTGridCard
                   nfts={otherNFTsData}
@@ -71,21 +70,27 @@ export default function NFTMarketScreen() {
                   currentPage={currentPage}
                   onPageChange={(page) => fetchOtherNFTs(page, 9)}
                 />
+                <NFTGridCard
+                  nfts={mysteryBoxData}
+                  title="NFT Hộp bí ẩn"
+                  initialCount={9}
+                  totalPages={mysteryBoxTotalPages}
+                  currentPage={mysteryBoxCurrentPage}
+                  onPageChange={(page) => fetchMysteryBoxNFTs(page, 9)}
+                />
               </div>
             )}
           </>
         )}
 
         {/* No Results */}
-        {tierNFTs.length === 0 &&
-          otherNFTs.length === 0 &&
-          searchNFTs.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-xl text-muted-foreground">
-                Không tìm thấy NFT phù hợp với bộ lọc
-              </p>
-            </div>
-          )}
+        {otherNFTsData.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-xl text-muted-foreground">
+              Không tìm thấy NFT phù hợp với bộ lọc
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );
