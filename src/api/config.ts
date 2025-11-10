@@ -1,20 +1,21 @@
 // Helper function để lấy env value với fallback
 const getEnvValue = (key: string, fallback: string): string => {
   const value = process.env[key];
-  
+
   // Debug log (chỉ log 1 lần khi module được load)
-  if (typeof window === 'undefined' && key === 'NEXT_PUBLIC_API_BASE_URL') {
-    console.log('🔍 ENV Debug:');
-    console.log('  - Key:', key);
-    console.log('  - Value:', value);
-    console.log('  - Fallback:', fallback);
-    console.log('  - All NEXT_PUBLIC_ vars:', 
+  if (typeof window === "undefined" && key === "NEXT_PUBLIC_API_BASE_URL") {
+    console.log("🔍 ENV Debug:");
+    console.log("  - Key:", key);
+    console.log("  - Value:", value);
+    console.log("  - Fallback:", fallback);
+    console.log(
+      "  - All NEXT_PUBLIC_ vars:",
       Object.keys(process.env)
-        .filter(k => k.startsWith('NEXT_PUBLIC_'))
-        .map(k => `${k}=${process.env[k]}`)
+        .filter((k) => k.startsWith("NEXT_PUBLIC_"))
+        .map((k) => `${k}=${process.env[k]}`)
     );
   }
-  
+
   return value || fallback;
 };
 
@@ -36,16 +37,8 @@ export const config = {
 
   // Blockchain Configuration
   BLOCKCHAIN: {
-    NETWORK: getEnvValue(
-      "NEXT_PUBLIC_BLOCKCHAIN_NETWORK",
-      "amoy"
-    ),
-    CHAIN_ID: parseInt(
-      getEnvValue(
-        "NEXT_PUBLIC_BLOCKCHAIN_CHAIN_ID",
-        "80002"
-      )
-    ),
+    NETWORK: getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_NETWORK", "amoy"),
+    CHAIN_ID: parseInt(getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_CHAIN_ID", "80002")),
     RPC_URL: getEnvValue(
       "NEXT_PUBLIC_BLOCKCHAIN_RPC_URL",
       "https://rpc-amoy.polygon.technology"
@@ -73,9 +66,17 @@ export const config = {
     environment: process.env.NODE_ENV || "development",
     blockchain: {
       network: getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_NETWORK", "amoy"),
-      chainId: parseInt(getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_CHAIN_ID", "80002")),
-      rpcUrl: getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_RPC_URL", "https://rpc-amoy.polygon.technology"),
-      canTokenAddress: getEnvValue("NEXT_PUBLIC_CAN_TOKEN_ADDRESS", "0x5b54896A3F8d144E02DcEEa05668C4a4EDe83c4F"),
+      chainId: parseInt(
+        getEnvValue("NEXT_PUBLIC_BLOCKCHAIN_CHAIN_ID", "80002")
+      ),
+      rpcUrl: getEnvValue(
+        "NEXT_PUBLIC_BLOCKCHAIN_RPC_URL",
+        "https://rpc-amoy.polygon.technology"
+      ),
+      canTokenAddress: getEnvValue(
+        "NEXT_PUBLIC_CAN_TOKEN_ADDRESS",
+        "0x5b54896A3F8d144E02DcEEa05668C4a4EDe83c4F"
+      ),
     },
   },
 
@@ -136,9 +137,7 @@ export const config = {
 
   // Default Values
   DEFAULTS: {
-    GAS_FEE: parseFloat(
-      getEnvValue("NEXT_PUBLIC_DEFAULT_GAS_FEE", "0.001")
-    ),
+    GAS_FEE: parseFloat(getEnvValue("NEXT_PUBLIC_DEFAULT_GAS_FEE", "0.001")),
     CURRENCY: getEnvValue("NEXT_PUBLIC_DEFAULT_CURRENCY", "POL"),
   },
 };
