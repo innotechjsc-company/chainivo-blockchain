@@ -1,4 +1,4 @@
-import { ApiService, API_ENDPOINTS, ApiResponse } from '../api';
+import { ApiService, API_ENDPOINTS, ApiResponse } from "../api";
 
 export interface MediaUploadResponse {
   id: string;
@@ -14,14 +14,16 @@ export class MediaService {
    * @param file - Avatar file to upload
    * @returns Media object with id and url
    */
-  static async uploadAvatar(file: File): Promise<ApiResponse<MediaUploadResponse>> {
+  static async uploadAvatar(
+    file: File
+  ): Promise<ApiResponse<MediaUploadResponse>> {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       // Backend returns: { success: true, doc: {...} }
       // Need to normalize to ApiResponse format: { success, data: {...} }
-      const response = await ApiService.postFormData<any>(
+      const response: any = await ApiService.postFormData<any>(
         API_ENDPOINTS.MEDIA.UPLOAD,
         formData
       );
@@ -42,10 +44,10 @@ export class MediaService {
 
       return response;
     } catch (error: any) {
-      console.error('Avatar upload error:', error);
+      console.error("Avatar upload error:", error);
       return {
         success: false,
-        error: error?.message || 'Loi upload avatar',
+        error: error?.message || "Loi upload avatar",
       };
     }
   }
