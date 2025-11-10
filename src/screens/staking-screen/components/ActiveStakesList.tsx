@@ -280,7 +280,40 @@ export const ActiveStakesList = ({
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => handleUnstakeClick(id)}
+                        onClick={async () => {
+                          if (!user) {
+                            toast.error("Bạn vui lòng đăng nhập để tiếp tục");
+                            return;
+                          }
+                          let isConnected =
+                            LocalStorageService.isConnectedToWallet();
+                          if (!isConnected) {
+                            try {
+                              const eth = (window as any)?.ethereum;
+                              if (eth?.isMetaMask) {
+                                await eth.request({
+                                  method: "eth_requestAccounts",
+                                });
+                                LocalStorageService.setWalletConnectionStatus(
+                                  true
+                                );
+                                try {
+                                  window.dispatchEvent(
+                                    new Event("wallet:connection-changed")
+                                  );
+                                } catch {}
+                                isConnected = true;
+                              }
+                            } catch (_e) {
+                              // user rejected or failed
+                            }
+                          }
+                          if (!isConnected) {
+                            toast.error("Vui lòng kết nối ví để tiếp tục");
+                            return;
+                          }
+                          handleUnstakeClick(id);
+                        }}
                         disabled={!canUnstake && status === "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer"
                       >
