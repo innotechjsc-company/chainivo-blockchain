@@ -67,8 +67,6 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
 
   // Ket noi lai MetaMask voi vi cua user
   const handleReconnect = async () => {
-    if (!user?.walletAddress) return;
-
     try {
       const eth = (window as any)?.ethereum;
       if (!eth?.isMetaMask) {
@@ -82,11 +80,18 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
 
       if (accounts && accounts.length > 0) {
         const connectedAddress = accounts[0].toLowerCase();
-        const userAddress = user.walletAddress.toLowerCase();
+        const walletAddress = user?.walletAddress;
 
-        if (connectedAddress === userAddress) {
+        if (!walletAddress) {
           LocalStorageService.setWalletConnectionStatus(true);
-          dispatch(setWalletBalance(user.walletAddress));
+          dispatch(setWalletBalance(connectedAddress));
+          setIsWalletConnected(true);
+          return;
+        }
+
+        if (connectedAddress === walletAddress.toLowerCase()) {
+          LocalStorageService.setWalletConnectionStatus(true);
+          dispatch(setWalletBalance(walletAddress));
           setIsWalletConnected(true);
           await getBalance();
         } else {
