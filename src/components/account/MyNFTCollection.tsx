@@ -6,6 +6,7 @@ import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
 import { NFTCard, MysteryBoxAnimationWrapper } from "@/components/nft";
 import { ListNFTDialog } from "./ListNFTDialog";
+import { NFTFilters } from "./NFTFilters";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -49,8 +50,18 @@ function LoadingSkeleton() {
 
 export function MyNFTCollection() {
   // Su dung hook fetch NFT collection
-  const { nfts, stats, loading, error, filter, setFilter, refetch } =
-    useMyNFTCollection();
+  const {
+    nfts,
+    stats,
+    loading,
+    error,
+    filter,
+    setFilter,
+    advancedFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
+    refetch,
+  } = useMyNFTCollection();
 
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
@@ -157,6 +168,13 @@ export function MyNFTCollection() {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* Advanced Filters - Loc NFT theo type, level, price */}
+      <NFTFilters
+        filters={advancedFilters}
+        onFiltersChange={setAdvancedFilters}
+        onReset={resetAdvancedFilters}
+      />
 
       {nfts.length === 0 ? (
         <div className="text-center py-12">

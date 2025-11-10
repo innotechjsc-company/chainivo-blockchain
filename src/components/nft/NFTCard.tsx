@@ -116,7 +116,7 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Xem chi tiết
+              Huỷ 
             </Button>
           );
         }
@@ -238,7 +238,7 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Xem chi tiết
+              Huỷ
             </Button>
           );
         }
@@ -282,12 +282,12 @@ export default function NFTCard({
           className="w-full h-56 object-cover"
         />
 
+
         {/* Badges trên góc trái */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           <LevelBadge level={nft.level} />
           <NFTTypeBadge type={nft.type} />
         </div>
-
         {/* Status badges trên góc phải */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
           {nft.isFeatured && (
@@ -310,11 +310,6 @@ export default function NFTCard({
             </div>
           )}
 
-          {nft.isActive && (
-            <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
-              Hoạt động
-            </div>
-          )}
         </div>
       </div>
 
