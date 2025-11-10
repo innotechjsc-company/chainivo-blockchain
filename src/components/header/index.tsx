@@ -175,6 +175,25 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
     setIsWalletConnected(LocalStorageService.isConnectedToWallet());
   }, [user?.walletAddress]);
 
+  // Listen for wallet connection status changes from anywhere in the app
+  useEffect(() => {
+    const handleConnectionChange = () => {
+      setIsWalletConnected(LocalStorageService.isConnectedToWallet());
+    };
+    window.addEventListener(
+      "wallet:connection-changed",
+      handleConnectionChange
+    );
+    window.addEventListener("storage", handleConnectionChange);
+    return () => {
+      window.removeEventListener(
+        "wallet:connection-changed",
+        handleConnectionChange
+      );
+      window.removeEventListener("storage", handleConnectionChange);
+    };
+  }, []);
+
   useEffect(() => {
     if (user) {
       getBalance();
