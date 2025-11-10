@@ -6,7 +6,7 @@ import LevelBadge from './LevelBadge';
 import NFTTypeBadge from './NFTTypeBadge';
 import InvestmentProgressBar from './InvestmentProgressBar';
 import CountdownTimer from './CountdownTimer';
-import MysteryRewardsPreview from './MysteryRewardsPreview';
+import MysteryRewardsPopover from './MysteryRewardsPopover';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/utils/formatters';
 
@@ -335,6 +335,8 @@ export default function NFTCard({
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === 'mysteryBox' ? (
           <div className="space-y-3">
+            {/* Divider */}
+            <div className="border-t border-gray-200 dark:border-gray-700" />
             {/* Giá hộp */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -346,17 +348,9 @@ export default function NFTCard({
               </span>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 dark:border-gray-700" />
 
-            {/* Rewards preview */}
-            {nft.rewards ? (
-              <MysteryRewardsPreview rewards={nft.rewards} />
-            ) : (
-              <div className="text-xs text-gray-500 dark:text-gray-400 italic">
-                Mở hộp để nhận phần thưởng bất ngờ!
-              </div>
-            )}
+            {/* Rewards popover */}
+            <MysteryRewardsPopover rewards={nft.rewards} />
 
             {/* Action button */}
             {renderActionButton()}
