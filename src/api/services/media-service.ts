@@ -26,16 +26,20 @@ export class MediaService {
         formData
       );
 
-      if (response.success && response.doc) {
+      // Cast to any to access 'doc' property which exists in backend response
+      const backendResponse = response as any;
+
+      if (response.success && backendResponse.doc) {
         // Normalize: extract doc and map to data field
+        const doc = backendResponse.doc;
         return {
           success: true,
           data: {
-            id: response.doc.id,
-            url: response.doc.url,
-            filename: response.doc.filename,
-            mimeType: response.doc.mimeType,
-            filesize: response.doc.filesize,
+            id: doc.id,
+            url: doc.url,
+            filename: doc.filename,
+            mimeType: doc.mimeType,
+            filesize: doc.filesize,
           },
         };
       }
