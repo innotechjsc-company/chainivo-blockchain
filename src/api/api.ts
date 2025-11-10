@@ -55,12 +55,9 @@ api.interceptors.response.use(
         LocalStorageService.clearAuthData();
       } catch {}
       if (typeof window !== "undefined") {
-        try {
-          ToastService.error(
-            "Phien dang nhap da het han, vui long dang nhap lai de tiep tuc"
-          );
-        } catch {}
-        window.location.href = "/auth?tab=login";
+        ToastService.error(
+          "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+        );
       }
       return Promise.reject(error);
     }

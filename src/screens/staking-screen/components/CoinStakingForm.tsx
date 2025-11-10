@@ -25,7 +25,7 @@ import { useAppSelector } from "@/stores";
 import { buildFrontendUrl, config } from "@/api/config";
 import { toast } from "sonner";
 import { StakingService } from "@/api/services";
-import { TransferService } from "@/services";
+import { TransferService, LocalStorageService } from "@/services";
 import { formatNumber } from "@/utils/formatters";
 interface CoinStakingFormProps {
   userBalance: number;
@@ -88,6 +88,34 @@ export const CoinStakingForm = ({
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check login
+    if (!user) {
+      toast.error("Ban vui long dang nhap de tiep tuc stake");
+      return;
+    }
+
+    // Check wallet connection (attempt connect if not)
+    let isConnected = LocalStorageService.isConnectedToWallet();
+    if (!isConnected) {
+      try {
+        const eth = (window as any)?.ethereum;
+        if (eth?.isMetaMask) {
+          await eth.request({ method: "eth_requestAccounts" });
+          LocalStorageService.setWalletConnectionStatus(true);
+          try {
+            window.dispatchEvent(new Event("wallet:connection-changed"));
+          } catch {}
+          isConnected = true;
+        }
+      } catch (_e) {
+        // user rejected or failed to connect
+      }
+    }
+    if (!isConnected) {
+      toast.error("Vui lòng kết nối ví để tiếp tục stake");
+      return;
+    }
 
     if (!selectedPool) {
       toast.error("Vui lòng chọn pool staking");
