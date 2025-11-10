@@ -4,6 +4,7 @@ import { useAppSelector, WalletBalance } from "@/stores";
 export interface UserProfile {
   name: string;
   username: string;
+  email?: string;
   can_balance: number;
   total_invested: number;
   membership_tier: string;
@@ -48,6 +49,7 @@ export const useUserProfile = () => {
         const userProfile: UserProfile = {
           name: authUser.name || authUser.email,
           username: authUser.name || authUser.email,
+          email: authUser.email || undefined,
           can_balance: (walletBalance as WalletBalance)?.can || 0,
           total_invested: totalInvested,
           membership_tier: authUser.role || "bronze", // Default tier

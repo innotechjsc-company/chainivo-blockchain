@@ -244,16 +244,22 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/wallet")}>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/account?section=wallet")}
+                    >
                       <Wallet className="w-4 h-4 mr-2" />
                       Ví
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/mynft")}>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/account?section=my-nft")}
+                    >
                       <Image className="w-4 h-4 mr-2" />
                       NFT của tôi
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => router.push("/nft-investment")}
+                      onClick={() =>
+                        router.push("/account?section=nft-co-phan")
+                      }
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
                       NFT cổ phần giúp tôi
@@ -265,6 +271,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   onSignOut={handleSignOut}
                   onReconnect={handleReconnect}
                   onDisconnect={handleDisconnect}
+                  isWalletConnected={isWalletConnected}
                 />
               </>
             ) : (

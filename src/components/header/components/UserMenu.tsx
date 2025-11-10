@@ -15,6 +15,7 @@ interface UserMenuProps {
   onSignOut: () => void;
   onReconnect: () => void;
   onDisconnect: () => void;
+  isWalletConnected: boolean;
 }
 
 export const UserMenu = ({
@@ -22,10 +23,26 @@ export const UserMenu = ({
   onSignOut,
   onReconnect,
   onDisconnect,
+  isWalletConnected,
 }: UserMenuProps) => {
   const router = useRouter();
 
   const hasWalletAddress = Boolean(userProfile?.walletAddress);
+  const statusColor = hasWalletAddress
+    ? isWalletConnected
+      ? "bg-emerald-500"
+      : "bg-red-500"
+    : "bg-red-500";
+
+  const displayLabel = hasWalletAddress
+    ? `${userProfile?.walletAddress?.slice(
+        0,
+        6
+      )}...${userProfile?.walletAddress?.slice(-4)}`
+    : userProfile?.email ||
+      userProfile?.username ||
+      userProfile?.name ||
+      "Người dùng";
 
   return (
     <DropdownMenu>
@@ -35,27 +52,18 @@ export const UserMenu = ({
           className="hidden md:flex items-center h-auto py-2 cursor-pointer relative"
         >
           <span
-            className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${
-              hasWalletAddress ? "bg-emerald-500" : "bg-red-500"
-            }`}
+            className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${statusColor}`}
           />
           <Wallet className="w-4 h-4 mr-2" />
-          <span className="text-sm font-medium text-left">
-            {hasWalletAddress
-              ? `${userProfile?.walletAddress?.slice(
-                  0,
-                  6
-                )}...${userProfile?.walletAddress?.slice(-4)}`
-              : userProfile?.username || userProfile?.name || "Nguoi dung"}
-          </span>
+          <span className="text-sm font-medium text-left">{displayLabel}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={onReconnect}>
+        <DropdownMenuItem onClick={onReconnect} disabled={isWalletConnected}>
           <RefreshCw className="w-4 h-4 mr-2" />
           Kết nối lại
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDisconnect}>
+        <DropdownMenuItem onClick={onDisconnect} disabled={!isWalletConnected}>
           <X className="w-4 h-4 mr-2" />
           Ngắt kết nối
         </DropdownMenuItem>
