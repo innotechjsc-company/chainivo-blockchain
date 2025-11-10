@@ -67,7 +67,7 @@ export default function NFTCard({
 
 
 
-  const handleAction = (e: React.MouseEvent, action: 'sell' | 'buy' | 'open') => {
+  const handleAction = (e: React.MouseEvent, action: 'sell' | 'buy' | 'open' | 'cancel') => {
     // Ngăn chặn event bubble lên card parent (tránh trigger onClick của card)
     e.stopPropagation();
 
