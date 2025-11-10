@@ -6,14 +6,14 @@ import LevelBadge from './LevelBadge';
 import NFTTypeBadge from './NFTTypeBadge';
 import InvestmentProgressBar from './InvestmentProgressBar';
 import CountdownTimer from './CountdownTimer';
-import MysteryRewardsPreview from './MysteryRewardsPreview';
+import MysteryRewardsPopover from './MysteryRewardsPopover';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/utils/formatters';
 
 interface NFTCardProps {
   nft: NFTItem;
   showActions?: boolean;
-  onActionClick?: (nft: NFTItem, action: 'sell' | 'buy' | 'open') => void;
+  onActionClick?: (nft: NFTItem, action: 'sell' | 'buy' | 'open' | 'cancel') => void;
   className?: string;
 
   // Props để tương thích ngược với NFTCard cũ
@@ -95,36 +95,74 @@ export default function NFTCard({
 
     switch (nft.type) {
       case 'mysteryBox':
+        // Nếu Mystery Box đã đăng bán → hiển thị button hủy đăng bán
+        if (nft.isSale) {
+          return (
+            <Button
+              onClick={(e) => handleAction(e, 'cancel')}
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2
+                bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
+              "
+            >
+              Huỷ
+            </Button>
+          );
+        }
+
+        // Nếu chưa đăng bán → hiển thị 2 buttons
         return (
-          <Button
-            onClick={(e) => handleAction(e, 'open')}
-            disabled={!isMysteryBoxOpenable}
-            className={`
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              ${isMysteryBoxOpenable
-                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl'
-                : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-              }
-            `}
-          >
-            {isMysteryBoxOpenable ? (
-              <>
-                <span className="text-lg">🎁</span>
-                <span>Mở hộp quà</span>
-                <span className="text-lg">✨</span>
-              </>
-            ) : (
-              <>
-                <span>🔒</span>
-                <span>Chưa thể mở</span>
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button
+              onClick={(e) => handleAction(e, 'open')}
+              disabled={!isMysteryBoxOpenable}
+              className={`
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+                ${isMysteryBoxOpenable
+                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }
+              `}
+            >
+              {isMysteryBoxOpenable ? (
+                <>
+                  <span className="text-lg">🎁</span>
+                  <span>Mở hộp quà</span>
+                  <span className="text-lg">✨</span>
+                </>
+              ) : (
+                <>
+                  <span>🔒</span>
+                  <span>Chưa thể mở</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={(e) => handleAction(e, 'sell')}
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+              "
+            >
+              Đăng bán
+            </Button>
+          </div>
         );
 
       case 'investment':
@@ -174,16 +212,10 @@ export default function NFTCard({
       case 'rank':
       default:
         if (nft.isSale) {
-          // NFT đã đăng bán -> hiển thị button "Xem chi tiết"
+          // NFT đã đăng bán -> hiển thị button hủy đăng bán
           return (
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Dùng onClick callback để xem chi tiết NFT
-                if (onClick) {
-                  onClick(nft.id);
-                }
-              }}
+              onClick={(e) => handleAction(e, 'cancel')}
               className="
                 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
                 transition-all disabled:pointer-events-none disabled:opacity-50
@@ -194,7 +226,7 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
               "
             >
-              Xem chi tiết
+              Huỷ
             </Button>
           );
         }
@@ -238,12 +270,12 @@ export default function NFTCard({
           className="w-full h-56 object-cover"
         />
 
+
         {/* Badges trên góc trái */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           <LevelBadge level={nft.level} />
           <NFTTypeBadge type={nft.type} />
         </div>
-
         {/* Status badges trên góc phải */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
           {nft.isFeatured && (
@@ -266,11 +298,6 @@ export default function NFTCard({
             </div>
           )}
 
-          {nft.isActive && (
-            <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
-              Hoạt động
-            </div>
-          )}
         </div>
       </div>
 
@@ -291,6 +318,8 @@ export default function NFTCard({
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === 'mysteryBox' ? (
           <div className="space-y-3">
+            {/* Divider */}
+            <div className="border-t border-gray-200 dark:border-gray-700" />
             {/* Giá hộp */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -302,17 +331,9 @@ export default function NFTCard({
               </span>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 dark:border-gray-700" />
 
-            {/* Rewards preview */}
-            {nft.rewards ? (
-              <MysteryRewardsPreview rewards={nft.rewards} />
-            ) : (
-              <div className="text-xs text-gray-500 dark:text-gray-400 italic">
-                Mở hộp để nhận phần thưởng bất ngờ!
-              </div>
-            )}
+            {/* Rewards popover */}
+            <MysteryRewardsPopover rewards={nft.rewards} />
 
             {/* Action button */}
             {renderActionButton()}

@@ -97,6 +97,7 @@ export const API_ENDPOINTS = {
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
     POST_FOR_SALE: "/api/nft-market/post-for-sale",
+    CAN_FOR_SALE: "/api/nft-market/cancel-sale",
     P2P_LIST: "/api/nft-market/for-sale",
     LIST_INVESTMENT: "/api/investment-nft/list",
     BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",

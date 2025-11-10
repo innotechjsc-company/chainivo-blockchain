@@ -474,7 +474,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       value={investAmount}
                       onChange={(e) => setInvestAmount(e.target.value)}
                       className="text-lg"
-                      placeholder="100"
+                      placeholder="Vui lòng nhập số tiền đầu tư "
                       min="0"
                     />
                     <p className="text-xs text-muted-foreground mt-2">

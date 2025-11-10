@@ -503,6 +503,12 @@ export class NFTService {
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.POST_FOR_SALE, data);
   }
+
+  // Huy dang ban NFT
+  static async cancelNFTSale(nftId: string): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.CAN_FOR_SALE, { nftId });
+  }
+
   static async getP2PList(data?: any): Promise<ApiResponse<any[]>> {
     return ApiService.get<any[]>(API_ENDPOINTS.NFT.P2P_LIST, data);
   }

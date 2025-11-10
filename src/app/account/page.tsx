@@ -72,50 +72,27 @@ export default function AccountManagementPage() {
   } = useTransactionHistory();
 
   useEffect(() => {
-    let isMounted = true;
-    const loadUser = async () => {
-      try {
-        setLoading(true);
-        const response = await UserService.getMe();
-        if (!isMounted) return;
-        if (response?.success) {
-          const raw = (response as any).data || response;
-          const data =
-            (raw && (raw.data || raw.user || raw.profile)) ||
-            (response as any).data;
-          const name =
-            data?.name || data?.username || user?.name || user?.email || "";
-          const avatarUrl =
-            data?.avatarUrl || data?.avatar?.url || user?.avatarUrl || null;
-          const mockProfile: Profile = {
-            name,
-            avatarUrl,
-            can_balance: Number.isFinite((profile as any)?.can_balance)
-              ? (profile as any).can_balance
-              : 0,
-            membership_tier: data?.role || user?.role || "gold",
-            total_invested: Number.isFinite((profile as any)?.total_invested)
-              ? (profile as any).total_invested
-              : 0,
-          };
-          setProfile(mockProfile);
-          setUsername(name);
-        } else {
-          // fallback: keep existing username if any
-          setUsername(user?.name || user?.email || "");
-        }
-      } catch (_e) {
-        if (!isMounted) return;
-        setUsername(user?.name || user?.email || "");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    loadUser();
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]);
+    // Simulate loading user profile
+    const timer = setTimeout(() => {
+      // Get avatar from localStorage or Redux
+      const userInfo = LocalStorageService.getUserInfo();
+      const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
+
+      // Mock profile data
+      const mockProfile: Profile = {
+        name: user?.name as string,
+        avatarUrl: avatarUrl,
+        can_balance: 12500,
+        membership_tier: "gold",
+        total_invested: 25000,
+      };
+      setProfile(mockProfile);
+      setUsername(mockProfile.name);
+      setLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [user]);
 
   useEffect(() => {
     const fetchCanBalance = async () => {
@@ -154,10 +131,10 @@ export default function AccountManagementPage() {
 
   const handleTabChange = (value: string) => {
     setTabValue(value);
-    if (value === "profile") {
-      router.replace("/account");
+    if (value === "wallet") {
+      router.replace("/account?section=wallet");
     } else {
-      router.replace(`/account?section=${value}`);
+      router.replace("/account");
     }
   };
 
@@ -218,7 +195,7 @@ export default function AccountManagementPage() {
       }
 
       // Call API
-      const response = await UserService.updateProfile(formData);
+      const response = await UserService.updateProfile(formData as any);
 
       if (response.success) {
         const updateData: any = {};
@@ -307,15 +284,39 @@ export default function AccountManagementPage() {
       console.error("Failed to copy address:", err);
     }
   };
-  const handleCopyReferral = async () => {
+
+  const getRecentMetaMaskTransactions = async () => {
     try {
-      const code = referralCode;
-      if (!code) return;
-      await navigator.clipboard.writeText(code);
-    } catch (err) {
-      console.error("Failed to copy referral code:", err);
+      if (!user?.walletAddress) return [] as any[];
+      setTxLoading(true);
+
+      const [nftsRes, rewardsRes] = await Promise.all([
+        NFTService.getNFTsByOwner({ ownerAddress: user.walletAddress }),
+        StakingService.getStakesByOwner(user.walletAddress),
+      ]);
+      let transactions = [];
+      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
+        (a: any, b: any) =>
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
+      );
+      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
+      );
+      transactions.push(...nfts, ...stakes);
+      setTransactions(transactions);
+    } catch (error) {
+      console.error("Error fetching NFTs and rewards:", error);
+      setTransactions([]);
+      return [] as any[];
+    } finally {
+      setTxLoading(false);
     }
   };
+
+  useEffect(() => {
+    getRecentMetaMaskTransactions();
+  }, [user?.walletAddress]);
 
   if (loading) {
     return (
@@ -330,11 +331,6 @@ export default function AccountManagementPage() {
     );
   }
 
-  const referralCode =
-    (user as unknown as { referralCode?: string })?.referralCode ||
-    user?.id ||
-    user?.email ||
-    "";
   const tierColors: Record<string, string> = {
     bronze: "text-orange-600",
     silver: "text-gray-400",
@@ -355,7 +351,7 @@ export default function AccountManagementPage() {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-7 mb-8">
+            <TabsList className="grid w-full grid-cols-6 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -371,10 +367,6 @@ export default function AccountManagementPage() {
               <TabsTrigger value="nft-co-phan">
                 <User className="w-4 h-4 mr-2" />
                 NFT cổ phần
-              </TabsTrigger>
-              <TabsTrigger value="referral">
-                <User className="w-4 h-4 mr-2" />
-                Mã giới thiệu
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
@@ -512,35 +504,6 @@ export default function AccountManagementPage() {
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
                 <MyNFTScreen />
-              </Card>
-            </TabsContent>
-            <TabsContent value="referral">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Mã giới thiệu:
-                    </span>
-                    <span className="font-mono text-lg text-primary">
-                      {referralCode || "Chưa có"}
-                    </span>
-                    {referralCode && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs cursor-pointer"
-                        onClick={handleCopyReferral}
-                      >
-                        Sao chép
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Chia sẻ mã này với bạn bè để họ nhập khi đăng ký. Phần
-                    thưởng giới thiệu sẽ được ghi nhận vào tài khoản của bạn.
-                  </p>
-                </div>
               </Card>
             </TabsContent>
 
