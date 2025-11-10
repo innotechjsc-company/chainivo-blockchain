@@ -284,6 +284,15 @@ export default function AccountManagementPage() {
       console.error("Failed to copy address:", err);
     }
   };
+  const referralCode = user?.id || user?.email || "";
+  const handleCopyReferral = async () => {
+    try {
+      if (!referralCode) return;
+      await navigator.clipboard.writeText(referralCode);
+    } catch (err) {
+      console.error("Failed to copy referral code:", err);
+    }
+  };
 
   const getRecentMetaMaskTransactions = async () => {
     try {
@@ -351,7 +360,7 @@ export default function AccountManagementPage() {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-6 mb-8">
+            <TabsList className="grid w-full grid-cols-7 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -367,6 +376,10 @@ export default function AccountManagementPage() {
               <TabsTrigger value="nft-co-phan">
                 <User className="w-4 h-4 mr-2" />
                 NFT cổ phần
+              </TabsTrigger>
+              <TabsTrigger value="referral">
+                <User className="w-4 h-4 mr-2" />
+                Mã giới thiệu
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
@@ -504,6 +517,29 @@ export default function AccountManagementPage() {
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
                 <MyNFTScreen />
+              </Card>
+            </TabsContent>
+            <TabsContent value="referral">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Mã giới thiệu:
+                  </span>
+                  <span className="font-mono text-lg text-primary">
+                    {referralCode || "Chưa có"}
+                  </span>
+                  {referralCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs cursor-pointer"
+                      onClick={handleCopyReferral}
+                    >
+                      Sao chép
+                    </Button>
+                  )}
+                </div>
               </Card>
             </TabsContent>
 
