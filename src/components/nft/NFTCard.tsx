@@ -95,36 +95,80 @@ export default function NFTCard({
 
     switch (nft.type) {
       case 'mysteryBox':
+        // Nếu Mystery Box đã đăng bán → chỉ hiển thị "Xem chi tiết"
+        if (nft.isSale) {
+          return (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Dùng onClick callback để xem chi tiết NFT
+                if (onClick) {
+                  onClick(nft.id);
+                }
+              }}
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2
+                bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
+              "
+            >
+              Xem chi tiết
+            </Button>
+          );
+        }
+
+        // Nếu chưa đăng bán → hiển thị 2 buttons
         return (
-          <Button
-            onClick={(e) => handleAction(e, 'open')}
-            disabled={!isMysteryBoxOpenable}
-            className={`
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              ${isMysteryBoxOpenable
-                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl'
-                : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-              }
-            `}
-          >
-            {isMysteryBoxOpenable ? (
-              <>
-                <span className="text-lg">🎁</span>
-                <span>Mở hộp quà</span>
-                <span className="text-lg">✨</span>
-              </>
-            ) : (
-              <>
-                <span>🔒</span>
-                <span>Chưa thể mở</span>
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button
+              onClick={(e) => handleAction(e, 'open')}
+              disabled={!isMysteryBoxOpenable}
+              className={`
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+                ${isMysteryBoxOpenable
+                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }
+              `}
+            >
+              {isMysteryBoxOpenable ? (
+                <>
+                  <span className="text-lg">🎁</span>
+                  <span>Mở hộp quà</span>
+                  <span className="text-lg">✨</span>
+                </>
+              ) : (
+                <>
+                  <span>🔒</span>
+                  <span>Chưa thể mở</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={(e) => handleAction(e, 'sell')}
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+              "
+            >
+              Đăng bán
+            </Button>
+          </div>
         );
 
       case 'investment':
