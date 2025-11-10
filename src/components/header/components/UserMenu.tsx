@@ -1,48 +1,72 @@
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Wallet } from "lucide-react";
+import { User, Settings, LogOut, Wallet, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
-import { constants } from "@/api/constants";
 
 interface UserMenuProps {
   userProfile: UserProfile | null;
   onSignOut: () => void;
+  onReconnect: () => void;
+  onDisconnect: () => void;
+  isWalletConnected: boolean;
 }
 
-export const UserMenu = ({ userProfile, onSignOut }: UserMenuProps) => {
+export const UserMenu = ({
+  userProfile,
+  onSignOut,
+  onReconnect,
+  onDisconnect,
+  isWalletConnected,
+}: UserMenuProps) => {
   const router = useRouter();
+
+  const hasWalletAddress = Boolean(userProfile?.walletAddress);
+  const statusColor = hasWalletAddress
+    ? isWalletConnected
+      ? "bg-emerald-500"
+      : "bg-red-500"
+    : "bg-red-500";
+
+  const displayLabel = hasWalletAddress
+    ? `${userProfile?.walletAddress?.slice(
+        0,
+        6
+      )}...${userProfile?.walletAddress?.slice(-4)}`
+    : userProfile?.email ||
+      userProfile?.username ||
+      userProfile?.name ||
+      "Người dùng";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          className="hidden md:flex items-center space-x-2 h-auto py-2 cursor-pointer"
+          variant="default"
+          className="hidden md:flex items-center h-auto py-2 cursor-pointer relative"
         >
-          <Avatar className="w-8 h-8">
-            <AvatarImage
-              src={userProfile?.avatarUrl || constants.user.DEFAULT_AVATAR}
-            />
-            <AvatarFallback>
-              {userProfile?.name?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium">
-            {userProfile?.name || "User"}
-          </span>
+          <span
+            className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${statusColor}`}
+          />
+          <Wallet className="w-4 h-4 mr-2" />
+          <span className="text-sm font-medium text-left">{displayLabel}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onReconnect} disabled={isWalletConnected}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Kết nối lại
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDisconnect} disabled={!isWalletConnected}>
+          <X className="w-4 h-4 mr-2" />
+          Ngắt kết nối
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <User className="w-4 h-4 mr-2" />

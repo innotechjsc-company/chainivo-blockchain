@@ -15,7 +15,7 @@ import {
 import { useAppSelector } from "@/stores";
 import { ArrowLeft, ShoppingCart, Clock, DollarSign } from "lucide-react";
 import { NFT, NFTService } from "@/api/services/nft-service";
-import { toast, TransferService } from "@/services";
+import { toast, TransferService, LocalStorageService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -87,6 +87,8 @@ export default function NFTDetailPage() {
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const id = params?.id as string;
@@ -404,11 +406,21 @@ export default function NFTDetailPage() {
                     className="flex-1 gap-2 mt-2 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (type === "other") {
-                        setConfirmDialogOpen(true);
-                      } else {
-                        toast.success("Bạn đã sở hữu NFT này");
+                      if (!user) {
+                        toast.error("Bạn vui lòng đăng nhập để tiếp tục");
+                        return;
                       }
+                      if (type !== "other") {
+                        toast.success("Bạn đã sở hữu NFT này");
+                        return;
+                      }
+                      const isConnected =
+                        LocalStorageService.isConnectedToWallet();
+                      if (!isConnected) {
+                        setShowConnectModal(true);
+                        return;
+                      }
+                      setConfirmDialogOpen(true);
                     }}
                     disabled={buyLoading}
                   >
@@ -769,6 +781,58 @@ export default function NFTDetailPage() {
               disabled={buyLoading}
             >
               Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Wallet Modal */}
+      <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kết nối ví</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Vui lòng kết nối ví để thực hiện mua NFT.
+          </div>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setShowConnectModal(false)}
+              disabled={connectingWallet}
+            >
+              Huỷ
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={async () => {
+                try {
+                  setConnectingWallet(true);
+                  const eth = (window as any)?.ethereum;
+                  if (!eth?.isMetaMask) {
+                    setConnectingWallet(false);
+                    setShowConnectModal(false);
+                    return;
+                  }
+                  await eth.request({ method: "eth_requestAccounts" });
+                  LocalStorageService.setWalletConnectionStatus(true);
+                  try {
+                    window.dispatchEvent(
+                      new Event("wallet:connection-changed")
+                    );
+                  } catch {}
+                  setShowConnectModal(false);
+                  setConfirmDialogOpen(true);
+                } catch (_e) {
+                  setShowConnectModal(false);
+                } finally {
+                  setConnectingWallet(false);
+                }
+              }}
+              disabled={connectingWallet}
+            >
+              {connectingWallet ? "Đang kết nối..." : "Kết nối"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -16,11 +16,5 @@ import router from "next/router";
 export default function StakingPage() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast.info("Vui long dang nhap de trai nghiem tinh nang nay");
-    }
-  }, [isAuthenticated]);
-
   return <StakingScreen />;
 }

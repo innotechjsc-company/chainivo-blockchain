@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ interface Profile {
 
 export default function AccountManagementPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,12 @@ export default function AccountManagementPage() {
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [tabValue, setTabValue] = useState<string>(() => {
+    const sectionParam = searchParams.get("section");
+    return sectionParam ?? "profile";
+  });
   const user = useAppSelector((state) => state.auth.user);
+  const walletSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Transaction History hook
   const {
@@ -106,6 +112,31 @@ export default function AccountManagementPage() {
 
     fetchCanBalance();
   }, []);
+
+  useEffect(() => {
+    const sectionParam = searchParams.get("section");
+    if (sectionParam && sectionParam !== tabValue) {
+      setTabValue(sectionParam);
+    }
+  }, [searchParams, tabValue]);
+
+  useEffect(() => {
+    if (tabValue === "wallet" && walletSectionRef.current) {
+      walletSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [tabValue]);
+
+  const handleTabChange = (value: string) => {
+    setTabValue(value);
+    if (value === "wallet") {
+      router.replace("/account?section=wallet");
+    } else {
+      router.replace("/account");
+    }
+  };
 
   // Validation: Chi cho phep chu (co dau), so, khoang trang
   const validateName = (name: string): string | null => {
@@ -164,7 +195,7 @@ export default function AccountManagementPage() {
       }
 
       // Call API
-      const response = await UserService.updateProfile(formData);
+      const response = await UserService.updateProfile(formData as any);
 
       if (response.success) {
         const updateData: any = {};
@@ -253,39 +284,15 @@ export default function AccountManagementPage() {
       console.error("Failed to copy address:", err);
     }
   };
-
-  const getRecentMetaMaskTransactions = async () => {
+  const referralCode = ((user as any)?.refCode as string) || "";
+  const handleCopyReferral = async () => {
     try {
-      if (!user?.walletAddress) return [] as any[];
-      setTxLoading(true);
-
-      const [nftsRes, rewardsRes] = await Promise.all([
-        NFTService.getNFTsByOwner({ ownerAddress: user.walletAddress }),
-        StakingService.getStakesByOwner(user.walletAddress),
-      ]);
-      let transactions = [];
-      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      transactions.push(...nfts, ...stakes);
-      setTransactions(transactions);
-    } catch (error) {
-      console.error("Error fetching NFTs and rewards:", error);
-      setTransactions([]);
-      return [] as any[];
-    } finally {
-      setTxLoading(false);
+      if (!referralCode) return;
+      await navigator.clipboard.writeText(referralCode);
+    } catch (err) {
+      console.error("Failed to copy referral code:", err);
     }
   };
-
-  useEffect(() => {
-    getRecentMetaMaskTransactions();
-  }, [user?.walletAddress]);
 
   if (loading) {
     return (
@@ -315,8 +322,12 @@ export default function AccountManagementPage() {
             <span className="gradient-text">Quản lý tài khoản</span>
           </h1>
 
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-8">
+          <Tabs
+            value={tabValue}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-7 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -332,6 +343,10 @@ export default function AccountManagementPage() {
               <TabsTrigger value="nft-co-phan">
                 <User className="w-4 h-4 mr-2" />
                 NFT cổ phần
+              </TabsTrigger>
+              <TabsTrigger value="referral">
+                <User className="w-4 h-4 mr-2" />
+                Mã giới thiệu
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
@@ -359,7 +374,7 @@ export default function AccountManagementPage() {
                         <Label htmlFor="name">Tên hiển thị </Label>
                         <Input
                           id="name"
-                          value={username}
+                          value={user?.name || user?.email}
                           onChange={(e) => setUsername(e.target.value)}
                           className="mt-2"
                           maxLength={100}
@@ -420,40 +435,42 @@ export default function AccountManagementPage() {
             </TabsContent>
 
             <TabsContent value="wallet">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
+              <div ref={walletSectionRef}>
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
 
-                {/* Wallet Balance Overview */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Số dư CAN</div>
-                      <div className="text-2xl gradient-text font-bold">
-                        {canBalance?.toLocaleString()} CAN
+                  {/* Wallet Balance Overview */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-4 glass rounded-lg">
+                      <div>
+                        <div className="font-semibold">Số dư CAN</div>
+                        <div className="text-2xl gradient-text font-bold">
+                          {canBalance?.toLocaleString()} CAN
+                        </div>
+                      </div>
+                      {/* <Button>Nạp tiền</Button> */}
+                    </div>
+                    <div className="p-4 glass rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Địa chỉ ví
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
+                          {user?.walletAddress}{" "}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs cursor-pointer"
+                          onClick={handleCopyAddress}
+                        >
+                          Sao chép
+                        </Button>
                       </div>
                     </div>
-                    {/* <Button>Nạp tiền</Button> */}
                   </div>
-                  <div className="p-4 glass rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Địa chỉ ví
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
-                        {user?.walletAddress}{" "}
-                      </code>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs cursor-pointer"
-                        onClick={handleCopyAddress}
-                      >
-                        Sao chép
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="my-nft">
@@ -467,6 +484,29 @@ export default function AccountManagementPage() {
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
                 <MyNFTScreen />
+              </Card>
+            </TabsContent>
+            <TabsContent value="referral">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Mã giới thiệu:
+                  </span>
+                  <span className="font-mono text-lg text-primary">
+                    {referralCode || "Chưa có"}
+                  </span>
+                  {referralCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs cursor-pointer"
+                      onClick={handleCopyReferral}
+                    >
+                      Sao chép
+                    </Button>
+                  )}
+                </div>
               </Card>
             </TabsContent>
 
