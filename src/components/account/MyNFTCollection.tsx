@@ -6,6 +6,8 @@ import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
 import { NFTCard, MysteryBoxAnimationWrapper } from "@/components/nft";
 import { ListNFTDialog } from "./ListNFTDialog";
+import { CancelSaleDialog } from "./CancelSaleDialog";
+import { NFTFilters } from "./NFTFilters";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -49,8 +51,18 @@ function LoadingSkeleton() {
 
 export function MyNFTCollection() {
   // Su dung hook fetch NFT collection
-  const { nfts, stats, loading, error, filter, setFilter, refetch } =
-    useMyNFTCollection();
+  const {
+    nfts,
+    stats,
+    loading,
+    error,
+    filter,
+    setFilter,
+    advancedFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
+    refetch,
+  } = useMyNFTCollection();
 
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
@@ -59,6 +71,10 @@ export function MyNFTCollection() {
   // State cho Open Box Animation
   const [selectedBoxNFT, setSelectedBoxNFT] = useState<NFTItem | null>(null);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
+
+  // State cho Cancel Sale Dialog
+  const [nftToCancel, setNftToCancel] = useState<NFTItem | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const router = useRouter();
 
@@ -107,12 +123,20 @@ export function MyNFTCollection() {
     ToastService.error(error);
   };
 
+  // Handler hủy đăng bán NFT
+  const handleCancelSale = (nft: NFTItem) => {
+    setNftToCancel(nft);
+    setCancelDialogOpen(true);
+  };
+
   // Handler chung cho action clicks từ NFTCard
-  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open') => {
+  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open' | 'cancel') => {
     if (action === 'sell') {
       handleListForSale(nft);
     } else if (action === 'open') {
       handleOpenBox(nft);
+    } else if (action === 'cancel') {
+      handleCancelSale(nft);
     }
   };
 
@@ -158,6 +182,13 @@ export function MyNFTCollection() {
         </TabsList>
       </Tabs>
 
+      {/* Advanced Filters - Loc NFT theo type, level, price */}
+      <NFTFilters
+        filters={advancedFilters}
+        onFiltersChange={setAdvancedFilters}
+        onReset={resetAdvancedFilters}
+      />
+
       {nfts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Không có NFT nào</p>
@@ -182,6 +213,14 @@ export function MyNFTCollection() {
         nft={selectedNFT}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onSuccess={refetch}
+      />
+
+      {/* Cancel Sale Dialog */}
+      <CancelSaleDialog
+        nft={nftToCancel}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
         onSuccess={refetch}
       />
 

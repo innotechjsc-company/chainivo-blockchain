@@ -36,12 +36,13 @@ export class UserService {
     return ApiService.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
   }
 
-  static async updateProfile(
-    formData: FormData
-  ): Promise<ApiResponse<UpdateProfileResponse>> {
-    const response = await ApiService.patchFormData<UpdateProfileResponse>(
+  static async updateProfile(data: {
+    name?: string;
+    avatar?: string; // Media ID from MediaService.uploadAvatar()
+  }): Promise<ApiResponse<UpdateProfileResponse>> {
+    const response = await ApiService.patch<UpdateProfileResponse>(
       API_ENDPOINTS.USER.UPDATE_PROFILE,
-      formData
+      data
     );
 
     return response;

@@ -2,10 +2,30 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { NFTService } from '@/api/services/nft-service';
-import type { NFTItem, Pagination, NFTStats } from '@/types/NFT';
+import type { NFTItem, Pagination, NFTStats, NFTType, NFTLevel } from '@/types/NFT';
 
 // Type cho filter tabs
 export type NFTFilterType = 'all' | 'sale' | 'not-listed';
+
+// Type cho advanced filters
+export interface AdvancedFilters {
+  type: NFTType | 'all';
+  level: NFTLevel | 'all';
+  priceRange: {
+    min: number;
+    max: number;
+  };
+}
+
+// Default advanced filters
+const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
+  type: 'all',
+  level: 'all',
+  priceRange: {
+    min: 0,
+    max: Infinity,
+  },
+};
 
 interface UseMyNFTCollectionResult {
   nfts: NFTItem[];
@@ -14,6 +34,9 @@ interface UseMyNFTCollectionResult {
   error: string | null;
   filter: NFTFilterType;
   setFilter: (filter: NFTFilterType) => void;
+  advancedFilters: AdvancedFilters;
+  setAdvancedFilters: (filters: AdvancedFilters) => void;
+  resetAdvancedFilters: () => void;
   pagination: Pagination;
   refetch: () => void;
 }
@@ -35,6 +58,7 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NFTFilterType>('all');
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(DEFAULT_ADVANCED_FILTERS);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -78,15 +102,38 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     fetchNFTs();
   }, [fetchNFTs]);
 
-  // Filter NFTs o client-side dua tren filter state
+  // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
+    let filtered = allNFTs;
+
+    // Filter theo sale status (all/sale/not-listed)
     if (filter === 'sale') {
-      return allNFTs.filter((nft) => nft.isSale === true);
+      filtered = filtered.filter((nft) => nft.isSale === true);
     } else if (filter === 'not-listed') {
-      return allNFTs.filter((nft) => nft.isSale === false);
+      filtered = filtered.filter((nft) => nft.isSale === false);
     }
-    return allNFTs; // 'all'
-  }, [allNFTs, filter]);
+
+    // Filter theo type (normal, rank, mysteryBox, investment)
+    if (advancedFilters.type !== 'all') {
+      filtered = filtered.filter((nft) => nft.type === advancedFilters.type);
+    }
+
+    // Filter theo level (rarity: 1, 2, 3, 4, 5)
+    if (advancedFilters.level !== 'all') {
+      filtered = filtered.filter((nft) => nft.level === advancedFilters.level);
+    }
+
+    // Filter theo price range
+    if (advancedFilters.priceRange.min > 0 || advancedFilters.priceRange.max < Infinity) {
+      filtered = filtered.filter((nft) => {
+        const price = nft.salePrice || nft.price;
+        return price >= advancedFilters.priceRange.min &&
+               price <= advancedFilters.priceRange.max;
+      });
+    }
+
+    return filtered;
+  }, [allNFTs, filter, advancedFilters]);
 
   // Tinh toan stats tu TOAN BO NFTs
   const stats = useMemo((): NFTStats => {
@@ -116,6 +163,11 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  // Reset advanced filters handler
+  const resetAdvancedFilters = useCallback(() => {
+    setAdvancedFilters(DEFAULT_ADVANCED_FILTERS);
+  }, []);
+
   return {
     nfts,
     stats,
@@ -123,6 +175,9 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     error,
     filter,
     setFilter: handleSetFilter,
+    advancedFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
     pagination,
     refetch: fetchNFTs,
   };

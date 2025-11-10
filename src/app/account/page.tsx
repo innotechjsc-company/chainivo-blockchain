@@ -13,6 +13,7 @@ import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
 import { UserService } from "@/api/services/user-service";
+import { MediaService } from "@/api/services/media-service";
 import { LocalStorageService } from "@/services";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 import { AvatarUpload } from "@/components/account/AvatarUpload";
@@ -49,6 +50,10 @@ export default function AccountManagementPage() {
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Backup original avatar từ server (template)
+  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
+
   const user = useAppSelector((state) => state.auth.user);
 
   // Transaction History hook
@@ -82,6 +87,11 @@ export default function AccountManagementPage() {
       };
       setProfile(mockProfile);
       setUsername(mockProfile.name);
+
+      // Store original avatar URL as backup/template
+      setOriginalAvatarUrl(avatarUrl);
+      console.log('[ACCOUNT] Original avatar URL set as backup:', avatarUrl);
+
       setLoading(false);
     }, 1000);
 
@@ -100,29 +110,29 @@ export default function AccountManagementPage() {
           setCanBalance(Number.isFinite(raw) ? Math.round(raw) : 0);
         }
       } catch (error) {
-        console.error("Failed to fetch CAN balance:", error);
+        console.error("Không thể lấy số dư CAN:", error);
       }
     };
 
     fetchCanBalance();
   }, []);
 
-  // Validation: Chi cho phep chu (co dau), so, khoang trang
+  // Validation: Chỉ cho phép chữ (có dấu), số, khoảng trắng
   const validateName = (name: string): string | null => {
     const trimmedName = name.trim();
 
     if (trimmedName.length === 0) {
-      return "Ten khong duoc de trong";
+      return "Tên không được để trống";
     }
 
     if (trimmedName.length > 100) {
-      return "Ten khong duoc vuot qua 100 ky tu";
+      return "Tên không được vượt quá 100 ký tự";
     }
 
-    // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
+    // Regex: chữ cái (a-z, A-Z), chữ Việt có dấu, số (0-9), khoảng trắng
     const nameRegex = /^[a-zA-Z0-9\u00C0-\u1EF9\s]+$/;
     if (!nameRegex.test(trimmedName)) {
-      return "Ten chi duoc chua chu cai, so va khoang trang";
+      return "Tên chỉ được chứa chữ cái, số và khoảng trắng";
     }
 
     return null;
@@ -137,10 +147,11 @@ export default function AccountManagementPage() {
     const hasAvatarChange = selectedAvatar !== null;
 
     if (!hasNameChange && !hasAvatarChange) {
-      setUpdateError("Vui long cap nhat ten hoac anh dai dien");
+      setUpdateError("Vui lòng cập nhật tên hoặc ảnh đại diện");
       return;
     }
 
+    // Validate name if changed
     if (hasNameChange) {
       const validationError = validateName(trimmedName);
       if (validationError) {
@@ -152,82 +163,115 @@ export default function AccountManagementPage() {
     setUpdateLoading(true);
 
     try {
-      // Create FormData
-      const formData = new FormData();
-
-      if (hasNameChange) {
-        formData.append("name", trimmedName);
-      }
+      // ========== BUOC 1: Upload avatar (neu co) ==========
+      let avatarMediaId: string | undefined;
 
       if (hasAvatarChange && selectedAvatar) {
-        formData.append("avatar", selectedAvatar);
+        console.log('[UPDATE-PROFILE] Step 1: Tải lên ảnh đại diện...', {
+          fileName: selectedAvatar.name,
+          fileSize: selectedAvatar.size,
+          fileType: selectedAvatar.type,
+        });
+        const uploadResponse = await MediaService.uploadAvatar(selectedAvatar);
+        console.log('[UPDATE-PROFILE] Upload response:', uploadResponse);
+
+        if (!uploadResponse.success || !uploadResponse.data) {
+          console.error('[UPDATE-PROFILE] Tải lên ảnh đại diện thất bại:', uploadResponse.error);
+          setUpdateError(uploadResponse.error || "Tải lên ảnh đại diện thất bại");
+          setUpdateLoading(false);
+          return;
+        }
+
+        avatarMediaId = uploadResponse.data.id;
+        console.log('[UPDATE-PROFILE] ✅ Tải lên ảnh đại diện thành công:', {
+          mediaId: avatarMediaId,
+          mediaUrl: uploadResponse.data.url,
+          fileName: uploadResponse.data.filename,
+        });
       }
 
-      // Call API
-      const response = await UserService.updateProfile(formData);
+      // ========== BUOC 2: Update profile voi JSON ==========
+      const updateData: { name?: string; avatar?: string } = {};
+      if (hasNameChange) updateData.name = trimmedName;
+      if (avatarMediaId) updateData.avatar = avatarMediaId;
 
-      if (response.success) {
-        const updateData: any = {};
-        let avatarUrl: string | null = null;
+      console.log('[UPDATE-PROFILE] Step 2: Cập nhật hồ sơ (JSON):', updateData);
+      const response = await UserService.updateProfile(updateData);
+      console.log('[UPDATE-PROFILE] Update response:', response);
 
-        if (hasNameChange) {
-          updateData.name = trimmedName;
-        }
+      if (!response.success) {
+        console.error('[UPDATE-PROFILE] Cập nhật hồ sơ thất bại:', response.error);
+        setUpdateError(response.error || "Có lỗi khi cập nhật hồ sơ");
+        setUpdateLoading(false);
+        return;
+      }
 
-        const actualData = (response.data as any)?.data || response.data;
+      console.log('[UPDATE-PROFILE] ✅ Cập nhật hồ sơ thành công');
 
-        if (hasAvatarChange && actualData?.avatarUrl) {
-          avatarUrl = actualData.avatarUrl;
-          updateData.avatarUrl = avatarUrl;
-        } else if (hasAvatarChange && actualData?.avatar?.url) {
-          avatarUrl = actualData.avatar.url;
-          updateData.avatarUrl = avatarUrl;
-        }
+      // ========== BUOC 3: Goi GET /api/user/profile de lay avatarUrl ==========
+      // Thong nhat voi login flow
+      console.log('[UPDATE-PROFILE] Step 3: Lấy thông tin hồ sơ mới (GET /api/user/profile)...');
+      const profileResponse = await UserService.getCurrentUserProfile();
+      console.log('[UPDATE-PROFILE] Profile response:', profileResponse);
 
-        // Update Redux store
-        dispatch(updateProfile(updateData));
+      if (!profileResponse.success) {
+        console.warn('[UPDATE-PROFILE] ⚠️ Không thể lấy thông tin hồ sơ mới:', profileResponse.error);
+      }
 
-        // Update local profile state
-        const newProfileState = {
-          ...profile,
-          name: hasNameChange ? trimmedName : profile?.name || "",
-          avatarUrl:
-            hasAvatarChange && avatarUrl
-              ? avatarUrl
-              : profile?.avatarUrl || null,
+      // Parse user data tu profileResponse
+      const userData = profileResponse.data as any;
+      const newAvatarUrl = userData?.avatarUrl || profile?.avatarUrl || null;
+      const newName = userData?.name || trimmedName;
+
+      console.log('[UPDATE-PROFILE] ✅ Dữ liệu hồ sơ mới:', { newName, newAvatarUrl });
+
+      // ========== BUOC 4: Update Redux ==========
+      const reduxUpdateData: any = {};
+      if (hasNameChange) reduxUpdateData.name = newName;
+      if (hasAvatarChange && newAvatarUrl) reduxUpdateData.avatarUrl = newAvatarUrl;
+
+      console.log('[UPDATE-PROFILE] Step 4: Cập nhật Redux:', reduxUpdateData);
+      dispatch(updateProfile(reduxUpdateData));
+      console.log('[UPDATE-PROFILE] ✅ Redux cập nhật xong');
+
+      // ========== BUOC 5: Update LocalStorage ==========
+      console.log('[UPDATE-PROFILE] Step 5: Cập nhật LocalStorage...');
+      const currentUserInfo = LocalStorageService.getUserInfo();
+      if (currentUserInfo) {
+        const updatedUserInfo = {
+          ...currentUserInfo,
+          name: newName,
+          avatarUrl: newAvatarUrl,
         };
-        setProfile(newProfileState as Profile);
-
-        // Update localStorage with new user info (including avatar URL)
-        const currentUserInfo = LocalStorageService.getUserInfo();
-
-        if (currentUserInfo) {
-          const updatedUserInfo = {
-            ...currentUserInfo,
-            name: hasNameChange ? trimmedName : currentUserInfo.name,
-            avatarUrl:
-              hasAvatarChange && avatarUrl
-                ? avatarUrl
-                : currentUserInfo.avatarUrl,
-          };
-          LocalStorageService.setUserInfo(updatedUserInfo);
-        }
-
-        // Clear avatar upload state
-        setSelectedAvatar(null);
-        setAvatarPreview(null);
-
-        setUpdateSuccess("Cap nhat profile thanh cong");
-
-        setTimeout(() => setUpdateSuccess(null), 3000);
-      } else {
-        setUpdateError(
-          response.error ||
-            response.message ||
-            "Co loi xay ra khi cap nhat profile"
-        );
+        LocalStorageService.setUserInfo(updatedUserInfo);
+        console.log('[UPDATE-PROFILE] ✅ LocalStorage cập nhật xong:', updatedUserInfo);
       }
+
+      // ========== BUOC 6: Update local state ==========
+      console.log('[UPDATE-PROFILE] Step 6: Cập nhật local state...');
+      setProfile({
+        ...profile,
+        name: newName,
+        avatarUrl: newAvatarUrl,
+      } as Profile);
+
+      // ========== BUOC 7: Update backup avatar (template) ==========
+      // Sau khi upload thành công, cập nhật backup để đảm bảo nếu user
+      // chọn ảnh khác sau này, sẽ so sánh với avatar mới từ server
+      setOriginalAvatarUrl(newAvatarUrl);
+      console.log('[UPDATE-PROFILE] ✅ Backup avatar updated:', newAvatarUrl);
+
+      // Clear avatar upload state (preview)
+      setSelectedAvatar(null);
+      setAvatarPreview(null);
+      console.log('[UPDATE-PROFILE] ✅ Avatar preview state cleared');
+
+      setUpdateSuccess("Cập nhật hồ sơ thành công");
+      console.log('[UPDATE-PROFILE] 🎉 Toàn bộ cập nhật hoàn tất!');
+
+      setTimeout(() => setUpdateSuccess(null), 3000);
     } catch (error: any) {
+      console.error('[UPDATE-PROFILE] Unexpected error:', error);
       setUpdateError(error.message || "Khong the cap nhat profile");
     } finally {
       setUpdateLoading(false);
@@ -235,6 +279,17 @@ export default function AccountManagementPage() {
   };
 
   const handleAvatarSelect = (file: File | null, previewUrl: string | null) => {
+    if (file && previewUrl) {
+      console.log('[ACCOUNT] Avatar selected:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        previewLength: previewUrl.length,
+        backupAvatarUrl: originalAvatarUrl, // Ensure backup là safe
+      });
+    } else {
+      console.log('[ACCOUNT] Avatar selection cleared');
+    }
     setSelectedAvatar(file);
     setAvatarPreview(previewUrl);
   };
@@ -348,7 +403,8 @@ export default function AccountManagementPage() {
                 <div className="flex flex-col gap-6 mb-6">
                   <div className="flex gap-6">
                     <AvatarUpload
-                      currentAvatar={profile?.avatarUrl || ""}
+                      currentAvatar={originalAvatarUrl || ""}
+                      previewUrl={avatarPreview}
                       userName={username}
                       onAvatarSelect={handleAvatarSelect}
                       disabled={updateLoading}

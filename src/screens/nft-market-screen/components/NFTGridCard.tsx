@@ -137,7 +137,7 @@ export const NFTGridCard = ({
             >
               <NFTCard
                 nft={nft}
-                type={title === "NFT của tôi" ? "tier" : "other"}
+                type="normal"
                 onClick={onClickNFT}
                 onLikeChange={handleLikeChange}
                 isLiked={isLiked}
