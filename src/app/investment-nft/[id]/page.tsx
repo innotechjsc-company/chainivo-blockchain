@@ -24,6 +24,7 @@ import TransferService from "@/services/TransferService";
 import { useAppSelector } from "@/stores";
 import { Spinner } from "@/components/ui/spinner";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { LocalStorageService } from "@/services";
 
 export default function InvestmentNFTDetailPage() {
   const params = useParams();
@@ -37,6 +38,8 @@ export default function InvestmentNFTDetailPage() {
   const [transactionsLoading, setTransactionsLoading] =
     useState<boolean>(false);
   const user = useAppSelector((state) => state.auth.user);
+  const [showConnectModal, setShowConnectModal] = useState<boolean>(false);
+  const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -548,8 +551,22 @@ export default function InvestmentNFTDetailPage() {
                 </div>
 
                 <Button
-                  onClick={() => setShowConfirmation(true)}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error(
+                        "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
+                      );
+                      return;
+                    }
+                    const isConnected =
+                      LocalStorageService.isConnectedToWallet();
+                    if (!isConnected) {
+                      setShowConnectModal(true);
+                      return;
+                    }
+                    setShowConfirmation(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -569,6 +586,59 @@ export default function InvestmentNFTDetailPage() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Connect Wallet Modal */}
+            <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Kết nối ví</DialogTitle>
+                </DialogHeader>
+                <div className="text-sm text-muted-foreground">
+                  Vui lòng kết nối ví để thực hiện mua cổ phần.
+                </div>
+                <DialogFooter className="mt-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => setShowConnectModal(false)}
+                    disabled={connectingWallet}
+                  >
+                    Huỷ
+                  </Button>
+                  <Button
+                    className="cursor-pointer"
+                    onClick={async () => {
+                      try {
+                        setConnectingWallet(true);
+                        const eth = (window as any)?.ethereum;
+                        if (!eth?.isMetaMask) {
+                          setConnectingWallet(false);
+                          setShowConnectModal(false);
+                          return;
+                        }
+                        await eth.request({ method: "eth_requestAccounts" });
+                        LocalStorageService.setWalletConnectionStatus(true);
+                        try {
+                          window.dispatchEvent(
+                            new Event("wallet:connection-changed")
+                          );
+                        } catch {}
+                        setShowConnectModal(false);
+                        setShowConfirmation(true);
+                      } catch (_e) {
+                        // user rejected or failed; just close modal silently
+                        setShowConnectModal(false);
+                      } finally {
+                        setConnectingWallet(false);
+                      }
+                    }}
+                    disabled={connectingWallet}
+                  >
+                    {connectingWallet ? "Đang kết nối..." : "Kết nối"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <Card className="glass">
               <CardContent className="p-5">

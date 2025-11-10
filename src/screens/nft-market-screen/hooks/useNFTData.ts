@@ -6,7 +6,7 @@ export interface NFT {
   image: string;
   price: string;
   rarity: string;
-  type: "tier" | "other";
+  type: "normal" | "rank" | "mysteryBox" | "investment";
   seller?: string;
   likes?: number;
   // For other NFTs
@@ -26,7 +26,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "0.8 ETH",
       rarity: "Legendary",
-      type: "tier",
+      type: "mysteryBox",
       seller: "0x7a9f...3d2c",
     },
     {
@@ -35,7 +35,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "3.2 ETH",
       rarity: "Mythic",
-      type: "tier",
+      type: "rank",
       seller: "0x4b8c...9e1f",
     },
     {
@@ -44,7 +44,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "0.28 ETH",
       rarity: "Epic",
-      type: "tier",
+      type: "mysteryBox",
       seller: "0x2f5d...7a8b",
     },
     {
@@ -53,7 +53,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "0.1 ETH",
       rarity: "Rare",
-      type: "tier",
+      type: "normal",
       seller: "0x8c3d...4f2a",
     },
     // Other NFTs
@@ -63,7 +63,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "2.5 ETH",
       rarity: "Divine",
-      type: "other",
+      type: "normal",
       seller: "0x1234...5678",
       totalValue: "250 ETH",
       pricePerShare: "2.5 ETH",
@@ -77,7 +77,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "1.8 ETH",
       rarity: "Legendary",
-      type: "other",
+      type: "normal",
       seller: "0xabcd...efgh",
       totalValue: "180 ETH",
       pricePerShare: "1.8 ETH",
@@ -91,7 +91,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "3.2 ETH",
       rarity: "Mythic",
-      type: "other",
+      type: "normal",
       seller: "0x9876...5432",
       totalValue: "320 ETH",
       pricePerShare: "3.2 ETH",
@@ -105,7 +105,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "1.2 ETH",
       rarity: "Epic",
-      type: "other",
+      type: "normal",
       seller: "0x3456...7890",
       totalValue: "120 ETH",
       pricePerShare: "1.2 ETH",
@@ -119,7 +119,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "0.9 ETH",
       rarity: "Rare",
-      type: "other",
+      type: "investment",
       seller: "0x5678...9012",
       totalValue: "90 ETH",
       pricePerShare: "0.9 ETH",
@@ -133,7 +133,7 @@ export const useNFTData = () => {
       image: "/api/placeholder/300/300",
       price: "0.5 ETH",
       rarity: "Common",
-      type: "other",
+      type: "mysteryBox",
       seller: "0x7890...1234",
       totalValue: "50 ETH",
       pricePerShare: "0.5 ETH",
