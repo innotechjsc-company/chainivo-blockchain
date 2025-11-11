@@ -11,30 +11,13 @@ export const DesktopNav = () => {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
-  const handleNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    item: { href: string; label: string }
-  ) => {
-    // Check if item is "NFT Market" and user is not authenticated
-    if (
-      (item.href === "/nft-market" || item.href === "/investments") &&
-      (!isAuthenticated || !user)
-    ) {
-      e.preventDefault();
-      router.push("/auth?tab=login");
-      toast.info("Bạn cần đăng nhập để tiếp tính năng này");
-      return;
-    }
-    // For other items, let Link handle navigation normally
-  };
-
   return (
     <nav className="hidden md:flex items-center space-x-8">
       {NAVIGATION_ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          onClick={(e) => handleNavClick(e, item)}
+          onClick={(e) => {}}
           className="text-foreground/80 hover:text-primary transition-colors"
         >
           {item.label}

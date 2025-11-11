@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
 import { UserService } from "@/api/services/user-service";
-import { MediaService } from "@/api/services/media-service";
 import { LocalStorageService } from "@/services";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 import { AvatarUpload } from "@/components/account/AvatarUpload";
@@ -37,6 +36,7 @@ interface Profile {
 
 export default function AccountManagementPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,11 +50,12 @@ export default function AccountManagementPage() {
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-
-  // Backup original avatar từ server (template)
-  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
-
+  const [tabValue, setTabValue] = useState<string>(() => {
+    const sectionParam = searchParams.get("section");
+    return sectionParam ?? "profile";
+  });
   const user = useAppSelector((state) => state.auth.user);
+  const walletSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Transaction History hook
   const {
@@ -87,11 +88,6 @@ export default function AccountManagementPage() {
       };
       setProfile(mockProfile);
       setUsername(mockProfile.name);
-
-      // Store original avatar URL as backup/template
-      setOriginalAvatarUrl(avatarUrl);
-      console.log('[ACCOUNT] Original avatar URL set as backup:', avatarUrl);
-
       setLoading(false);
     }, 1000);
 
@@ -110,29 +106,54 @@ export default function AccountManagementPage() {
           setCanBalance(Number.isFinite(raw) ? Math.round(raw) : 0);
         }
       } catch (error) {
-        console.error("Không thể lấy số dư CAN:", error);
+        console.error("Failed to fetch CAN balance:", error);
       }
     };
 
     fetchCanBalance();
   }, []);
 
-  // Validation: Chỉ cho phép chữ (có dấu), số, khoảng trắng
+  useEffect(() => {
+    const sectionParam = searchParams.get("section");
+    if (sectionParam && sectionParam !== tabValue) {
+      setTabValue(sectionParam);
+    }
+  }, [searchParams, tabValue]);
+
+  useEffect(() => {
+    if (tabValue === "wallet" && walletSectionRef.current) {
+      walletSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [tabValue]);
+
+  const handleTabChange = (value: string) => {
+    setTabValue(value);
+    if (value === "wallet") {
+      router.replace("/account?section=wallet");
+    } else {
+      router.replace("/account");
+    }
+  };
+
+  // Validation: Chi cho phep chu (co dau), so, khoang trang
   const validateName = (name: string): string | null => {
     const trimmedName = name.trim();
 
     if (trimmedName.length === 0) {
-      return "Tên không được để trống";
+      return "Ten khong duoc de trong";
     }
 
     if (trimmedName.length > 100) {
-      return "Tên không được vượt quá 100 ký tự";
+      return "Ten khong duoc vuot qua 100 ky tu";
     }
 
-    // Regex: chữ cái (a-z, A-Z), chữ Việt có dấu, số (0-9), khoảng trắng
+    // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
     const nameRegex = /^[a-zA-Z0-9\u00C0-\u1EF9\s]+$/;
     if (!nameRegex.test(trimmedName)) {
-      return "Tên chỉ được chứa chữ cái, số và khoảng trắng";
+      return "Ten chi duoc chua chu cai, so va khoang trang";
     }
 
     return null;
@@ -147,11 +168,10 @@ export default function AccountManagementPage() {
     const hasAvatarChange = selectedAvatar !== null;
 
     if (!hasNameChange && !hasAvatarChange) {
-      setUpdateError("Vui lòng cập nhật tên hoặc ảnh đại diện");
+      setUpdateError("Vui long cap nhat ten hoac anh dai dien");
       return;
     }
 
-    // Validate name if changed
     if (hasNameChange) {
       const validationError = validateName(trimmedName);
       if (validationError) {
@@ -163,115 +183,82 @@ export default function AccountManagementPage() {
     setUpdateLoading(true);
 
     try {
-      // ========== BUOC 1: Upload avatar (neu co) ==========
-      let avatarMediaId: string | undefined;
+      // Create FormData
+      const formData = new FormData();
+
+      if (hasNameChange) {
+        formData.append("name", trimmedName);
+      }
 
       if (hasAvatarChange && selectedAvatar) {
-        console.log('[UPDATE-PROFILE] Step 1: Tải lên ảnh đại diện...', {
-          fileName: selectedAvatar.name,
-          fileSize: selectedAvatar.size,
-          fileType: selectedAvatar.type,
-        });
-        const uploadResponse = await MediaService.uploadAvatar(selectedAvatar);
-        console.log('[UPDATE-PROFILE] Upload response:', uploadResponse);
+        formData.append("avatar", selectedAvatar);
+      }
 
-        if (!uploadResponse.success || !uploadResponse.data) {
-          console.error('[UPDATE-PROFILE] Tải lên ảnh đại diện thất bại:', uploadResponse.error);
-          setUpdateError(uploadResponse.error || "Tải lên ảnh đại diện thất bại");
-          setUpdateLoading(false);
-          return;
+      // Call API
+      const response = await UserService.updateProfile(formData as any);
+
+      if (response.success) {
+        const updateData: any = {};
+        let avatarUrl: string | null = null;
+
+        if (hasNameChange) {
+          updateData.name = trimmedName;
         }
 
-        avatarMediaId = uploadResponse.data.id;
-        console.log('[UPDATE-PROFILE] ✅ Tải lên ảnh đại diện thành công:', {
-          mediaId: avatarMediaId,
-          mediaUrl: uploadResponse.data.url,
-          fileName: uploadResponse.data.filename,
-        });
-      }
+        const actualData = (response.data as any)?.data || response.data;
 
-      // ========== BUOC 2: Update profile voi JSON ==========
-      const updateData: { name?: string; avatar?: string } = {};
-      if (hasNameChange) updateData.name = trimmedName;
-      if (avatarMediaId) updateData.avatar = avatarMediaId;
+        if (hasAvatarChange && actualData?.avatarUrl) {
+          avatarUrl = actualData.avatarUrl;
+          updateData.avatarUrl = avatarUrl;
+        } else if (hasAvatarChange && actualData?.avatar?.url) {
+          avatarUrl = actualData.avatar.url;
+          updateData.avatarUrl = avatarUrl;
+        }
 
-      console.log('[UPDATE-PROFILE] Step 2: Cập nhật hồ sơ (JSON):', updateData);
-      const response = await UserService.updateProfile(updateData);
-      console.log('[UPDATE-PROFILE] Update response:', response);
+        // Update Redux store
+        dispatch(updateProfile(updateData));
 
-      if (!response.success) {
-        console.error('[UPDATE-PROFILE] Cập nhật hồ sơ thất bại:', response.error);
-        setUpdateError(response.error || "Có lỗi khi cập nhật hồ sơ");
-        setUpdateLoading(false);
-        return;
-      }
-
-      console.log('[UPDATE-PROFILE] ✅ Cập nhật hồ sơ thành công');
-
-      // ========== BUOC 3: Goi GET /api/user/profile de lay avatarUrl ==========
-      // Thong nhat voi login flow
-      console.log('[UPDATE-PROFILE] Step 3: Lấy thông tin hồ sơ mới (GET /api/user/profile)...');
-      const profileResponse = await UserService.getCurrentUserProfile();
-      console.log('[UPDATE-PROFILE] Profile response:', profileResponse);
-
-      if (!profileResponse.success) {
-        console.warn('[UPDATE-PROFILE] ⚠️ Không thể lấy thông tin hồ sơ mới:', profileResponse.error);
-      }
-
-      // Parse user data tu profileResponse
-      const userData = profileResponse.data as any;
-      const newAvatarUrl = userData?.avatarUrl || profile?.avatarUrl || null;
-      const newName = userData?.name || trimmedName;
-
-      console.log('[UPDATE-PROFILE] ✅ Dữ liệu hồ sơ mới:', { newName, newAvatarUrl });
-
-      // ========== BUOC 4: Update Redux ==========
-      const reduxUpdateData: any = {};
-      if (hasNameChange) reduxUpdateData.name = newName;
-      if (hasAvatarChange && newAvatarUrl) reduxUpdateData.avatarUrl = newAvatarUrl;
-
-      console.log('[UPDATE-PROFILE] Step 4: Cập nhật Redux:', reduxUpdateData);
-      dispatch(updateProfile(reduxUpdateData));
-      console.log('[UPDATE-PROFILE] ✅ Redux cập nhật xong');
-
-      // ========== BUOC 5: Update LocalStorage ==========
-      console.log('[UPDATE-PROFILE] Step 5: Cập nhật LocalStorage...');
-      const currentUserInfo = LocalStorageService.getUserInfo();
-      if (currentUserInfo) {
-        const updatedUserInfo = {
-          ...currentUserInfo,
-          name: newName,
-          avatarUrl: newAvatarUrl,
+        // Update local profile state
+        const newProfileState = {
+          ...profile,
+          name: hasNameChange ? trimmedName : profile?.name || "",
+          avatarUrl:
+            hasAvatarChange && avatarUrl
+              ? avatarUrl
+              : profile?.avatarUrl || null,
         };
-        LocalStorageService.setUserInfo(updatedUserInfo);
-        console.log('[UPDATE-PROFILE] ✅ LocalStorage cập nhật xong:', updatedUserInfo);
+        setProfile(newProfileState as Profile);
+
+        // Update localStorage with new user info (including avatar URL)
+        const currentUserInfo = LocalStorageService.getUserInfo();
+
+        if (currentUserInfo) {
+          const updatedUserInfo = {
+            ...currentUserInfo,
+            name: hasNameChange ? trimmedName : currentUserInfo.name,
+            avatarUrl:
+              hasAvatarChange && avatarUrl
+                ? avatarUrl
+                : currentUserInfo.avatarUrl,
+          };
+          LocalStorageService.setUserInfo(updatedUserInfo);
+        }
+
+        // Clear avatar upload state
+        setSelectedAvatar(null);
+        setAvatarPreview(null);
+
+        setUpdateSuccess("Cap nhat profile thanh cong");
+
+        setTimeout(() => setUpdateSuccess(null), 3000);
+      } else {
+        setUpdateError(
+          response.error ||
+            response.message ||
+            "Co loi xay ra khi cap nhat profile"
+        );
       }
-
-      // ========== BUOC 6: Update local state ==========
-      console.log('[UPDATE-PROFILE] Step 6: Cập nhật local state...');
-      setProfile({
-        ...profile,
-        name: newName,
-        avatarUrl: newAvatarUrl,
-      } as Profile);
-
-      // ========== BUOC 7: Update backup avatar (template) ==========
-      // Sau khi upload thành công, cập nhật backup để đảm bảo nếu user
-      // chọn ảnh khác sau này, sẽ so sánh với avatar mới từ server
-      setOriginalAvatarUrl(newAvatarUrl);
-      console.log('[UPDATE-PROFILE] ✅ Backup avatar updated:', newAvatarUrl);
-
-      // Clear avatar upload state (preview)
-      setSelectedAvatar(null);
-      setAvatarPreview(null);
-      console.log('[UPDATE-PROFILE] ✅ Avatar preview state cleared');
-
-      setUpdateSuccess("Cập nhật hồ sơ thành công");
-      console.log('[UPDATE-PROFILE] 🎉 Toàn bộ cập nhật hoàn tất!');
-
-      setTimeout(() => setUpdateSuccess(null), 3000);
     } catch (error: any) {
-      console.error('[UPDATE-PROFILE] Unexpected error:', error);
       setUpdateError(error.message || "Khong the cap nhat profile");
     } finally {
       setUpdateLoading(false);
@@ -279,17 +266,6 @@ export default function AccountManagementPage() {
   };
 
   const handleAvatarSelect = (file: File | null, previewUrl: string | null) => {
-    if (file && previewUrl) {
-      console.log('[ACCOUNT] Avatar selected:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        previewLength: previewUrl.length,
-        backupAvatarUrl: originalAvatarUrl, // Ensure backup là safe
-      });
-    } else {
-      console.log('[ACCOUNT] Avatar selection cleared');
-    }
     setSelectedAvatar(file);
     setAvatarPreview(previewUrl);
   };
@@ -308,39 +284,15 @@ export default function AccountManagementPage() {
       console.error("Failed to copy address:", err);
     }
   };
-
-  const getRecentMetaMaskTransactions = async () => {
+  const referralCode = ((user as any)?.refCode as string) || "";
+  const handleCopyReferral = async () => {
     try {
-      if (!user?.walletAddress) return [] as any[];
-      setTxLoading(true);
-
-      const [nftsRes, rewardsRes] = await Promise.all([
-        NFTService.getNFTsByOwner({ ownerAddress: user.walletAddress }),
-        StakingService.getStakesByOwner(user.walletAddress),
-      ]);
-      let transactions = [];
-      let nfts: any[] = ((nftsRes?.data as any) || [])?.nfts?.sort?.(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      let stakes: any[] = (rewardsRes?.data as any)?.stakes?.sort(
-        (a: any, b: any) =>
-          new Date(b.createdAt)?.getTime() - new Date(a.createdAt)?.getTime()
-      );
-      transactions.push(...nfts, ...stakes);
-      setTransactions(transactions);
-    } catch (error) {
-      console.error("Error fetching NFTs and rewards:", error);
-      setTransactions([]);
-      return [] as any[];
-    } finally {
-      setTxLoading(false);
+      if (!referralCode) return;
+      await navigator.clipboard.writeText(referralCode);
+    } catch (err) {
+      console.error("Failed to copy referral code:", err);
     }
   };
-
-  useEffect(() => {
-    getRecentMetaMaskTransactions();
-  }, [user?.walletAddress]);
 
   if (loading) {
     return (
@@ -370,8 +322,12 @@ export default function AccountManagementPage() {
             <span className="gradient-text">Quản lý tài khoản</span>
           </h1>
 
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-8">
+          <Tabs
+            value={tabValue}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-7 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -388,6 +344,10 @@ export default function AccountManagementPage() {
                 <User className="w-4 h-4 mr-2" />
                 NFT cổ phần
               </TabsTrigger>
+              <TabsTrigger value="referral">
+                <User className="w-4 h-4 mr-2" />
+                Mã giới thiệu
+              </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
@@ -403,8 +363,7 @@ export default function AccountManagementPage() {
                 <div className="flex flex-col gap-6 mb-6">
                   <div className="flex gap-6">
                     <AvatarUpload
-                      currentAvatar={originalAvatarUrl || ""}
-                      previewUrl={avatarPreview}
+                      currentAvatar={profile?.avatarUrl || ""}
                       userName={username}
                       onAvatarSelect={handleAvatarSelect}
                       disabled={updateLoading}
@@ -415,7 +374,7 @@ export default function AccountManagementPage() {
                         <Label htmlFor="name">Tên hiển thị </Label>
                         <Input
                           id="name"
-                          value={username}
+                          value={user?.name || user?.email}
                           onChange={(e) => setUsername(e.target.value)}
                           className="mt-2"
                           maxLength={100}
@@ -476,40 +435,42 @@ export default function AccountManagementPage() {
             </TabsContent>
 
             <TabsContent value="wallet">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
+              <div ref={walletSectionRef}>
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
 
-                {/* Wallet Balance Overview */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Số dư CAN</div>
-                      <div className="text-2xl gradient-text font-bold">
-                        {canBalance?.toLocaleString()} CAN
+                  {/* Wallet Balance Overview */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-4 glass rounded-lg">
+                      <div>
+                        <div className="font-semibold">Số dư CAN</div>
+                        <div className="text-2xl gradient-text font-bold">
+                          {canBalance?.toLocaleString()} CAN
+                        </div>
+                      </div>
+                      {/* <Button>Nạp tiền</Button> */}
+                    </div>
+                    <div className="p-4 glass rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Địa chỉ ví
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
+                          {user?.walletAddress}{" "}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs cursor-pointer"
+                          onClick={handleCopyAddress}
+                        >
+                          Sao chép
+                        </Button>
                       </div>
                     </div>
-                    {/* <Button>Nạp tiền</Button> */}
                   </div>
-                  <div className="p-4 glass rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Địa chỉ ví
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
-                        {user?.walletAddress}{" "}
-                      </code>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs cursor-pointer"
-                        onClick={handleCopyAddress}
-                      >
-                        Sao chép
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="my-nft">
@@ -523,6 +484,29 @@ export default function AccountManagementPage() {
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
                 <MyNFTScreen />
+              </Card>
+            </TabsContent>
+            <TabsContent value="referral">
+              <Card className="p-6 glass">
+                <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Mã giới thiệu:
+                  </span>
+                  <span className="font-mono text-lg text-primary">
+                    {referralCode || "Chưa có"}
+                  </span>
+                  {referralCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs cursor-pointer"
+                      onClick={handleCopyReferral}
+                    >
+                      Sao chép
+                    </Button>
+                  )}
+                </div>
               </Card>
             </TabsContent>
 

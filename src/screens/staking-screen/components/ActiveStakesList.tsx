@@ -28,6 +28,9 @@ import {
 
 import { useEffect, useState } from "react";
 import { StakingCoin, StakingNFT, StakingPool } from "@/types";
+import { useAppSelector } from "@/stores";
+import { LocalStorageService } from "@/services";
+import { toast } from "sonner";
 
 function CountdownTimer({
   startAt,
@@ -94,6 +97,7 @@ export const ActiveStakesList = ({
   getClaimRewardsData,
   unStakeData,
 }: ActiveStakesListProps) => {
+  const user = useAppSelector((state) => state.auth.user);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
   const [confirmUnstakeOpen, setConfirmUnstakeOpen] = useState(false);
@@ -234,7 +238,40 @@ export const ActiveStakesList = ({
                     <div className="grid grid-cols-2 gap-3 mt-2">
                       <Button
                         variant="default"
-                        onClick={() => handleClaimClick(id)}
+                        onClick={async () => {
+                          if (!user) {
+                            toast.error("Ban vui long dang nhap de tiep tuc");
+                            return;
+                          }
+                          let isConnected =
+                            LocalStorageService.isConnectedToWallet();
+                          if (!isConnected) {
+                            try {
+                              const eth = (window as any)?.ethereum;
+                              if (eth?.isMetaMask) {
+                                await eth.request({
+                                  method: "eth_requestAccounts",
+                                });
+                                LocalStorageService.setWalletConnectionStatus(
+                                  true
+                                );
+                                try {
+                                  window.dispatchEvent(
+                                    new Event("wallet:connection-changed")
+                                  );
+                                } catch {}
+                                isConnected = true;
+                              }
+                            } catch (_e) {
+                              // user rejected or failed
+                            }
+                          }
+                          if (!isConnected) {
+                            toast.error("Vui long ket noi vi de tiep tuc");
+                            return;
+                          }
+                          handleClaimClick(id);
+                        }}
                         disabled={status !== "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer bg-sky-500 hover:bg-sky-600 text-white cursor-pointer"
                       >
@@ -243,7 +280,40 @@ export const ActiveStakesList = ({
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => handleUnstakeClick(id)}
+                        onClick={async () => {
+                          if (!user) {
+                            toast.error("Bạn vui lòng đăng nhập để tiếp tục");
+                            return;
+                          }
+                          let isConnected =
+                            LocalStorageService.isConnectedToWallet();
+                          if (!isConnected) {
+                            try {
+                              const eth = (window as any)?.ethereum;
+                              if (eth?.isMetaMask) {
+                                await eth.request({
+                                  method: "eth_requestAccounts",
+                                });
+                                LocalStorageService.setWalletConnectionStatus(
+                                  true
+                                );
+                                try {
+                                  window.dispatchEvent(
+                                    new Event("wallet:connection-changed")
+                                  );
+                                } catch {}
+                                isConnected = true;
+                              }
+                            } catch (_e) {
+                              // user rejected or failed
+                            }
+                          }
+                          if (!isConnected) {
+                            toast.error("Vui lòng kết nối ví để tiếp tục");
+                            return;
+                          }
+                          handleUnstakeClick(id);
+                        }}
                         disabled={!canUnstake && status === "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer"
                       >

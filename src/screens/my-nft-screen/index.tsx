@@ -49,7 +49,10 @@ export default function MyNFTScreen(): JSX.Element {
     fetchMyNFTs();
   }, [isAuthenticated]);
 
-  const handleNFTAction = (nft: NFTItem, action: "sell" | "buy" | "open" | "cancel") => {
+  const handleNFTAction = (
+    nft: NFTItem,
+    action: "sell" | "buy" | "open" | "cancel"
+  ) => {
     console.log(`Action ${action} on NFT:`, nft.id);
     // TODO: Implement action handlers (sell, buy, open mystery box, cancel listing)
     // - open: Open mystery box -> fetch rewards
