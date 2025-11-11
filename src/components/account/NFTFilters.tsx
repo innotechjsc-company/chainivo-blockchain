@@ -74,7 +74,7 @@ export function NFTFilters({ filters, onFiltersChange, onReset }: NFTFiltersProp
     <Card className="glass p-4">
       <div className="flex items-center gap-2 mb-4">
         <Filter className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold">Lọc NFT</h3>
+        {/* <h3 className="font-semibold">Lọc NFT</h3> */}
       <div className="flex justify-center gap-4">
         {/* Type Filter */}
         <div className="space-y-2">

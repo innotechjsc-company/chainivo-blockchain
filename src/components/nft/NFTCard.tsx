@@ -435,12 +435,12 @@ export default function NFTCard({
             {(nft.type === "normal" || nft.type === "rank") && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                  <span>👁️</span>
-                  <span>{formatNumber(nft.viewsCount)}</span>
+                  <span></span>
+                  <span></span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                  <span>{nft.isLike ? "❤️" : "🤍"}</span>
-                  <span>{formatNumber(nft.likesCount)}</span>
+                  <span></span>
+                  <span></span>
                 </div>
               </div>
             )}
