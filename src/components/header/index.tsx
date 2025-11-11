@@ -251,10 +251,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                <NotificationDropdown
-                  notifications={notifications}
-                  hasUnread={hasUnread}
-                />
+                <NotificationDropdown />
                 <LanguageDropdown
                   languages={languages}
                   currentLanguage={language}

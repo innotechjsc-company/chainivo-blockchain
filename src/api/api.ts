@@ -3,6 +3,7 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService, ToastService } from "@/services";
+import router from "next/router";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -58,6 +59,7 @@ api.interceptors.response.use(
         ToastService.error(
           "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
         );
+        router.push("/auth?tab=login");
       }
       return Promise.reject(error);
     }
@@ -67,6 +69,11 @@ api.interceptors.response.use(
 );
 
 export const API_ENDPOINTS = {
+  NOTIFICATION: {
+    GET_MY_NOTIFICATIONS: "/api/notification/my-notifications",
+    READ_ALL_NOTIFICATIONS: "/api/notification/read-all",
+    READ_NOTIFICATION: (id: string) => `/api/notification/read/${id}`,
+  },
   AUTH: {
     LOGIN: "/api/users/login",
     REGISTER: "/api/users",
