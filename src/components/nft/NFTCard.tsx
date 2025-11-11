@@ -10,6 +10,7 @@ import MysteryRewardsPopover from "./MysteryRewardsPopover";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/formatters";
 import { Send } from "lucide-react";
+import { config } from "@/api/config";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -51,9 +52,61 @@ export default function NFTCard({
   // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || type !== undefined;
 
-  // Safety: Convert image to string nếu là object
-  const imageUrl =
-    typeof nft.image === "string" ? nft.image : (nft.image as any)?.url || "";
+  // Function to get NFT image from API backend or fallback to default
+  const getNFTImage = (nft: NFTItem): string => {
+    // Helper to construct full image URL from API
+    const getImageUrl = (imageData: any): string | null => {
+      if (!imageData) return null;
+
+      let imageUrl: string;
+
+      // Handle different image data structures
+      if (typeof imageData === "string") {
+        imageUrl = imageData;
+      } else if (imageData?.url) {
+        imageUrl = imageData.url;
+      } else if (imageData?.image) {
+        imageUrl =
+          typeof imageData.image === "string"
+            ? imageData.image
+            : imageData.image?.url;
+      } else {
+        return null;
+      }
+
+      if (!imageUrl || imageUrl.trim() === "") return null;
+
+      // If URL is already a full URL (starts with http), use it directly
+      if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+        return imageUrl;
+      }
+
+      // If it's a relative path, combine with API_BASE_URL
+      // Handle slashes properly to avoid double slashes
+      const apiBase = config.API_BASE_URL.endsWith("/")
+        ? config.API_BASE_URL.slice(0, -1)
+        : config.API_BASE_URL;
+      const imagePath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+      return `${apiBase}${imagePath}`;
+    };
+
+    // Try to get image from API backend first
+    const apiImageUrl = getImageUrl(nft?.image);
+    if (apiImageUrl) {
+      return apiImageUrl;
+    }
+
+    // Default fallback for all NFTs
+    return "/nft-box.jpg";
+  };
+
+  const nftImage = getNFTImage(nft);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Fallback to default image if the image fails to load
+    const target = e.target as HTMLImageElement;
+    target.src = "/nft-box.jpg";
+  };
 
   // Fallback check for mystery box openable status
   const isMysteryBoxOpenable =
@@ -274,9 +327,10 @@ export default function NFTCard({
       {/* Badges overlay trên ảnh */}
       <div className="relative">
         <img
-          src={imageUrl}
+          src={nftImage}
           alt={nft.name}
           className="w-full h-56 object-cover"
+          onError={handleImageError}
         />
 
         {/* Badges trên góc trái */}
