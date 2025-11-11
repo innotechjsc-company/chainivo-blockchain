@@ -13,8 +13,12 @@ interface TeamCardProps {
  */
 export const TeamCard = ({ leader, index }: TeamCardProps) => {
   // Tao full URL cho image
+  // Neu URL da la full URL (bat dau voi http/https) thi dung truc tiep
+  // Neu la relative URL (bat dau voi /) thi moi append base URL
   const imageUrl = leader.image?.url
-    ? `${config.API_BASE_URL}${leader.image.url}`
+    ? (leader.image.url.startsWith('http')
+        ? leader.image.url
+        : `${config.API_BASE_URL}${leader.image.url}`)
     : '/placeholder-avatar.png';
 
   return (
