@@ -12,7 +12,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "./components/LoginForm";
 import { RegisterForm } from "./components/RegisterForm";
-import { Shield } from "lucide-react";
 
 export const AuthScreen = () => {
   const searchParams = useSearchParams();
@@ -33,10 +32,14 @@ export const AuthScreen = () => {
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4 animate-glow">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 flex items-center justify-center mb-4 overflow-hidden">
+            <img
+              src="/logo hinh.png"
+              alt="Chainivo logo"
+              className="w-12 h-12 object-contain block border-0 outline-none ring-0 shadow-none select-none"
+            />
           </div>
-          <h1 className="text-3xl font-bold gradient-text">CryptoHub</h1>
+          <h1 className="text-3xl font-bold gradient-text">Chainivo</h1>
           <p className="text-muted-foreground mt-2 text-center">
             Nền tảng đầu tư blockchain hàng đầu
           </p>
