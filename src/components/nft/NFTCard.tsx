@@ -9,6 +9,7 @@ import CountdownTimer from "./CountdownTimer";
 import MysteryRewardsPopover from "./MysteryRewardsPopover";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/formatters";
+import { Send } from "lucide-react";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -166,6 +167,7 @@ export default function NFTCard({
                 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
               "
             >
+              <Send className="w-5 h-5" />
               Đăng bán
             </Button>
           </div>

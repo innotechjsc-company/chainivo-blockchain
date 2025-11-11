@@ -101,11 +101,11 @@ export function NFTFilters({ filters, onFiltersChange, onReset }: NFTFiltersProp
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="1">Level 1</SelectItem>
-              <SelectItem value="2">Level 2</SelectItem>
-              <SelectItem value="3">Level 3</SelectItem>
-              <SelectItem value="4">Level 4</SelectItem>
-              <SelectItem value="5">Level 5</SelectItem>
+              <SelectItem value="1">Thường</SelectItem>
+              <SelectItem value="2">Bạc</SelectItem>
+              <SelectItem value="3">Vàng</SelectItem>
+              <SelectItem value="4">Bạch kim</SelectItem>
+              <SelectItem value="5">Kim cương</SelectItem>
             </SelectContent>
           </Select>
         </div>
