@@ -101,9 +101,7 @@ export const ActiveStakesList = ({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
   const [confirmUnstakeOpen, setConfirmUnstakeOpen] = useState(false);
-  const [selectedUnstakeId, setSelectedUnstakeId] = useState<string | null>(
-    null
-  );
+  const [selectedUnstakeId, setSelectedUnstakeId] = useState<any>(null);
   const [penaltyAmount, setPenaltyAmount] = useState<number | null>(null);
 
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
@@ -127,18 +125,19 @@ export const ActiveStakesList = ({
     }
   };
 
-  const handleUnstakeClick = (stakeId: string) => {
-    setSelectedUnstakeId(stakeId);
+  const handleUnstakeClick = (item: any) => {
+    setSelectedUnstakeId(item);
+    console.log(item);
     setConfirmUnstakeOpen(true);
   };
 
   const handleConfirmUnstake = async () => {
-    const stakeId = selectedUnstakeId;
+    const stakeItem = selectedUnstakeId;
     setConfirmUnstakeOpen(false);
     setSelectedUnstakeId(null);
-    if (!stakeId) return;
+    if (!stakeItem.id) return;
     try {
-      await unStakeData(stakeId);
+      await unStakeData(stakeItem.id);
     } catch (e) {
       // noop
     }
@@ -340,9 +339,9 @@ export const ActiveStakesList = ({
                             setPenaltyAmount(null);
                           }
 
-                          handleUnstakeClick(id);
+                          handleUnstakeClick(pool);
                         }}
-                        disabled={!canUnstake && status === "active"}
+                        // disabled={!canUnstake && status === "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />
@@ -399,8 +398,11 @@ export const ActiveStakesList = ({
           <DialogHeader>
             <DialogTitle>Xác nhận hủy staking</DialogTitle>
             <DialogDescription>
-              {penaltyAmount && penaltyAmount > 0
-                ? `Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ không nhận được thưởng và sẽ bị phạt ${penaltyAmount}%`
+              {selectedUnstakeId?.type === "token" &&
+              selectedUnstakeId?.allowEarlyClaim === false
+                ? `Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ không nhận được thưởng và sẽ bị phạt ${Number(
+                    selectedUnstakeId?.penaltyAmount
+                  ).toLocaleString()}%`
                 : "Bạn có chắc chắn muốn huỷ gói stake này không?"}
             </DialogDescription>
           </DialogHeader>
