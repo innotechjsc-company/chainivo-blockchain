@@ -470,9 +470,17 @@ export const NFTStakingForm = ({
                     return (
                       <SelectItem key={optionId} value={optionId}>
                         <div className="flex flex-col">
-                          <span className="font-medium">
-                            {pool.name}(
-                            {pool.isStaking ? "Đã staking" : "Chưa staking"})
+                          <span className="font-medium">{pool.name}( )</span>
+                          <span className="text-xs text-muted-foreground">
+                            {pool.isStaking ? (
+                              <span className="!text-green-500 font-semibold">
+                                Đã staking
+                              </span>
+                            ) : (
+                              <span className="!text-red-500 font-semibold">
+                                Chưa staking
+                              </span>
+                            )}
                           </span>
                         </div>
                       </SelectItem>
