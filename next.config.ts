@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
    * 
    * Không cần hard-code env vars ở đây trừ khi có lý do đặc biệt
    */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "chainivo.online",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

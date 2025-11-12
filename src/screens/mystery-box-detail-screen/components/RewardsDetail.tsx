@@ -6,6 +6,7 @@ import type {
   MysteryBoxData,
   Reward,
 } from "@/screens/mystery-box-screen/hooks/useMysteryBoxData";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface RewardsDetailProps {
   box: MysteryBoxData;
@@ -66,7 +67,7 @@ export const RewardsDetail = ({ box }: RewardsDetailProps) => {
                         <span className="text-foreground font-medium">
                           {reward.tokenMaxQuantity?.toLocaleString()}
                         </span>{" "}
-                        CAN
+                        {TOKEN_DEAULT_CURRENCY}
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">
@@ -78,7 +79,7 @@ export const RewardsDetail = ({ box }: RewardsDetailProps) => {
                         <span className="text-foreground font-medium">
                           {reward.nftPriceMax?.toLocaleString()}
                         </span>{" "}
-                        CAN
+                        {TOKEN_DEAULT_CURRENCY}
                       </p>
                     )}
                   </div>

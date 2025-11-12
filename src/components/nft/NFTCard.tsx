@@ -250,11 +250,6 @@ export default function NFTCard({
             console.error("Error refreshing NFT collection:", refreshError);
           }
         }
-
-        // Đợi một chút để đảm bảo modal xác nhận đã đóng hoàn toàn
-        setTimeout(() => {
-          setWithdrawSuccessDialogOpen(true);
-        }, 100);
       } else {
         setIsLoading(false);
         toast.error(response.message || "Rút NFT về ví thất bại");
@@ -267,6 +262,10 @@ export default function NFTCard({
       setIsWithdrawing(false);
     }
   };
+
+  useEffect(() => {
+    setWithdrawSuccessDialogOpen(true);
+  }, [withdrawResult]);
 
   // Render action button dựa vào type
   const renderActionButton = () => {

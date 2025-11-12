@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, ArrowLeft } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
-import { config } from "@/api/config";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import {
   Dialog,
@@ -347,7 +347,7 @@ export default function InvestmentNFTDetailPage() {
                             const txCurrency = (
                               tx.currency ||
                               currency ||
-                              "CAN"
+                              TOKEN_DEAULT_CURRENCY
                             ).toUpperCase();
 
                             // Handle timestamp

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/chart";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Phase } from "@/api";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -179,7 +180,7 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                       phases.find((p: Phase) => p.status === "active")
                         ?.pricePerToken
                     }
-                    /CAN
+                    /{TOKEN_DEAULT_CURRENCY}
                   </div>
                 </div>
 

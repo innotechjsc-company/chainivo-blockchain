@@ -22,7 +22,7 @@ import {
 import { Sparkles, Zap } from "lucide-react";
 import { API_ENDPOINTS, ApiService } from "@/api/api";
 import { useAppSelector } from "@/stores";
-import { buildFrontendUrl, config } from "@/api/config";
+import { buildFrontendUrl, config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { toast } from "sonner";
 import { StakingService } from "@/api/services";
 import { TransferService, LocalStorageService } from "@/services";
@@ -137,7 +137,7 @@ export const CoinStakingForm = ({
     if (selectedPoolData) {
       if (stakeAmount < selectedPoolData.minStake) {
         toast.error(
-          `Số lượng stake tối thiểu là ${selectedPoolData.minStake} CAN`
+          `Số lượng stake tối thiểu là ${selectedPoolData.minStake} ${TOKEN_DEAULT_CURRENCY}`
         );
         return;
       }
@@ -145,7 +145,7 @@ export const CoinStakingForm = ({
         toast.error(
           `Số lượng stake tối đa là ${formatNumber(
             selectedPoolData.maxStake.toString()
-          )} CAN`
+          )} ${TOKEN_DEAULT_CURRENCY}`
         );
         return;
       }

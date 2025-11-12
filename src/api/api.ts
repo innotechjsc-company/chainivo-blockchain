@@ -82,6 +82,10 @@ export const API_ENDPOINTS = {
     WITH_AUTH: "/api/with-auth",
   },
 
+  DIGITAL_REQUEST: {
+    LIST: "/api/digitization-request/send-request",
+  },
+
   INVESTMENT: {
     PHASES: "/api/investment/phases",
     PHASE_DETAIL: (id: string) => `/api/investment/phases/${id}`,
@@ -125,6 +129,10 @@ export const API_ENDPOINTS = {
     UNSTAKE: (stakeId: string) => `/api/staking/unstake/${stakeId}`,
     CLAIM: (stakeId: string) => `/api/staking/claim/${stakeId}`,
     USER_STAKES: (userId: string) => `/api/staking/user-stakes/${userId}`,
+  },
+
+  BENEFITS: {
+    LIST: "/api/benefits-digi",
   },
 
   AIRDROP: {

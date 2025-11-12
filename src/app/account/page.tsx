@@ -404,7 +404,7 @@ export default function AccountManagementPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="glass p-4 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">
-                      Số dư CAN
+                      Số dư TOKEN
                     </div>
                     <div className="text-2xl font-bold gradient-text">
                       {canBalance?.toLocaleString()} CAN

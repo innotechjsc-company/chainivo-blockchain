@@ -32,6 +32,7 @@ import { useAppSelector } from "@/stores";
 import { LocalStorageService } from "@/services";
 import { toast } from "sonner";
 import { formatNumber } from "@/utils/formatters";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 function CountdownTimer({
   startAt,
@@ -411,7 +412,7 @@ export const ActiveStakesList = ({
                         selectedUnstakeId?.amount) /
                         100
                     )}{" "}
-                    CAN
+                    {TOKEN_DEAULT_CURRENCY}{" "}
                   </span>
                 </>
               ) : (

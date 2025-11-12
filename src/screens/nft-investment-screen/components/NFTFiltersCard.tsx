@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { NFTFiltersState } from "@/screens/nft-market-screen/hooks";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface NFTFiltersCardProps {
   filters: NFTFiltersState;
@@ -257,14 +258,14 @@ export const NFTFiltersCard = ({
                       <span className="text-cyan-400 font-semibold">
                         {pendingRange[0].toLocaleString("vi-VN")}
                       </span>
-                      {" CAN"}
+                      {TOKEN_DEAULT_CURRENCY}
                     </span>
                     <span>~</span>
                     <span>
                       <span className="text-purple-400 font-semibold">
                         {pendingRange[1].toLocaleString("vi-VN")}
                       </span>
-                      {" CAN"}
+                      {TOKEN_DEAULT_CURRENCY}
                     </span>
                   </div>
                   <Slider
@@ -282,7 +283,8 @@ export const NFTFiltersCard = ({
                   />
                   <div className="text-xs text-muted-foreground text-center pt-1">
                     Khoảng giá: {pendingRange[0].toLocaleString("vi-VN")} -{" "}
-                    {pendingRange[1].toLocaleString("vi-VN")} CAN
+                    {pendingRange[1].toLocaleString("vi-VN")}{" "}
+                    {TOKEN_DEAULT_CURRENCY}
                   </div>
                 </div>
               )}
