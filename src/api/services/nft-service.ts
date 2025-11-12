@@ -541,6 +541,12 @@ export class NFTService {
   static async openBox(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.OPEN_BOX, { nftId });
   }
+
+  static async mintNFTToBlockchain(data: {
+    nftId: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.Mint_NFT_BLOCKCHAIN, data);
+  }
 }
 
 export default NFTService;

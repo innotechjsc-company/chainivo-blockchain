@@ -115,6 +115,7 @@ export const API_ENDPOINTS = {
     INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
     OPEN_BOX: "/api/nft/open-box",
+    Mint_NFT_BLOCKCHAIN: "/api/nft/mint-to-blockchain",
   },
 
   STAKING: {

@@ -31,6 +31,7 @@ import { StakingCoin, StakingNFT, StakingPool } from "@/types";
 import { useAppSelector } from "@/stores";
 import { LocalStorageService } from "@/services";
 import { toast } from "sonner";
+import { formatNumber } from "@/utils/formatters";
 
 function CountdownTimer({
   startAt,
@@ -127,7 +128,6 @@ export const ActiveStakesList = ({
 
   const handleUnstakeClick = (item: any) => {
     setSelectedUnstakeId(item);
-    console.log(item);
     setConfirmUnstakeOpen(true);
   };
 
@@ -399,11 +399,24 @@ export const ActiveStakesList = ({
             <DialogTitle>Xác nhận hủy staking</DialogTitle>
             <DialogDescription>
               {selectedUnstakeId?.type === "token" &&
-              selectedUnstakeId?.allowEarlyClaim === false
-                ? `Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ không nhận được thưởng và sẽ bị phạt ${Number(
-                    selectedUnstakeId?.penaltyAmount
-                  ).toLocaleString()}%`
-                : "Bạn có chắc chắn muốn huỷ gói stake này không?"}
+              selectedUnstakeId?.allowEarlyClaim === false ? (
+                <>
+                  Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ
+                  không nhận được thưởng và sẽ bị phạt{" "}
+                  {Number(selectedUnstakeId?.penaltyAmount).toLocaleString()}%
+                  tương đương với{" "}
+                  <span className="text-red-500 font-semibold">
+                    {formatNumber(
+                      (selectedUnstakeId?.penaltyAmount *
+                        selectedUnstakeId?.amount) /
+                        100
+                    )}{" "}
+                    CAN
+                  </span>
+                </>
+              ) : (
+                "Bạn có chắc chắn muốn huỷ gói stake này không?"
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

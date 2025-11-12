@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { NFTItem } from "@/types/NFT";
 import LevelBadge from "./LevelBadge";
 import NFTTypeBadge from "./NFTTypeBadge";
@@ -8,9 +8,20 @@ import InvestmentProgressBar from "./InvestmentProgressBar";
 import CountdownTimer from "./CountdownTimer";
 import MysteryRewardsPopover from "./MysteryRewardsPopover";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatNumber } from "@/utils/formatters";
 import { Send } from "lucide-react";
 import { config } from "@/api/config";
+import { NFTService } from "@/api/services/nft-service";
+import { toast } from "sonner";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -25,6 +36,7 @@ interface NFTCardProps {
   type?: string;
   onListForSale?: (nft: NFTItem) => void;
   onClick?: (id: string) => void;
+  onRefreshNFTs?: () => void | Promise<void>;
 }
 
 // Map level sang border shadow color classes
@@ -45,7 +57,11 @@ export default function NFTCard({
   type,
   onListForSale,
   onClick,
+  onRefreshNFTs,
 }: NFTCardProps) {
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -148,6 +164,38 @@ export default function NFTCard({
     }
   };
 
+  // Handler cho rút NFT về ví
+  const handleWithdrawConfirm = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setIsWithdrawing(true);
+    setIsLoading(true);
+    try {
+      const response = await NFTService.mintNFTToBlockchain({
+        nftId: nft.id,
+      });
+
+      if (response.success) {
+        toast.success("Rút NFT về ví thành công");
+        setWithdrawDialogOpen(false);
+        setIsLoading(false);
+        // Gọi lại API lấy my NFT
+        if (onRefreshNFTs) {
+          await onRefreshNFTs();
+        }
+      } else {
+        setIsLoading(false);
+        toast.error(response.message || "Rút NFT về ví thất bại");
+      }
+    } catch (error) {
+      console.error("Error withdrawing NFT:", error);
+      setIsLoading(false);
+      toast.error("Đã xảy ra lỗi khi rút NFT về ví");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
@@ -222,22 +270,6 @@ export default function NFTCard({
             >
               <Send className="w-5 h-5" />
               Đăng bán
-            </Button>
-
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
-                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-              "
-            >
-              <Send className="w-5 h-5" />
-              Rút về ví
             </Button>
           </div>
         );
@@ -324,9 +356,14 @@ export default function NFTCard({
             >
               Đăng bán
             </Button>
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
+
+            {nft?.isMinted === false && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWithdrawDialogOpen(true);
+                }}
+                className="
               inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
               transition-all disabled:pointer-events-none disabled:opacity-50
               [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
@@ -335,9 +372,10 @@ export default function NFTCard({
               h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
               bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             "
-            >
-              Rút về ví
-            </Button>
+              >
+                Rút về ví
+              </Button>
+            )}
           </div>
         );
     }
@@ -492,25 +530,42 @@ export default function NFTCard({
 
             {/* Action button */}
             {renderActionButton()}
-            {nft?.isMinted === false && (
-              <Button
-                onClick={(e) => handleAction(e, "sell")}
-                className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-              "
-              >
-                Rút về ví
-              </Button>
-            )}
           </div>
         )}
       </div>
+
+      {/* Withdraw Confirmation Dialog */}
+      <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận rút NFT về ví</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn rút NFT này về ví?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setWithdrawDialogOpen(false)}
+              disabled={isWithdrawing}
+            >
+              Thoát
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleWithdrawConfirm}
+              disabled={isWithdrawing}
+            >
+              {isWithdrawing ? "Đang xử lý..." : "Đồng ý"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loading Spinner */}
+      {isLoading && <LoadingSpinner />}
     </div>
   );
 }

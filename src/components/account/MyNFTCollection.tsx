@@ -16,41 +16,10 @@ import { useRouter } from "next/navigation";
 import { NFTService } from "@/api/services/nft-service";
 import { ToastService } from "@/services/ToastService";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface MyNFTCollectionProps {
   type?: string;
-}
-
-// Loading Skeleton Component
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Stats Skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="glass p-4">
-            <div className="h-16 bg-muted animate-pulse rounded" />
-          </Card>
-        ))}
-      </div>
-
-      {/* Tabs Skeleton */}
-      <div className="h-10 w-full max-w-md bg-muted animate-pulse rounded" />
-
-      {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="glass overflow-hidden">
-            <div className="aspect-square bg-muted animate-pulse" />
-            <CardContent className="p-4 space-y-2">
-              <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
-              <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export function MyNFTCollection({ type }: MyNFTCollectionProps) {
@@ -154,7 +123,7 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   };
   // Loading state
   if (loading) {
-    return <LoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
   // Error state
