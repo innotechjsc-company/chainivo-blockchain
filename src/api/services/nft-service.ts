@@ -151,7 +151,6 @@ export class NFTService {
     params?: GetMyNFTsParams
   ): Promise<ApiResponse<MyNFTsResponse["data"]>> {
     const res = await ApiService.get<any>(API_ENDPOINTS.NFT.MY_NFT, params);
-
     if (!res.success || !res.data) {
       return res as ApiResponse<MyNFTsResponse["data"]>;
     }
@@ -203,6 +202,8 @@ export class NFTService {
         owner: item?.user?.id || null,
         isSale: !!nft.isSale,
         isActive: !!nft.isActive,
+        isMinted: !!nft.isMinted,
+        isStaking: !!nft.isStaking,
         type: nft.type,
         level: nft.level,
         currency: nft.currency,

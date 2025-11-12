@@ -476,7 +476,7 @@ export default function AccountManagementPage() {
             <TabsContent value="my-nft">
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
-                <MyNFTCollection />
+                <MyNFTCollection type="my-nft" />
               </Card>
             </TabsContent>
 
@@ -529,7 +529,7 @@ export default function AccountManagementPage() {
                   <div className="flex items-center justify-center py-12">
                     <Spinner className="w-8 h-8 mr-2" />
                     <span className="text-muted-foreground">
-                      Dang tai giao dich...
+                      Đang tải giao dịch...
                     </span>
                   </div>
                 )}

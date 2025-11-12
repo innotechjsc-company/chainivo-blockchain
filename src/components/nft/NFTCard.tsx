@@ -17,12 +17,12 @@ interface NFTCardProps {
   showActions?: boolean;
   onActionClick?: (
     nft: NFTItem,
-    action: "sell" | "buy" | "open" | "cancel"
+    action: "sell" | "buy" | "open" | "cancel" | "withdraw"
   ) => void;
   className?: string;
 
   // Props để tương thích ngược với NFTCard cũ
-  type?: "tier" | "other";
+  type?: string;
   onListForSale?: (nft: NFTItem) => void;
   onClick?: (id: string) => void;
 }
@@ -125,7 +125,7 @@ export default function NFTCard({
 
   const handleAction = (
     e: React.MouseEvent,
-    action: "sell" | "buy" | "open" | "cancel"
+    action: "sell" | "buy" | "open" | "cancel" | "withdraw"
   ) => {
     // Ngăn chặn event bubble lên card parent (tránh trigger onClick của card)
     e.stopPropagation();
@@ -223,6 +223,22 @@ export default function NFTCard({
               <Send className="w-5 h-5" />
               Đăng bán
             </Button>
+
+            <Button
+              onClick={(e) => handleAction(e, "sell")}
+              className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+              "
+            >
+              <Send className="w-5 h-5" />
+              Rút về ví
+            </Button>
           </div>
         );
 
@@ -292,11 +308,11 @@ export default function NFTCard({
             </Button>
           );
         }
-        // NFT đang sở hữu -> hiển thị button đăng bán
         return (
-          <Button
-            onClick={(e) => handleAction(e, "sell")}
-            className="
+          <div className="flex gap-2 w-full flex-col">
+            <Button
+              onClick={(e) => handleAction(e, "sell")}
+              className="
               inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
               transition-all disabled:pointer-events-none disabled:opacity-50
               [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
@@ -305,9 +321,24 @@ export default function NFTCard({
               h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
               bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             "
-          >
-            Đăng bán
-          </Button>
+            >
+              Đăng bán
+            </Button>
+            <Button
+              onClick={(e) => handleAction(e, "sell")}
+              className="
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+            "
+            >
+              Rút về ví
+            </Button>
+          </div>
         );
     }
   };
@@ -395,7 +426,6 @@ export default function NFTCard({
             {/* Rewards popover */}
             <MysteryRewardsPopover rewards={nft.rewards} />
 
-            {/* Action button */}
             {renderActionButton()}
           </div>
         ) : (
@@ -445,8 +475,39 @@ export default function NFTCard({
               </div>
             )}
 
+            {/* My NFT specific content */}
+            {type === "my-nft" && (
+              <div className="space-y-2">
+                {/* Staking status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Staking:
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {(nft as any).isStaking === true ? "Có" : "Chưa"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Action button */}
             {renderActionButton()}
+            {nft?.isMinted === false && (
+              <Button
+                onClick={(e) => handleAction(e, "sell")}
+                className="
+                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                transition-all disabled:pointer-events-none disabled:opacity-50
+                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+              "
+              >
+                Rút về ví
+              </Button>
+            )}
           </div>
         )}
       </div>

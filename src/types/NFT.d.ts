@@ -213,9 +213,9 @@ export type NFTDocument = INFT;
 /**
  * NFT API Response Types - Theo structure từ backend API
  */
-export type NFTType = 'normal' | 'rank' | 'mysteryBox' | 'investment';
-export type NFTLevel = '1' | '2' | '3' | '4' | '5';
-export type NFTCurrency = 'can' | 'usdc' | 'usdt' | 'eth';
+export type NFTType = "normal" | "rank" | "mysteryBox" | "investment";
+export type NFTLevel = "1" | "2" | "3" | "4" | "5";
+export type NFTCurrency = "can" | "usdc" | "usdt" | "eth";
 
 // Interface cho NFT rewards trong mystery box
 export interface NFTReward {
@@ -237,7 +237,7 @@ export interface TokenReward {
 // Interface cho rewards raw data tu API
 export interface APIRewardItem {
   id: string;
-  rewardType: 'token' | 'nft';
+  rewardType: "token" | "nft";
   isOpenable: boolean;
   // Token reward fields
   tokenMinQuantity?: number;
@@ -282,6 +282,8 @@ export interface NFTItem {
   investmentStartDate?: string;
   investmentEndDate?: string;
   pricePerShare?: number;
+  isMinted?: boolean;
+  isStaking?: boolean;
 
   // Mystery Box NFT fields
   isOpenable?: boolean;

@@ -17,6 +17,10 @@ import { NFTService } from "@/api/services/nft-service";
 import { ToastService } from "@/services/ToastService";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
 
+interface MyNFTCollectionProps {
+  type?: string;
+}
+
 // Loading Skeleton Component
 function LoadingSkeleton() {
   return (
@@ -49,7 +53,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function MyNFTCollection() {
+export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   // Su dung hook fetch NFT collection
   const {
     nfts,
@@ -93,7 +97,7 @@ export function MyNFTCollection() {
   // Handler gọi API mở hộp (được gọi bởi MysteryBoxAnimationWrapper)
   const handleOpenBoxAPI = async (): Promise<OpenBoxResponse> => {
     if (!selectedBoxNFT) {
-      throw new Error('Không có hộp nào được chọn');
+      throw new Error("Không có hộp nào được chọn");
     }
 
     // Goi API mo hop
@@ -102,7 +106,9 @@ export function MyNFTCollection() {
     if (response.success && response.data) {
       return response.data;
     } else {
-      throw new Error(response.error || response.message || 'Có lỗi xảy ra khi mở hộp');
+      throw new Error(
+        response.error || response.message || "Có lỗi xảy ra khi mở hộp"
+      );
     }
   };
 
@@ -114,7 +120,7 @@ export function MyNFTCollection() {
     // Refetch NFT collection để cập nhật danh sách
     refetch();
 
-    ToastService.success('Phần thưởng đã được chuyển vào tài khoản của bạn!');
+    ToastService.success("Phần thưởng đã được chuyển vào tài khoản của bạn!");
   };
 
   // Handler khi có lỗi
@@ -130,12 +136,15 @@ export function MyNFTCollection() {
   };
 
   // Handler chung cho action clicks từ NFTCard
-  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open' | 'cancel') => {
-    if (action === 'sell') {
+  const handleActionClick = (
+    nft: NFTItem,
+    action: "sell" | "buy" | "open" | "cancel"
+  ) => {
+    if (action === "sell") {
       handleListForSale(nft);
-    } else if (action === 'open') {
+    } else if (action === "open") {
       handleOpenBox(nft);
-    } else if (action === 'cancel') {
+    } else if (action === "cancel") {
       handleCancelSale(nft);
     }
   };
@@ -199,8 +208,8 @@ export function MyNFTCollection() {
             <NFTCard
               key={nft.id}
               nft={nft}
-              type="tier"
-              onActionClick={handleActionClick}
+              type={type}
+              onActionClick={() => {}}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
             />

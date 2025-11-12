@@ -104,6 +104,7 @@ export const ActiveStakesList = ({
   const [selectedUnstakeId, setSelectedUnstakeId] = useState<string | null>(
     null
   );
+  const [penaltyAmount, setPenaltyAmount] = useState<number | null>(null);
 
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
@@ -240,7 +241,7 @@ export const ActiveStakesList = ({
                         variant="default"
                         onClick={async () => {
                           if (!user) {
-                            toast.error("Ban vui long dang nhap de tiep tuc");
+                            toast.error("Bạn vui lòng đăng nhập để tiếp tục");
                             return;
                           }
                           let isConnected =
@@ -312,6 +313,33 @@ export const ActiveStakesList = ({
                             toast.error("Vui lòng kết nối ví để tiếp tục");
                             return;
                           }
+
+                          // Check điều kiện hủy sớm
+                          const poolInfo = (pool as any).poolInfo;
+                          const stakeInfo = (pool as any).stake;
+                          const allowEarlyClaim =
+                            poolInfo?.allowEarlyClaim ??
+                            stakeInfo?.allowEarlyClaim ??
+                            true;
+                          const penalty =
+                            poolInfo?.penaltyAmount ??
+                            stakeInfo?.penaltyAmount ??
+                            null;
+                          const poolType =
+                            poolInfo?.type ?? stakeInfo?.type ?? "token";
+
+                          // Nếu không cho phép hủy sớm, có penalty và type là token
+                          if (
+                            allowEarlyClaim === false &&
+                            penalty !== null &&
+                            penalty > 0 &&
+                            poolType === "token"
+                          ) {
+                            setPenaltyAmount(penalty);
+                          } else {
+                            setPenaltyAmount(null);
+                          }
+
                           handleUnstakeClick(id);
                         }}
                         disabled={!canUnstake && status === "active"}
@@ -358,12 +386,22 @@ export const ActiveStakesList = ({
       </Dialog>
 
       {/* Unstake Confirmation Dialog */}
-      <Dialog open={confirmUnstakeOpen} onOpenChange={setConfirmUnstakeOpen}>
+      <Dialog
+        open={confirmUnstakeOpen}
+        onOpenChange={(open) => {
+          setConfirmUnstakeOpen(open);
+          if (!open) {
+            setPenaltyAmount(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Xác nhận hủy staking</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn huỷ gói stake này không?
+              {penaltyAmount && penaltyAmount > 0
+                ? `Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ không nhận được thưởng và sẽ bị phạt ${penaltyAmount}%`
+                : "Bạn có chắc chắn muốn huỷ gói stake này không?"}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -372,11 +410,18 @@ export const ActiveStakesList = ({
               onClick={() => {
                 setConfirmUnstakeOpen(false);
                 setSelectedUnstakeId(null);
+                setPenaltyAmount(null);
               }}
             >
               Thoát
             </Button>
-            <Button variant="destructive" onClick={handleConfirmUnstake}>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                handleConfirmUnstake();
+                setPenaltyAmount(null);
+              }}
+            >
               Đồng ý
             </Button>
           </DialogFooter>
