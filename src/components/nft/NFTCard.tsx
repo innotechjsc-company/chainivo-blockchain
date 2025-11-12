@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { NFTItem } from "@/types/NFT";
 import LevelBadge from "./LevelBadge";
 import NFTTypeBadge from "./NFTTypeBadge";
@@ -21,7 +22,7 @@ import { Send } from "lucide-react";
 import { config } from "@/api/config";
 import { NFTService } from "@/api/services/nft-service";
 import { toast } from "sonner";
-import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { Spinner } from "@/components/ui/spinner";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -70,8 +71,21 @@ export default function NFTCard({
     tokenId?: string | number;
     explorerUrl?: string;
   } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
+
+  // Kiểm tra component đã mount (để tránh lỗi SSR với portal)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Đóng modal khi isLoading là true
+  useEffect(() => {
+    if (isLoading && withdrawDialogOpen) {
+      setWithdrawDialogOpen(false);
+    }
+  }, [isLoading, withdrawDialogOpen]);
 
   // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || type !== undefined;
@@ -187,6 +201,8 @@ export default function NFTCard({
         toast.success("Rút NFT về ví thành công");
         setIsLoading(false);
 
+        setWithdrawDialogOpen(false);
+
         // Lấy thông tin từ response
         const responseData = (response.data || {}) as Record<string, any>;
         const contractAddress =
@@ -230,17 +246,15 @@ export default function NFTCard({
         if (onRefreshNFTs) {
           try {
             await onRefreshNFTs();
-            // Sau khi refresh thành công, mở modal success
-            setWithdrawSuccessDialogOpen(true);
           } catch (refreshError) {
             console.error("Error refreshing NFT collection:", refreshError);
-            // Vẫn mở modal dù có lỗi refresh
-            setWithdrawSuccessDialogOpen(true);
           }
-        } else {
-          // Nếu không có onRefreshNFTs, vẫn mở modal
-          setWithdrawSuccessDialogOpen(true);
         }
+
+        // Đợi một chút để đảm bảo modal xác nhận đã đóng hoàn toàn
+        setTimeout(() => {
+          setWithdrawSuccessDialogOpen(true);
+        }, 100);
       } else {
         setIsLoading(false);
         toast.error(response.message || "Rút NFT về ví thất bại");
@@ -400,22 +414,7 @@ export default function NFTCard({
         }
         return (
           <div className="flex gap-2 w-full flex-col">
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-            "
-            >
-              Đăng bán
-            </Button>
-
-            {nft?.isMinted === false && (
+            {nft?.isMinted === false ? (
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -433,16 +432,32 @@ export default function NFTCard({
               >
                 Rút về ví
               </Button>
-            )}
+            ) : null}
+            <Button
+              onClick={(e) => handleAction(e, "sell")}
+              className="
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+            "
+            >
+              Đăng bán
+            </Button>
           </div>
         );
     }
   };
 
+  const actionSection = renderActionButton();
+
   return (
     <div
       className={`
-        rounded-xl border-2 overflow-hidden bg-gray-900
+        rounded-xl border-2 overflow-hidden bg-gray-900 flex flex-col h-full
         transition-all duration-300 hover:scale-[1.02]
         ${borderClass}
         ${nft.type === "mysteryBox" && nft.isOpenable ? "hover:shadow-2xl" : ""}
@@ -490,7 +505,7 @@ export default function NFTCard({
       </div>
 
       {/* Card content */}
-      <div className="p-4 space-y-3">
+      <div className="flex flex-col flex-1 p-4 space-y-3">
         {/* Tên NFT */}
         <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
           {nft.name}
@@ -505,7 +520,7 @@ export default function NFTCard({
 
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === "mysteryBox" ? (
-          <div className="space-y-3">
+          <div className="flex flex-col flex-1 gap-3">
             {/* Divider */}
             <div className="border-t border-gray-700" />
             {/* Giá hộp */}
@@ -520,10 +535,10 @@ export default function NFTCard({
             {/* Rewards popover */}
             <MysteryRewardsPopover rewards={nft.rewards} />
 
-            {renderActionButton()}
+            {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
         ) : (
-          <div className="border-t border-gray-700 pt-3 space-y-3">
+          <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-3">
             {/* Giá cho các loại NFT khác */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">
@@ -583,12 +598,11 @@ export default function NFTCard({
             )}
 
             {/* Action button */}
-            {renderActionButton()}
+            {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
         )}
       </div>
 
-      {/* Withdraw Confirmation Dialog */}
       <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -617,81 +631,19 @@ export default function NFTCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Withdraw Success Dialog */}
-      <Dialog
-        open={withdrawSuccessDialogOpen}
-        onOpenChange={(open) => {
-          setWithdrawSuccessDialogOpen(open);
-          if (!open) {
-            setWithdrawResult(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chúc mừng!</DialogTitle>
-            <DialogDescription>
-              Bạn đã rút NFT về ví thành công.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Địa chỉ smart contract
-              </span>
-              <span className="font-mono text-sm break-all">
-                {withdrawResult?.contractAddress ?? "Không xác định"}
+      {isLoading &&
+        isMounted &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
+            <div className="flex items-center gap-3 px-6 py-4 bg-gray-900/95 rounded-lg border border-primary/30 shadow-2xl pointer-events-auto">
+              <Spinner className="h-6 w-6 text-primary" />
+              <span className="text-sm font-medium text-gray-100">
+                Đang xử lý giao dịch...
               </span>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Mã giao dịch
-              </span>
-              <span className="font-mono text-sm break-all">
-                {withdrawResult?.transactionHash ?? "Không xác định"}
-              </span>
-            </div>
-            {withdrawResult?.explorerUrl && (
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">
-                  Link tra cứu giao dịch
-                </span>
-                <a
-                  href={withdrawResult.explorerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-sm text-primary break-all underline hover:opacity-80"
-                >
-                  {withdrawResult.explorerUrl}
-                </a>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
-            {withdrawResult?.explorerUrl && (
-              <Button type="button" variant="outline" asChild>
-                <a
-                  href={withdrawResult.explorerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Mở trên Polygonscan
-                </a>
-              </Button>
-            )}
-            <Button
-              type="button"
-              onClick={() => setWithdrawSuccessDialogOpen(false)}
-            >
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Loading Spinner */}
-      {isLoading && <LoadingSpinner />}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
