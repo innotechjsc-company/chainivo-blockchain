@@ -63,4 +63,5 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { href: "/p2p-market", label: "P2P Market" },
   { href: "/staking", label: "Staking" },
   { href: "/about", label: "Về chúng tôi" },
+  { href: "/digitizing-nft", label: "Số hoá NFT" },
 ];

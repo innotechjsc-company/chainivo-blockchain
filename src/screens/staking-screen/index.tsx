@@ -16,6 +16,7 @@ import { StakingInfo } from "./components/StakingInfo";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -248,7 +249,7 @@ export const StakingScreen = () => {
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12">
             <TabsTrigger value="coin" className="text-lg">
               <Coins className="h-5 w-5 mr-2" />
-              Staking CAN
+              Staking {TOKEN_DEAULT_CURRENCY}
             </TabsTrigger>
             <TabsTrigger value="nft" className="text-lg">
               <Package className="h-5 w-5 mr-2" />

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings } from "lucide-react";
+import { User, Wallet, History, Settings, FileText } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
@@ -25,6 +25,8 @@ import { TransactionPagination } from "@/components/account/TransactionPaginatio
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { Spinner } from "@/components/ui/spinner";
 import MyNFTScreen from "@/screens/my-nft-screen";
+import { DigitizingNftScreen } from "@/screens/digitizing-nft-screen";
+import { DigitizationRequestList } from "@/components/account/DigitizationRequestList";
 
 interface Profile {
   name: string;
@@ -327,7 +329,7 @@ export default function AccountManagementPage() {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-7 mb-8">
+            <TabsList className="grid w-full grid-cols-8 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -351,6 +353,10 @@ export default function AccountManagementPage() {
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
+              </TabsTrigger>
+              <TabsTrigger value="digitizing-request">
+                <FileText className="w-4 h-4 mr-2" />
+                Số hóa NFT
               </TabsTrigger>
               <TabsTrigger value="settings">
                 <Settings className="w-4 h-4 mr-2" />
@@ -404,7 +410,7 @@ export default function AccountManagementPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="glass p-4 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">
-                      Số dư CAN
+                      Số dư TOKEN
                     </div>
                     <div className="text-2xl font-bold gradient-text">
                       {canBalance?.toLocaleString()} CAN
@@ -476,7 +482,7 @@ export default function AccountManagementPage() {
             <TabsContent value="my-nft">
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
-                <MyNFTCollection />
+                <MyNFTCollection type="my-nft" />
               </Card>
             </TabsContent>
 
@@ -529,7 +535,7 @@ export default function AccountManagementPage() {
                   <div className="flex items-center justify-center py-12">
                     <Spinner className="w-8 h-8 mr-2" />
                     <span className="text-muted-foreground">
-                      Dang tai giao dich...
+                      Đang tải giao dịch...
                     </span>
                   </div>
                 )}
@@ -554,6 +560,12 @@ export default function AccountManagementPage() {
                     />
                   </>
                 )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="digitizing-request">
+              <Card className="p-6 glass">
+                <DigitizationRequestList />
               </Card>
             </TabsContent>
 

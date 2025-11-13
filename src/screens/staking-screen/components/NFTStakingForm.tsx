@@ -147,6 +147,12 @@ export const NFTStakingForm = ({
       return;
     }
 
+    // Kiểm tra NFT đã được stake chưa
+    if (selectedUserNFT?.isStaking === true) {
+      toast.error("Bạn đã stake NFT này và không thể stake tiếp");
+      return;
+    }
+
     const nftPriceValue = Number(selectedUserNFT?.price ?? 0);
     if (!nftPriceValue || nftPriceValue <= 0) {
       toast.error("NFT không có giá trị hợp lệ");
@@ -177,7 +183,11 @@ export const NFTStakingForm = ({
     setConfirmDialogOpen(true);
   };
 
-  const createTransaction = async (fromAddress: string, amount: number) => {
+  const createTransaction = async (
+    fromAddress: string,
+    amount: number,
+    nftId: string
+  ) => {
     let tempStakeId: string | null = null;
 
     try {
@@ -210,6 +220,7 @@ export const NFTStakingForm = ({
         walletAddress: userInfo?.walletAddress,
         stake: selectedPoolData,
         poolInfo: selectedPoolData,
+        nftId: nftId, // Thêm nftId vào pendingStakeData
         status: "pending",
         canUnstake: true,
       };
@@ -231,14 +242,14 @@ export const NFTStakingForm = ({
       if (res.transactionHash) {
         let createStake = await StakingService.stake(
           selectedPoolData?.id as string,
-          res.rawReceipt.transactionHash
+          res.rawReceipt.transactionHash,
+          nftId as string
         );
-        // ;
         if (createStake.success) {
-          // BƯỚC 5: Thành công - xóa temp stake và refresh để lấy data thật
           if (tempStakeId) {
             removeStake?.(tempStakeId);
           }
+          await fetchUserNFTs();
           toast.success("Giao dịch stake thành công");
 
           setTimeout(async () => {
@@ -261,7 +272,6 @@ export const NFTStakingForm = ({
             }
           }, 500);
         } else {
-          // Thất bại - xóa temp stake
           if (tempStakeId) {
             removeStake?.(tempStakeId);
           }
@@ -282,15 +292,6 @@ export const NFTStakingForm = ({
         toast.error("Không nhận được xác nhận giao dịch");
       }
     } catch (error) {
-      console.error("=== [STAKE ERROR] Exception caught ===");
-      console.error("Error type:", typeof error);
-      console.error("Error constructor:", error?.constructor?.name);
-      console.error("Error code:", (error as any)?.code);
-      console.error("Error message:", (error as any)?.message);
-      console.error("Error data:", (error as any)?.data);
-      console.error("Error stack:", (error as any)?.stack);
-      console.error("Full error object:", error);
-
       try {
         console.error("Error JSON:", JSON.stringify(error, null, 2));
       } catch (e) {}
@@ -360,9 +361,12 @@ export const NFTStakingForm = ({
   const handleConfirmStake = async () => {
     setConfirmDialogOpen(false);
     try {
+      const nftId =
+        selectedUserNFT?._id ?? selectedUserNFT?.id ?? selectedNFTId;
       await createTransaction(
         userInfo?.walletAddress as string,
-        pendingStakeAmount
+        pendingStakeAmount,
+        String(nftId)
       );
     } catch (error) {
       console.error(error);
@@ -466,7 +470,18 @@ export const NFTStakingForm = ({
                     return (
                       <SelectItem key={optionId} value={optionId}>
                         <div className="flex flex-col">
-                          <span className="font-medium">{pool.name}</span>
+                          <span className="font-medium">{pool.name}( )</span>
+                          <span className="text-xs text-muted-foreground">
+                            {pool.isStaking ? (
+                              <span className="!text-green-500 font-semibold">
+                                Đã staking
+                              </span>
+                            ) : (
+                              <span className="!text-red-500 font-semibold">
+                                Chưa staking
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </SelectItem>
                     );
@@ -543,12 +558,16 @@ export const NFTStakingForm = ({
                   <SelectValue placeholder="-- Chọn NFT --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {userNFTs.map((pool, idx) => {
-                    const optionId = String(pool?._id ?? pool?.id ?? idx);
+                  {userNFTs.map((nft, idx) => {
+                    const optionId = String(nft?._id ?? nft?.id ?? idx);
+                    const isStaking = nft?.isStaking ?? false;
                     return (
                       <SelectItem key={optionId} value={optionId}>
                         <div className="flex flex-col">
-                          <span className="font-medium">{pool.name}</span>
+                          <span className="font-medium">
+                            {nft?.name}{" "}
+                            {isStaking ? "(Đã staking)" : "(Chưa staking)"}
+                          </span>
                         </div>
                       </SelectItem>
                     );
@@ -562,6 +581,15 @@ export const NFTStakingForm = ({
                 </div>
               )}
             </div>
+            {selectedUserNFT?.isStaking === true && (
+              <div className="p-4 bg-red-500/10 rounded-lg space-y-2 border border-red-500/20 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-red-500">
+                    ⚠️ NFT này đã được staking vui lòng chọn NFT khác
+                  </span>
+                </div>
+              </div>
+            )}
             {isInvalidNFTPrice && selectedPoolData && (
               <div className="p-4 bg-red-500/10 rounded-lg space-y-2 border border-red-500/20 animate-fade-in">
                 <div className="flex items-center gap-2 mb-2">
@@ -592,7 +620,8 @@ export const NFTStakingForm = ({
                   !selectedUserNFT ||
                   !selectedPoolData ||
                   loading ||
-                  !isValidNFTPrice
+                  !isValidNFTPrice ||
+                  selectedUserNFT?.isStaking === true
                 }
               >
                 <Zap className="h-5 w-5 mr-2" />

@@ -151,7 +151,6 @@ export class NFTService {
     params?: GetMyNFTsParams
   ): Promise<ApiResponse<MyNFTsResponse["data"]>> {
     const res = await ApiService.get<any>(API_ENDPOINTS.NFT.MY_NFT, params);
-
     if (!res.success || !res.data) {
       return res as ApiResponse<MyNFTsResponse["data"]>;
     }
@@ -203,6 +202,8 @@ export class NFTService {
         owner: item?.user?.id || null,
         isSale: !!nft.isSale,
         isActive: !!nft.isActive,
+        isMinted: !!nft.isMinted,
+        isStaking: !!nft.isStaking,
         type: nft.type,
         level: nft.level,
         currency: nft.currency,
@@ -539,6 +540,17 @@ export class NFTService {
   // Mo hop bi an NFT
   static async openBox(nftId: string): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.OPEN_BOX, { nftId });
+  }
+
+  static async mintNFTToBlockchain(data: {
+    nftId: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post(API_ENDPOINTS.NFT.Mint_NFT_BLOCKCHAIN, data);
+  }
+  static async getShareDetail(data: {
+    nftId: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.get(API_ENDPOINTS.NFT.SHARE_DETAIL(data.nftId));
   }
 }
 

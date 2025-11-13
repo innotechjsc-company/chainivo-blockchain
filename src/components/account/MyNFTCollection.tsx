@@ -16,40 +16,13 @@ import { useRouter } from "next/navigation";
 import { NFTService } from "@/api/services/nft-service";
 import { ToastService } from "@/services/ToastService";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
-// Loading Skeleton Component
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Stats Skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="glass p-4">
-            <div className="h-16 bg-muted animate-pulse rounded" />
-          </Card>
-        ))}
-      </div>
-
-      {/* Tabs Skeleton */}
-      <div className="h-10 w-full max-w-md bg-muted animate-pulse rounded" />
-
-      {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="glass overflow-hidden">
-            <div className="aspect-square bg-muted animate-pulse" />
-            <CardContent className="p-4 space-y-2">
-              <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
-              <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+interface MyNFTCollectionProps {
+  type?: string;
 }
 
-export function MyNFTCollection() {
+export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   // Su dung hook fetch NFT collection
   const {
     nfts,
@@ -93,7 +66,7 @@ export function MyNFTCollection() {
   // Handler gọi API mở hộp (được gọi bởi MysteryBoxAnimationWrapper)
   const handleOpenBoxAPI = async (): Promise<OpenBoxResponse> => {
     if (!selectedBoxNFT) {
-      throw new Error('Không có hộp nào được chọn');
+      throw new Error("Không có hộp nào được chọn");
     }
 
     // Goi API mo hop
@@ -102,7 +75,9 @@ export function MyNFTCollection() {
     if (response.success && response.data) {
       return response.data;
     } else {
-      throw new Error(response.error || response.message || 'Có lỗi xảy ra khi mở hộp');
+      throw new Error(
+        response.error || response.message || "Có lỗi xảy ra khi mở hộp"
+      );
     }
   };
 
@@ -114,7 +89,7 @@ export function MyNFTCollection() {
     // Refetch NFT collection để cập nhật danh sách
     refetch();
 
-    ToastService.success('Phần thưởng đã được chuyển vào tài khoản của bạn!');
+    ToastService.success("Phần thưởng đã được chuyển vào tài khoản của bạn!");
   };
 
   // Handler khi có lỗi
@@ -130,12 +105,15 @@ export function MyNFTCollection() {
   };
 
   // Handler chung cho action clicks từ NFTCard
-  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open' | 'cancel') => {
-    if (action === 'sell') {
+  const handleActionClick = (
+    nft: NFTItem,
+    action: "sell" | "buy" | "open" | "cancel"
+  ) => {
+    if (action === "sell") {
       handleListForSale(nft);
-    } else if (action === 'open') {
+    } else if (action === "open") {
       handleOpenBox(nft);
-    } else if (action === 'cancel') {
+    } else if (action === "cancel") {
       handleCancelSale(nft);
     }
   };
@@ -145,7 +123,7 @@ export function MyNFTCollection() {
   };
   // Loading state
   if (loading) {
-    return <LoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
   // Error state
@@ -199,10 +177,11 @@ export function MyNFTCollection() {
             <NFTCard
               key={nft.id}
               nft={nft}
-              type="tier"
-              onActionClick={handleActionClick}
+              type={type}
+              onActionClick={() => {}}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
+              onRefreshNFTs={refetch}
             />
           ))}
         </div>

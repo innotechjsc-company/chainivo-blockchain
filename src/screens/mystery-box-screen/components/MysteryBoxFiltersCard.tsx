@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Filter, X } from "lucide-react";
 import { MysteryBoxFilters } from "../hooks";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface MysteryBoxFiltersCardProps {
   filters: MysteryBoxFilters;
@@ -60,7 +61,7 @@ export const MysteryBoxFiltersCard = ({
           {/* Price Range */}
           <div>
             <label className="text-sm font-medium mb-2 block">
-              Khoảng giá (CAN):
+              Khoảng giá ({TOKEN_DEAULT_CURRENCY}):
             </label>
             <div className="flex items-center gap-3">
               <input
