@@ -224,7 +224,7 @@ export class NFTService {
         investmentStartDate: nft.investmentStartDate,
         investmentEndDate: nft.investmentEndDate,
         pricePerShare: nft.pricePerShare,
-
+        tokenId: nft.tokenId,
         // Mystery Box NFT fields
         isOpenable:
           nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,

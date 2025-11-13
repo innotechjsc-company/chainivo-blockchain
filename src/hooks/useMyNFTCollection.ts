@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { NFTService } from '@/api/services/nft-service';
-import type { NFTItem, Pagination, NFTStats, NFTType, NFTLevel } from '@/types/NFT';
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { NFTService } from "@/api/services/nft-service";
+import type {
+  NFTItem,
+  Pagination,
+  NFTStats,
+  NFTType,
+  NFTLevel,
+} from "@/types/NFT";
 
 // Type cho filter tabs
-export type NFTFilterType = 'all' | 'sale' | 'not-listed';
+export type NFTFilterType = "all" | "sale" | "not-listed";
 
 // Type cho advanced filters
 export interface AdvancedFilters {
-  type: NFTType | 'all';
-  level: NFTLevel | 'all';
+  type: NFTType | "all";
+  level: NFTLevel | "all";
   priceRange: {
     min: number;
     max: number;
@@ -19,8 +25,8 @@ export interface AdvancedFilters {
 
 // Default advanced filters
 const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
-  type: 'all',
-  level: 'all',
+  type: "all",
+  level: "all",
   priceRange: {
     min: 0,
     max: Infinity,
@@ -57,8 +63,10 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   const [allNFTs, setAllNFTs] = useState<NFTItem[]>([]); // Luu toan bo NFT
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<NFTFilterType>('all');
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(DEFAULT_ADVANCED_FILTERS);
+  const [filter, setFilter] = useState<NFTFilterType>("all");
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(
+    DEFAULT_ADVANCED_FILTERS
+  );
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -78,19 +86,19 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
       const response = await NFTService.getNFTsByOwner({
         page: 1,
         limit: 100, // Tang limit de lay het NFT
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
+        sortBy: "createdAt",
+        sortOrder: "desc",
       });
 
       if (response.success && response.data) {
         setAllNFTs(response.data.nfts);
         setPagination(response.data.pagination);
       } else {
-        setError(response.message || 'Khong the tai danh sach NFT');
+        setError(response.message || "Khong the tai danh sach NFT");
         setAllNFTs([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khong xac dinh');
+      setError(err instanceof Error ? err.message : "Loi khong xac dinh");
       setAllNFTs([]);
     } finally {
       setLoading(false);
@@ -105,30 +113,36 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
     let filtered = allNFTs;
+    debugger;
 
     // Filter theo sale status (all/sale/not-listed)
-    if (filter === 'sale') {
+    if (filter === "sale") {
       filtered = filtered.filter((nft) => nft.isSale === true);
-    } else if (filter === 'not-listed') {
+    } else if (filter === "not-listed") {
       filtered = filtered.filter((nft) => nft.isSale === false);
     }
 
     // Filter theo type (normal, rank, mysteryBox, investment)
-    if (advancedFilters.type !== 'all') {
+    if (advancedFilters.type !== "all") {
       filtered = filtered.filter((nft) => nft.type === advancedFilters.type);
     }
 
     // Filter theo level (rarity: 1, 2, 3, 4, 5)
-    if (advancedFilters.level !== 'all') {
+    if (advancedFilters.level !== "all") {
       filtered = filtered.filter((nft) => nft.level === advancedFilters.level);
     }
 
     // Filter theo price range
-    if (advancedFilters.priceRange.min > 0 || advancedFilters.priceRange.max < Infinity) {
+    if (
+      advancedFilters.priceRange.min > 0 ||
+      advancedFilters.priceRange.max < Infinity
+    ) {
       filtered = filtered.filter((nft) => {
         const price = nft.salePrice || nft.price;
-        return price >= advancedFilters.priceRange.min &&
-               price <= advancedFilters.priceRange.max;
+        return (
+          price >= advancedFilters.priceRange.min &&
+          price <= advancedFilters.priceRange.max
+        );
       });
     }
 
