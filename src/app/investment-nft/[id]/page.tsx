@@ -453,7 +453,8 @@ export default function InvestmentNFTDetailPage() {
                   <Progress value={progress} className="h-2.5" />
                   <div className="mt-2 text-xs text-cyan-400 font-semibold">
                     <span className="font-semibold text-cyan-400">
-                      {sharesSold} CP / {totalShares} CP
+                      {sharesSold} CP /{" "}
+                      {Number(totalShares).toLocaleString("us-EN")} CP
                     </span>
                   </div>
                 </div>
