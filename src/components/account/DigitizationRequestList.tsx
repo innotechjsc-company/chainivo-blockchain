@@ -12,6 +12,7 @@ import {
   type GetSystemFeeResponse,
   BenefitsDigiService,
 } from "@/api/services";
+import { config } from "@/api/config";
 import { RefreshCw, MapPin, Calendar, DollarSign, Plus } from "lucide-react";
 import { DigitizationRequestModal } from "@/screens/digitizing-nft-screen/components";
 import {
@@ -87,6 +88,26 @@ export function DigitizationRequestList({
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(
     null
   );
+  const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+  const [successModalOpen, setSuccessModalOpen] = useState<boolean>(false);
+  const [pendingRequestData, setPendingRequestData] = useState<{
+    request: DigitizationRequest;
+    totalFeePercent: number;
+    paidAmount: number;
+  } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    transactionHash: string;
+    request: DigitizationRequest;
+  } | null>(null);
+
+  const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
+    if (!Number.isFinite(value)) return "0";
+    return value.toLocaleString("vi-VN", {
+      maximumFractionDigits: 6,
+      minimumFractionDigits: 0,
+      ...options,
+    });
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -146,7 +167,7 @@ export function DigitizationRequestList({
     setIsDetailModalOpen(true);
   };
 
-  const handleConfirmRequest = async (request: DigitizationRequest) => {
+  const handleConfirmClick = async (request: DigitizationRequest) => {
     try {
       setFeeLoading(true);
       setProcessingRequestId(request.id);
@@ -189,14 +210,40 @@ export function DigitizationRequestList({
         return;
       }
 
+      setPendingRequestData({
+        request,
+        totalFeePercent,
+        paidAmount: normalizedAmount,
+      });
+      setConfirmModalOpen(true);
+    } catch (err) {
+      console.error("Error while preparing confirmation:", err);
+      toast.error("Có lỗi xảy ra khi xử lý yêu cầu.");
+    } finally {
+      setFeeLoading(false);
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleConfirmRequest = async () => {
+    if (!pendingRequestData) return;
+
+    const { request, paidAmount } = pendingRequestData;
+
+    try {
+      setFeeLoading(true);
+      setProcessingRequestId(request.id);
+
       if (!walletAddress) {
         toast.error("Vui lòng kết nối ví của bạn trước khi xác nhận yêu cầu.");
         throw new Error("WALLET_NOT_CONNECTED");
       }
 
+      setConfirmModalOpen(false);
+
       const transferResult = await TransferService.sendCanTransfer({
         fromAddress: walletAddress,
-        amountCan: normalizedAmount,
+        amountCan: paidAmount,
       });
 
       if (!transferResult.transactionHash) {
@@ -211,9 +258,9 @@ export function DigitizationRequestList({
         );
 
       if (confirmResponse.success) {
-        toast.success("Đã xác nhận yêu cầu số hóa thành công.");
-        fetchRequests();
-        onRefresh?.();
+        debugger;
+        setSuccessData((confirmResponse?.data as any)?.nft);
+        setSuccessModalOpen(true);
       } else {
         toast.error(
           confirmResponse.error ||
@@ -229,8 +276,35 @@ export function DigitizationRequestList({
     } finally {
       setFeeLoading(false);
       setProcessingRequestId(null);
+      setPendingRequestData(null);
     }
   };
+
+  const handleConfirmModalOpenChange = (open: boolean) => {
+    setConfirmModalOpen(open);
+    if (!open) {
+      setPendingRequestData(null);
+    }
+  };
+
+  const handleSuccessModalClose = () => {
+    setSuccessModalOpen(false);
+    if (successData) {
+      debugger;
+      fetchRequests();
+      onRefresh?.();
+    }
+    setSuccessData(null);
+  };
+
+  const nftTargetId = (successData as any)?.id || "";
+  const explorerLink = successData
+    ? `https://amoy.polygonscan.com/token/${config.BLOCKCHAIN.CAN_TOKEN_ADDRESS}?a=${successData.transactionHash}`
+    : "#";
+  const myNftLink = nftTargetId ? `/nft/${nftTargetId}` : "#";
+  const investmentNftLink = nftTargetId
+    ? `/investment-nft/${nftTargetId}`
+    : "#";
 
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
@@ -391,9 +465,7 @@ export function DigitizationRequestList({
                           Giá tài sản
                         </div>
                         <div className="text-xl font-bold gradient-text">
-                          {request.price
-                            ? `${request.price.toLocaleString("vi-VN")} VNĐ`
-                            : "—"}
+                          {formatNumber(request.price ?? 0)}
                         </div>
                       </div>
                     </div>
@@ -424,7 +496,7 @@ export function DigitizationRequestList({
                         }
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleConfirmRequest(request);
+                          handleConfirmClick(request);
                         }}
                       >
                         {feeLoading && processingRequestId === request.id ? (
@@ -477,6 +549,119 @@ export function DigitizationRequestList({
           onRefresh?.();
         }}
       />
+
+      {/* Confirm Digitization Modal */}
+      <Dialog
+        open={confirmModalOpen}
+        onOpenChange={handleConfirmModalOpenChange}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Xác nhận số hóa</DialogTitle>
+            <DialogDescription>
+              {pendingRequestData
+                ? `Bạn muốn số hóa ${
+                    pendingRequestData.request.name || "tài sản"
+                  }?`
+                : "Xác nhận số hóa tài sản này."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Nếu đồng ý, bạn sẽ bị trừ phí{" "}
+              <span className="font-semibold text-cyan-400">
+                {formatNumber(pendingRequestData?.totalFeePercent ?? 0, {
+                  maximumFractionDigits: 2,
+                })}
+                %
+              </span>
+              , tương đương với{" "}
+              <span className="font-semibold text-white">
+                {formatNumber(pendingRequestData?.paidAmount ?? 0, {
+                  maximumFractionDigits: 2,
+                })}{" "}
+                CAN
+              </span>
+              .
+            </p>
+            <p>
+              Phí sẽ được trừ ngay lập tức khỏi ví của bạn và không thể hoàn
+              tác.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => handleConfirmModalOpenChange(false)}
+              disabled={feeLoading}
+            >
+              Thoát
+            </Button>
+            <Button onClick={handleConfirmRequest} disabled={feeLoading}>
+              {feeLoading ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="w-4 h-4" />
+                  Đang xử lý...
+                </span>
+              ) : (
+                "Đồng ý"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog
+        open={successModalOpen}
+        onOpenChange={(open) => {
+          if (!open) handleSuccessModalClose();
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chúc mừng!</DialogTitle>
+            <DialogDescription>
+              Bạn đã số hóa thành công tài sản của mình.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Hệ thống đã hoàn tất xử lý. Bạn có thể theo dõi giao dịch và xem
+              lại thông tin tài sản qua các liên kết bên dưới.
+            </p>
+            <div className="space-y-2">
+              <a
+                href={explorerLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline block"
+              >
+                Kiểm tra giao dịch
+              </a>
+              <a
+                href={myNftLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline block"
+              >
+                Xem cổ phần
+              </a>
+              <a
+                href={investmentNftLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline block"
+              >
+                Xem chi tiết NFT
+              </a>
+            </div>
+          </div>
+          <div className="flex justify-end pt-4">
+            <Button onClick={handleSuccessModalClose}>Thoát</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={handleCloseDetailModal}>
