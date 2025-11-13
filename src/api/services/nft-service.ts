@@ -547,6 +547,11 @@ export class NFTService {
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.Mint_NFT_BLOCKCHAIN, data);
   }
+  static async getShareDetail(data: {
+    nftId: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.get(API_ENDPOINTS.NFT.SHARE_DETAIL(data.nftId));
+  }
 }
 
 export default NFTService;

@@ -22,6 +22,23 @@ export interface DigitizationRequestResponse {
   createdAt: string;
 }
 
+export interface DigitizationRequest {
+  id: string;
+  name: string;
+  description: string;
+  address: string;
+  status: string;
+  price?: number;
+  availablePercentage?: number;
+  image?: {
+    id: string;
+    url: string;
+    filename?: string;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export class SendRequestService {
   static async sendRequest(
     data: SendDigitizationRequestData
@@ -29,6 +46,15 @@ export class SendRequestService {
     return ApiService.post<DigitizationRequestResponse>(
       API_ENDPOINTS.DIGITAL_REQUEST.LIST,
       data
+    );
+  }
+
+  static async getMyRequests(
+    params?: Record<string, any>
+  ): Promise<ApiResponse<DigitizationRequest[]>> {
+    return ApiService.get<DigitizationRequest[]>(
+      API_ENDPOINTS.DIGITAL_REQUEST.DETAIL,
+      params
     );
   }
 }

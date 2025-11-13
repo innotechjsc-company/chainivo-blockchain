@@ -25,6 +25,9 @@ export class BenefitsDigiService {
       params
     );
   }
+  static async getMyDigitizingRequests(): Promise<ApiResponse<any>> {
+    return ApiService.get<any>(API_ENDPOINTS.DIGITAL_REQUEST.DETAIL);
+  }
 }
 
 export default BenefitsDigiService;

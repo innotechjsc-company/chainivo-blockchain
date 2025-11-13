@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings } from "lucide-react";
+import { User, Wallet, History, Settings, FileText } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
@@ -25,6 +25,8 @@ import { TransactionPagination } from "@/components/account/TransactionPaginatio
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { Spinner } from "@/components/ui/spinner";
 import MyNFTScreen from "@/screens/my-nft-screen";
+import { DigitizingNftScreen } from "@/screens/digitizing-nft-screen";
+import { DigitizationRequestList } from "@/components/account/DigitizationRequestList";
 
 interface Profile {
   name: string;
@@ -327,7 +329,7 @@ export default function AccountManagementPage() {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-7 mb-8">
+            <TabsList className="grid w-full grid-cols-8 mb-8">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
@@ -351,6 +353,10 @@ export default function AccountManagementPage() {
               <TabsTrigger value="history">
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
+              </TabsTrigger>
+              <TabsTrigger value="digitizing-request">
+                <FileText className="w-4 h-4 mr-2" />
+                Số hóa NFT
               </TabsTrigger>
               <TabsTrigger value="settings">
                 <Settings className="w-4 h-4 mr-2" />
@@ -554,6 +560,12 @@ export default function AccountManagementPage() {
                     />
                   </>
                 )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="digitizing-request">
+              <Card className="p-6 glass">
+                <DigitizationRequestList />
               </Card>
             </TabsContent>
 

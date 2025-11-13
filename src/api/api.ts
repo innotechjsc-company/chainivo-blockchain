@@ -84,6 +84,7 @@ export const API_ENDPOINTS = {
 
   DIGITAL_REQUEST: {
     LIST: "/api/digitization-request/send-request",
+    DETAIL: "/api/digitization-request/my-request",
   },
 
   INVESTMENT: {
@@ -120,6 +121,8 @@ export const API_ENDPOINTS = {
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
     OPEN_BOX: "/api/nft/open-box",
     Mint_NFT_BLOCKCHAIN: "/api/nft/mint-to-blockchain",
+    SHARE_DETAIL: (nftId: string) =>
+      `/api/investment-nft/share-details?nftId=${nftId}`,
   },
 
   STAKING: {

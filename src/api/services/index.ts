@@ -80,6 +80,7 @@ export { SendRequestService } from "./send-request";
 export type {
   SendDigitizationRequestData,
   DigitizationRequestResponse,
+  DigitizationRequest,
 } from "./send-request";
 
 export { MediaService } from "./media-service";

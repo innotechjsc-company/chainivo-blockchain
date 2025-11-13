@@ -263,9 +263,7 @@ export function DigitizationRequestModal({
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const abc = e.target.files;
     const file = e.target.files?.[0];
-    debugger;
     if (!file) return;
 
     // Validate image file
