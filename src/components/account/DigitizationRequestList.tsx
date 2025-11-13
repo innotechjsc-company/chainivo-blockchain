@@ -116,7 +116,18 @@ export function DigitizationRequestList({
     onRefresh?.();
   };
 
+  const shouldShowConfirmButton = (status?: string) => {
+    if (!status) return false;
+    const normalizedStatus = status.toLowerCase();
+    return normalizedStatus !== "completed" && normalizedStatus !== "rejected";
+  };
+
   const handleCardClick = (request: DigitizationRequest) => {
+    setSelectedRequest(request);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleConfirmRequest = (request: DigitizationRequest) => {
     setSelectedRequest(request);
     setIsDetailModalOpen(true);
   };
@@ -191,7 +202,7 @@ export function DigitizationRequestList({
           {requests.map((request) => (
             <Card
               key={request.id}
-              className="glass overflow-hidden transition hover:shadow-lg p-0 cursor-pointer"
+              className="glass overflow-hidden transition hover:shadow-lg p-0 cursor-pointer flex flex-col"
               onClick={() => handleCardClick(request)}
             >
               {/* Image */}
@@ -235,75 +246,92 @@ export function DigitizationRequestList({
               </div>
 
               {/* Content */}
-              <div className="px-4 space-y-3">
-                {/* Title */}
-                <div className="flex items-center gap-3">
-                  <h4 className="font-semibold text-lg line-clamp-1 flex-1">
-                    {request.name}
-                  </h4>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Mô tả
+              <div className="px-4 py-4 flex flex-col flex-1">
+                <div className="flex-1 space-y-3">
+                  {/* Title */}
+                  <div className="flex items-center gap-3 min-h-[28px]">
+                    <h4 className="font-semibold text-lg line-clamp-1 flex-1">
+                      {request.name || "—"}
+                    </h4>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {request.description}
-                  </p>
-                </div>
 
-                {/* Address */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-green-400" />
+                  {/* Description */}
+                  <div className="min-h-[60px]">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Mô tả
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {request.description || "—"}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground">Địa chỉ</div>
-                    <div className="text-sm line-clamp-1">
-                      {request.address}
+
+                  {/* Address */}
+                  <div className="flex items-center gap-3 min-h-[56px]">
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-muted-foreground">
+                        Địa chỉ
+                      </div>
+                      <div className="text-sm line-clamp-1">
+                        {request.address || "—"}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Price and Percentage */}
+                  <div className="flex items-center gap-3 min-h-[64px]">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="w-5 h-5 text-yellow-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-muted-foreground">
+                          Giá tài sản
+                        </div>
+                        <div className="text-xl font-bold gradient-text">
+                          {request.price
+                            ? `${request.price.toLocaleString("vi-VN")} VNĐ`
+                            : "—"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-muted-foreground">
+                          Cổ phần mở bán
+                        </div>
+                        <div className="text-xl font-bold">
+                          {request.availablePercentage
+                            ? `${request.availablePercentage}%`
+                            : "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {shouldShowConfirmButton(request.status) && (
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl hover:from-cyan-600 hover:to-purple-700 transition"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleConfirmRequest(request);
+                        }}
+                      >
+                        Xác nhận
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Price and Percentage */}
-                {(request.price || request.availablePercentage) && (
-                  <div className="flex items-center gap-3">
-                    {request.price && (
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                          <DollarSign className="w-5 h-5 text-yellow-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-muted-foreground">
-                            Giá tài sản
-                          </div>
-                          <div className="text-xl font-bold gradient-text">
-                            {request.price.toLocaleString("vi-VN")} VNĐ
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {request.availablePercentage && (
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-5 h-5 text-purple-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-muted-foreground">
-                            Cổ phần
-                          </div>
-                          <div className="text-xl font-bold">
-                            {request.availablePercentage}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Created Date */}
-                <div className="flex items-center gap-3 border-t py-3">
+                {/* Created Date - Fixed at bottom */}
+                <div className="flex items-center gap-3 border-t pt-3 mt-auto min-h-[56px]">
                   <div className="w-10 h-10 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-5 h-5 text-gray-400" />
                   </div>
@@ -312,11 +340,16 @@ export function DigitizationRequestList({
                       Ngày tạo
                     </div>
                     <div className="text-sm">
-                      {new Date(request.createdAt).toLocaleDateString("vi-VN", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      {request.createdAt
+                        ? new Date(request.createdAt).toLocaleDateString(
+                            "vi-VN",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )
+                        : "—"}
                     </div>
                   </div>
                 </div>

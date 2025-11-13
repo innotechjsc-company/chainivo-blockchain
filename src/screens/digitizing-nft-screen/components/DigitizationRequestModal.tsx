@@ -58,6 +58,41 @@ export function DigitizationRequestModal({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
 
+  // Helper function để format số với dấu phẩy
+  const formatNumberWithCommas = (value: string): string => {
+    // Loại bỏ tất cả ký tự không phải số và dấu chấm
+    let numericValue = value.replace(/[^\d.]/g, "");
+    if (!numericValue) return "";
+
+    // Xử lý trường hợp có nhiều dấu chấm (chỉ giữ lại dấu chấm đầu tiên)
+    const dotIndex = numericValue.indexOf(".");
+    if (dotIndex !== -1) {
+      const integerPart = numericValue.substring(0, dotIndex);
+      const decimalPart = numericValue
+        .substring(dotIndex + 1)
+        .replace(/\./g, "");
+      numericValue = `${integerPart}.${decimalPart}`;
+    }
+
+    // Tách phần nguyên và phần thập phân
+    const parts = numericValue.split(".");
+    const integerPart = parts[0] || "";
+    const decimalPart = parts[1];
+
+    // Format phần nguyên với dấu phẩy
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    // Kết hợp lại
+    return decimalPart !== undefined
+      ? `${formattedInteger}.${decimalPart}`
+      : formattedInteger;
+  };
+
+  // Helper function để parse số từ string có dấu phẩy
+  const parseNumberFromFormatted = (value: string): string => {
+    return value.replace(/,/g, "");
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -72,8 +107,11 @@ export function DigitizationRequestModal({
     }
     if (!formData.price.trim()) {
       newErrors.price = "Giá tài sản là bắt buộc";
-    } else if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-      newErrors.price = "Giá tài sản phải là số lớn hơn 0";
+    } else {
+      const numericPrice = parseNumberFromFormatted(formData.price);
+      if (isNaN(Number(numericPrice)) || Number(numericPrice) <= 0) {
+        newErrors.price = "Giá tài sản phải là số lớn hơn 0";
+      }
     }
     if (!formData.availablePercentage.trim()) {
       newErrors.availablePercentage = "Phần trăm số cổ phần là bắt buộc";
@@ -207,7 +245,7 @@ export function DigitizationRequestModal({
         description: formData.description.trim(),
         image: imageId,
         documents: documentIds.length > 0 ? documentIds : undefined,
-        price: Number(formData.price),
+        price: Number(parseNumberFromFormatted(formData.price)),
         availablePercentage: Number(formData.availablePercentage),
         address: formData.address.trim(),
         senderName: formData.senderName.trim(),
@@ -505,14 +543,13 @@ export function DigitizationRequestModal({
             </Label>
             <Input
               id="price"
-              type="number"
+              type="text"
               value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              placeholder="Nhập giá tài sản"
-              min="0"
-              step="0.01"
+              onChange={(e) => {
+                const formatted = formatNumberWithCommas(e.target.value);
+                setFormData({ ...formData, price: formatted });
+              }}
+              placeholder="Nhập giá tài sản (ví dụ: 1,000,000)"
               className={errors.price ? "border-red-500" : ""}
             />
             {errors.price && (

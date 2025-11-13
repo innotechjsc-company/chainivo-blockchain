@@ -97,7 +97,9 @@ export default function MyNFTScreen(): JSX.Element {
             key={nft.id}
             nft={nft}
             showActions={true}
-            onActionClick={handleNFTAction}
+            onActionClick={(nft, action) =>
+              handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
+            }
           />
         ))}
       </div>
