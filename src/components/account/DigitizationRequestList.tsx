@@ -97,8 +97,10 @@ export function DigitizationRequestList({
   } | null>(null);
   const [successData, setSuccessData] = useState<{
     transactionHash: string;
-    request: DigitizationRequest;
+    tokenId?: string | number;
+    nftId?: string;
   } | null>(null);
+  const [globalLoading, setGlobalLoading] = useState<boolean>(false);
 
   const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
     if (!Number.isFinite(value)) return "0";
@@ -170,6 +172,7 @@ export function DigitizationRequestList({
   const handleConfirmClick = async (request: DigitizationRequest) => {
     try {
       setFeeLoading(true);
+      setGlobalLoading(true);
       setProcessingRequestId(request.id);
 
       const feeResponse = await FeeService.getSystemFees();
@@ -258,8 +261,14 @@ export function DigitizationRequestList({
         );
 
       if (confirmResponse.success) {
-        debugger;
-        setSuccessData((confirmResponse?.data as any)?.nft);
+        const responseData = confirmResponse?.data as any;
+        const nftInfo = responseData?.nft || responseData;
+        setSuccessData({
+          transactionHash: transferResult.transactionHash,
+          tokenId:
+            nftInfo?.tokenId || nftInfo?.token_id || responseData?.tokenId,
+          nftId: nftInfo?.id || nftInfo?._id || nftInfo?.nftId || request.id,
+        });
         setSuccessModalOpen(true);
       } else {
         toast.error(
@@ -275,6 +284,7 @@ export function DigitizationRequestList({
       }
     } finally {
       setFeeLoading(false);
+      setGlobalLoading(false);
       setProcessingRequestId(null);
       setPendingRequestData(null);
     }
@@ -284,22 +294,27 @@ export function DigitizationRequestList({
     setConfirmModalOpen(open);
     if (!open) {
       setPendingRequestData(null);
+      setFeeLoading(false);
+      setProcessingRequestId(null);
+      setGlobalLoading(false);
     }
   };
 
   const handleSuccessModalClose = () => {
     setSuccessModalOpen(false);
     if (successData) {
-      debugger;
       fetchRequests();
       onRefresh?.();
     }
     setSuccessData(null);
+    setGlobalLoading(false);
   };
 
-  const nftTargetId = (successData as any)?.id || "";
+  const nftTargetId = successData?.nftId || "";
   const explorerLink = successData
-    ? `https://amoy.polygonscan.com/token/${config.BLOCKCHAIN.CAN_TOKEN_ADDRESS}?a=${successData.transactionHash}`
+    ? `https://amoy.polygonscan.com/token/${
+        config.BLOCKCHAIN.CAN_TOKEN_ADDRESS
+      }?a=${successData.tokenId ?? successData.transactionHash}`
     : "#";
   const myNftLink = nftTargetId ? `/nft/${nftTargetId}` : "#";
   const investmentNftLink = nftTargetId
@@ -357,6 +372,17 @@ export function DigitizationRequestList({
 
   return (
     <>
+      {globalLoading && (
+        <div className="fixed inset-0 z-[999] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Spinner className="w-8 h-8 text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Đang xử lý giao dịch...
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold">Danh sách yêu cầu số hóa</h3>
@@ -465,7 +491,11 @@ export function DigitizationRequestList({
                           Giá tài sản
                         </div>
                         <div className="text-xl font-bold gradient-text">
-                          {formatNumber(request.price ?? 0)}
+                          {request.price
+                            ? `${formatNumber(request.price ?? 0, {
+                                maximumFractionDigits: 0,
+                              })} VNĐ`
+                            : "—"}
                         </div>
                       </div>
                     </div>
@@ -754,7 +784,10 @@ export function DigitizationRequestList({
                         Giá tài sản
                       </div>
                       <div className="text-xl font-bold gradient-text">
-                        {selectedRequest.price.toLocaleString("vi-VN")} VNĐ
+                        {formatNumber(selectedRequest.price ?? 0, {
+                          maximumFractionDigits: 0,
+                        })}{" "}
+                        VNĐ
                       </div>
                     </div>
                   </div>
