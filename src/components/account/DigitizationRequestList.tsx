@@ -5,7 +5,13 @@ import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { SendRequestService, type DigitizationRequest } from "@/api/services";
+import {
+  SendRequestService,
+  FeeService,
+  type DigitizationRequest,
+  type GetSystemFeeResponse,
+  BenefitsDigiService,
+} from "@/api/services";
 import { RefreshCw, MapPin, Calendar, DollarSign, Plus } from "lucide-react";
 import { DigitizationRequestModal } from "@/screens/digitizing-nft-screen/components";
 import {
@@ -15,6 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import TransferService from "@/services/TransferService";
+import { useAppSelector } from "@/stores";
+import { toast } from "sonner";
 
 interface DigitizationRequestListProps {
   onRefresh?: () => void;
@@ -68,6 +77,16 @@ export function DigitizationRequestList({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<DigitizationRequest | null>(null);
+  const [feeLoading, setFeeLoading] = useState<boolean>(false);
+  const [systemFees, setSystemFees] = useState<GetSystemFeeResponse | null>(
+    null
+  );
+  const walletAddress = useAppSelector(
+    (state) => state.wallet.wallet?.address || ""
+  );
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(
+    null
+  );
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -127,9 +146,90 @@ export function DigitizationRequestList({
     setIsDetailModalOpen(true);
   };
 
-  const handleConfirmRequest = (request: DigitizationRequest) => {
-    setSelectedRequest(request);
-    setIsDetailModalOpen(true);
+  const handleConfirmRequest = async (request: DigitizationRequest) => {
+    try {
+      setFeeLoading(true);
+      setProcessingRequestId(request.id);
+
+      const feeResponse = await FeeService.getSystemFees();
+      if (!feeResponse.success || !feeResponse.data) {
+        console.error("Failed to fetch system fees:", feeResponse.error);
+        toast.error("Không thể lấy thông tin phí hệ thống.");
+        return;
+      }
+
+      setSystemFees(feeResponse.data);
+
+      const { appraisalFee, digitizationFee } = feeResponse.data as Record<
+        string,
+        any
+      >;
+
+      let totalFeePercent = 0;
+
+      if (appraisalFee?.isActive && Number(appraisalFee.value) > 0) {
+        totalFeePercent += Number(appraisalFee.value);
+      }
+
+      if (digitizationFee?.isActive && Number(digitizationFee.value) > 0) {
+        totalFeePercent += Number(digitizationFee.value);
+      }
+
+      if (totalFeePercent <= 0) {
+        toast.info("Không có phí cần thanh toán cho yêu cầu này.");
+        return;
+      }
+
+      const basePrice = Number(request.price || 0);
+      const paidAmount = (basePrice * totalFeePercent) / 100;
+      const normalizedAmount = Number(paidAmount.toFixed(6));
+
+      if (normalizedAmount <= 0) {
+        toast.info("Giá trị phí không hợp lệ.");
+        return;
+      }
+
+      if (!walletAddress) {
+        toast.error("Vui lòng kết nối ví của bạn trước khi xác nhận yêu cầu.");
+        throw new Error("WALLET_NOT_CONNECTED");
+      }
+
+      const transferResult = await TransferService.sendCanTransfer({
+        fromAddress: walletAddress,
+        amountCan: normalizedAmount,
+      });
+
+      if (!transferResult.transactionHash) {
+        toast.error("Không thể thực hiện giao dịch phí số hóa.");
+        return;
+      }
+
+      const confirmResponse =
+        await BenefitsDigiService.confirmDigitizingRequest(
+          request.id,
+          transferResult.transactionHash
+        );
+
+      if (confirmResponse.success) {
+        toast.success("Đã xác nhận yêu cầu số hóa thành công.");
+        fetchRequests();
+        onRefresh?.();
+      } else {
+        toast.error(
+          confirmResponse.error ||
+            confirmResponse.message ||
+            "Không thể xác nhận yêu cầu số hóa."
+        );
+      }
+    } catch (err) {
+      console.error("Error while confirming request:", err);
+      if (!(err instanceof Error && err.message === "WALLET_NOT_CONNECTED")) {
+        toast.error("Có lỗi xảy ra khi thực hiện giao dịch phí.");
+      }
+    } finally {
+      setFeeLoading(false);
+      setProcessingRequestId(null);
+    }
   };
 
   const handleCloseDetailModal = () => {
@@ -319,19 +419,29 @@ export function DigitizationRequestList({
                       <Button
                         type="button"
                         className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl hover:from-cyan-600 hover:to-purple-700 transition"
+                        disabled={
+                          feeLoading && processingRequestId === request.id
+                        }
                         onClick={(event) => {
                           event.stopPropagation();
                           handleConfirmRequest(request);
                         }}
                       >
-                        Xác nhận
+                        {feeLoading && processingRequestId === request.id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner className="w-4 h-4" />
+                            Đang lấy phí...
+                          </span>
+                        ) : (
+                          "Xác nhận"
+                        )}
                       </Button>
                     </div>
                   )}
                 </div>
 
                 {/* Created Date - Fixed at bottom */}
-                <div className="flex items-center gap-3 border-t pt-3 mt-auto min-h-[56px]">
+                <div className="flex items-center gap-3  pt-3 mt-auto min-h-[56px]">
                   <div className="w-10 h-10 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-5 h-5 text-gray-400" />
                   </div>

@@ -28,6 +28,15 @@ export class BenefitsDigiService {
   static async getMyDigitizingRequests(): Promise<ApiResponse<any>> {
     return ApiService.get<any>(API_ENDPOINTS.DIGITAL_REQUEST.DETAIL);
   }
+  static async confirmDigitizingRequest(
+    requestId: string,
+    transactionHash: string
+  ): Promise<ApiResponse<any>> {
+    return ApiService.post<any>(API_ENDPOINTS.DIGITAL_REQUEST.CONFIRM, {
+      requestId,
+      transactionHash,
+    });
+  }
 }
 
 export default BenefitsDigiService;

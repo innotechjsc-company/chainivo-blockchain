@@ -85,6 +85,7 @@ export const API_ENDPOINTS = {
   DIGITAL_REQUEST: {
     LIST: "/api/digitization-request/send-request",
     DETAIL: "/api/digitization-request/my-request",
+    CONFIRM: "/api/digitization-request/user-confirm",
   },
 
   INVESTMENT: {
@@ -132,6 +133,10 @@ export const API_ENDPOINTS = {
     UNSTAKE: (stakeId: string) => `/api/staking/unstake/${stakeId}`,
     CLAIM: (stakeId: string) => `/api/staking/claim/${stakeId}`,
     USER_STAKES: (userId: string) => `/api/staking/user-stakes/${userId}`,
+  },
+
+  FEE: {
+    GET_FEE: "/api/globals/system-fees",
   },
 
   BENEFITS: {

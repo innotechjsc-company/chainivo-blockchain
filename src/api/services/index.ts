@@ -85,3 +85,6 @@ export type {
 
 export { MediaService } from "./media-service";
 export type { MediaUploadResponse } from "./media-service";
+
+export { FeeService } from "./fee-service";
+export type { SystemFeeConfig, GetSystemFeeResponse } from "./fee-service";
