@@ -8,7 +8,6 @@ import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
 import { NFTCard } from "@/components/nft";
 
-// Trang quan ly NFT cua toi (chi hien thi NFT dau tu)
 export default function MyNFTScreen(): JSX.Element {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -17,14 +16,12 @@ export default function MyNFTScreen(): JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect neu chua dang nhap
   useEffect(() => {
     if (isAuthenticated === false) {
       router.replace("/auth?tab=login");
     }
   }, [isAuthenticated, router]);
 
-  // Fetch my NFTs khi da dang nhap
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -97,7 +94,9 @@ export default function MyNFTScreen(): JSX.Element {
             key={nft.id}
             nft={nft}
             showActions={true}
-            onActionClick={handleNFTAction}
+            onActionClick={(nft, action) =>
+              handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
+            }
           />
         ))}
       </div>

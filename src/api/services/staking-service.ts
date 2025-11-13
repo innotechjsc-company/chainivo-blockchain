@@ -46,11 +46,13 @@ export class StakingService {
 
   static async stake(
     stakeId: string,
-    transactionHash: string
+    transactionHash: string,
+    nftId?: string
   ): Promise<ApiResponse<UserStake>> {
     return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
       stakeId,
       transactionHash,
+      nftId,
     });
   }
 

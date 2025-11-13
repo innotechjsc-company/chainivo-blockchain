@@ -1,5 +1,6 @@
 "use client";
 
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Building2,
@@ -73,7 +74,7 @@ export const CompanyInfoCard = () => {
                 <Building2 className="w-12 h-12 text-primary flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-semibold mb-2">
-                    CAN Technology Corporation
+                    {TOKEN_DEAULT_CURRENCY} Technology Corporation
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Được thành lập vào năm 2020, CAN Technology Corporation là

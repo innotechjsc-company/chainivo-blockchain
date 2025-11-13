@@ -11,6 +11,7 @@ import { useAppSelector } from "@/stores";
 import { StakingService, WalletService } from "@/api/services";
 import TransferService from "@/services/TransferService";
 import { toast } from "sonner";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 export default function StakingHeroDemoPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
@@ -261,7 +262,7 @@ export default function StakingHeroDemoPage() {
                               (parseFloat(amount) * apy * 30) /
                               (365 * 100)
                             ).toFixed(2)}{" "}
-                            CAN
+                            {TOKEN_DEAULT_CURRENCY}
                           </p>
                         </div>
                         <div>

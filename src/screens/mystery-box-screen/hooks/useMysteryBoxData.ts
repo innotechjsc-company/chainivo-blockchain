@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MysteryBoxService } from "@/api/services";
-import { config } from "@/api/config";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 export interface Reward {
   id: string;
@@ -153,7 +153,7 @@ export const useMysteryBoxData = () => {
         // Helper to construct full image URL
         const getImageUrl = (imageData: any): string => {
           if (!imageData?.url) return "/nft-box.jpg";
-          
+
           const imageUrl = imageData.url;
           // Nếu URL đã là full URL (bắt đầu bằng http), dùng trực tiếp
           if (imageUrl.startsWith("http")) {
@@ -174,7 +174,7 @@ export const useMysteryBoxData = () => {
             image: getImageUrl(box.image),
             price: {
               amount: box.price,
-              currency: "CAN",
+              currency: { TOKEN_DEAULT_CURRENCY },
             },
             tierName: tierInfo.tierName,
             tierLevel: tierInfo.tierLevel,

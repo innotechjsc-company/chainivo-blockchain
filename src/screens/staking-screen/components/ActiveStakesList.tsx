@@ -31,6 +31,8 @@ import { StakingCoin, StakingNFT, StakingPool } from "@/types";
 import { useAppSelector } from "@/stores";
 import { LocalStorageService } from "@/services";
 import { toast } from "sonner";
+import { formatNumber } from "@/utils/formatters";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 function CountdownTimer({
   startAt,
@@ -101,9 +103,8 @@ export const ActiveStakesList = ({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
   const [confirmUnstakeOpen, setConfirmUnstakeOpen] = useState(false);
-  const [selectedUnstakeId, setSelectedUnstakeId] = useState<string | null>(
-    null
-  );
+  const [selectedUnstakeId, setSelectedUnstakeId] = useState<any>(null);
+  const [penaltyAmount, setPenaltyAmount] = useState<number | null>(null);
 
   const activeCoinStakes = coinStakes.filter((s) => s.status === "active");
   const activeNFTStakes = nftStakes.filter((s) => s.status === "active");
@@ -126,18 +127,18 @@ export const ActiveStakesList = ({
     }
   };
 
-  const handleUnstakeClick = (stakeId: string) => {
-    setSelectedUnstakeId(stakeId);
+  const handleUnstakeClick = (item: any) => {
+    setSelectedUnstakeId(item);
     setConfirmUnstakeOpen(true);
   };
 
   const handleConfirmUnstake = async () => {
-    const stakeId = selectedUnstakeId;
+    const stakeItem = selectedUnstakeId;
     setConfirmUnstakeOpen(false);
     setSelectedUnstakeId(null);
-    if (!stakeId) return;
+    if (!stakeItem.id) return;
     try {
-      await unStakeData(stakeId);
+      await unStakeData(stakeItem.id);
     } catch (e) {
       // noop
     }
@@ -240,7 +241,7 @@ export const ActiveStakesList = ({
                         variant="default"
                         onClick={async () => {
                           if (!user) {
-                            toast.error("Ban vui long dang nhap de tiep tuc");
+                            toast.error("Bạn vui lòng đăng nhập để tiếp tục");
                             return;
                           }
                           let isConnected =
@@ -312,9 +313,36 @@ export const ActiveStakesList = ({
                             toast.error("Vui lòng kết nối ví để tiếp tục");
                             return;
                           }
-                          handleUnstakeClick(id);
+
+                          // Check điều kiện hủy sớm
+                          const poolInfo = (pool as any).poolInfo;
+                          const stakeInfo = (pool as any).stake;
+                          const allowEarlyClaim =
+                            poolInfo?.allowEarlyClaim ??
+                            stakeInfo?.allowEarlyClaim ??
+                            true;
+                          const penalty =
+                            poolInfo?.penaltyAmount ??
+                            stakeInfo?.penaltyAmount ??
+                            null;
+                          const poolType =
+                            poolInfo?.type ?? stakeInfo?.type ?? "token";
+
+                          // Nếu không cho phép hủy sớm, có penalty và type là token
+                          if (
+                            allowEarlyClaim === false &&
+                            penalty !== null &&
+                            penalty > 0 &&
+                            poolType === "token"
+                          ) {
+                            setPenaltyAmount(penalty);
+                          } else {
+                            setPenaltyAmount(null);
+                          }
+
+                          handleUnstakeClick(pool);
                         }}
-                        disabled={!canUnstake && status === "active"}
+                        // disabled={!canUnstake && status === "active"}
                         className="flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" />
@@ -358,12 +386,38 @@ export const ActiveStakesList = ({
       </Dialog>
 
       {/* Unstake Confirmation Dialog */}
-      <Dialog open={confirmUnstakeOpen} onOpenChange={setConfirmUnstakeOpen}>
+      <Dialog
+        open={confirmUnstakeOpen}
+        onOpenChange={(open) => {
+          setConfirmUnstakeOpen(open);
+          if (!open) {
+            setPenaltyAmount(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Xác nhận hủy staking</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn huỷ gói stake này không?
+              {selectedUnstakeId?.type === "token" &&
+              selectedUnstakeId?.allowEarlyClaim === false ? (
+                <>
+                  Bạn có chắc chắn muốn huỷ gói stake này nếu đồng ý bạn sẽ
+                  không nhận được thưởng và sẽ bị phạt{" "}
+                  {Number(selectedUnstakeId?.penaltyAmount).toLocaleString()}%
+                  tương đương với{" "}
+                  <span className="text-red-500 font-semibold">
+                    {formatNumber(
+                      (selectedUnstakeId?.penaltyAmount *
+                        selectedUnstakeId?.amount) /
+                        100
+                    )}{" "}
+                    {TOKEN_DEAULT_CURRENCY}{" "}
+                  </span>
+                </>
+              ) : (
+                "Bạn có chắc chắn muốn huỷ gói stake này không?"
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -372,11 +426,18 @@ export const ActiveStakesList = ({
               onClick={() => {
                 setConfirmUnstakeOpen(false);
                 setSelectedUnstakeId(null);
+                setPenaltyAmount(null);
               }}
             >
               Thoát
             </Button>
-            <Button variant="destructive" onClick={handleConfirmUnstake}>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                handleConfirmUnstake();
+                setPenaltyAmount(null);
+              }}
+            >
               Đồng ý
             </Button>
           </DialogFooter>

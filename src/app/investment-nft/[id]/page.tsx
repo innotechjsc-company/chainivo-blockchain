@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, ArrowLeft } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
-import { config } from "@/api/config";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import { useAppSelector } from "@/stores";
 import { Spinner } from "@/components/ui/spinner";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 import { LocalStorageService } from "@/services";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function InvestmentNFTDetailPage() {
   const params = useParams();
@@ -40,6 +41,9 @@ export default function InvestmentNFTDetailPage() {
   const user = useAppSelector((state) => state.auth.user);
   const [showConnectModal, setShowConnectModal] = useState<boolean>(false);
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
+  const [shareDetail, setShareDetail] = useState<any>(null);
+  const [shareDetailLoading, setShareDetailLoading] = useState<boolean>(false);
+  const [showAllShareDetail, setShowAllShareDetail] = useState<boolean>(false);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -137,6 +141,26 @@ export default function InvestmentNFTDetailPage() {
       setTransactionsLoading(false);
     }
   };
+
+  const fetchShareDetail = async () => {
+    const nftId = String(params?.id || "");
+    if (!nftId || !user) return;
+
+    try {
+      setShareDetailLoading(true);
+      const response = await NFTService.getShareDetail({ nftId });
+      if (response.success && response.data) {
+        setShareDetail(response.data?.dataDetail);
+      } else {
+        setShareDetail(null);
+      }
+    } catch (error) {
+      console.error("Error fetching share detail:", error);
+      setShareDetail(null);
+    } finally {
+      setShareDetailLoading(false);
+    }
+  };
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
   const availableShares: number = Number(data?.availableShares ?? 0);
   const totalShares: number = Number(data?.availableShares + data?.soldShares);
@@ -177,14 +201,18 @@ export default function InvestmentNFTDetailPage() {
     // Fetch transaction history separately
     fetchTransactionHistory();
 
+    // Fetch share detail
+    fetchShareDetail();
+
     return () => {
       isMounted = false;
     };
-  }, [params?.id]);
+  }, [params?.id, user]);
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [params?.id]);
+    fetchShareDetail();
+  }, [params?.id, user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,25 +220,38 @@ export default function InvestmentNFTDetailPage() {
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
 
-        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+        {/* <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
-        </Button>
+        </Button> */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">
+              {data?.name || "NFT Investment"}
+            </h1>
+          </div>
+          <div className="mb-2">
+            <p> Mô tả : </p>
+            <CollapsibleDescription
+              html={String(data?.description || "").replace(/\n/g, "<br/>")}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Image and stats */}
-          <div className="lg:col-span-7 space-y-4">
-            <Card className="border-0 shadow-none bg-transparent">
-              <div className="relative w-full h-full mx-auto rounded-lg overflow-hidden flex items-center justify-center">
+          <div className="lg:col-span-7 space-y-4 flex flex-col">
+            <Card className="border-0 shadow-none bg-transparent flex-1">
+              <div className="relative w-full h-full min-h-[calc(100vh-8rem)] mx-auto rounded-lg overflow-hidden">
                 <img
                   src={imageSrc}
                   alt={data?.name || "NFT"}
-                  className="w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) =>
                     ((e.target as HTMLImageElement).src = "/nft-box.jpg")
                   }
                 />
                 <button
-                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-background/70 backdrop-blur flex items-center justify-center mr-2"
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full backdrop-blur flex items-center justify-center mr-2"
                   aria-label="like"
                 >
                   {data?.level && (
@@ -222,241 +263,134 @@ export default function InvestmentNFTDetailPage() {
               </div>
             </Card>
             <div>
-              <div className="glass rounded-xl p-6">
-                <h2 className="text-2xl font-bold mb-6">Tài liệu và tập tin</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {data?.documents?.length > 0 &&
-                    data?.documents?.map((doc: any, idx: number) => {
-                      const docName =
-                        doc?.name || doc?.filename || `Tai lieu ${idx + 1}`;
-                      const docUrl = doc?.url || doc?.link || "";
-                      const docType = doc?.type || doc?.mimeType || "file";
-                      const fileSize = doc?.filesize || doc?.size || 0;
-
-                      const formatFileSize = (bytes: number) => {
-                        if (!bytes) return "0 B";
-                        const k = 1024;
-                        const sizes = ["B", "KB", "MB", "GB"];
-                        const i = Math.floor(Math.log(bytes) / Math.log(k));
-                        return `${
-                          Math.round((bytes / Math.pow(k, i)) * 100) / 100
-                        } ${sizes[i]}`;
-                      };
-
-                      const getFileIcon = (type: string) => {
-                        const t = (type || "").toLowerCase();
-                        if (t.includes("pdf")) return "📄";
-                        if (t.includes("image")) return "🖼️";
-                        if (t.includes("video")) return "🎥";
-                        if (t.includes("audio")) return "🎵";
-                        if (t.includes("zip") || t.includes("rar")) return "📦";
-                        return "📎";
-                      };
-
-                      return (
-                        <a
-                          key={idx}
-                          href={docUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                              {getFileIcon(docType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
-                                {docName}
-                              </h3>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatFileSize(fileSize)}
-                              </p>
-                              {docType && (
-                                <div className="mt-2 inline-flex text-xs px-2 py-1 rounded bg-primary/20 text-primary">
-                                  {(
-                                    docType.split("/")[1] || docType
-                                  ).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </a>
-                      );
-                    })}
-                </div>
-                {data?.documents?.length === 0 && (
-                  <div className="text-center text-muted-foreground justify-center items-center py-12">
-                    <p>Không có tài liệu</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="mt-12">
               <Card className="glass">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
-                  {transactionsLoading ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>Đang tải lịch sử giao dịch...</p>
-                    </div>
-                  ) : Array.isArray(transactions) &&
-                    transactions?.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border/50">
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Người mua
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Số cổ phần
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Tổng tiền
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Thời gian
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Trạng thái
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                              Hash giao dịch
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactions.map((tx: any, idx: number) => {
-                            // Handle buyer address/username
+                  <Tabs defaultValue="documents" className="space-y-6">
+                    <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
+                      <TabsTrigger
+                        value="documents"
+                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
+                      >
+                        Tài liệu và tập tin
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="details"
+                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
+                      >
+                        Chi tiết NFT
+                      </TabsTrigger>
+                    </TabsList>
 
-                            const displayBuyer = formatAddress(
-                              tx?.walletAddress
-                            );
+                    <TabsContent value="documents" className="space-y-6">
+                      <h2 className="text-2xl font-bold">
+                        Tài liệu và tập tin
+                      </h2>
+                      {Array.isArray(data?.documents) &&
+                      data.documents.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {data.documents.map((doc: any, idx: number) => {
+                            const docName =
+                              doc?.name ||
+                              doc?.filename ||
+                              `Tài liệu ${idx + 1}`;
+                            const docUrl = doc?.url || doc?.link || "";
+                            const docType =
+                              doc?.type || doc?.mimeType || "file";
+                            const fileSize = doc?.filesize || doc?.size || 0;
 
-                            // Handle shares
-                            const shares = tx.shares || tx.quantity || 0;
+                            const formatFileSize = (bytes: number) => {
+                              if (!bytes) return "0 B";
+                              const k = 1024;
+                              const sizes = ["B", "KB", "MB", "GB"];
+                              const i = Math.floor(
+                                Math.log(bytes) / Math.log(k)
+                              );
+                              return `${
+                                Math.round((bytes / Math.pow(k, i)) * 100) / 100
+                              } ${sizes[i]}`;
+                            };
 
-                            // Handle total price
-                            const totalPrice =
-                              tx.totalPrice ||
-                              tx.total_price ||
-                              tx.price ||
-                              tx.amount ||
-                              0;
-                            const txCurrency = (
-                              tx.currency ||
-                              currency ||
-                              "CAN"
-                            ).toUpperCase();
-
-                            // Handle timestamp
-                            const timestamp =
-                              tx.createdAt || tx.created_at || tx.date || "-";
-                            let formattedDate = "-";
-                            if (timestamp !== "-") {
-                              try {
-                                formattedDate = new Date(
-                                  timestamp
-                                ).toLocaleString("vi-VN");
-                              } catch {
-                                formattedDate = timestamp;
-                              }
-                            }
-
-                            // Handle transaction hash
-                            const txHash =
-                              tx.transactionHash ||
-                              tx.transaction_hash ||
-                              tx.txHash ||
-                              "-";
-
-                            // Handle status
-                            const status = tx.status || "success";
-                            const statusColor =
-                              status === "success" || status === "completed"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : status === "pending"
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-red-500/20 text-red-400";
-                            const statusLabel =
-                              status === "success"
-                                ? "Thành công"
-                                : status === "pending"
-                                ? "Đang xử lý"
-                                : "Thất bại";
+                            const getFileIcon = (type: string) => {
+                              const t = (type || "").toLowerCase();
+                              if (t.includes("pdf")) return "📄";
+                              if (t.includes("image")) return "🖼️";
+                              if (t.includes("video")) return "🎥";
+                              if (t.includes("audio")) return "🎵";
+                              if (t.includes("zip") || t.includes("rar"))
+                                return "📦";
+                              return "📎";
+                            };
 
                             return (
-                              <tr
+                              <a
                                 key={idx}
-                                className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                                href={docUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
                               >
-                                <td className="py-3 px-4 font-medium text-white">
-                                  {displayBuyer}
-                                </td>
-                                <td className="py-3 px-4 text-cyan-400 font-semibold">
-                                  {formatAmount(shares)} CP
-                                </td>
-                                <td className="py-3 px-4 font-semibold">
-                                  {formatAmount(totalPrice)} {txCurrency}
-                                </td>
-                                <td className="py-3 px-4 text-muted-foreground">
-                                  {formattedDate}
-                                </td>
-                                <td className="py-3 px-4">
-                                  <Badge className={`text-xs ${statusColor}`}>
-                                    {statusLabel}
-                                  </Badge>
-                                </td>
-                                <td className="py-3 px-4 text-xs font-mono">
-                                  {txHash !== "-" ? (
-                                    <a
-                                      href={`https://www.oklink.com/amoy/tx/${txHash}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
-                                    >
-                                      {formatAddress(txHash)}
-                                    </a>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                              </tr>
+                                <div className="flex items-start gap-3">
+                                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                                    {getFileIcon(docType)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                                      {docName}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {formatFileSize(fileSize)}
+                                    </p>
+                                    {docType && (
+                                      <div className="mt-2 inline-flex text-xs px-2 py-1 rounded bg-primary/20 text-primary">
+                                        {(
+                                          docType.split("/")[1] || docType
+                                        ).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </a>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>Chưa có lịch sử giao dịch</p>
-                    </div>
-                  )}
+                        </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-12">
+                          <p>Không có tài liệu</p>
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="details" className="space-y-4">
+                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
+                      {data?.fullDescription ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Mô tả chi tiết:
+                          </p>
+                          <CollapsibleDescription
+                            html={String(data.fullDescription || "").replace(
+                              /\n/g,
+                              "<br/>"
+                            )}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          Không có mô tả chi tiết
+                        </p>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </div>
           </div>
 
           {/* Right: Detail card */}
-          <div className="lg:col-span-5 space-y-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">
-                  {data?.name || "NFT Investment"}
-                </h1>
-              </div>
-              <div>
-                <p> Mô tả : </p>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
-
+          <div className="lg:col-span-5 space-y-6 flex flex-col mt-6">
             <Card className="glass">
-              <CardContent className="p-5 space-y-5">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="p-5  space-y-5">
+                {/* <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
                       Người bán
@@ -465,7 +399,7 @@ export default function InvestmentNFTDetailPage() {
                       {formatAddress(data?.walletAddress)}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Pricing section */}
                 <div className="space-y-5">
@@ -511,7 +445,7 @@ export default function InvestmentNFTDetailPage() {
                     {totalShares > 0 && (
                       <span className="text-muted-foreground">
                         <span className="text-purple-400 font-semibold">
-                          {progress.toFixed(1)}%
+                          {progress}%
                         </span>
                       </span>
                     )}
@@ -519,7 +453,8 @@ export default function InvestmentNFTDetailPage() {
                   <Progress value={progress} className="h-2.5" />
                   <div className="mt-2 text-xs text-cyan-400 font-semibold">
                     <span className="font-semibold text-cyan-400">
-                      {sharesSold} CP / {totalShares} CP
+                      {sharesSold} CP /{" "}
+                      {Number(totalShares).toLocaleString("us-EN")} CP
                     </span>
                   </div>
                 </div>
@@ -675,7 +610,7 @@ export default function InvestmentNFTDetailPage() {
                   {data?.isFractional && (
                     <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                       <div className="text-xs text-muted-foreground mb-1">
-                        Cổ phần tối thiểu
+                        Cổ phần mua tối thiểu
                       </div>
                       <div className="text-sm font-semibold text-white">
                         {formatAmount(data?.minSharesPerPurchase)} phần
@@ -698,14 +633,7 @@ export default function InvestmentNFTDetailPage() {
                       {formatAmount(data?.availableShares)} phần
                     </div>
                   </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Đơn vị tiền tệ
-                    </div>
-                    <div className="text-sm font-semibold text-white uppercase">
-                      {data?.currency || "CAN"}
-                    </div>
-                  </div>
+
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1">
                       Trạng thái
@@ -726,48 +654,250 @@ export default function InvestmentNFTDetailPage() {
                       {formatAmount(data?.totalInvestors)} người
                     </div>
                   </div>
-                  {data?.createdAt && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Ngày tạo
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {(() => {
-                          try {
-                            return new Date(data.createdAt).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            return String(data.createdAt);
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  {data?.updatedAt && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Cập nhật
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {(() => {
-                          try {
-                            return new Date(data.updatedAt).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            return String(data.updatedAt);
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
                 </div>
+              </CardContent>
+            </Card>
+            <Card className="glass">
+              <CardContent className="p-5">
+                <h3 className="font-semibold mb-4 text-white">
+                  Danh sách người mua cổ phần{" "}
+                  <span className="text-cyan-400">
+                    ({shareDetail?.length || 0})
+                  </span>
+                </h3>
+                {shareDetailLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Spinner className="w-6 h-6 mx-auto mb-2" />
+                    <p>Đang tải lịch sử mua cổ phần...</p>
+                  </div>
+                ) : !user ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Vui lòng đăng nhập để xem lịch sử mua cổ phần</p>
+                  </div>
+                ) : shareDetail ? (
+                  <div className="space-y-4">
+                    {/* Tổng số cổ phần đã mua */}
+                    {shareDetail.shares !== undefined && (
+                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-4">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Danh sách người mua cổ phần
+                        </div>
+                        <div className="text-2xl font-bold text-cyan-400">
+                          {formatAmount(shareDetail.shares)} CP
+                        </div>
+                      </div>
+                    )}
+
+                    {shareDetail &&
+                      Array.isArray(shareDetail) &&
+                      shareDetail.length > 0 && (
+                        <div className="mt-4">
+                          <div
+                            className="space-y-2 overflow-y-auto pr-2"
+                            style={{
+                              maxHeight: showAllShareDetail ? "600px" : "400px",
+                              minHeight: "200px",
+                            }}
+                          >
+                            {(showAllShareDetail
+                              ? shareDetail
+                              : shareDetail.slice(0, 10)
+                            ).map((purchase: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="rounded-md border border-border/50 bg-background/30 p-3 hover:bg-background/50 transition-colors"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      Người mua:{" "}
+                                      {purchase.buyer?.walletAddress
+                                        ? `${purchase.buyer.walletAddress.slice(
+                                            0,
+                                            4
+                                          )}...${purchase.buyer.walletAddress.slice(
+                                            -4
+                                          )}`
+                                        : "—"}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm font-semibold text-cyan-400">
+                                      {formatAmount(purchase.totalShares || 0)}{" "}
+                                      CP
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {shareDetail.length > 10 && (
+                            <div className="mt-4 text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setShowAllShareDetail(!showAllShareDetail)
+                                }
+                                className="text-primary hover:text-primary/80"
+                              >
+                                {showAllShareDetail ? "Thu gọn" : `Xem thêm `}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Không có dữ liệu lịch sử mua cổ phần</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
+        <div className="mt-12">
+          <Card className="glass">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
+              {transactionsLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Đang tải lịch sử giao dịch...</p>
+                </div>
+              ) : Array.isArray(transactions) && transactions?.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Người mua
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Số cổ phần
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Tổng tiền
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Thời gian
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Trạng thái
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Hash giao dịch
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((tx: any, idx: number) => {
+                        // Handle buyer address/username
 
+                        const displayBuyer = formatAddress(tx?.walletAddress);
+
+                        // Handle shares
+                        const shares = tx.shares || tx.quantity || 0;
+
+                        // Handle total price
+                        const totalPrice =
+                          tx.totalPrice ||
+                          tx.total_price ||
+                          tx.price ||
+                          tx.amount ||
+                          0;
+                        const txCurrency = (
+                          tx.currency ||
+                          currency ||
+                          TOKEN_DEAULT_CURRENCY
+                        ).toUpperCase();
+
+                        // Handle timestamp
+                        const timestamp =
+                          tx.createdAt || tx.created_at || tx.date || "-";
+                        let formattedDate = "-";
+                        if (timestamp !== "-") {
+                          try {
+                            formattedDate = new Date(timestamp).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            formattedDate = timestamp;
+                          }
+                        }
+
+                        // Handle transaction hash
+                        const txHash =
+                          tx.transactionHash ||
+                          tx.transaction_hash ||
+                          tx.txHash ||
+                          "-";
+
+                        // Handle status
+                        const status = tx.status || "success";
+                        const statusColor =
+                          status === "success" || status === "completed"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : status === "pending"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400";
+                        const statusLabel =
+                          status === "success"
+                            ? "Thành công"
+                            : status === "pending"
+                            ? "Đang xử lý"
+                            : "Thất bại";
+
+                        return (
+                          <tr
+                            key={idx}
+                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-medium text-white">
+                              {displayBuyer}
+                            </td>
+                            <td className="py-3 px-4 text-cyan-400 font-semibold">
+                              {formatAmount(shares)} CP
+                            </td>
+                            <td className="py-3 px-4 font-semibold">
+                              {formatAmount(totalPrice)} {txCurrency}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {formattedDate}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge className={`text-xs ${statusColor}`}>
+                                {statusLabel}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-xs font-mono">
+                              {txHash !== "-" ? (
+                                <a
+                                  href={`https://www.oklink.com/amoy/tx/${txHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
+                                >
+                                  {formatAddress(txHash)}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Chưa có lịch sử giao dịch</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <DialogContent
@@ -887,50 +1017,48 @@ export default function InvestmentNFTDetailPage() {
 
 function CollapsibleDescription({ html }: { html: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [halfHeight, setHalfHeight] = useState<number>(0);
-  const descRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const el = descRef.current;
-    if (!el) return;
-    const compute = () => {
-      const full = el.scrollHeight || 0;
-      setHalfHeight(Math.max(0, Math.floor(full / 2)));
-    };
-    const id = window.setTimeout(compute, 0);
-    window.addEventListener("resize", compute);
-    return () => {
-      window.clearTimeout(id);
-      window.removeEventListener("resize", compute);
-    };
+  const collapsedText = useMemo(() => {
+    if (!html) return "";
+    return html
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<\/p>/gi, " ")
+      .replace(/<\/?[^>]+(>|$)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }, [html]);
 
-  return (
-    <div>
-      <div className="relative">
+  if (isExpanded) {
+    return (
+      <div className="space-y-2">
         <div
-          ref={descRef}
-          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
-          style={{
-            maxHeight: isExpanded
-              ? "none"
-              : halfHeight
-              ? `${halfHeight}px`
-              : "6rem",
-            overflow: "hidden",
-          }}
+          className="text-muted-foreground leading-relaxed space-y-3"
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        {!isExpanded && (
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
-        )}
+        <div className="text-right">
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer"
+            onClick={() => setIsExpanded(false)}
+          >
+            Thu gọn
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground leading-relaxed flex-1 truncate">
+        {collapsedText}
+      </span>
       <button
         type="button"
-        className="text-primary text-sm font-medium hover:underline cursor-pointer"
-        onClick={() => setIsExpanded((v) => !v)}
+        className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
+        onClick={() => setIsExpanded(true)}
       >
-        {isExpanded ? "Thu gọn" : "Xem thêm"}
+        Xem thêm
       </button>
     </div>
   );

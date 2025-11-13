@@ -82,6 +82,12 @@ export const API_ENDPOINTS = {
     WITH_AUTH: "/api/with-auth",
   },
 
+  DIGITAL_REQUEST: {
+    LIST: "/api/digitization-request/send-request",
+    DETAIL: "/api/digitization-request/my-request",
+    CONFIRM: "/api/digitization-request/user-confirm",
+  },
+
   INVESTMENT: {
     PHASES: "/api/investment/phases",
     PHASE_DETAIL: (id: string) => `/api/investment/phases/${id}`,
@@ -115,6 +121,9 @@ export const API_ENDPOINTS = {
     INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
     OPEN_BOX: "/api/nft/open-box",
+    Mint_NFT_BLOCKCHAIN: "/api/nft/mint-to-blockchain",
+    SHARE_DETAIL: (nftId: string) =>
+      `/api/investment-nft/share-details?nftId=${nftId}`,
   },
 
   STAKING: {
@@ -124,6 +133,14 @@ export const API_ENDPOINTS = {
     UNSTAKE: (stakeId: string) => `/api/staking/unstake/${stakeId}`,
     CLAIM: (stakeId: string) => `/api/staking/claim/${stakeId}`,
     USER_STAKES: (userId: string) => `/api/staking/user-stakes/${userId}`,
+  },
+
+  FEE: {
+    GET_FEE: "/api/globals/system-fees",
+  },
+
+  BENEFITS: {
+    LIST: "/api/benefits-digi",
   },
 
   AIRDROP: {

@@ -1,4 +1,4 @@
-import { ApiService, API_ENDPOINTS, ApiResponse } from "../api";
+import api, { ApiService, API_ENDPOINTS, ApiResponse } from "../api";
 
 export interface MediaUploadResponse {
   id: string;
@@ -28,6 +28,7 @@ export class MediaService {
         formData
       );
 
+      console.log("response", response);
       // Cast to any to access 'doc' property which exists in backend response
       const backendResponse = response as any;
 
@@ -46,12 +47,35 @@ export class MediaService {
         };
       }
 
+      // Handle error response from backend
+      if (!response.success) {
+        return {
+          success: false,
+          error:
+            response.error ||
+            response.message ||
+            "Không thể upload file. Vui lòng thử lại.",
+        };
+      }
+
       return response;
     } catch (error: any) {
       console.error("Avatar upload error:", error);
+
+      // Extract error message from various possible error formats
+      let errorMessage = "Lỗi khi upload file. Vui lòng thử lại.";
+
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       return {
         success: false,
-        error: error?.message || "Loi upload avatar",
+        error: errorMessage,
       };
     }
   }
