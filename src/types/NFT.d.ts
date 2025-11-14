@@ -272,7 +272,7 @@ export interface NFTItem {
   publishedAt: string;
   updatedAt: string;
   purchaseDate: string;
-
+  tokenId: string;
   // Investment NFT fields
   isFractional?: boolean;
   totalShares?: number;

@@ -224,7 +224,7 @@ export class NFTService {
         investmentStartDate: nft.investmentStartDate,
         investmentEndDate: nft.investmentEndDate,
         pricePerShare: nft.pricePerShare,
-
+        tokenId: nft.tokenId,
         // Mystery Box NFT fields
         isOpenable:
           nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,
@@ -551,6 +551,14 @@ export class NFTService {
     nftId: string;
   }): Promise<ApiResponse<any>> {
     return ApiService.get(API_ENDPOINTS.NFT.SHARE_DETAIL(data.nftId));
+  }
+  static async checkOwnership(data: {
+    nftId: string;
+    walletAddress: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.get(
+      API_ENDPOINTS.NFT.CHECK_OWNERSHIP(data.nftId, data.walletAddress)
+    );
   }
 }
 
