@@ -201,14 +201,20 @@ export default function NFTCard({
           walletAddress: walletAddress,
         });
         if (response.success && response.data?.isOwner === true) {
-          // Mở modal xác nhận chuyển NFT sang ví admin
-          setTransferToAdminDialogOpen(true);
-          setContractAddress(response.data?.contractAddress);
+          // Xử lý callback mới
+          if (onActionClick) {
+            onActionClick(nft, action);
+          }
+
+          // Xử lý callback cũ (tương thích ngược)
+          if (action === "sell" && onListForSale) {
+            onListForSale(nft);
+          }
         } else {
           toast.warning(
             response.error ||
               response.message ||
-              "Bạn không sở hữu NFT này trên blockchain."
+              "Bạn không sở hữu NFT này trên blockchain hoặc bạn đã đăng bán NFT này."
           );
         }
       } catch (error: any) {
@@ -219,17 +225,6 @@ export default function NFTCard({
       } finally {
         setIsLoading(false);
       }
-      return; // Dừng xử lý callback nếu đã kiểm tra ownership
-    }
-
-    // Xử lý callback mới
-    if (onActionClick) {
-      onActionClick(nft, action);
-    }
-
-    // Xử lý callback cũ (tương thích ngược)
-    if (action === "sell" && onListForSale) {
-      onListForSale(nft);
     }
   };
 
@@ -237,88 +232,6 @@ export default function NFTCard({
   const handleCardClick = () => {
     if (onClick) {
       onClick(nft.id);
-    }
-  };
-
-  // Handler cho chuyển NFT sang ví admin
-  const handleTransferToAdmin = async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-
-    const nftAny = nft as any;
-    const tokenId = nftAny.tokenId || nftAny.token_id;
-
-    // Validate inputs
-    if (!walletAddress) {
-      toast.error("Vui lòng kết nối ví MetaMask.");
-      return;
-    }
-
-    if (!tokenId) {
-      toast.error("NFT này không có tokenId để chuyển.");
-      return;
-    }
-
-    // Lấy contract address từ state hoặc từ nft
-    const nftContractAddress =
-      contractAddress ||
-      nftAny.contractAddress ||
-      nftAny.collection?.contractAddress;
-
-    if (!nftContractAddress) {
-      toast.error(
-        "Không tìm thấy địa chỉ contract của NFT. Vui lòng kiểm tra thông tin NFT."
-      );
-      return;
-    }
-
-    setIsTransferring(true);
-    setIsLoading(true);
-
-    try {
-      // Gọi TransferService để chuyển NFT
-      const result = await TransferService.transferNFT({
-        fromAddress: walletAddress,
-        contractAddress: nftContractAddress,
-        tokenId: tokenId,
-      });
-
-      // Hiển thị thông báo thành công
-      toast.success(
-        `Chuyển NFT sang ví admin thành công! Transaction: ${result.transactionHash.slice(
-          0,
-          10
-        )}... (Phí gas: ${Number(result.totalGasCost).toFixed(6)} POL)`
-      );
-      setTransferToAdminDialogOpen(false);
-
-      // Refresh danh sách NFT sau khi chuyển thành công
-      onRefreshNFTs?.();
-    } catch (error: any) {
-      console.error("❌ handleTransferToAdmin Error:", error);
-
-      // Xử lý lỗi chi tiết
-      const errorMessage =
-        error?.message || error?.toString() || "Unknown error";
-
-      // Kiểm tra các lỗi cụ thể
-      if (
-        errorMessage.includes("user rejected") ||
-        errorMessage.includes("user denied") ||
-        errorMessage.includes("User denied")
-      ) {
-        toast.error("Bạn đã hủy giao dịch.");
-      } else if (
-        errorMessage.includes("insufficient funds") ||
-        errorMessage.includes("insufficient balance")
-      ) {
-        toast.error("Số dư không đủ để thực hiện giao dịch.");
-      } else {
-        toast.error(`Lỗi chuyển NFT: ${errorMessage}`);
-      }
-    } finally {
-      setIsTransferring(false);
-      setIsLoading(false);
     }
   };
 
@@ -762,48 +675,6 @@ export default function NFTCard({
               disabled={isWithdrawing}
             >
               {isWithdrawing ? "Đang xử lý..." : "Đồng ý"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog chuyển NFT sang ví admin */}
-      <Dialog
-        open={transferToAdminDialogOpen}
-        onOpenChange={setTransferToAdminDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chuyển NFT sang ví admin</DialogTitle>
-            <DialogDescription>
-              NFT này là của bạn. Để đăng bán, vui lòng chuyển NFT sang ví của
-              admin để tiếp tục.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-3 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setTransferToAdminDialogOpen(false)}
-              disabled={isTransferring}
-            >
-              Thoát
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleTransferToAdmin}
-              disabled={isTransferring}
-              className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
-            >
-              {isTransferring ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Đang chuyển...
-                </>
-              ) : (
-                "Đồng ý"
-              )}
             </Button>
           </DialogFooter>
         </DialogContent>
