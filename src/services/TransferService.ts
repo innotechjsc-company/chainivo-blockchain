@@ -1563,8 +1563,8 @@ export default class TransferService {
         }`
       );
 
-      // 9. Gửi transaction - để MetaMask tự estimate gas để tránh lỗi Internal JSON-RPC
-      console.log(`📍 Step 8: Sending transaction...`);
+      // 9. Estimate gas và lấy gas price trước khi gửi transaction
+      console.log(`📍 Step 8: Estimating gas and preparing transaction...`);
       console.log(`📍 Transaction params:`, {
         from: fromAddress,
         to: adminWalletAddress,
@@ -1572,14 +1572,65 @@ export default class TransferService {
         contract: contractAddress,
       });
 
-      let receipt: any;
+      let gasLimit: number;
+      let gasPrice: string;
+
+      // Estimate gas với error handling
       try {
-        // Gửi transaction mà không chỉ định gas - để MetaMask tự estimate
-        // Điều này tránh lỗi Internal JSON-RPC khi estimate gas thủ công
-        receipt = await transaction.send({
+        debugger;
+        console.log(`📍 Estimating gas for transaction...`);
+        const estimatedGas = await transaction.estimateGas({
           from: fromAddress,
         });
-        console.log(`✅ Transaction sent: ${receipt?.transactionHash}`);
+        // Thêm buffer 20% để đảm bảo transaction không bị out of gas
+        gasLimit = Math.floor(Number(estimatedGas) * 1.2);
+        console.log(
+          `📍 Estimated gas: ${estimatedGas}, With buffer: ${gasLimit}`
+        );
+        debugger;
+      } catch (gasEstimateError: any) {
+        console.warn(
+          "⚠️ Gas estimation failed, using default gas limit:",
+          gasEstimateError?.message || gasEstimateError
+        );
+        // Sử dụng gas limit mặc định cho NFT transfer nếu estimate fail
+        gasLimit = 200000; // Default gas limit cho ERC-721 transfer
+        console.log(`📍 Using default gas limit: ${gasLimit}`);
+      }
+
+      // Lấy gas price từ network
+      try {
+        console.log(`📍 Getting current gas price from network...`);
+        const currentGasPrice = await web3.eth.getGasPrice();
+        gasPrice =
+          typeof currentGasPrice === "string"
+            ? currentGasPrice
+            : String(currentGasPrice);
+        console.log(`📍 Current gas price: ${gasPrice} wei`);
+      } catch (gasPriceError: any) {
+        console.warn(
+          "⚠️ Failed to get gas price, using default:",
+          gasPriceError?.message || gasPriceError
+        );
+        // Sử dụng gas price mặc định nếu không lấy được (20 gwei = 20000000000 wei)
+        gasPrice = "20000000000";
+        console.log(`📍 Using default gas price: ${gasPrice} wei (20 gwei)`);
+      }
+
+      // 10. Gửi transaction với gas limit và gas price đã chuẩn bị
+      console.log(
+        `📍 Step 9: Sending transaction with gas limit: ${gasLimit}, gas price: ${gasPrice}...`
+      );
+      let receipt: any;
+      try {
+        receipt = await transaction.send({
+          from: fromAddress,
+          gas: gasLimit,
+          gasPrice: gasPrice,
+        });
+        console.log(
+          `✅ Transaction sent successfully: ${receipt?.transactionHash}`
+        );
       } catch (sendError: any) {
         console.error("❌ Error sending transaction:", sendError);
         console.error("Send error details:", {
@@ -1589,7 +1640,7 @@ export default class TransferService {
           error: sendError?.error,
         });
 
-        // Xử lý lỗi Internal JSON-RPC
+        // Xử lý các lỗi cụ thể
         const errorMsg = (
           sendError?.message ||
           sendError?.error?.message ||
@@ -1597,45 +1648,6 @@ export default class TransferService {
         ).toLowerCase();
 
         if (
-          errorMsg.includes("internal json-rpc error") ||
-          errorMsg.includes("json-rpc") ||
-          errorMsg.includes("jsonrpc") ||
-          sendError?.code === -32603
-        ) {
-          // Thử lại với gas limit thủ công
-          console.log(`📍 Retrying with manual gas limit...`);
-          try {
-            const estimatedGas = await transaction.estimateGas({
-              from: fromAddress,
-            });
-
-            // Thêm buffer cho chắc (20%)
-            const gasLimit = Math.floor(Number(estimatedGas) * 1.2);
-
-            // ⭐ 2. Lấy gasPrice thực tế từ mạng
-            const gasPrice = await web3.eth.getGasPrice();
-
-            console.log(
-              `📍 Estimated gas: ${estimatedGas}, using gasLimit: ${gasLimit}, gasPrice: ${gasPrice}`
-            );
-
-            // ⭐ 3. Gửi transaction với gas hợp lý
-            receipt = await transaction.send({
-              from: fromAddress,
-              gas: gasLimit,
-              gasPrice,
-            });
-          } catch (retryError: any) {
-            console.error("❌ Retry also failed:", retryError);
-            throw new Error(
-              "Lỗi kết nối với blockchain khi gửi transaction. Vui lòng:\n" +
-                "1. Kiểm tra network đã đúng chưa? (Polygon Amoy - Chain ID: 80002)\n" +
-                "2. Kiểm tra contract address và token ID có hợp lệ không?\n" +
-                "3. Kiểm tra bạn có đủ POL để trả phí gas không?\n" +
-                "4. Thử lại sau vài giây"
-            );
-          }
-        } else if (
           errorMsg.includes("user rejected") ||
           errorMsg.includes("user denied") ||
           errorMsg.includes("user cancelled")
@@ -1653,6 +1665,34 @@ export default class TransferService {
           throw new Error(
             "Giao dịch bị từ chối. Vui lòng kiểm tra lại quyền sở hữu NFT hoặc contract có hỗ trợ transfer không."
           );
+        } else if (
+          errorMsg.includes("internal json-rpc error") ||
+          errorMsg.includes("json-rpc") ||
+          errorMsg.includes("jsonrpc") ||
+          sendError?.code === -32603
+        ) {
+          // Nếu vẫn lỗi Internal JSON-RPC, thử lại với gas limit cao hơn
+          console.log(`📍 Retrying with higher gas limit...`);
+          try {
+            const higherGasLimit = Math.floor(gasLimit * 1.5); // Tăng thêm 50%
+            receipt = await transaction.send({
+              from: fromAddress,
+              gas: higherGasLimit,
+              gasPrice: gasPrice,
+            });
+            console.log(
+              `✅ Transaction sent with higher gas limit: ${receipt?.transactionHash}`
+            );
+          } catch (retryError: any) {
+            console.error("❌ Retry also failed:", retryError);
+            throw new Error(
+              "Lỗi kết nối với blockchain khi gửi transaction. Vui lòng:\n" +
+                "1. Kiểm tra network đã đúng chưa? (Polygon Amoy - Chain ID: 80002)\n" +
+                "2. Kiểm tra contract address và token ID có hợp lệ không?\n" +
+                "3. Kiểm tra bạn có đủ POL để trả phí gas không?\n" +
+                "4. Thử lại sau vài giây"
+            );
+          }
         } else {
           // Re-throw với message gốc
           throw new Error(
@@ -1663,20 +1703,20 @@ export default class TransferService {
         }
       }
 
-      // 10. Xử lý kết quả
+      // 11. Xử lý kết quả
       if (!receipt.transactionHash) {
         throw new Error("Không thể lấy transaction hash.");
       }
 
       // Lấy thông tin về phí gas đã sử dụng
       const gasUsed = receipt.gasUsed || receipt.receipt?.gasUsed || "0";
-      const gasPrice =
+      const actualGasPrice =
         receipt.gasPrice || receipt.receipt?.effectiveGasPrice || "0";
-      const totalGasCost = BigInt(gasUsed) * BigInt(gasPrice);
+      const totalGasCost = BigInt(gasUsed) * BigInt(actualGasPrice);
       const gasCostInEth = web3.utils.fromWei(totalGasCost.toString(), "ether");
 
       console.log(
-        `✅ Gas used: ${gasUsed}, Gas price: ${gasPrice}, Total cost: ${gasCostInEth} POL`
+        `✅ Gas used: ${gasUsed}, Gas price: ${actualGasPrice}, Total cost: ${gasCostInEth} POL`
       );
 
       const blockNumber = this.normalizeBlockNumber(receipt?.blockNumber);
@@ -1686,7 +1726,7 @@ export default class TransferService {
         blockNumber,
         recipient: adminWalletAddress,
         gasUsed: String(gasUsed),
-        gasPrice: String(gasPrice),
+        gasPrice: String(actualGasPrice),
         totalGasCost: gasCostInEth,
         rawReceipt: receipt,
       };
