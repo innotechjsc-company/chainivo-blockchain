@@ -23,6 +23,8 @@ import { config } from "@/api/config";
 import { NFTService } from "@/api/services/nft-service";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { useAppSelector } from "@/stores";
+import TransferService from "@/services/TransferService";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -72,8 +74,17 @@ export default function NFTCard({
     explorerUrl?: string;
   } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [transferToAdminDialogOpen, setTransferToAdminDialogOpen] =
+    useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [contractAddress, setContractAddress] = useState<string | null>(null);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
+
+  // Lấy walletAddress từ Redux store
+  const walletAddress = useAppSelector(
+    (state) => state.wallet.wallet?.address || ""
+  );
 
   // Kiểm tra component đã mount (để tránh lỗi SSR với portal)
   useEffect(() => {
@@ -161,21 +172,59 @@ export default function NFTCard({
         : false
       : false;
 
-  const handleAction = (
+  const handleAction = async (
     e: React.MouseEvent,
     action: "sell" | "buy" | "open" | "cancel" | "withdraw"
   ) => {
     // Ngăn chặn event bubble lên card parent (tránh trigger onClick của card)
     e.stopPropagation();
 
-    // Xử lý callback mới
-    if (onActionClick) {
-      onActionClick(nft, action);
-    }
+    // Lấy tokenId từ NFT
+    const nftAny = nft as any;
+    const tokenId = nftAny.tokenId || nftAny.token_id;
 
-    // Xử lý callback cũ (tương thích ngược)
-    if (action === "sell" && onListForSale) {
-      onListForSale(nft);
+    // Kiểm tra tokenId và walletAddress để gọi API checkOwnership
+    if (action === "sell" && nft.isMinted === true) {
+      if (!tokenId) {
+        toast.error("NFT này không có tokenId để kiểm tra quyền sở hữu.");
+        return;
+      }
+      if (!walletAddress) {
+        toast.error("Vui lòng kết nối ví để kiểm tra quyền sở hữu NFT.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await NFTService.checkOwnership({
+          nftId: String(tokenId),
+          walletAddress: walletAddress,
+        });
+        if (response.success && response.data?.isOwner === true) {
+          // Xử lý callback mới
+          if (onActionClick) {
+            onActionClick(nft, action);
+          }
+
+          // Xử lý callback cũ (tương thích ngược)
+          if (action === "sell" && onListForSale) {
+            onListForSale(nft);
+          }
+        } else {
+          toast.warning(
+            response.error ||
+              response.message ||
+              "Bạn không sở hữu NFT này trên blockchain hoặc bạn đã đăng bán NFT này."
+          );
+        }
+      } catch (error: any) {
+        console.error("Error checking NFT ownership:", error);
+        toast.error(
+          error?.message || "Có lỗi xảy ra khi kiểm tra quyền sở hữu NFT."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -630,6 +679,7 @@ export default function NFTCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {isLoading &&
         isMounted &&
         createPortal(

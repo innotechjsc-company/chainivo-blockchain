@@ -281,24 +281,102 @@ export default function NFTDetailPage() {
     ? formatAddress(user.walletAddress)
     : "Anonymous";
 
+  /**
+   * Utility function để wrap API calls với timeout và retry logic
+   * @param fn - Function cần thực thi
+   * @param timeoutMs - Thời gian timeout (mặc định 60000ms = 60s)
+   * @param maxRetries - Số lần retry tối đa (mặc định 3)
+   * @param retryDelayMs - Thời gian delay giữa các lần retry (mặc định 2000ms = 2s)
+   */
+  const withTimeoutAndRetry = async <T,>(
+    fn: () => Promise<T>,
+    timeoutMs: number = 60000,
+    maxRetries: number = 3,
+    retryDelayMs: number = 2000
+  ): Promise<T> => {
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📍 Attempt ${attempt}/${maxRetries}...`);
+
+        // Tạo promise với timeout
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Request timeout after ${timeoutMs}ms`));
+          }, timeoutMs);
+        });
+
+        // Race giữa API call và timeout
+        const result = await Promise.race([fn(), timeoutPromise]);
+
+        console.log(`✅ Success on attempt ${attempt}`);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage =
+          error?.message || error?.toString() || "Unknown error";
+
+        console.error(`❌ Attempt ${attempt} failed:`, errorMessage);
+
+        // Nếu là lỗi timeout hoặc network error, retry
+        const shouldRetry =
+          errorMessage.includes("timeout") ||
+          errorMessage.includes("network") ||
+          errorMessage.includes("fetch") ||
+          errorMessage.includes("ECONNREFUSED") ||
+          errorMessage.includes("ETIMEDOUT") ||
+          error?.code === "ECONNREFUSED" ||
+          error?.code === "ETIMEDOUT";
+
+        if (shouldRetry && attempt < maxRetries) {
+          console.log(`⏳ Retrying in ${retryDelayMs}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+
+        // Nếu không nên retry hoặc đã hết số lần retry, throw error
+        throw error;
+      }
+    }
+
+    // Nếu đã hết số lần retry
+    throw lastError || new Error("Max retries exceeded");
+  };
+
   const handleBuyNFT = async () => {
     if (!nftData || buyLoading) return;
     setBuyLoading(true);
 
     try {
-      const response = await TransferService.sendCanTransfer({
-        fromAddress: user?.walletAddress ?? "",
-        // toAddressData: nftData?.creator?.address ?? "",
-        amountCan:
-          Number(nftData?.salePrice ? nftData?.salePrice : nftData?.price) ?? 0,
-      });
+      // Gọi TransferService với timeout và retry
+      const response = await withTimeoutAndRetry(
+        () =>
+          TransferService.sendCanTransfer({
+            fromAddress: user?.walletAddress ?? "",
+            amountCan:
+              Number(
+                nftData?.salePrice ? nftData?.salePrice : nftData?.price
+              ) ?? 0,
+          }),
+        60000, // 60s timeout
+        3, // 3 lần retry
+        2000 // 2s delay giữa các lần retry
+      );
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        let result = await NFTService.buyP2PList({
-          nftId: nftData?.id,
-          transactionHash: response?.transactionHash,
-        });
+        // Gọi buyP2PList với timeout và retry
+        const result = await withTimeoutAndRetry(
+          () =>
+            NFTService.buyP2PList({
+              nftId: nftData?.id,
+              transactionHash: response?.transactionHash,
+            }),
+          30000, // 30s timeout cho API call
+          3, // 3 lần retry
+          2000 // 2s delay
+        );
 
         if (result.success) {
           setBuyLoading(false);
@@ -319,6 +397,24 @@ export default function NFTDetailPage() {
       }
     } catch (error: any) {
       setBuyLoading(false);
+      const errorMessage =
+        error?.message || error?.toString() || "Unknown error";
+
+      // Hiển thị thông báo lỗi cụ thể
+      if (errorMessage.includes("timeout")) {
+        toast.error("Mua NFT thất bại: Request timeout. Vui lòng thử lại sau.");
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
+        toast.error(
+          "Mua NFT thất bại: Lỗi kết nối mạng. Vui lòng kiểm tra kết nối và thử lại."
+        );
+      } else {
+        toast.error(`Mua NFT thất bại: ${errorMessage}`);
+      }
+
+      console.error("❌ handleBuyNFT Error:", error);
     }
   };
   return (
