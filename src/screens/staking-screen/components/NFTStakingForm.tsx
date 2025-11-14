@@ -344,14 +344,71 @@ export const NFTStakingForm = ({
 
   const cretaeMintNftTransaction = async (
     fromAddress?: string,
-    tokenId?: string,
-    nftId?: string
+    nftId?: string,
+    tokenId?: string
   ) => {
     try {
-      let createStake = await StakingService.stakeNFT(
-        selectedPoolData?.id as string,
-        nftId as string
+      if (!fromAddress || !tokenId) {
+        toast.error("Thiếu thông tin địa chỉ ví hoặc token ID");
+        setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
+        return;
+      }
+
+      // Lấy contract address của NFT
+      const contractAddress = config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS;
+
+      if (!contractAddress) {
+        toast.error("Không tìm thấy địa chỉ contract NFT");
+        setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
+        return;
+      }
+
+      console.log("🔍 Transferring NFT to Admin:", {
+        fromAddress,
+        contractAddress,
+        tokenId,
+        nftId,
+      });
+
+      toast.info("Đang chuyển NFT sang ví Admin...");
+
+      // BƯỚC 1: Chuyển NFT sang ví admin
+      const transferResult = await TransferService.transferNFT({
+        fromAddress: fromAddress,
+        contractAddress: contractAddress,
+        tokenId: tokenId,
+      });
+
+      if (!transferResult.transactionHash) {
+        toast.error("Không thể chuyển NFT sang ví Admin. Vui lòng thử lại.");
+        setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
+        return;
+      }
+
+      console.log(
+        "✅ NFT transferred successfully:",
+        transferResult.transactionHash
       );
+      toast.success("Chuyển NFT thành công!");
+
+      // BƯỚC 2: Gọi API stake NFT với transactionHash
+      toast.info("Đang xử lý stake NFT...");
+
+      let createStake = await StakingService.stakeNFTMint(
+        selectedPoolData?.id as string,
+        nftId as string,
+        transferResult.transactionHash
+      );
+
       if (createStake.success) {
         await fetchUserNFTs();
         toast.success("Giao dịch stake thành công");
@@ -382,8 +439,28 @@ export const NFTStakingForm = ({
         }
         toast.error("Giao dịch stake thất bại");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Error in cretaeMintNftTransaction:", error);
+
+      // Error handling cho transfer NFT
+      if (error?.message?.includes("User denied") || error?.code === 4001) {
+        toast.error("Bạn đã từ chối giao dịch chuyển NFT");
+      } else if (error?.message?.includes("insufficient funds")) {
+        toast.error("Số dư không đủ để thực hiện giao dịch");
+      } else if (error?.message?.includes("reverted")) {
+        toast.error(
+          "Giao dịch bị từ chối bởi smart contract. Vui lòng kiểm tra quyền sở hữu NFT."
+        );
+      } else {
+        toast.error(
+          "Lỗi khi chuyển NFT: " + (error?.message || "Vui lòng thử lại")
+        );
+      }
+
+      setIsLoading(false);
+      if (setParentIsLoading) {
+        setParentIsLoading(false);
+      }
     }
   };
 
@@ -402,8 +479,8 @@ export const NFTStakingForm = ({
       } else {
         await cretaeMintNftTransaction(
           userInfo?.walletAddress as string,
-          String(tokenId),
-          String(nftId)
+          String(nftId),
+          String(tokenId)
         );
       }
     } catch (error) {
