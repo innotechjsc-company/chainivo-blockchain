@@ -1,14 +1,37 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { AuthService } from "@/api/services/auth-service";
 import { UserService } from "@/api/services/user-service";
+import { RankObject } from "@/api/api";
 
 export interface AuthUser {
   id: string;
   email: string;
-  name: string;
-  avatarUrl?: string;  // 
-  walletAddress: string;
+  name?: string;
+  avatarUrl?: string;
+  bio?: string;
+  walletAddress?: string;
   role: string;
+
+  // Trang thai xac minh
+  isEmailVerified?: boolean;
+  isKYCVerified?: boolean;
+  isWalletVerified?: boolean;
+
+  // Trang thai tai khoan
+  isActive?: boolean;
+  isSuspended?: boolean;
+  suspensionReason?: string;
+
+  // Theo doi dang nhap
+  lastLogin?: string;
+
+  // Ma gioi thieu & Rank
+  refCode?: string;
+  rank?: RankObject;
+  rankId?: string;
+  points?: number;
+
+  // Timestamps
   createdAt?: string;
   updatedAt?: string;
 }

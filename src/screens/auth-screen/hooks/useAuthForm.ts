@@ -117,8 +117,6 @@ export const useAuthForm = (type: "login" | "register") => {
 
   // Handle login
   const handleLogin = useCallback(async () => {
-    console.log("[AUTH] Starting login process...");
-
     try {
       dispatch(setLoading(true));
       dispatch(setErrorAction(null));
@@ -129,16 +127,36 @@ export const useAuthForm = (type: "login" | "register") => {
       });
 
       if (response.token && response.user) {
-        console.log("[AUTH] Login successful");
-
-        // Map Payload CMS user to AuthUser
+        // Map Payload CMS user to AuthUser - BAO GOM TAT CA TRUONG
         const authUser = {
           id: response.user.id,
           email: response.user.email,
           name: response.user.name || "",
-          avatarUrl: response.user.avatarUrl || "", // Include avatarUrl tu AuthService.login()
+          avatarUrl: response.user.avatarUrl || "",
+          bio: response.user.bio,
           walletAddress: response.user.walletAddress || "",
           role: response.user.role || "user",
+
+          // Trang thai xac minh
+          isEmailVerified: response.user.isEmailVerified,
+          isKYCVerified: response.user.isKYCVerified,
+          isWalletVerified: response.user.isWalletVerified,
+
+          // Trang thai tai khoan
+          isActive: response.user.isActive,
+          isSuspended: response.user.isSuspended,
+          suspensionReason: response.user.suspensionReason,
+
+          // Theo doi dang nhap
+          lastLogin: response.user.lastLogin,
+
+          // Ma gioi thieu & Rank
+          refCode: response.user.refCode,
+          rank: response.user.rank,
+          rankId: response.user.rankId,
+          points: response.user.points,
+
+          // Timestamps
           createdAt: response.user.createdAt,
           updatedAt: response.user.updatedAt,
         };
@@ -148,11 +166,9 @@ export const useAuthForm = (type: "login" | "register") => {
 
         // Check if user has wallet address
         if (response.user.walletAddress) {
-          console.log("[AUTH] User has wallet address, redirecting to home");
           await autoConnect();
           router.push("/");
         } else {
-          console.log("[AUTH] User has no wallet, redirecting to wallet page");
           router.push("/wallet");
         }
       }
@@ -168,8 +184,6 @@ export const useAuthForm = (type: "login" | "register") => {
 
   // Handle register
   const handleRegister = useCallback(async () => {
-    console.log("[AUTH] Starting registration process...");
-
     try {
       dispatch(setLoading(true));
       dispatch(setErrorAction(null));
@@ -185,7 +199,6 @@ export const useAuthForm = (type: "login" | "register") => {
       );
 
       if (response.doc && response.doc.email) {
-        console.log("[AUTH] Registration successful, redirecting to login");
         router.push("/auth?tab=login");
       }
     } catch (error: any) {
@@ -205,15 +218,10 @@ export const useAuthForm = (type: "login" | "register") => {
       e.preventDefault();
       e.stopPropagation();
 
-      console.log("[AUTH] Form submitted, starting validation...");
-
       // Validate form before submitting
       if (!validateForm()) {
-        console.log("[AUTH] Validation failed");
         return;
       }
-
-      console.log("[AUTH] Validation passed");
 
       try {
         if (type === "login") {
@@ -222,7 +230,7 @@ export const useAuthForm = (type: "login" | "register") => {
           await handleRegister();
         }
       } catch (error) {
-        console.log("[AUTH] Error caught:", error);
+        // Error is already handled in handleLogin/handleRegister
       }
     },
     [type, validateForm, handleLogin, handleRegister]

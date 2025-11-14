@@ -175,7 +175,7 @@ export const API_ENDPOINTS = {
     UPDATE_USER_PROFILE: "/api/users/profile",
     CHANGE_PASSWORD: "/api/user/change-password",
     UPDATE_PROFILE: "/api/user/update-profile",
-    GET_PROFILE: "/api/user/profile",
+    GET_PROFILE: "/api/users/me",
     GET_ME: "/api/users/me",
   },
   ABOUT: {
@@ -211,6 +211,88 @@ export interface AvatarObject {
   width: number;
   height: number;
   type: string;
+}
+
+// Rank object khi populate tu relationship
+export interface RankObject {
+  id: string;
+  name: string;
+  requiredPoints: number;
+  benefits?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Day du response tu /api/users/me (PayloadCMS)
+export interface UserMeResponse {
+  user: {
+    id: string;
+    email: string;
+    collection: string;
+    _strategy: string;
+    _verified?: boolean;
+
+    // Thong tin co ban
+    name?: string;
+    avatar?: string | AvatarObject; // Co the la ID hoac object neu depth > 0
+    bio?: string;
+
+    // Thong tin vi
+    walletAddress?: string;
+
+    // Vai tro & Quyen han
+    role: string; // 'user' | 'investor' | 'creator' | 'moderator' | 'admin'
+
+    // Trang thai xac minh
+    isEmailVerified?: boolean;
+    isKYCVerified?: boolean;
+    isWalletVerified?: boolean;
+
+    // Trang thai tai khoan
+    isActive?: boolean;
+    isSuspended?: boolean;
+    suspensionReason?: string;
+
+    // Theo doi dang nhap
+    lastLogin?: string;
+
+    // Ma gioi thieu
+    refCode?: string;
+
+    // Rank & Points
+    rank?: string | RankObject; // Co the la ID hoac object neu depth > 0
+    points?: number;
+
+    // Timestamps
+    createdAt: string;
+    updatedAt: string;
+  };
+  message?: string;
+  exp?: number;
+}
+
+// Simplified user profile cho app su dung
+export interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string; // Da parse tu avatar.url
+  bio?: string;
+  walletAddress?: string;
+  role: string;
+  isEmailVerified?: boolean;
+  isKYCVerified?: boolean;
+  isWalletVerified?: boolean;
+  isActive?: boolean;
+  isSuspended?: boolean;
+  suspensionReason?: string;
+  lastLogin?: string;
+  refCode?: string;
+  rank?: RankObject; // Da parse neu co
+  rankId?: string; // ID cua rank neu chua populate
+  points?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateProfileResponse {

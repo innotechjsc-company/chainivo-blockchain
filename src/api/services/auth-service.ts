@@ -42,6 +42,26 @@ export interface AuthResponse {
     walletAddress?: string;
     role?: string;
     avatarUrl?: string;
+    bio?: string;
+
+    // Trang thai xac minh
+    isEmailVerified?: boolean;
+    isKYCVerified?: boolean;
+    isWalletVerified?: boolean;
+
+    // Trang thai tai khoan
+    isActive?: boolean;
+    isSuspended?: boolean;
+    suspensionReason?: string;
+
+    // Theo doi dang nhap
+    lastLogin?: string;
+
+    // Ma gioi thieu & Rank
+    refCode?: string;
+    rank?: any; // RankObject hoac string ID
+    rankId?: string;
+    points?: number;
   };
   token: string;
   exp: number;
@@ -153,43 +173,41 @@ export class AuthService {
           // Store token with expiration
           this.setToken(authData.token, authData.exp);
 
-          // Goi API getCurrentUserProfile de lay avatar day du tu backend
-          // Vi response login co the khong chua avatar.url
-          let avatarUrl = authData.user.avatarUrl || "";
+          // Goi API getCurrentUserProfile de lay day du thong tin user tu backend
+          // Bao gom avatar, refCode, points, rank, va cac trang thai xac minh
+          let fullUserProfile = null;
 
           try {
             const profileResponse = await UserService.getCurrentUserProfile();
 
-            // Backend tra ve nested data: {success, data: {success, data: {avatarUrl}}}
-            const userData = (profileResponse.data as any)?.data || profileResponse.data;
-
-            if (profileResponse.success && userData?.avatarUrl) {
-              avatarUrl = userData.avatarUrl;
+            if (profileResponse.success && profileResponse.data) {
+              fullUserProfile = profileResponse.data;
             }
           } catch (error) {
-            console.warn("Khong the lay avatar tu getCurrentUserProfile:", error);
-            // Van tiep tuc login, chi thieu avatar thoi
+            console.warn("Khong the lay profile day du:", error);
+            // Van tiep tuc login, chi thieu mot so thong tin bo sung
           }
 
-          // Store user info with all fields including avatar URL
-          const userInfo = {
+          // Store user info with all fields including avatar URL, refCode, points, rank
+          const userInfo = fullUserProfile || {
             id: authData.user.id,
             email: authData.user.email,
             name: authData.user.name || "",
             walletAddress: authData.user.walletAddress || "",
             role: authData.user.role || "user",
-            avatarUrl,
+            avatarUrl: authData.user.avatarUrl || "",
             createdAt: authData.user.createdAt,
             updatedAt: authData.user.updatedAt,
           };
+
           this.setUserInfo(userInfo);
 
-          // Return authData voi avatarUrl da fetch de frontend nhan duoc
+          // Return authData voi day du thong tin user de frontend nhan duoc
           return {
             ...authData,
             user: {
               ...authData.user,
-              avatarUrl,
+              ...userInfo,
             },
           };
         }
