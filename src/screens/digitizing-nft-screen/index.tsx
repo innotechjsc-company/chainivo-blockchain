@@ -140,8 +140,8 @@ export const DigitizingNftScreen = () => {
           </div>
         </section>
 
-        <section className="pt-16 bg-background text-foreground">
-          <div className="container mx-auto flex max-w-5xl flex-col gap-6 px-4 text-center md:text-left">
+        <section className="py-16 bg-background text-foreground">
+          <div className="container mx-auto flex max-w-6xl flex-col gap-8 px-4 text-center md:text-left">
             <h2 className="text-3xl font-bold gradient-text">
               Số hóa NFT là gì?
             </h2>
