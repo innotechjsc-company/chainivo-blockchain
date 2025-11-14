@@ -108,7 +108,10 @@ export function ListNFTDialog({
   };
 
   // Hàm xử lý list NFT sau khi transfer hoặc nếu không cần transfer
-  const proceedWithListing = async (priceValue: number) => {
+  const proceedWithListing = async (
+    priceValue: number,
+    transactionHash?: string
+  ) => {
     if (!nft) return;
 
     setLoading(true);
@@ -117,6 +120,7 @@ export function ListNFTDialog({
       const response = await NFTService.listNFTForSale({
         nftId: nft.id,
         salePrice: priceValue,
+        transactionHash: transactionHash,
       });
 
       if (response.success) {
@@ -189,7 +193,7 @@ export function ListNFTDialog({
 
       // Sau khi transfer thành công, tiếp tục list NFT
       if (pendingPrice !== null) {
-        await proceedWithListing(pendingPrice);
+        await proceedWithListing(pendingPrice, result.transactionHash);
         setPendingPrice(null);
       }
     } catch (error: any) {

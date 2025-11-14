@@ -64,6 +64,7 @@ export interface GetNFTOwnershipsParams {
     | "publishedAt";
   sortOrder?: "asc" | "desc";
   isSale?: boolean;
+  status?: string;
 }
 
 // Params cho API /api/nft/my-nft
@@ -351,114 +352,15 @@ export class NFTService {
 
   static async getMyNFTOwnerships(
     params?: GetNFTOwnershipsParams
-  ): Promise<ApiResponse<MyNFTsResponse["data"]>> {
+  ): Promise<any> {
     const res = await ApiService.get<any>(
       API_ENDPOINTS.NFT.OWNERSHIP_LIST,
       params
     );
-    if (!res.success || !res.data)
-      return res as ApiResponse<MyNFTsResponse["data"]>;
-
-    // Handle ca 2 format: data.ownerships (cu) hoac data.nfts (moi)
-    let rawNFTs: any[] = [];
-    if (Array.isArray(res.data.ownerships)) {
-      // Format cu: data.ownerships
-      rawNFTs = res.data.ownerships.map((o: any) => ({
-        nft: o?.nft || {},
-        user: o?.user,
-        metadata: o?.metadata,
-      }));
-    } else if (Array.isArray(res.data.nfts)) {
-      // Format moi: data.nfts (direct array)
-      rawNFTs = res.data.nfts.map((nft: any) => ({
-        nft: nft,
-        user: null,
-        metadata: null,
-      }));
+    if (res.success) {
+      return res;
     }
-
-    const nfts = rawNFTs.map((item: any) => {
-      const nft = item.nft || {};
-      const shares = item?.shares || 0;
-      const pricePerShare = nft?.pricePerShare || 0;
-      const imageObj = nft?.image;
-
-      // Extract image URL - handle nested object structure
-      let imageUrl = "";
-      if (typeof imageObj === "string") {
-        imageUrl = imageObj;
-      } else if (imageObj && typeof imageObj === "object") {
-        imageUrl = imageObj.url || "";
-      }
-
-      return {
-        id: nft.id || nft._id,
-        name: nft.name || "",
-        description: nft.description || "",
-        image: imageUrl,
-        price: typeof nft.price === "number" ? nft.price : 0,
-        salePrice: nft.isSale
-          ? typeof nft.salePrice === "number"
-            ? nft.salePrice
-            : typeof nft.pricePerShare === "number"
-            ? nft.pricePerShare
-            : typeof nft.price === "number"
-            ? nft.price
-            : null
-          : null,
-        walletAddress: nft.walletAddress || "",
-        owner: item?.user?.id || null,
-        isSale: !!nft.isSale,
-        isActive: !!nft.isActive,
-        type: nft.type,
-        level: nft.level,
-        currency: nft.currency,
-        viewsCount: typeof nft.viewsCount === "number" ? nft.viewsCount : 0,
-        likesCount: typeof nft.likesCount === "number" ? nft.likesCount : 0,
-        isLike: !!nft.isLike,
-        createdAt: nft.createdAt,
-        publishedAt: nft.investmentStartDate || nft.createdAt,
-        updatedAt: nft.updatedAt,
-        purchaseDate: item.metadata?.purchaseDate || nft.createdAt,
-
-        // Investment NFT fields
-        isFractional: nft.isFractional,
-        totalShares: nft.totalShares,
-        soldShares: nft.soldShares,
-        availableShares: nft.availableShares,
-        totalInvestors: nft.totalInvestors,
-        investmentStartDate: nft.investmentStartDate,
-        investmentEndDate: nft.investmentEndDate,
-        pricePerShare: nft.pricePerShare,
-
-        // Mystery Box NFT fields
-        isOpenable:
-          nft.type === "mysteryBox" ? checkIsOpenable(nft.rewards) : undefined,
-        rewards:
-          nft.type === "mysteryBox"
-            ? transformRewards(nft.rewards, nft.currency)
-            : undefined,
-
-        // General flags
-        isFeatured: !!nft.isFeatured,
-        shares: shares,
-      } as MyNFTsResponse["data"]["nfts"][number];
-    });
-
-    const p = res.data.pagination || {};
-    const pagination = {
-      page: p.page ?? 1,
-      limit: p.limit ?? nfts.length,
-      total: p.totalDocs ?? p.total ?? nfts.length,
-      totalPages: p.totalPages ?? 1,
-      hasNextPage: !!p.hasNextPage,
-      hasPrevPage: !!p.hasPrevPage,
-    } as MyNFTsResponse["data"]["pagination"];
-
-    return {
-      success: true,
-      data: { nfts, pagination },
-    };
+    return [];
   }
 
   static async getNFTByTemplateId(id: string): Promise<ApiResponse<NFT>> {
@@ -501,6 +403,7 @@ export class NFTService {
   static async listNFTForSale(data: {
     nftId: string;
     salePrice: number;
+    transactionHash?: string;
   }): Promise<ApiResponse<any>> {
     return ApiService.post(API_ENDPOINTS.NFT.POST_FOR_SALE, data);
   }

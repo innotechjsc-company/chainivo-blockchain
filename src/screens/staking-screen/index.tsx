@@ -4,7 +4,7 @@ import { useAppSelector } from "@/stores";
 import { useStakingData } from "./hooks/useStakingData";
 import { useStakingActions } from "./hooks/useStakingActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Coins, Package, Sparkles } from "lucide-react";
+import { Coins, Package, Sparkles, Share2 } from "lucide-react";
 import "./staking-screen.css";
 
 // Components
@@ -17,6 +17,7 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { NFTStakingSharesForm } from "./components/NFTStakingSharesForm";
 
 /**
  * StakingScreen - Màn hình quản lý staking CAN token và NFT
@@ -246,14 +247,27 @@ export const StakingScreen = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="coin" className="space-y-8">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12">
-            <TabsTrigger value="coin" className="text-lg">
-              <Coins className="h-5 w-5 mr-2" />
+          <TabsList className="grid w-full h-full max-w-3xl mx-auto grid-cols-3 gap-3 p-1 rounded-2xl border border-white/10 bg-white/5 shadow-lg backdrop-blur-lg">
+            <TabsTrigger
+              value="coin"
+              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
+            >
+              <Coins className="h-5 w-5 transition-transform duration-300 group-data-[state=active]:scale-110" />
               Staking {TOKEN_DEAULT_CURRENCY}
             </TabsTrigger>
-            <TabsTrigger value="nft" className="text-lg">
-              <Package className="h-5 w-5 mr-2" />
+            <TabsTrigger
+              value="nft"
+              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
+            >
+              <Package className="h-5 w-5 transition-transform duration-300 group-data-[state=active]:scale-110" />
               Staking NFT
+            </TabsTrigger>
+            <TabsTrigger
+              value="nft-shares"
+              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
+            >
+              <Share2 className="h-5 w-5 transition-transform duration-300 group-data-[state=active]:scale-110" />
+              Staking NFT shares
             </TabsTrigger>
           </TabsList>
 
@@ -292,6 +306,35 @@ export const StakingScreen = () => {
           <TabsContent value="nft" className="space-y-6 animate-fade-in">
             <div className="staking-grid">
               <NFTStakingForm
+                availableNFTs={availableNFTs}
+                onStake={handleNFTStake}
+                loading={actionLoading}
+                apy={stakingConfig?.nftAPY}
+                fetchStakingData={fetchStakingData}
+                getStakingPoolsOnSuccess={getStakingPools}
+                setIsLoading={setIsLoading}
+                stakingMyPools={stakingMyPools}
+                addPendingStake={addPendingStake}
+                updateStakeStatus={updateStakeStatus}
+                removeStake={removeStake}
+              />
+
+              <ActiveStakesList
+                coinStakes={[]}
+                nftStakes={nftStakes}
+                onClaim={handleClaim}
+                onCancel={handleCancel}
+                calculateRewards={calculateRewards}
+                calculateDaysPassed={calculateDaysPassed}
+                stakingMyPools={stakingMyPools}
+                getClaimRewardsData={getClaimRewardsData}
+                unStakeData={unStakeData}
+              />
+            </div>
+          </TabsContent>
+          <TabsContent value="nft-shares" className="space-y-6 animate-fade-in">
+            <div className="staking-grid">
+              <NFTStakingSharesForm
                 availableNFTs={availableNFTs}
                 onStake={handleNFTStake}
                 loading={actionLoading}
