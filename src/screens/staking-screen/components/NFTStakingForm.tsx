@@ -235,53 +235,36 @@ export const NFTStakingForm = ({
         setParentIsLoading(true);
       }
 
-      let res = await TransferService.sendCanTransfer({
-        fromAddress,
-        amountCan: amount,
-      });
-
-      if (res.transactionHash) {
-        let createStake = await StakingService.stake(
-          selectedPoolData?.id as string,
-          res.rawReceipt.transactionHash,
-          nftId as string
-        );
-        if (createStake.success) {
-          if (tempStakeId) {
-            removeStake?.(tempStakeId);
-          }
-          await fetchUserNFTs();
-          toast.success("Giao dịch stake thành công");
-
-          setTimeout(async () => {
-            try {
-              await getStakingPoolsOnSuccess?.();
-              if (fetchStakingData) {
-                await fetchStakingData();
-              }
-              setSelectedNFTId("");
-              setSelectedPoolId("");
-              setIsLoading(false);
-              if (setParentIsLoading) {
-                setParentIsLoading(false);
-              }
-            } catch (refreshError) {
-              setIsLoading(false);
-              if (setParentIsLoading) {
-                setParentIsLoading(false);
-              }
-            }
-          }, 500);
-        } else {
-          if (tempStakeId) {
-            removeStake?.(tempStakeId);
-          }
-          setIsLoading(false);
-          if (setParentIsLoading) {
-            setParentIsLoading(false);
-          }
-          toast.error("Giao dịch stake thất bại");
+      let createStake = await StakingService.stakeNFT(
+        selectedPoolData?.id as string,
+        nftId as string
+      );
+      if (createStake.success) {
+        if (tempStakeId) {
+          removeStake?.(tempStakeId);
         }
+        await fetchUserNFTs();
+        toast.success("Giao dịch stake thành công");
+
+        setTimeout(async () => {
+          try {
+            await getStakingPoolsOnSuccess?.();
+            if (fetchStakingData) {
+              await fetchStakingData();
+            }
+            setSelectedNFTId("");
+            setSelectedPoolId("");
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
+          } catch (refreshError) {
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
+          }
+        }, 500);
       } else {
         if (tempStakeId) {
           removeStake?.(tempStakeId);
@@ -290,7 +273,7 @@ export const NFTStakingForm = ({
         if (setParentIsLoading) {
           setParentIsLoading(false);
         }
-        toast.error("Không nhận được xác nhận giao dịch");
+        toast.error("Giao dịch stake thất bại");
       }
     } catch (error) {
       try {
@@ -365,51 +348,39 @@ export const NFTStakingForm = ({
     nftId?: string
   ) => {
     try {
-      const result = await TransferService.transferNFT({
-        fromAddress: fromAddress as string,
-        contractAddress: "0xeaDB5F19e5Fc4fbf15123606BA61CE1Da7FaaaFF",
-        tokenId: tokenId as string,
-      });
-      if (result.transactionHash) {
-        let createStake = await StakingService.stake(
-          selectedPoolData?.id as string,
-          result.rawReceipt.transactionHash,
-          nftId as string
-        );
-        if (createStake.success) {
-          await fetchUserNFTs();
-          toast.success("Giao dịch stake thành công");
+      let createStake = await StakingService.stakeNFT(
+        selectedPoolData?.id as string,
+        nftId as string
+      );
+      if (createStake.success) {
+        await fetchUserNFTs();
+        toast.success("Giao dịch stake thành công");
 
-          setTimeout(async () => {
-            try {
-              await getStakingPoolsOnSuccess?.();
-              if (fetchStakingData) {
-                await fetchStakingData();
-              }
-              setSelectedNFTId("");
-              setSelectedPoolId("");
-              setIsLoading(false);
-              if (setParentIsLoading) {
-                setParentIsLoading(false);
-              }
-            } catch (refreshError) {
-              setIsLoading(false);
-              if (setParentIsLoading) {
-                setParentIsLoading(false);
-              }
+        setTimeout(async () => {
+          try {
+            await getStakingPoolsOnSuccess?.();
+            if (fetchStakingData) {
+              await fetchStakingData();
             }
-          }, 500);
-        } else {
-          setIsLoading(false);
-          if (setParentIsLoading) {
-            setParentIsLoading(false);
+            setSelectedNFTId("");
+            setSelectedPoolId("");
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
+          } catch (refreshError) {
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
           }
-          toast.error("Giao dịch stake thất bại");
-        }
+        }, 500);
       } else {
-        toast.error(
-          "Chuyển NFT sang ví admin thất bại , vui lòng liên hệ với Admin để được hỗ trợ"
-        );
+        setIsLoading(false);
+        if (setParentIsLoading) {
+          setParentIsLoading(false);
+        }
+        toast.error("Giao dịch stake thất bại");
       }
     } catch (error) {
       console.error(error);

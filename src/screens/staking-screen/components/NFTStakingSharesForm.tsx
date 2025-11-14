@@ -189,13 +189,17 @@ export const NFTStakingSharesForm = ({
     amount: number,
     nftId: string
   ) => {
-    let createStake = await StakingService.stake(
+    let createStake = await StakingService.stakeShares(
       selectedPoolData?.id as string,
       nftId as string
     );
     debugger;
-    await fetchMyNFTOwnerships();
-    toast.success("Giao dịch stake thành công");
+    if (createStake.success) {
+      await fetchMyNFTOwnerships();
+      toast.success("Giao dịch stake thành công");
+    } else {
+      toast.error("Giao dịch stake thất bại");
+    }
 
     setTimeout(async () => {
       try {
