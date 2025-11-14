@@ -113,8 +113,6 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
     let filtered = allNFTs;
-    debugger;
-
     // Filter theo sale status (all/sale/not-listed)
     if (filter === "sale") {
       filtered = filtered.filter((nft) => nft.isSale === true);

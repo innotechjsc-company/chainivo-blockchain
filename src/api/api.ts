@@ -124,6 +124,8 @@ export const API_ENDPOINTS = {
     Mint_NFT_BLOCKCHAIN: "/api/nft/mint-to-blockchain",
     SHARE_DETAIL: (nftId: string) =>
       `/api/investment-nft/share-details?nftId=${nftId}`,
+    CHECK_OWNERSHIP: (nftId: string, walletAddress: string) =>
+      `/api/nft-market/check-owner-nft?tokenId=${nftId}&walletAddress=${walletAddress}`,
   },
 
   STAKING: {

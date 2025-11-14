@@ -552,6 +552,14 @@ export class NFTService {
   }): Promise<ApiResponse<any>> {
     return ApiService.get(API_ENDPOINTS.NFT.SHARE_DETAIL(data.nftId));
   }
+  static async checkOwnership(data: {
+    nftId: string;
+    walletAddress: string;
+  }): Promise<ApiResponse<any>> {
+    return ApiService.get(
+      API_ENDPOINTS.NFT.CHECK_OWNERSHIP(data.nftId, data.walletAddress)
+    );
+  }
 }
 
 export default NFTService;
