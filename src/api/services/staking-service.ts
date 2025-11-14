@@ -44,15 +44,49 @@ export class StakingService {
     return ApiService.get<StakingPool[]>(API_ENDPOINTS.STAKING.POOLS);
   }
 
-  static async stake(
+  static async stakeShares(
     stakeId: string,
-    transactionHash: string,
-    nftId?: string
+    nftSharesId?: string,
+    nftId?: string,
+    transactionHash?: string
+  ): Promise<ApiResponse<UserStake>> {
+    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
+      stakeId,
+      nftSharesId,
+      nftId,
+      transactionHash,
+    });
+  }
+
+  static async stakeCan(
+    stakeId: string,
+    transactionHash?: string
   ): Promise<ApiResponse<UserStake>> {
     return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
       stakeId,
       transactionHash,
+    });
+  }
+
+  static async stakeNFT(
+    stakeId: string,
+    nftId?: string
+  ): Promise<ApiResponse<UserStake>> {
+    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
+      stakeId,
       nftId,
+    });
+  }
+
+  static async stakeNFTMint(
+    stakeId: string,
+    nftId?: string,
+    transactionHash?: string
+  ): Promise<ApiResponse<UserStake>> {
+    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
+      stakeId,
+      nftId,
+      transactionHash,
     });
   }
 

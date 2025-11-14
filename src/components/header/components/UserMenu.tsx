@@ -76,10 +76,7 @@ export const UserMenu = ({
           <Settings className="w-4 h-4 mr-2" />
           Nhiệm vụ
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="w-4 h-4 mr-2" />
-          Cài đặt
-        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="w-4 h-4 mr-2" />

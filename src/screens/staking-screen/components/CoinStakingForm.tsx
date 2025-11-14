@@ -239,7 +239,7 @@ export const CoinStakingForm = ({
       });
 
       if (res.transactionHash) {
-        let createStake = await StakingService.stake(
+        let createStake = await StakingService.stakeCan(
           selectedPoolData?.id as string,
           res.rawReceipt.transactionHash
         );
