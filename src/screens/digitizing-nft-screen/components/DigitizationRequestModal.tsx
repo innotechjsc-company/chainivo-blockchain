@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface DigitizationRequestModalProps {
   open: boolean;
@@ -171,9 +172,9 @@ export function DigitizationRequestModal({
     if (!validateForm()) {
       return;
     }
-
-    // Kiểm tra phí số hóa trước khi tiếp tục
     await checkAppraisalFee();
+
+    setFeeModalOpen(true);
   };
 
   // Hàm kiểm tra và hiển thị modal phí số hóa
@@ -187,40 +188,22 @@ export function DigitizationRequestModal({
       if (feeResponse.success && feeResponse.data) {
         // Tìm appraisalFee trong response
         let appraisalFeeValue = 0;
-
-        if (Array.isArray(feeResponse.data)) {
-          const appraisalFeeConfig = feeResponse.data.find(
-            (fee: any) =>
-              fee.key === "appraisalFee" || fee.name === "appraisalFee"
-          );
+        if (
+          (feeResponse.data as any).appraisalFee &&
+          Number((feeResponse.data as any).appraisalFee?.value) > 0
+        ) {
           appraisalFeeValue =
-            appraisalFeeConfig?.value || appraisalFeeConfig?.percentage || 0;
-        } else {
-          appraisalFeeValue =
-            (feeResponse.data as any).appraisalFee ||
-            (feeResponse.data as any).value ||
-            (feeResponse.data as any).percentage ||
-            0;
+            Number((feeResponse.data as any).appraisalFee?.value) +
+            appraisalFeeValue;
         }
 
-        console.log("Appraisal Fee:", appraisalFeeValue);
-
         if (appraisalFeeValue > 0) {
-          // Tính phí dựa trên giá trị tài sản
           const priceValue = Number(parseNumberFromFormatted(formData.price));
           const calculatedFeeAmount = (priceValue * appraisalFeeValue) / 100;
 
           setAppraisalFee(appraisalFeeValue);
           setCalculatedFee(calculatedFeeAmount);
-          setFeeModalOpen(true);
-          setLoading(false);
-        } else {
-          // Không có phí, tiếp tục submit
-          await proceedWithSubmit();
         }
-      } else {
-        // Không lấy được phí, tiếp tục submit
-        await proceedWithSubmit();
       }
     } catch (error) {
       console.error("Error checking appraisal fee:", error);
@@ -256,6 +239,8 @@ export function DigitizationRequestModal({
 
         // Tiếp tục submit request với transactionHash
         await proceedWithSubmit(result.transactionHash);
+        onOpenChange(false);
+        onSuccess?.();
       } else {
         toast.error("Không nhận được xác nhận giao dịch");
         setPayingFee(false);
@@ -916,6 +901,9 @@ export function DigitizationRequestModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Loading Spinner khi đang thanh toán phí */}
+      {payingFee && <LoadingSpinner />}
     </>
   );
 }

@@ -46,7 +46,15 @@ export default function NFTTypeBadge({
   type,
   className = "",
 }: NFTTypeBadgeProps) {
-  const config = TYPE_CONFIGS[type];
+  // Fallback to "normal" if config not found
+  const config = TYPE_CONFIGS[type] || TYPE_CONFIGS["normal"];
+
+  // Log warning if type is not valid
+  if (!TYPE_CONFIGS[type]) {
+    console.warn(
+      `[NFTTypeBadge] Invalid type: "${type}" (type: ${typeof type}). Falling back to "normal".`
+    );
+  }
 
   return (
     <div

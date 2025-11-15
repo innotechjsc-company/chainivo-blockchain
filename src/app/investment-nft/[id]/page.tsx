@@ -636,13 +636,13 @@ export default function InvestmentNFTDetailPage() {
 
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1">
-                      Trạng thái
+                      Cho phép stake
                     </div>
                     <div className="text-sm font-semibold">
-                      {data?.isActive ? (
-                        <span className="text-emerald-400">✓ Hoạt động</span>
+                      {(data as any)?.allowStakingOfShares ? (
+                        <span className="text-emerald-400">✓ Có</span>
                       ) : (
-                        <span className="text-red-400">✗ Tạm dừng</span>
+                        <span className="text-red-400">✗ Không </span>
                       )}
                     </div>
                   </div>
@@ -783,7 +783,7 @@ export default function InvestmentNFTDetailPage() {
                           Thời gian
                         </th>
                         <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Trạng thái
+                          Stake
                         </th>
                         <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
                           Hash giao dịch
@@ -793,7 +793,6 @@ export default function InvestmentNFTDetailPage() {
                     <tbody>
                       {transactions.map((tx: any, idx: number) => {
                         // Handle buyer address/username
-
                         const displayBuyer = formatAddress(tx?.walletAddress);
 
                         // Handle shares

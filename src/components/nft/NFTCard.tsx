@@ -78,6 +78,7 @@ export default function NFTCard({
     useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -291,14 +292,8 @@ export default function NFTCard({
           explorerUrl,
         });
 
-        // Gọi lại API lấy my NFT
-        if (onRefreshNFTs) {
-          try {
-            await onRefreshNFTs();
-          } catch (refreshError) {
-            console.error("Error refreshing NFT collection:", refreshError);
-          }
-        }
+        // Mở modal thông báo thành công
+        setSuccessDialogOpen(true);
       } else {
         setIsLoading(false);
         toast.error(response.message || "Rút NFT về ví thất bại");
@@ -312,6 +307,17 @@ export default function NFTCard({
     }
   };
 
+  // Hàm xử lý khi đóng modal thành công
+  const handleSuccessDialogClose = async () => {
+    setSuccessDialogOpen(false);
+    setIsLoading(false);
+
+    // Gọi API refresh
+    if (onRefreshNFTs) {
+      await onRefreshNFTs();
+    }
+  };
+
   useEffect(() => {
     setWithdrawSuccessDialogOpen(true);
   }, [withdrawResult]);
@@ -319,185 +325,44 @@ export default function NFTCard({
   // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
-
-    switch (nft.type) {
-      case "mysteryBox":
-        // Nếu Mystery Box đã đăng bán → hiển thị button hủy đăng bán
-        if (nft.isSale) {
-          return (
-            <Button
-              onClick={(e) => handleAction(e, "cancel")}
-              className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2
-                bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
-              "
-            >
-              Huỷ
-            </Button>
-          );
-        }
-
-        // Nếu chưa đăng bán → hiển thị 2 buttons
-        return (
-          <div className="flex gap-2 w-full">
-            <Button
-              onClick={(e) => handleAction(e, "open")}
-              disabled={!isMysteryBoxOpenable}
-              className={`
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
-                ${
-                  isMysteryBoxOpenable
-                    ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl"
-                    : "bg-gray-700 text-gray-400"
-                }
-              `}
-            >
-              {isMysteryBoxOpenable ? (
-                <>
-                  <span className="text-lg">🎁</span>
-                  <span>Mở hộp quà</span>
-                  <span className="text-lg">✨</span>
-                </>
-              ) : (
-                <>
-                  <span>🔒</span>
-                  <span>Chưa thể mở</span>
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
-                bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-              "
-            >
-              <Send className="w-5 h-5" />
-              Đăng bán
-            </Button>
-          </div>
-        );
-
-      case "investment":
-        const isAvailable = (nft.availableShares ?? 0) > 0;
-        const isExpired =
-          nft.investmentEndDate &&
-          new Date(nft.investmentEndDate).getTime() < Date.now();
-
-        if (isExpired) {
-          return (
-            <Button
-              disabled
-              className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                outline-none h-9 px-4 py-2 w-full gap-2
-                bg-gray-700 text-gray-400
-              "
-            >
-              Đã hết hạn
-            </Button>
-          );
-        }
-
-        return (
+    if (type === "investment") return null;
+    return (
+      <div className="flex gap-2 w-full flex-col">
+        {nft?.isMinted === false ? (
           <Button
-            onClick={(e) => handleAction(e, "buy")}
-            disabled={!isAvailable}
-            className={`
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              ${
-                isAvailable
-                  ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white"
-                  : "bg-gray-700 text-gray-400"
-              }
-            `}
+            onClick={(e) => {
+              e.stopPropagation();
+              setWithdrawDialogOpen(true);
+            }}
+            className="
+          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+          transition-all disabled:pointer-events-none disabled:opacity-50
+          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+        "
           >
-            {isAvailable ? "💰 Đầu tư" : "Đã hết cổ phần"}
+            Rút về ví
           </Button>
-        );
-
-      case "normal":
-      case "rank":
-      default:
-        if (nft.isSale) {
-          // NFT đã đăng bán -> hiển thị button hủy đăng bán
-          return (
-            <Button
-              onClick={(e) => handleAction(e, "cancel")}
-              className="
-                inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                transition-all disabled:pointer-events-none disabled:opacity-50
-                [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2
-                bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer
-              "
-            >
-              Huỷ
-            </Button>
-          );
-        }
-        return (
-          <div className="flex gap-2 w-full flex-col">
-            {nft?.isMinted === false ? (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setWithdrawDialogOpen(true);
-                }}
-                className="
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-            "
-              >
-                Rút về ví
-              </Button>
-            ) : null}
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-              bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-            "
-            >
-              Đăng bán
-            </Button>
-          </div>
-        );
-    }
+        ) : null}
+        <Button
+          onClick={(e) => handleAction(e, "sell")}
+          className="
+          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+          transition-all disabled:pointer-events-none disabled:opacity-50
+          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+        "
+        >
+          Đăng bán
+        </Button>
+      </div>
+    );
   };
 
   const actionSection = renderActionButton();
@@ -593,10 +458,31 @@ export default function NFTCard({
                 {nft.type === "investment" ? "Giá/cổ phần:" : "Giá:"}
               </span>
               <span className="text-lg font-bold text-gray-100">
-                {formatNumber(nft.salePrice ?? nft.price)}{" "}
-                <span className="text-sm uppercase">{nft.currency}</span>
+                {formatNumber(
+                  (nft as any)?.nft?.salePrice ??
+                    (nft as any)?.nft?.salePrice ??
+                    (nft as any)?.nft?.price ??
+                    nft.salePrice ??
+                    nft.price
+                )}{" "}
+                <span className="text-sm uppercase">
+                  {nft.currency
+                    ? nft.currency.toUpperCase()
+                    : (nft as any)?.nft?.currency
+                    ? (nft as any)?.nft?.currency.toUpperCase()
+                    : "CAN".toUpperCase()}
+                </span>
               </span>
             </div>
+            {nft.shares && nft.shares > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Cổ phần nắm giữ:</span>
+                <span className="text-lg font-bold text-gray-100">
+                  {formatNumber(nft.shares)}
+                  <span className="text-sm uppercase">{nft.currency}</span>
+                </span>
+              </div>
+            )}
 
             {/* Investment-specific content */}
             {nft.type === "investment" &&
@@ -693,6 +579,125 @@ export default function NFTCard({
           </div>,
           document.body
         )}
+
+      {/* Modal thông báo thành công */}
+      <Dialog
+        open={successDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleSuccessDialogClose();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-500">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Chúc mừng!
+            </DialogTitle>
+            <DialogDescription>
+              Bạn đã số hóa thành công NFT này
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Thông tin NFT */}
+            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={nftImage}
+                  alt={nft.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div>
+                  <h3 className="font-semibold">{nft.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Token ID: {withdrawResult?.tokenId || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {withdrawResult?.contractAddress && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Contract Address:
+                  </p>
+                  <p className="text-xs font-mono break-all">
+                    {withdrawResult.contractAddress}
+                  </p>
+                </div>
+              )}
+
+              {withdrawResult?.transactionHash && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Transaction Hash:
+                  </p>
+                  <p className="text-xs font-mono break-all">
+                    {withdrawResult.transactionHash}
+                  </p>
+                </div>
+              )}
+
+              {withdrawResult?.explorerUrl && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <a
+                    href={withdrawResult.explorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    Xem trên Polygon Scan
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Thông báo */}
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-3">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                💡 NFT của bạn đã được mint lên blockchain và có thể xem trên ví
+                MetaMask
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={handleSuccessDialogClose}
+              className="w-full"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

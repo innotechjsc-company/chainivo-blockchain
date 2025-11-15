@@ -101,7 +101,7 @@ export default function StakingHeroDemoPage() {
       if (transferRes.transactionHash) {
         toast.loading("Saving staking information...", { id: "stake-toast" });
 
-        const stakeRes = await StakingService.stake(
+        const stakeRes = await StakingService.stakeCan(
           selectedPoolId,
           transferRes.transactionHash
         );

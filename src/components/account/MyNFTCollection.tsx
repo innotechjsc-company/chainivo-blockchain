@@ -121,13 +121,9 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   const onClickMyNFT = (id: string) => {
     router.push(`/nft/${id}?type=tier`);
   };
-  // Loading state
-  if (loading) {
-    return <LoadingSpinner />;
-  }
 
   // Error state
-  if (error) {
+  if (error && !loading) {
     return (
       <Card className="glass p-6">
         <div className="flex items-center gap-3 text-destructive">
@@ -142,7 +138,13 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   }
 
   return (
-    <div className=" space-y-6 ">
+    <div className="space-y-6 relative ">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+          <LoadingSpinner />
+        </div>
+      )}
       {/* Stats Cards */}
       <NFTStatsCards {...stats} />
 
