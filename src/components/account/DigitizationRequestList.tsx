@@ -184,16 +184,9 @@ export function DigitizationRequestList({
 
       setSystemFees(feeResponse.data);
 
-      const { appraisalFee, digitizationFee } = feeResponse.data as Record<
-        string,
-        any
-      >;
+      const { digitizationFee } = feeResponse.data as Record<string, any>;
 
       let totalFeePercent = 0;
-
-      if (appraisalFee?.isActive && Number(appraisalFee.value) > 0) {
-        totalFeePercent += Number(appraisalFee.value);
-      }
 
       if (digitizationFee?.isActive && Number(digitizationFee.value) > 0) {
         totalFeePercent += Number(digitizationFee.value);

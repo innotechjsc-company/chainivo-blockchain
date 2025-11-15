@@ -28,10 +28,10 @@ import { useAppSelector } from "@/stores";
 import { toast } from "sonner";
 import { LoadingSkeleton } from "@/screens/staking-screen/components/LoadingSkeleton";
 import { formatNumber } from "@/utils/formatters";
-import { config } from "@/api/config";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 
-interface NFTStakingFormProps {
+interface NFTStakingSharesFormProps {
   availableNFTs: AvailableNFT[];
   onStake: (request: CreateStakingNFTRequest) => Promise<void>;
   loading?: boolean;
@@ -45,7 +45,7 @@ interface NFTStakingFormProps {
   removeStake?: (id: string) => void;
 }
 
-export const NFTStakingForm = ({
+export const NFTStakingSharesForm = ({
   availableNFTs,
   onStake,
   loading = false,
@@ -57,20 +57,23 @@ export const NFTStakingForm = ({
   addPendingStake,
   updateStakeStatus,
   removeStake,
-}: NFTStakingFormProps) => {
+}: NFTStakingSharesFormProps) => {
   const [selectedNFTId, setSelectedNFTId] = useState("");
   const [selectedPoolId, setSelectedPoolId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [isTransferring, setIsTransferring] = useState(false);
+  const [isStakingShares, setIsStakingShares] = useState(false);
 
   const selectedNFT = availableNFTs.find((nft) => nft.id === selectedNFTId);
   const [takePools, setTakePools] = useState<any[]>([]);
-  const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const [investNFTs, setInvestNFTs] = useState<any[]>([]);
   const [pendingStakeAmount, setPendingStakeAmount] = useState(0);
-  const selectedUserNFT = userNFTs.find(
+  const selectedUserNFT = investNFTs.find(
     (nft: any) => String(nft?._id ?? nft?.id) === selectedNFTId
   );
+  const totalPrice =
+    Number(selectedUserNFT?.shares ?? 0) *
+    Number(selectedUserNFT?.nft?.pricePerShare ?? 0);
   const userInfo = useAppSelector((state) => state.auth.user);
 
   // Lấy thông tin pool đã chọn
@@ -100,23 +103,24 @@ export const NFTStakingForm = ({
     nftPrice >= (selectedPoolData.minStake || 0) &&
     nftPrice <= (selectedPoolData.maxStake || Infinity);
 
-  const fetchUserNFTs = async () => {
+  const fetchMyNFTOwnerships = async () => {
     if (!userInfo || !userInfo.walletAddress) {
-      setUserNFTs([]);
+      setInvestNFTs([]);
       return;
     }
     try {
-      const response = await NFTService.getNFTsByOwner({
-        ownerAddress: userInfo?.walletAddress || "",
-      });
+      const response = await NFTService.getMyNFTOwnerships();
       if (response.success) {
-        setUserNFTs((response.data as any).nfts || []);
+        const nfts = response?.data?.ownerships || [];
+        setInvestNFTs(nfts);
       } else {
-        toast.error(response.message);
-        setUserNFTs([]);
+        toast.error(response.message || "Không thể tải danh sách NFT");
+        setInvestNFTs([]);
       }
     } catch (error) {
-      setUserNFTs([]);
+      console.error("Error fetching NFT ownerships:", error);
+      toast.error("Lỗi khi tải danh sách NFT");
+      setInvestNFTs([]);
     }
   };
 
@@ -126,14 +130,14 @@ export const NFTStakingForm = ({
     if (response?.success) {
       setTakePools(
         (response?.data as any)?.pools.filter(
-          (pool: any) => pool.type === "nft"
+          (pool: any) => pool.type === "nft-shares"
         )
       );
     }
   };
 
   useEffect(() => {
-    fetchUserNFTs();
+    fetchMyNFTOwnerships();
     getStakingPools();
   }, []);
 
@@ -156,11 +160,7 @@ export const NFTStakingForm = ({
       return;
     }
 
-    const nftPriceValue = Number(selectedUserNFT?.price ?? 0);
-    if (!nftPriceValue || nftPriceValue <= 0) {
-      toast.error("NFT không có giá trị hợp lệ");
-      return;
-    }
+    const nftPriceValue = Number(totalPrice ?? 0);
 
     // Kiểm tra min/max stake
     if (selectedPoolData) {
@@ -191,61 +191,18 @@ export const NFTStakingForm = ({
     amount: number,
     nftId: string
   ) => {
-    let tempStakeId: string | null = null;
-
     try {
-      if (!window.ethereum) {
-        throw new Error(
-          "MetaMask không được cài đặt. Vui lòng cài đặt MetaMask extension."
-        );
-      }
+      // Bật spinner loading
+      setIsStakingShares(true);
+      toast.info("Đang xử lý stake NFT cổ phần...");
 
-      // Validate from address
-      if (!fromAddress) {
-        throw new Error("Invalid sender address");
-      }
-      // Kiểm tra đã stake gói này chưa
-      if (
-        stakingMyPools?.length > 0 &&
-        stakingMyPools?.some(
-          (item: any) =>
-            item?.stake?.id === (selectedPoolData?._id as string) &&
-            item?.status === "active"
-        )
-      ) {
-        toast.error("Bạn đã stake gói này");
-        return;
-      }
-
-      // BƯỚC 1: Thêm stake ngay vào danh sách với status "pending"
-      const pendingStakeData = {
-        amount: amount, // Use amount parameter instead of stakeAmount from closure
-        walletAddress: userInfo?.walletAddress,
-        stake: selectedPoolData,
-        poolInfo: selectedPoolData,
-        nftId: nftId, // Thêm nftId vào pendingStakeData
-        status: "pending",
-        canUnstake: true,
-      };
-
-      tempStakeId = addPendingStake?.(pendingStakeData) ?? null;
-      toast.info("Đang chờ xác nhận giao dịch...");
-
-      // BƯỚC 2: Xử lý blockchain transaction
-      setIsLoading(true);
-      if (setParentIsLoading) {
-        setParentIsLoading(true);
-      }
-
-      let createStake = await StakingService.stakeNFT(
+      let createStake = await StakingService.stakeNFTShares(
         selectedPoolData?.id as string,
         nftId as string
       );
+
       if (createStake.success) {
-        if (tempStakeId) {
-          removeStake?.(tempStakeId);
-        }
-        await fetchUserNFTs();
+        await fetchMyNFTOwnerships();
         toast.success("Giao dịch stake thành công");
 
         setTimeout(async () => {
@@ -256,11 +213,13 @@ export const NFTStakingForm = ({
             }
             setSelectedNFTId("");
             setSelectedPoolId("");
+            setIsStakingShares(false);
             setIsLoading(false);
             if (setParentIsLoading) {
               setParentIsLoading(false);
             }
           } catch (refreshError) {
+            setIsStakingShares(false);
             setIsLoading(false);
             if (setParentIsLoading) {
               setParentIsLoading(false);
@@ -268,179 +227,7 @@ export const NFTStakingForm = ({
           }
         }, 500);
       } else {
-        if (tempStakeId) {
-          removeStake?.(tempStakeId);
-        }
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Giao dịch stake thất bại");
-      }
-    } catch (error) {
-      try {
-        console.error("Error JSON:", JSON.stringify(error, null, 2));
-      } catch (e) {}
-
-      // Xóa temp stake nếu có lỗi
-      if (tempStakeId) {
-        removeStake?.(tempStakeId);
-      }
-
-      if ((error as any).code === 4001) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Người dùng đã từ chối giao dịch");
-      } else if ((error as any).code === -32603) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Lỗi nội bộ. Vui lòng thử lại.");
-      } else if ((error as any).code === 205) {
-        // AbiError - thường do sai network
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error(
-          "Lỗi blockchain. Vui lòng kiểm tra wallet đã kết nối đúng network chưa (Polygon Amoy Testnet)"
-        );
-      } else if ((error as any).message?.includes("Sai network")) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error((error as any).message);
-      } else if ((error as any).message?.includes("insufficient funds")) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Số dư không đủ để thực hiện giao dịch");
-      } else if ((error as any).message?.includes("gas")) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Lỗi gas. Vui lòng thử lại.");
-      } else if ((error as any).message?.includes("Invalid")) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error((error as any).message);
-      } else {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
-      }
-
-      console.error("=== [STAKE ERROR] End of error handling ===");
-    }
-  };
-
-  const cretaeMintNftTransaction = async (
-    fromAddress?: string,
-    nftId?: string,
-    tokenId?: string
-  ) => {
-    try {
-      if (!fromAddress || !tokenId) {
-        toast.error("Thiếu thông tin địa chỉ ví hoặc token ID");
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        return;
-      }
-
-      // Lấy contract address của NFT
-      const contractAddress = config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS;
-
-      if (!contractAddress) {
-        toast.error("Không tìm thấy địa chỉ contract NFT");
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        return;
-      }
-
-      console.log("🔍 Transferring NFT to Admin:", {
-        fromAddress,
-        contractAddress,
-        tokenId,
-        nftId,
-      });
-
-      // Bật spinner loading
-      setIsTransferring(true);
-      toast.info("Đang chuyển NFT sang ví Admin...");
-
-      // BƯỚC 1: Chuyển NFT sang ví admin
-      const transferResult = await TransferService.transferNFT({
-        fromAddress: fromAddress,
-        contractAddress: contractAddress,
-        tokenId: tokenId,
-      });
-
-      if (!transferResult.transactionHash) {
-        toast.error("Không thể chuyển NFT sang ví Admin. Vui lòng thử lại.");
-        setIsTransferring(false);
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
-        return;
-      }
-
-      console.log(
-        "✅ NFT transferred successfully:",
-        transferResult.transactionHash
-      );
-      toast.success("Chuyển NFT thành công!");
-
-      // BƯỚC 2: Gọi API stake NFT với transactionHash
-      toast.info("Đang xử lý stake NFT...");
-
-      let createStake = await StakingService.stakeNFTMint(
-        selectedPoolData?.id as string,
-        nftId as string,
-        transferResult.transactionHash
-      );
-
-      if (createStake.success) {
-        await fetchUserNFTs();
-        toast.success("Giao dịch stake thành công");
-
-        setTimeout(async () => {
-          try {
-            await getStakingPoolsOnSuccess?.();
-            if (fetchStakingData) {
-              await fetchStakingData();
-            }
-            setSelectedNFTId("");
-            setSelectedPoolId("");
-            setIsTransferring(false);
-            setIsLoading(false);
-            if (setParentIsLoading) {
-              setParentIsLoading(false);
-            }
-          } catch (refreshError) {
-            setIsTransferring(false);
-            setIsLoading(false);
-            if (setParentIsLoading) {
-              setParentIsLoading(false);
-            }
-          }
-        }, 500);
-      } else {
-        setIsTransferring(false);
+        setIsStakingShares(false);
         setIsLoading(false);
         if (setParentIsLoading) {
           setParentIsLoading(false);
@@ -448,24 +235,11 @@ export const NFTStakingForm = ({
         toast.error("Giao dịch stake thất bại");
       }
     } catch (error: any) {
-      console.error("Error in cretaeMintNftTransaction:", error);
-
-      // Error handling cho transfer NFT
-      if (error?.message?.includes("User denied") || error?.code === 4001) {
-        toast.error("Bạn đã từ chối giao dịch chuyển NFT");
-      } else if (error?.message?.includes("insufficient funds")) {
-        toast.error("Số dư không đủ để thực hiện giao dịch");
-      } else if (error?.message?.includes("reverted")) {
-        toast.error(
-          "Giao dịch bị từ chối bởi smart contract. Vui lòng kiểm tra quyền sở hữu NFT."
-        );
-      } else {
-        toast.error(
-          "Lỗi khi chuyển NFT: " + (error?.message || "Vui lòng thử lại")
-        );
-      }
-
-      setIsTransferring(false);
+      console.error("Error in createTransaction:", error);
+      toast.error(
+        "Lỗi khi stake NFT cổ phần: " + (error?.message || "Vui lòng thử lại")
+      );
+      setIsStakingShares(false);
       setIsLoading(false);
       if (setParentIsLoading) {
         setParentIsLoading(false);
@@ -478,20 +252,11 @@ export const NFTStakingForm = ({
     try {
       const nftId =
         selectedUserNFT?._id ?? selectedUserNFT?.id ?? selectedNFTId;
-      const tokenId = selectedUserNFT?.tokenId ?? selectedUserNFT?.token_id;
-      if (selectedUserNFT?.isMinted === false) {
-        await createTransaction(
-          userInfo?.walletAddress as string,
-          pendingStakeAmount,
-          String(nftId)
-        );
-      } else {
-        await cretaeMintNftTransaction(
-          userInfo?.walletAddress as string,
-          String(nftId),
-          String(tokenId)
-        );
-      }
+      await createTransaction(
+        userInfo?.walletAddress as string,
+        pendingStakeAmount,
+        String(nftId)
+      );
     } catch (error) {
       console.error(error);
     }
@@ -519,7 +284,7 @@ export const NFTStakingForm = ({
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <h3 className="text-2xl font-bold mb-1 text-white drop-shadow-lg">
-              Stake NFT
+              Staking cổ phần
             </h3>
             <p className="text-white/90 drop-shadow-lg">
               APY {currentApy}% - Phần thưởng cao hơn
@@ -671,20 +436,17 @@ export const NFTStakingForm = ({
                   <SelectValue placeholder="-- Chọn NFT --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {userNFTs.map((nft, idx) => {
+                  {investNFTs.map((nft, idx) => {
                     const optionId = String(nft?._id ?? nft?.id ?? idx);
-                    const isStaking = nft?.isStaking ?? false;
                     return (
                       <SelectItem key={optionId} value={optionId}>
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {nft?.name}{" "}
+                            {nft?.nft?.name}
                             <span className=" ml-2 text-xs text-muted-foreground">
-                              {nft.isStaking ? (
-                                <span className="!text-green-500 font-semibold">
-                                  Đã staking
-                                </span>
-                              ) : null}
+                              <span className="!text-green-500 font-semibold">
+                                {nft.shares ? nft.shares : 0} cổ phần
+                              </span>
                             </span>
                           </span>
                         </div>
@@ -695,8 +457,8 @@ export const NFTStakingForm = ({
               </Select>
               {selectedUserNFT && (
                 <div className="mt-2 text-sm text-muted-foreground">
-                  Số tiền trong gói NFT:{" "}
-                  {Number(selectedUserNFT?.price ?? 0).toLocaleString()} CAN
+                  Số tiền trong gói NFT: {totalPrice.toLocaleString()}{" "}
+                  {TOKEN_DEAULT_CURRENCY}
                 </div>
               )}
             </div>
@@ -735,16 +497,12 @@ export const NFTStakingForm = ({
               <Button
                 type="submit"
                 className="w-full h-12 text-lg cursor-pointer"
-                disabled={
-                  !selectedUserNFT ||
-                  !selectedPoolData ||
-                  loading ||
-                  !isValidNFTPrice ||
-                  selectedUserNFT?.isStaking === true
-                }
+                disabled={selectedUserNFT?.isStaking === true}
               >
                 <Zap className="h-5 w-5 mr-2" />
-                {loading ? "Đang xử lý..." : "Stake NFT Ngay"}
+                {loading || isLoading
+                  ? "Đang xử lý..."
+                  : "Stake NFT cổ phần Ngay"}
               </Button>
             </div>
           </form>
@@ -757,10 +515,7 @@ export const NFTStakingForm = ({
           <DialogHeader>
             <DialogTitle>Xác nhận stake NFT</DialogTitle>
             <DialogDescription>
-              {selectedUserNFT?.isMinted === false
-                ? "Bạn có chắc chắn muốn stake NFT này vào gói"
-                : `Gói NFT ${selectedPoolData?.name} bạn muốn stake đã được Mint để tiếp tục stake vui lòng thực hiện chuyển gói Nft đó cho ví Admin`}
-              ?
+              "Bạn có chắc chắn muốn stake NFT này vào gói"
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -781,8 +536,8 @@ export const NFTStakingForm = ({
         </DialogContent>
       </Dialog>
 
-      {/* Loading Spinner khi đang chuyển NFT */}
-      {isTransferring && <LoadingSpinner />}
+      {/* Loading Spinner khi đang stake NFT cổ phần */}
+      {isStakingShares && <LoadingSpinner />}
     </>
   );
 };

@@ -11,7 +11,12 @@ import type {
 } from "@/types/NFT";
 
 // Type cho filter tabs
-export type NFTFilterType = "all" | "sale" | "not-listed";
+export type NFTFilterType =
+  | "all"
+  | "sale"
+  | "not-listed"
+  | "can-sell"
+  | "can-staking";
 
 // Type cho advanced filters
 export interface AdvancedFilters {
@@ -113,11 +118,15 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
     let filtered = allNFTs;
-    // Filter theo sale status (all/sale/not-listed)
+    // Filter theo sale status (all/sale/not-listed/can-sell/can-staking)
     if (filter === "sale") {
       filtered = filtered.filter((nft) => nft.isSale === true);
     } else if (filter === "not-listed") {
       filtered = filtered.filter((nft) => nft.isSale === false);
+    } else if (filter === "can-sell") {
+      filtered = filtered.filter((nft) => nft.isSale === false);
+    } else if (filter === "can-staking") {
+      filtered = filtered.filter((nft) => nft.isStaking === false);
     }
 
     // Filter theo type (normal, rank, mysteryBox, investment)
@@ -148,10 +157,15 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   }, [allNFTs, filter, advancedFilters]);
 
   // Tinh toan stats tu TOAN BO NFTs
-  const stats = useMemo((): NFTStats => {
+  const stats = useMemo((): NFTStats & {
+    canSell: number;
+    canStaking: number;
+  } => {
     const totalNFTs = allNFTs.length;
     const onSale = allNFTs.filter((nft) => nft.isSale === true).length;
     const notListed = allNFTs.filter((nft) => nft.isSale === false).length;
+    const canSell = allNFTs.filter((nft) => nft.isSale === false).length;
+    const canStaking = allNFTs.filter((nft) => nft.isStaking === false).length;
     const inactive = allNFTs.filter((nft) => !nft.isActive).length;
 
     // Tinh tong gia tri: uu tien salePrice, neu khong co thi dung price
@@ -165,6 +179,8 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
       notListed,
       totalValue,
       inactive,
+      canSell,
+      canStaking,
     };
   }, [allNFTs]);
 

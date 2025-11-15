@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Wallet, RefreshCw, X } from "lucide-react";
+import { User, Settings, LogOut, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
 
@@ -48,19 +48,33 @@ export const UserMenu = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="default"
-          className="hidden md:flex items-center h-auto py-2 cursor-pointer relative"
+          variant="ghost"
+          className="hidden md:flex items-center h-auto py-2 cursor-pointer relative bg-transparent hover:bg-transparent border border-border"
         >
           <span
             className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ${statusColor}`}
           />
-          <Wallet className="w-4 h-4 mr-2" />
+          {userProfile?.avatarUrl ? (
+            <img
+              src={userProfile.avatarUrl}
+              alt={displayLabel}
+              className="w-6 h-6 rounded-full mr-2 object-cover"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+          )}
           <span className="text-sm font-medium text-left">{displayLabel}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={onReconnect} disabled={isWalletConnected}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+        <DropdownMenuItem
+          onClick={onReconnect}
+          disabled={isWalletConnected}
+          className="mt-2"
+        >
+          <RefreshCw className="w-4 h-4 mr-2 " />
           Kết nối lại
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onDisconnect} disabled={!isWalletConnected}>
@@ -76,10 +90,7 @@ export const UserMenu = ({
           <Settings className="w-4 h-4 mr-2" />
           Nhiệm vụ
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="w-4 h-4 mr-2" />
-          Cài đặt
-        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="w-4 h-4 mr-2" />
