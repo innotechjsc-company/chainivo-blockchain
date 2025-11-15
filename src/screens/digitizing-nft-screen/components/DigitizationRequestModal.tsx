@@ -171,9 +171,9 @@ export function DigitizationRequestModal({
     if (!validateForm()) {
       return;
     }
-
-    // Kiểm tra phí số hóa trước khi tiếp tục
     await checkAppraisalFee();
+
+    setFeeModalOpen(true);
   };
 
   // Hàm kiểm tra và hiển thị modal phí số hóa
@@ -183,44 +183,26 @@ export function DigitizationRequestModal({
 
       // Gọi API lấy phí hệ thống
       const feeResponse = await FeeService.getSystemFees();
-
+      debugger;
       if (feeResponse.success && feeResponse.data) {
         // Tìm appraisalFee trong response
         let appraisalFeeValue = 0;
-
-        if (Array.isArray(feeResponse.data)) {
-          const appraisalFeeConfig = feeResponse.data.find(
-            (fee: any) =>
-              fee.key === "appraisalFee" || fee.name === "appraisalFee"
-          );
+        if (
+          (feeResponse.data as any).appraisalFee &&
+          Number((feeResponse.data as any).appraisalFee?.value) > 0
+        ) {
           appraisalFeeValue =
-            appraisalFeeConfig?.value || appraisalFeeConfig?.percentage || 0;
-        } else {
-          appraisalFeeValue =
-            (feeResponse.data as any).appraisalFee ||
-            (feeResponse.data as any).value ||
-            (feeResponse.data as any).percentage ||
-            0;
+            Number((feeResponse.data as any).appraisalFee?.value) +
+            appraisalFeeValue;
         }
 
-        console.log("Appraisal Fee:", appraisalFeeValue);
-
         if (appraisalFeeValue > 0) {
-          // Tính phí dựa trên giá trị tài sản
           const priceValue = Number(parseNumberFromFormatted(formData.price));
           const calculatedFeeAmount = (priceValue * appraisalFeeValue) / 100;
 
           setAppraisalFee(appraisalFeeValue);
           setCalculatedFee(calculatedFeeAmount);
-          setFeeModalOpen(true);
-          setLoading(false);
-        } else {
-          // Không có phí, tiếp tục submit
-          await proceedWithSubmit();
         }
-      } else {
-        // Không lấy được phí, tiếp tục submit
-        await proceedWithSubmit();
       }
     } catch (error) {
       console.error("Error checking appraisal fee:", error);
