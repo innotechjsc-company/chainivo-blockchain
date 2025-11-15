@@ -89,6 +89,15 @@ export class StakingService {
       transactionHash,
     });
   }
+  static async stakeNFTShares(
+    stakeId: string,
+    nftSharesId?: string
+  ): Promise<ApiResponse<UserStake>> {
+    return ApiService.post<UserStake>(API_ENDPOINTS.STAKING.STAKE, {
+      stakeId,
+      nftSharesId,
+    });
+  }
 
   static async unstake(id: string): Promise<ApiResponse<any>> {
     return ApiService.post(`${API_ENDPOINTS.STAKING.UNSTAKE(id)}`);

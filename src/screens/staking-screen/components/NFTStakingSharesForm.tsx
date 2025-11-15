@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { LoadingSkeleton } from "@/screens/staking-screen/components/LoadingSkeleton";
 import { formatNumber } from "@/utils/formatters";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface NFTStakingSharesFormProps {
   availableNFTs: AvailableNFT[];
@@ -61,6 +62,7 @@ export const NFTStakingSharesForm = ({
   const [selectedPoolId, setSelectedPoolId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [isStakingShares, setIsStakingShares] = useState(false);
 
   const selectedNFT = availableNFTs.find((nft) => nft.id === selectedNFTId);
   const [takePools, setTakePools] = useState<any[]>([]);
@@ -189,37 +191,60 @@ export const NFTStakingSharesForm = ({
     amount: number,
     nftId: string
   ) => {
-    let createStake = await StakingService.stakeNFT(
-      selectedPoolData?.id as string,
-      nftId as string
-    );
+    try {
+      // Bật spinner loading
+      setIsStakingShares(true);
+      toast.info("Đang xử lý stake NFT cổ phần...");
 
-    if (createStake.success) {
-      await fetchMyNFTOwnerships();
-      toast.success("Giao dịch stake thành công");
-    } else {
-      toast.error("Giao dịch stake thất bại");
-    }
+      let createStake = await StakingService.stakeNFTShares(
+        selectedPoolData?.id as string,
+        nftId as string
+      );
 
-    setTimeout(async () => {
-      try {
-        await getStakingPoolsOnSuccess?.();
-        if (fetchStakingData) {
-          await fetchStakingData();
-        }
-        setSelectedNFTId("");
-        setSelectedPoolId("");
+      if (createStake.success) {
+        await fetchMyNFTOwnerships();
+        toast.success("Giao dịch stake thành công");
+
+        setTimeout(async () => {
+          try {
+            await getStakingPoolsOnSuccess?.();
+            if (fetchStakingData) {
+              await fetchStakingData();
+            }
+            setSelectedNFTId("");
+            setSelectedPoolId("");
+            setIsStakingShares(false);
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
+          } catch (refreshError) {
+            setIsStakingShares(false);
+            setIsLoading(false);
+            if (setParentIsLoading) {
+              setParentIsLoading(false);
+            }
+          }
+        }, 500);
+      } else {
+        setIsStakingShares(false);
         setIsLoading(false);
         if (setParentIsLoading) {
           setParentIsLoading(false);
         }
-      } catch (refreshError) {
-        setIsLoading(false);
-        if (setParentIsLoading) {
-          setParentIsLoading(false);
-        }
+        toast.error("Giao dịch stake thất bại");
       }
-    }, 500);
+    } catch (error: any) {
+      console.error("Error in createTransaction:", error);
+      toast.error(
+        "Lỗi khi stake NFT cổ phần: " + (error?.message || "Vui lòng thử lại")
+      );
+      setIsStakingShares(false);
+      setIsLoading(false);
+      if (setParentIsLoading) {
+        setParentIsLoading(false);
+      }
+    }
   };
 
   const handleConfirmStake = async () => {
@@ -510,6 +535,9 @@ export const NFTStakingSharesForm = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Loading Spinner khi đang stake NFT cổ phần */}
+      {isStakingShares && <LoadingSpinner />}
     </>
   );
 };

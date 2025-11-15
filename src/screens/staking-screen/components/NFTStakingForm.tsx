@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { LoadingSkeleton } from "@/screens/staking-screen/components/LoadingSkeleton";
 import { formatNumber } from "@/utils/formatters";
 import { config } from "@/api/config";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface NFTStakingFormProps {
   availableNFTs: AvailableNFT[];
@@ -61,6 +62,7 @@ export const NFTStakingForm = ({
   const [selectedPoolId, setSelectedPoolId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
 
   const selectedNFT = availableNFTs.find((nft) => nft.id === selectedNFTId);
   const [takePools, setTakePools] = useState<any[]>([]);
@@ -376,6 +378,8 @@ export const NFTStakingForm = ({
         nftId,
       });
 
+      // Bật spinner loading
+      setIsTransferring(true);
       toast.info("Đang chuyển NFT sang ví Admin...");
 
       // BƯỚC 1: Chuyển NFT sang ví admin
@@ -387,6 +391,7 @@ export const NFTStakingForm = ({
 
       if (!transferResult.transactionHash) {
         toast.error("Không thể chuyển NFT sang ví Admin. Vui lòng thử lại.");
+        setIsTransferring(false);
         setIsLoading(false);
         if (setParentIsLoading) {
           setParentIsLoading(false);
@@ -421,11 +426,13 @@ export const NFTStakingForm = ({
             }
             setSelectedNFTId("");
             setSelectedPoolId("");
+            setIsTransferring(false);
             setIsLoading(false);
             if (setParentIsLoading) {
               setParentIsLoading(false);
             }
           } catch (refreshError) {
+            setIsTransferring(false);
             setIsLoading(false);
             if (setParentIsLoading) {
               setParentIsLoading(false);
@@ -433,6 +440,7 @@ export const NFTStakingForm = ({
           }
         }, 500);
       } else {
+        setIsTransferring(false);
         setIsLoading(false);
         if (setParentIsLoading) {
           setParentIsLoading(false);
@@ -457,6 +465,7 @@ export const NFTStakingForm = ({
         );
       }
 
+      setIsTransferring(false);
       setIsLoading(false);
       if (setParentIsLoading) {
         setParentIsLoading(false);
@@ -771,6 +780,9 @@ export const NFTStakingForm = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Loading Spinner khi đang chuyển NFT */}
+      {isTransferring && <LoadingSpinner />}
     </>
   );
 };
