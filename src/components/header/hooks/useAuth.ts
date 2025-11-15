@@ -30,6 +30,7 @@ export const useAuth = (onSignOut?: () => void) => {
       ...user,
         name: user.name || user.email,
         username: user.name || user.email,
+        walletAddress: user.walletAddress || "",
         can_balance: 0,
         total_invested: 0,
         membership_tier: user.role || "bronze",

@@ -4,7 +4,11 @@ import {
   ApiService,
   UpdateProfileResponse,
   AvatarObject,
+  UserMeResponse,
+  UserProfile,
+  RankObject,
 } from "../api";
+import { config } from "../config";
 
 // Interface cho response tu PayloadCMS GET /api/users/{userId}
 interface PayloadUserResponse {
@@ -59,35 +63,94 @@ export class UserService {
   }
 
   /**
-   * Lay thong tin user hien tai tu backend voi avatar populated
+   * Lay thong tin user hien tai tu backend voi avatar va rank populated
    * Su dung JWT token de xac dinh user
-   * @returns User profile voi avatarUrl da duoc parse tu avatar.url
+   * Call toi /api/users/me voi depth=2 de populate avatar va rank
+   * @returns User profile voi avatarUrl va rank da duoc parse
    */
-  static async getCurrentUserProfile(): Promise<
-    ApiResponse<{
-      id: string;
-      email: string;
-      name?: string;
-      avatarUrl?: string;
-      walletAddress?: string;
-      role?: string;
-      createdAt?: string;
-      updatedAt?: string;
-    }>
-  > {
+  static async getCurrentUserProfile(): Promise<ApiResponse<UserProfile>> {
     try {
-      const response = await ApiService.get<{
-        id: string;
-        email: string;
-        name?: string;
-        avatarUrl?: string;
-        walletAddress?: string;
-        role?: string;
-        createdAt?: string;
-        updatedAt?: string;
-      }>(API_ENDPOINTS.USER.GET_PROFILE);
+      // Call /api/users/me voi depth=2 de populate avatar va rank relationships
+      const response = await ApiService.get<UserMeResponse>(
+        `${API_ENDPOINTS.USER.GET_ME}?depth=2`
+      );
 
-      return response;
+      // PayloadCMS /api/users/me tra ve truc tiep object, KHONG wrap trong {success, data}
+      // Check neu co .user (PayloadCMS format) hoac .success (wrapped format)
+      const hasData = (response as any).user || (response.success && response.data);
+
+      if (hasData) {
+        // PayloadCMS co the tra ve { user: {...} } hoac { success, data: {...} }
+        const userData = (response as any).user || (response.data as any)?.user || response.data;
+
+        // Parse avatarUrl tu avatar object hoac string
+        let avatarUrl = "";
+
+        if (userData.avatar) {
+          if (typeof userData.avatar === "string") {
+            // Neu la string ID, khong co URL
+            avatarUrl = "";
+          } else {
+            // Neu la object, lay URL
+            const rawUrl = userData.avatar.url || "";
+
+            // Construct full URL neu la relative path
+            if (rawUrl) {
+              if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+                // Da la absolute URL
+                avatarUrl = rawUrl;
+              } else {
+                // La relative path, them base URL
+                avatarUrl = `${config.API_BASE_URL}${rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`}`;
+              }
+            }
+          }
+        }
+
+        // Parse rank object neu co
+        let rank: RankObject | undefined;
+        let rankId: string | undefined;
+        if (userData.rank) {
+          if (typeof userData.rank === "string") {
+            // Neu la string ID (chua populate)
+            rankId = userData.rank;
+          } else {
+            // Neu la object (da populate)
+            rank = userData.rank;
+          }
+        }
+
+        // Tra ve UserProfile da parse
+        const userProfile: UserProfile = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          avatarUrl,
+          bio: userData.bio,
+          walletAddress: userData.walletAddress,
+          role: userData.role,
+          isEmailVerified: userData.isEmailVerified,
+          isKYCVerified: userData.isKYCVerified,
+          isWalletVerified: userData.isWalletVerified,
+          isActive: userData.isActive,
+          isSuspended: userData.isSuspended,
+          suspensionReason: userData.suspensionReason,
+          lastLogin: userData.lastLogin,
+          refCode: userData.refCode,
+          rank,
+          rankId,
+          points: userData.points,
+          createdAt: userData.createdAt,
+          updatedAt: userData.updatedAt,
+        };
+
+        return {
+          success: true,
+          data: userProfile,
+        };
+      }
+
+      return response as any;
     } catch (error: any) {
       console.error("Error fetching user profile:", error);
       return {
@@ -121,7 +184,17 @@ export class UserService {
       );
 
       if (response.success && response.data) {
-        const avatarUrl = response.data.avatar?.url || "";
+        // Parse avatarUrl voi full URL
+        const rawUrl = response.data.avatar?.url || "";
+        let avatarUrl = "";
+
+        if (rawUrl) {
+          if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+            avatarUrl = rawUrl;
+          } else {
+            avatarUrl = `${config.API_BASE_URL}${rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`}`;
+          }
+        }
 
         return {
           success: true,
