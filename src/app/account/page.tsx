@@ -489,7 +489,7 @@ export default function AccountManagementPage() {
             <TabsContent value="nft-co-phan">
               <Card className="p-6 glass">
                 <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
-                <MyNFTScreen />
+                <MyNFTScreen type="investment" />
               </Card>
             </TabsContent>
             <TabsContent value="referral">

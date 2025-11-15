@@ -8,7 +8,7 @@ import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
 import { NFTCard } from "@/components/nft";
 
-export default function MyNFTScreen(): JSX.Element {
+export default function MyNFTScreen({ type }: { type: string }): JSX.Element {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
@@ -30,11 +30,12 @@ export default function MyNFTScreen(): JSX.Element {
       setError(null);
       try {
         const res = await NFTService.getMyNFTOwnerships({ page: 1, limit: 50 });
-        const items = res?.data?.nfts ?? [];
+        const items = res?.data?.ownerships ?? [];
         // Loc client-side: chi lay NFT co type = 'investment'
         const investmentNFTs = items.filter(
-          (item) => item.type === "investment"
+          (item: any) => item?.nft?.type === "investment"
         );
+
         setNfts(investmentNFTs);
       } catch (err: unknown) {
         setError("Khong the tai danh sach NFT co phan");
@@ -97,6 +98,7 @@ export default function MyNFTScreen(): JSX.Element {
             onActionClick={(nft, action) =>
               handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
             }
+            type={type}
           />
         ))}
       </div>
