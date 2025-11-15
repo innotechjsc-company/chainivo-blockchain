@@ -78,6 +78,7 @@ export default function NFTCard({
     useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -291,14 +292,8 @@ export default function NFTCard({
           explorerUrl,
         });
 
-        // Gọi lại API lấy my NFT
-        if (onRefreshNFTs) {
-          try {
-            await onRefreshNFTs();
-          } catch (refreshError) {
-            console.error("Error refreshing NFT collection:", refreshError);
-          }
-        }
+        // Mở modal thông báo thành công
+        setSuccessDialogOpen(true);
       } else {
         setIsLoading(false);
         toast.error(response.message || "Rút NFT về ví thất bại");
@@ -309,6 +304,17 @@ export default function NFTCard({
       toast.error("Đã xảy ra lỗi khi rút NFT về ví");
     } finally {
       setIsWithdrawing(false);
+    }
+  };
+
+  // Hàm xử lý khi đóng modal thành công
+  const handleSuccessDialogClose = async () => {
+    setSuccessDialogOpen(false);
+    setIsLoading(false);
+
+    // Gọi API refresh
+    if (onRefreshNFTs) {
+      await onRefreshNFTs();
     }
   };
 
@@ -693,6 +699,125 @@ export default function NFTCard({
           </div>,
           document.body
         )}
+
+      {/* Modal thông báo thành công */}
+      <Dialog
+        open={successDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleSuccessDialogClose();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-500">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Chúc mừng!
+            </DialogTitle>
+            <DialogDescription>
+              Bạn đã số hóa thành công NFT này
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Thông tin NFT */}
+            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={nftImage}
+                  alt={nft.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div>
+                  <h3 className="font-semibold">{nft.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Token ID: {withdrawResult?.tokenId || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {withdrawResult?.contractAddress && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Contract Address:
+                  </p>
+                  <p className="text-xs font-mono break-all">
+                    {withdrawResult.contractAddress}
+                  </p>
+                </div>
+              )}
+
+              {withdrawResult?.transactionHash && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Transaction Hash:
+                  </p>
+                  <p className="text-xs font-mono break-all">
+                    {withdrawResult.transactionHash}
+                  </p>
+                </div>
+              )}
+
+              {withdrawResult?.explorerUrl && (
+                <div className="pt-3 border-t border-green-500/20">
+                  <a
+                    href={withdrawResult.explorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    Xem trên Polygon Scan
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Thông báo */}
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-3">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                💡 NFT của bạn đã được mint lên blockchain và có thể xem trên ví
+                MetaMask
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={handleSuccessDialogClose}
+              className="w-full"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
