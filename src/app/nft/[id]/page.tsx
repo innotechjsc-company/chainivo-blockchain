@@ -572,10 +572,15 @@ export default function NFTDetailPage() {
                       </div>
                       <div className="text-sm font-semibold text-white">
                         {(() => {
-                          const n = Number(nftData?.price);
-                          return Number.isFinite(n)
-                            ? n.toLocaleString("vi-VN")
-                            : String(nftData?.price);
+                          const raw = (nftData as any)?.salePrice
+                            ? nftData?.salePrice
+                            : nftData?.price;
+                          const n =
+                            typeof raw === "string"
+                              ? parseFloat(raw)
+                              : Number(raw);
+                          const safe = Number.isFinite(n) ? n : 0;
+                          return safe.toLocaleString("vi-VN");
                         })()}{" "}
                         {TOKEN_DEAULT_CURRENCY}
                       </div>
@@ -594,24 +599,6 @@ export default function NFTDetailPage() {
                             );
                           } catch {
                             return String(nftData.createdAt);
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  {nftData?.updatedAt && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Cập nhật
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {(() => {
-                          try {
-                            return new Date(nftData.updatedAt).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            return String(nftData.updatedAt);
                           }
                         })()}
                       </div>

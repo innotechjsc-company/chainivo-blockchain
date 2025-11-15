@@ -72,7 +72,13 @@ export default function LevelBadge({
   showTooltip = true,
   className = "",
 }: LevelBadgeProps) {
-  const config = LEVEL_CONFIGS[level];
+  // Fallback to level "1" if config not found
+  const config = LEVEL_CONFIGS[level] || LEVEL_CONFIGS["1"];
+
+  // Log warning if level is not valid
+  if (!LEVEL_CONFIGS[level]) {
+    console.warn(`[LevelBadge] Invalid level: "${level}" (type: ${typeof level}). Falling back to level "1".`);
+  }
 
   const badge = (
     <div
