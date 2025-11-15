@@ -562,7 +562,6 @@ export default function AccountManagementPage() {
                 )}
               </Card>
             </TabsContent>
-
             <TabsContent value="digitizing-request">
               <Card className="p-6 glass">
                 <DigitizationRequestList />
