@@ -8,7 +8,7 @@ import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
 import { NFTCard } from "@/components/nft";
 
-export default function MyNFTScreen({ type }: { type: string }): JSX.Element {
+export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
