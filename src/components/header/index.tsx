@@ -257,7 +257,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   currentLanguage={language}
                   onLanguageChange={handleLanguageChange}
                 />
-                <DropdownMenu>
+                {/* <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="hidden md:flex cursor-pointer relative">
                       Ví của tôi
@@ -286,7 +286,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                       NFT cổ phần giúp tôi
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu> */}
                 <UserMenu
                   userProfile={userProfile}
                   onSignOut={handleSignOut}
