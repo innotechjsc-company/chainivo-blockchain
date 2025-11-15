@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface DigitizationRequestModalProps {
   open: boolean;
@@ -183,7 +184,7 @@ export function DigitizationRequestModal({
 
       // Gọi API lấy phí hệ thống
       const feeResponse = await FeeService.getSystemFees();
-      debugger;
+
       if (feeResponse.success && feeResponse.data) {
         // Tìm appraisalFee trong response
         let appraisalFeeValue = 0;
@@ -238,6 +239,8 @@ export function DigitizationRequestModal({
 
         // Tiếp tục submit request với transactionHash
         await proceedWithSubmit(result.transactionHash);
+        onOpenChange(false);
+        onSuccess?.();
       } else {
         toast.error("Không nhận được xác nhận giao dịch");
         setPayingFee(false);
@@ -898,6 +901,9 @@ export function DigitizationRequestModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Loading Spinner khi đang thanh toán phí */}
+      {payingFee && <LoadingSpinner />}
     </>
   );
 }
