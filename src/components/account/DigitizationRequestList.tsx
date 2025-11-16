@@ -509,7 +509,7 @@ export function DigitizationRequestList({
                     </div>
                   </div>
 
-                  {shouldShowConfirmButton(request.status) && (
+                  {request.status === "pendingConfirmation" && (
                     <div className="pt-2">
                       <Button
                         type="button"
@@ -528,7 +528,7 @@ export function DigitizationRequestList({
                             Đang lấy phí...
                           </span>
                         ) : (
-                          "Xác nhận"
+                          "Xác nhận "
                         )}
                       </Button>
                     </div>
