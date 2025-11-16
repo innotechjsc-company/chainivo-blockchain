@@ -421,13 +421,13 @@ export default function NFTCard({
       <div className="flex flex-col flex-1 p-4 space-y-3">
         {/* Tên NFT */}
         <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
-          {nft.name}
+          {(nft as any)?.nft?.name}
         </h3>
 
         {/* Mô tả */}
-        {nft.description && (
+        {(nft as any)?.nft?.description && (
           <p className="text-sm text-gray-400 line-clamp-2">
-            {nft.description}
+            {(nft as any)?.nft?.description}
           </p>
         )}
 
