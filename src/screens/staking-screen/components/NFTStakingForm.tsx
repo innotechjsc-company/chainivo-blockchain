@@ -667,19 +667,23 @@ export const NFTStakingForm = ({
                 Chọn NFT để stake
               </Label>
               <Select value={selectedNFTId} onValueChange={setSelectedNFTId}>
-                <SelectTrigger className="w-full h-12 text-lg">
+                <SelectTrigger className="w-full h-10 text-sm">
                   <SelectValue placeholder="-- Chọn NFT --" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {userNFTs.map((nft, idx) => {
                     const optionId = String(nft?._id ?? nft?.id ?? idx);
                     const isStaking = nft?.isStaking ?? false;
                     return (
-                      <SelectItem key={optionId} value={optionId}>
+                      <SelectItem
+                        key={optionId}
+                        value={optionId}
+                        className="text-sm"
+                      >
                         <div className="flex flex-col">
-                          <span className="font-medium">
+                          <span className="font-medium text-sm">
                             {nft?.name}{" "}
-                            <span className=" ml-2 text-xs text-muted-foreground">
+                            <span className="ml-2 text-xs text-muted-foreground">
                               {nft.isStaking ? (
                                 <span className="!text-green-500 font-semibold">
                                   Đã staking

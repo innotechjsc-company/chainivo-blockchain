@@ -180,7 +180,7 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
               key={nft.id}
               nft={nft}
               type={type}
-              onActionClick={() => {}}
+              onActionClick={handleActionClick as any}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
               onRefreshNFTs={refetch}

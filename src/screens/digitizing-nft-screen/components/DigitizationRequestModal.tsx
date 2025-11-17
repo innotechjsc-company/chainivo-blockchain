@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,10 @@ import {
   FileText,
   Image as ImageIcon,
   DollarSign,
+  Bold,
+  Italic,
+  Underline,
+  List,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -48,10 +52,12 @@ export function DigitizationRequestModal({
 }: DigitizationRequestModalProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentsInputRef = useRef<HTMLInputElement>(null);
+  const descriptionEditorRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    fullDescription: "",
     image: "",
     documents: [] as string[],
     price: "",
@@ -117,13 +123,43 @@ export function DigitizationRequestModal({
     return value.replace(/,/g, "");
   };
 
+  // Hàm format HTML editor
+  const formatText = (command: string, value?: string) => {
+    if (descriptionEditorRef.current) {
+      descriptionEditorRef.current.focus();
+      document.execCommand(command, false, value);
+      const html = descriptionEditorRef.current.innerHTML;
+      setFormData({ ...formData, description: html });
+    }
+  };
+
+  // Hàm xử lý khi thay đổi nội dung HTML editor
+  const handleDescriptionChange = () => {
+    if (descriptionEditorRef.current) {
+      const html = descriptionEditorRef.current.innerHTML;
+      setFormData({ ...formData, description: html });
+    }
+  };
+
+  // Sync HTML khi formData.description thay đổi từ bên ngoài (như reset form)
+  useEffect(() => {
+    if (
+      descriptionEditorRef.current &&
+      formData.description !== descriptionEditorRef.current.innerHTML
+    ) {
+      descriptionEditorRef.current.innerHTML = formData.description || "";
+    }
+  }, [formData.description]);
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Tên tài sản là bắt buộc";
     }
-    if (!formData.description.trim()) {
+    // Kiểm tra description HTML: loại bỏ HTML tags để kiểm tra nội dung thực tế
+    const descriptionText = formData.description.replace(/<[^>]*>/g, "").trim();
+    if (!descriptionText) {
       newErrors.description = "Mô tả tài sản là bắt buộc";
     }
     if (!imageFile) {
@@ -188,19 +224,26 @@ export function DigitizationRequestModal({
       if (feeResponse.success && feeResponse.data) {
         // Tìm appraisalFee trong response
         let appraisalFeeValue = 0;
-        if (
-          (feeResponse.data as any).appraisalFee &&
-          Number((feeResponse.data as any).appraisalFee?.value) > 0
-        ) {
-          appraisalFeeValue =
-            Number((feeResponse.data as any).appraisalFee?.value) +
-            appraisalFeeValue;
+        let calculatedFeeAmount = 0;
+        const appraisalFee = (feeResponse.data as any).appraisalFee;
+
+        if (appraisalFee && Number(appraisalFee?.value) > 0) {
+          const feeType = appraisalFee?.type || "percentage";
+          const feeValue = Number(appraisalFee.value);
+
+          if (feeType === "percentage") {
+            // Phí theo phần trăm: tính theo giá trị
+            appraisalFeeValue = feeValue;
+            const priceValue = Number(parseNumberFromFormatted(formData.price));
+            calculatedFeeAmount = (priceValue * appraisalFeeValue) / 100;
+          } else if (feeType === "fixed") {
+            // Phí cố định: set giá trị trực tiếp
+            appraisalFeeValue = feeValue;
+            calculatedFeeAmount = feeValue;
+          }
         }
 
         if (appraisalFeeValue > 0) {
-          const priceValue = Number(parseNumberFromFormatted(formData.price));
-          const calculatedFeeAmount = (priceValue * appraisalFeeValue) / 100;
-
           setAppraisalFee(appraisalFeeValue);
           setCalculatedFee(calculatedFeeAmount);
         }
@@ -353,9 +396,13 @@ export function DigitizationRequestModal({
       }
 
       // Gửi request với ID đã upload và transactionHash (nếu có)
+      // Gửi description dưới dạng JSON string
+      const descriptionJson = JSON.stringify(formData.description.trim());
+
       const requestPayload: any = {
         name: formData.name.trim(),
-        description: formData.description.trim(),
+        description: formData.fullDescription.trim(),
+        fullDescription: descriptionJson,
         image: imageId,
         documents: documentIds.length > 0 ? documentIds : undefined,
         price: Number(parseNumberFromFormatted(formData.price)),
@@ -368,7 +415,7 @@ export function DigitizationRequestModal({
 
       // Thêm transactionHash nếu có thanh toán phí
       if (paymentTransactionHash) {
-        requestPayload.paymentTransactionHash = paymentTransactionHash;
+        requestPayload.transactionHash = paymentTransactionHash;
       }
 
       const response = await SendRequestService.sendRequest(requestPayload);
@@ -397,6 +444,7 @@ export function DigitizationRequestModal({
       setFormData({
         name: "",
         description: "",
+        fullDescription: "",
         image: "",
         documents: [],
         price: "",
@@ -511,22 +559,107 @@ export function DigitizationRequestModal({
                 <p className="text-sm text-red-500">{errors.name}</p>
               )}
             </div>
-
-            {/* Mô tả tài sản */}
+            {/* Mô tả chi tiết */}
             <div className="space-y-2">
-              <Label htmlFor="description">
+              <Label htmlFor="fullDescription">
                 Mô tả tài sản <span className="text-red-500">*</span>
               </Label>
               <Textarea
-                id="description"
-                value={formData.description}
+                id="fullDescription"
+                value={formData.fullDescription}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setFormData({ ...formData, fullDescription: e.target.value })
                 }
-                placeholder="Nhập mô tả chi tiết về tài sản"
-                rows={4}
-                className={errors.description ? "border-red-500" : ""}
+                placeholder="Nhập mô tả chi tiết bổ sung về tài sản"
+                rows={6}
               />
+            </div>
+            {/* Mô tả tài sản - HTML Editor */}
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                Mô tả chi tiết
+                <span className="text-muted-foreground">(Tùy chọn)</span>
+              </Label>
+
+              {/* Toolbar */}
+              <div className="flex gap-1 p-2 border border-input rounded-t-md bg-muted/50">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => formatText("bold")}
+                  className="h-8 w-8 p-0"
+                  title="Bold"
+                >
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => formatText("italic")}
+                  className="h-8 w-8 p-0"
+                  title="Italic"
+                >
+                  <Italic className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => formatText("underline")}
+                  className="h-8 w-8 p-0"
+                  title="Underline"
+                >
+                  <Underline className="h-4 w-4" />
+                </Button>
+                <div className="w-px bg-border mx-1" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => formatText("insertUnorderedList")}
+                  className="h-8 w-8 p-0"
+                  title="Bullet List"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => formatText("insertOrderedList")}
+                  className="h-8 w-8 p-0"
+                  title="Numbered List"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* HTML Editor */}
+              <div className="relative">
+                <div
+                  ref={descriptionEditorRef}
+                  contentEditable
+                  onInput={handleDescriptionChange}
+                  onBlur={handleDescriptionChange}
+                  className={`min-h-[100px] p-3 border border-t-0 border-input rounded-b-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                    errors.description ? "border-red-500" : ""
+                  }`}
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                />
+                {(!formData.description ||
+                  formData.description.replace(/<[^>]*>/g, "").trim() ===
+                    "") && (
+                  <div className="absolute top-3 left-3 text-muted-foreground pointer-events-none">
+                    Nhập mô tả chi tiết về tài sản
+                  </div>
+                )}
+              </div>
+
               {errors.description && (
                 <p className="text-sm text-red-500">{errors.description}</p>
               )}
@@ -860,7 +993,10 @@ export function DigitizationRequestModal({
                   Phí thẩm định:
                 </span>
                 <span className="font-semibold text-primary">
-                  {appraisalFee}%
+                  {appraisalFee}{" "}
+                  {(appraisalFee as any)?.type === "percentage"
+                    ? "%"
+                    : TOKEN_DEAULT_CURRENCY}
                 </span>
               </div>
 

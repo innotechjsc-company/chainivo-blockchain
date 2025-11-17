@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import type { NFTItem } from "@/types/NFT";
 import LevelBadge from "./LevelBadge";
 import NFTTypeBadge from "./NFTTypeBadge";
@@ -19,9 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { formatNumber } from "@/utils/formatters";
 import { Send } from "lucide-react";
-import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { config } from "@/api/config";
 import { NFTService } from "@/api/services/nft-service";
-import { FeeService } from "@/api/services";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/stores";
@@ -52,7 +52,7 @@ const LEVEL_BORDER_CLASSES: Record<string, string> = {
   "5": "border-cyan-500 shadow-lg shadow-cyan-900/40",
 };
 
-export default function NFTCard({
+export default function NFTInvestCard({
   nft,
   showActions = false,
   onActionClick,
@@ -63,6 +63,7 @@ export default function NFTCard({
   onClick,
   onRefreshNFTs,
 }: NFTCardProps) {
+  const router = useRouter();
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,16 +81,6 @@ export default function NFTCard({
   const [isTransferring, setIsTransferring] = useState(false);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [mintingFeeAmount, setMintingFeeAmount] = useState<number | null>(null);
-  const [mintingFeeDetails, setMintingFeeDetails] = useState<{
-    type: "fixed" | "percentage";
-    value: number;
-  } | null>(null);
-  const [mintingFeeLoading, setMintingFeeLoading] = useState(false);
-  const [payingMintingFee, setPayingMintingFee] = useState(false);
-  const [mintingFeeError, setMintingFeeError] = useState<string | null>(null);
-  const borderClass =
-    LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
   // Lấy walletAddress từ Redux store
   const walletAddress = useAppSelector(
@@ -110,26 +101,6 @@ export default function NFTCard({
 
   // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || type !== undefined;
-
-  const getNftBasePrice = (): number => {
-    const basePrice =
-      (nft as any)?.nft?.salePrice ??
-      (nft as any)?.nft?.price ??
-      nft.salePrice ??
-      nft.price ??
-      0;
-
-    const parsedPrice = Number(basePrice);
-    return Number.isNaN(parsedPrice) ? 0 : parsedPrice;
-  };
-
-  const resetMintingFeeState = () => {
-    setMintingFeeAmount(null);
-    setMintingFeeDetails(null);
-    setMintingFeeLoading(false);
-    setMintingFeeError(null);
-    setPayingMintingFee(false);
-  };
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: NFTItem): string => {
@@ -170,7 +141,8 @@ export default function NFTCard({
     };
 
     // Try to get image from API backend first
-    const apiImageUrl = getImageUrl(nft?.image);
+    // Check nft.nft.image for new data structure
+    const apiImageUrl = getImageUrl((nft as any)?.nft?.image ?? nft?.image);
     if (apiImageUrl) {
       return apiImageUrl;
     }
@@ -181,6 +153,22 @@ export default function NFTCard({
 
   const nftImage = getNFTImage(nft);
 
+  // Get NFT name - support both old and new data structure
+  const nftName = (nft as any)?.nft?.name ?? nft.name;
+
+  // Get NFT description - support both old and new data structure
+  const nftDescription = (nft as any)?.nft?.description ?? nft.description;
+
+  // Get NFT type and level - support both old and new data structure
+  const nftType = (nft as any)?.nft?.type ?? nft.type;
+  const nftLevel = (nft as any)?.nft?.level ?? nft.level;
+  const nftIsFeatured = (nft as any)?.nft?.isFeatured ?? nft.isFeatured;
+  const nftIsSale = (nft as any)?.nft?.isSale ?? nft.isSale;
+
+  // Border class based on level
+  const borderClass =
+    LEVEL_BORDER_CLASSES[nftLevel] || LEVEL_BORDER_CLASSES["1"];
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     // Fallback to default image if the image fails to load
     const target = e.target as HTMLImageElement;
@@ -188,16 +176,17 @@ export default function NFTCard({
   };
 
   // Fallback check for mystery box openable status
+  const nftRewards = (nft as any)?.nft?.rewards ?? nft.rewards;
   const isMysteryBoxOpenable =
-    nft.type === "mysteryBox"
-      ? nft.isOpenable !== undefined
-        ? nft.isOpenable // Ưu tiên từ API transform
+    nftType === "mysteryBox"
+      ? ((nft as any)?.nft?.isOpenable ?? nft.isOpenable) !== undefined
+        ? (nft as any)?.nft?.isOpenable ?? nft.isOpenable // Ưu tiên từ API transform
         : // Fallback: Check rewards structure
-        Array.isArray(nft.rewards)
+        Array.isArray(nftRewards)
         ? // Raw array format từ API (chưa transform)
-          nft.rewards.some((r: any) => r.isOpenable === true)
+          nftRewards.some((r: any) => r.isOpenable === true)
         : // Transformed object format
-        nft.rewards?.tokens?.length || nft.rewards?.nfts?.length
+        nftRewards?.tokens?.length || nftRewards?.nfts?.length
         ? true
         : false
       : false;
@@ -214,7 +203,8 @@ export default function NFTCard({
     const tokenId = nftAny.tokenId || nftAny.token_id;
 
     // Kiểm tra tokenId và walletAddress để gọi API checkOwnership
-    if (action === "sell" && nft.isMinted === true) {
+    const nftIsMinted = (nft as any)?.nft?.isMinted ?? nft.isMinted;
+    if (action === "sell" && nftIsMinted === true) {
       if (!tokenId) {
         toast.error("NFT này không có tokenId để kiểm tra quyền sở hữu.");
         return;
@@ -256,126 +246,15 @@ export default function NFTCard({
         setIsLoading(false);
       }
     }
-    if (onActionClick) {
-      onActionClick(nft, action);
-    }
   };
 
   // Handler cho onClick cũ
   const handleCardClick = () => {
     if (onClick) {
       onClick(nft.id);
-    }
-  };
-
-  const handleOpenMintingFeeModal = async (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!walletAddress) {
-      toast.error("Vui lòng kết nối ví trước khi thực hiện rút NFT.");
       return;
     }
-
-    resetMintingFeeState();
-    setWithdrawDialogOpen(true);
-    setMintingFeeLoading(true);
-
-    try {
-      const feeResponse = await FeeService.getSystemFees();
-      const feeData = feeResponse?.data as any;
-
-      let mintingFeeConfig: any =
-        feeData?.mintingFee ||
-        feeData?.fees?.mintingFee ||
-        (Array.isArray(feeData)
-          ? feeData.find(
-              (fee: any) =>
-                fee?.code === "mintingFee" ||
-                fee?.name === "mintingFee" ||
-                fee?.key === "mintingFee"
-            )
-          : undefined);
-
-      if (!mintingFeeConfig && feeData?.data) {
-        mintingFeeConfig = feeData.data?.mintingFee;
-      }
-
-      const feeType = (mintingFeeConfig?.type || "percentage") as
-        | "fixed"
-        | "percentage";
-      const feeValue = Number(mintingFeeConfig?.value || 0);
-      const nftPrice = getNftBasePrice();
-
-      let calculatedAmount = 0;
-      if (feeValue > 0) {
-        calculatedAmount =
-          feeType === "fixed" ? feeValue : (nftPrice * feeValue) / 100;
-      }
-
-      setMintingFeeDetails({
-        type: feeType,
-        value: feeValue,
-      });
-      setMintingFeeAmount(calculatedAmount);
-
-      if (!mintingFeeConfig || feeValue === 0) {
-        toast.info(
-          "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
-        );
-      }
-    } catch (error: any) {
-      console.error("Lỗi khi lấy phí minting:", error);
-      setMintingFeeError(
-        error?.message ||
-          "Không thể lấy thông tin phí minting. Vui lòng thử lại."
-      );
-    } finally {
-      setMintingFeeLoading(false);
-    }
-  };
-
-  const handlePayMintingFee = async () => {
-    if (mintingFeeLoading) return;
-
-    const amount = mintingFeeAmount ?? 0;
-
-    if (amount <= 0) {
-      setWithdrawDialogOpen(false);
-      await handleWithdrawConfirm();
-      return;
-    }
-
-    if (!walletAddress) {
-      toast.error("Không tìm thấy địa chỉ ví. Vui lòng kết nối lại.");
-      return;
-    }
-
-    setPayingMintingFee(true);
-    try {
-      await TransferService.sendCanTransfer({
-        fromAddress: walletAddress,
-        toAddressData: config.WALLET_ADDRESSES.ADMIN,
-        amountCan: amount,
-        gasLimit: 200000,
-        gasBoostPercent: 80,
-      });
-
-      toast.success("Thanh toán phí minting thành công.");
-      setWithdrawDialogOpen(false);
-      await handleWithdrawConfirm();
-    } catch (error: any) {
-      console.error("Lỗi khi thanh toán phí minting:", error);
-      const errorMessage =
-        error?.message ||
-        error?.data?.message ||
-        "Thanh toán phí thất bại. Vui lòng thử lại.";
-      toast.error(errorMessage);
-    } finally {
-      setPayingMintingFee(false);
-    }
+    router.push(`/investment-nft/${(nft as any)?.nft?.id}`);
   };
 
   // Handler cho rút NFT về ví
@@ -467,96 +346,43 @@ export default function NFTCard({
   // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
+    if (type === "investment" || nftType === "investment") return null;
+    const nftIsMinted = (nft as any)?.nft?.isMinted ?? nft.isMinted;
     return (
       <div className="flex gap-2 w-full flex-col">
-        {nft?.type === "mysteryBox" && !nft.isStaking && !nft.isSale && (
-          <MysteryRewardsPopover
-            rewards={nft.rewards}
-            trigger={
-              <Button
-                onClick={(e) => handleAction(e, "open")}
-                disabled={!isMysteryBoxOpenable}
-                className={`
-                  inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-                  transition-all disabled:pointer-events-none disabled:opacity-50
-                  [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-                  outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-                  aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-                  h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-                  ${
-                    isMysteryBoxOpenable
-                      ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl"
-                      : "bg-gray-700 text-gray-400"
-                  }
-                `}
-              >
-                {isMysteryBoxOpenable ? (
-                  <>
-                    <span>🎁</span>
-                    <span>Mở hộp quà</span>
-                    <span>✨</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🔒</span>
-                    <span>Chưa thể mở</span>
-                  </>
-                )}
-              </Button>
-            }
-          />
-        )}
-        {!nft.isStaking && !nft.isSale ? (
-          <div className="flex w-full gap-2 items-center">
-            {nft?.isMinted === false ? (
-              <Button
-                onClick={handleOpenMintingFeeModal}
-                className="
-         inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-        transition-all disabled:pointer-events-none disabled:opacity-50
-        [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-        outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-        aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-        h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-        bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-      "
-              >
-                Rút về ví
-              </Button>
-            ) : null}
-            {!nft.isSale && (
-              <Button
-                onClick={(e) => handleAction(e, "sell")}
-                className="
-        inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-        transition-all disabled:pointer-events-none disabled:opacity-50
-        [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-        outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-        aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-        h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-        bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-      "
-              >
-                Đăng bán
-              </Button>
-            )}
-          </div>
-        ) : (
+        {nftIsMinted === false ? (
           <Button
-            onClick={(e) => handleAction(e, "cancel")}
+            onClick={(e) => {
+              e.stopPropagation();
+              setWithdrawDialogOpen(true);
+            }}
             className="
-inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-transition-all disabled:pointer-events-none disabled:opacity-50
-[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-"
+          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+          transition-all disabled:pointer-events-none disabled:opacity-50
+          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+        "
           >
-            Huỷ{" "}
+            Rút về ví
           </Button>
-        )}
+        ) : null}
+        <Button
+          onClick={(e) => handleAction(e, "sell")}
+          className="
+          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+          transition-all disabled:pointer-events-none disabled:opacity-50
+          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+        "
+        >
+          Đăng bán
+        </Button>
       </div>
     );
   };
@@ -569,43 +395,47 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
         rounded-xl border-2 overflow-hidden bg-gray-900 flex flex-col h-full
         transition-all duration-300 hover:scale-[1.02]
         ${borderClass}
-        ${nft.type === "mysteryBox" && nft.isOpenable ? "hover:shadow-2xl" : ""}
-        ${onClick ? "cursor-pointer" : ""}
+        ${
+          nftType === "mysteryBox" && isMysteryBoxOpenable
+            ? "hover:shadow-2xl"
+            : ""
+        }
+        cursor-pointer
         ${className}
       `}
-      onClick={onClick ? handleCardClick : undefined}
+      onClick={handleCardClick}
     >
       {/* Badges overlay trên ảnh */}
       <div className="relative">
         <img
           src={nftImage}
-          alt={nft.name}
+          alt={nftName || "NFT"}
           className="w-full h-56 object-cover"
           onError={handleImageError}
         />
 
         {/* Badges trên góc trái */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
-          <LevelBadge level={nft.level} />
-          <NFTTypeBadge type={nft.type} />
+          <LevelBadge level={nftLevel} />
+          <NFTTypeBadge type={nftType} />
         </div>
         {/* Status badges trên góc phải */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-          {nft.isFeatured && (
+          {nftIsFeatured && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white">
               ⭐ Nổi bật
             </div>
           )}
 
           {/* Mystery Box: Hiển thị trạng thái mở hộp */}
-          {nft.type === "mysteryBox" && isMysteryBoxOpenable && (
+          {nftType === "mysteryBox" && isMysteryBoxOpenable && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
               ✨ Sẵn sàng mở
             </div>
           )}
 
           {/* Các loại NFT khác: Hiển thị trạng thái bán */}
-          {nft.type !== "mysteryBox" && nft.isSale && (
+          {nftType !== "mysteryBox" && nftIsSale && (
             <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500 text-white">
               Đang bán
             </div>
@@ -617,18 +447,16 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
       <div className="flex flex-col flex-1 p-4 space-y-3">
         {/* Tên NFT */}
         <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
-          {(nft as any)?.name}
+          {nftName || "—"}
         </h3>
 
         {/* Mô tả */}
-        {(nft as any)?.description && (
-          <p className="text-sm text-gray-400 line-clamp-2">
-            {(nft as any)?.description}
-          </p>
+        {nftDescription && (
+          <p className="text-sm text-gray-400 line-clamp-2">{nftDescription}</p>
         )}
 
         {/* Mystery Box layout - riêng biệt */}
-        {nft.type === "mysteryBox" ? (
+        {nftType === "mysteryBox" ? (
           <div className="flex flex-col flex-1 gap-3">
             {/* Divider */}
             <div className="border-t border-gray-700" />
@@ -636,72 +464,190 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Giá hộp:</span>
               <span className="text-lg font-bold text-gray-100">
-                {formatNumber(nft.price)}{" "}
-                <span className="text-sm uppercase">{nft.currency}</span>
+                {formatNumber((nft as any)?.nft?.price ?? nft.price)}{" "}
+                <span className="text-sm uppercase">
+                  {(
+                    (nft as any)?.nft?.currency ??
+                    nft.currency ??
+                    "CAN"
+                  ).toUpperCase()}
+                </span>
               </span>
             </div>
 
             {/* Rewards popover */}
-            {/* <MysteryRewardsPopover rewards={nft.rewards} /> */}
+            <MysteryRewardsPopover rewards={nftRewards} />
 
             {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
         ) : (
           <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-3">
-            {/* Giá cho các loại NFT khác */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-400">
-                {nft.type === "investment" ? "Giá/cổ phần:" : "Giá:"}
-              </span>
-              <span className="text-lg font-bold text-gray-100">
-                {formatNumber(
-                  (nft as any)?.nft?.salePrice ??
-                    (nft as any)?.nft?.salePrice ??
-                    (nft as any)?.nft?.price ??
-                    nft.salePrice ??
-                    nft.price
-                )}{" "}
-                <span className="text-sm uppercase">
-                  {nft.currency
-                    ? nft.currency.toUpperCase()
-                    : (nft as any)?.nft?.currency
-                    ? (nft as any)?.nft?.currency.toUpperCase()
-                    : "CAN".toUpperCase()}
-                </span>
-              </span>
-            </div>
-            {nft.shares && nft.shares > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Cổ phần nắm giữ:</span>
-                <span className="text-lg font-bold text-gray-100">
-                  {formatNumber(nft.shares)}
-                  <span className="text-sm uppercase">{nft.currency}</span>
-                </span>
-              </div>
+            {/* Investment NFT - Layout riêng */}
+            {nftType === "investment" ? (
+              <>
+                {/* Giá/cổ phần */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Giá/cổ phần:</span>
+                  <span className="text-lg font-bold text-gray-100">
+                    {formatNumber(
+                      (nft as any)?.nft?.pricePerShare ??
+                        (nft as any)?.pricePerShare ??
+                        0
+                    )}{" "}
+                    <span className="text-sm uppercase">
+                      {(
+                        (nft as any)?.nft?.currency ??
+                        nft.currency ??
+                        "CAN"
+                      ).toUpperCase()}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Cổ phần nắm giữ */}
+                {((nft as any)?.shares ?? nft.shares) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">
+                      Cổ phần nắm giữ:
+                    </span>
+                    <span className="text-lg font-bold text-gray-100">
+                      {formatNumber((nft as any)?.shares ?? nft.shares ?? 0)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Giá trị cổ phần nắm giữ */}
+                {((nft as any)?.shares ?? nft.shares) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">
+                      Giá trị cổ phần:
+                    </span>
+                    <span className="text-lg font-bold text-primary">
+                      {formatNumber(
+                        ((nft as any)?.shares ?? nft.shares ?? 0) *
+                          ((nft as any)?.nft?.pricePerShare ??
+                            (nft as any)?.pricePerShare ??
+                            0)
+                      )}{" "}
+                      <span className="text-sm uppercase">
+                        {(
+                          (nft as any)?.nft?.currency ??
+                          nft.currency ??
+                          "CAN"
+                        ).toUpperCase()}
+                      </span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Investment Progress Bar */}
+                {((nft as any)?.nft?.totalShares ??
+                  (nft as any)?.totalShares) &&
+                  ((nft as any)?.nft?.soldShares ??
+                    (nft as any)?.soldShares) !== undefined && (
+                    <>
+                      <InvestmentProgressBar
+                        soldShares={
+                          (nft as any)?.nft?.soldShares ??
+                          (nft as any)?.soldShares ??
+                          0
+                        }
+                        totalShares={
+                          (nft as any)?.nft?.totalShares ??
+                          (nft as any)?.totalShares ??
+                          0
+                        }
+                        totalInvestors={
+                          (nft as any)?.nft?.totalInvestors ??
+                          (nft as any)?.totalInvestors ??
+                          0
+                        }
+                        pricePerShare={
+                          (nft as any)?.nft?.pricePerShare ??
+                          (nft as any)?.pricePerShare ??
+                          0
+                        }
+                        currency={
+                          (nft as any)?.nft?.currency ?? nft.currency ?? "CAN"
+                        }
+                      />
+                      {(nft as any)?.nft?.investmentEndDate && (
+                        <CountdownTimer
+                          endDate={(nft as any)?.nft?.investmentEndDate}
+                        />
+                      )}
+                    </>
+                  )}
+
+                {/* Trạng thái cổ phần */}
+                <div className="space-y-2 pt-2 border-t border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Trạng thái:</span>
+                    <span className="text-sm font-medium text-gray-100">
+                      {(nft as any)?.isLocked === true
+                        ? " Đã khóa"
+                        : " Đang hoạt động"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Staking:</span>
+                    <span className="text-sm font-medium text-gray-100">
+                      {(nft as any)?.isStaking === true
+                        ? "Đang staking"
+                        : " Chưa staking"}
+                    </span>
+                  </div>
+                  {(nft as any)?.allowStakingOfShares !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-400">
+                        Cho phép staking cổ phần:
+                      </span>
+                      <span className="text-sm font-medium text-gray-100">
+                        {(nft as any)?.allowStakingOfShares === true
+                          ? " Có"
+                          : " Không"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Giá cho các loại NFT khác */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Giá:</span>
+                  <span className="text-lg font-bold text-gray-100">
+                    {formatNumber(
+                      (nft as any)?.nft?.salePrice ??
+                        (nft as any)?.nft?.price ??
+                        nft.salePrice ??
+                        nft.price
+                    )}{" "}
+                    <span className="text-sm uppercase">
+                      {nft.currency
+                        ? nft.currency.toUpperCase()
+                        : (nft as any)?.nft?.currency
+                        ? (nft as any)?.nft?.currency.toUpperCase()
+                        : "CAN".toUpperCase()}
+                    </span>
+                  </span>
+                </div>
+                {nft.shares && nft.shares > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">
+                      Cổ phần nắm giữ:
+                    </span>
+                    <span className="text-lg font-bold text-gray-100">
+                      {formatNumber(nft.shares)}
+                      <span className="text-sm uppercase">{nft.currency}</span>
+                    </span>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Investment-specific content */}
-            {nft.type === "investment" &&
-              nft.totalShares &&
-              nft.soldShares !== undefined &&
-              nft.totalInvestors !== undefined &&
-              nft.pricePerShare !== undefined && (
-                <>
-                  <InvestmentProgressBar
-                    soldShares={nft.soldShares}
-                    totalShares={nft.totalShares}
-                    totalInvestors={nft.totalInvestors}
-                    pricePerShare={nft.pricePerShare}
-                    currency={nft.currency}
-                  />
-                  {nft.investmentEndDate && (
-                    <CountdownTimer endDate={nft.investmentEndDate} />
-                  )}
-                </>
-              )}
-
             {/* Stats cho Normal/Rank NFT */}
-            {(nft.type === "normal" || nft.type === "rank") && (
+            {(nftType === "normal" || nftType === "rank") && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-gray-400">
                   <span></span>
@@ -726,22 +672,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </div>
               </div>
             )}
-            {nft.isSale && (
-              <div className="space-y-2">
-                {/* Staking status */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Trạng thái:</span>
-                  <span className="text-sm font-medium text-gray-100">
-                    Đã bán
-                  </span>
-                </div>
-              </div>
-            )}
-            {/* {
-              nft.type === "investment" && (
-
-              )
-            } */}
 
             {/* Action button */}
             {actionSection && <div className="mt-auto">{actionSection}</div>}
@@ -749,97 +679,30 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
         )}
       </div>
 
-      <Dialog
-        open={withdrawDialogOpen}
-        onOpenChange={(open) => {
-          if (!open && !payingMintingFee) {
-            setWithdrawDialogOpen(false);
-            resetMintingFeeState();
-          }
-        }}
-      >
+      <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thanh toán phí rút NFT</DialogTitle>
+            <DialogTitle>Xác nhận rút NFT về ví</DialogTitle>
             <DialogDescription>
-              Để rút NFT về ví, vui lòng thanh toán cước phí minting cho hệ
-              thống.
+              Bạn có chắc chắn muốn rút NFT này về ví?
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {mintingFeeLoading ? (
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Spinner className="h-4 w-4" />
-                <span>Đang tải thông tin phí...</span>
-              </div>
-            ) : mintingFeeError ? (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
-                {mintingFeeError}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Loại phí</span>
-                  <span className="font-medium capitalize">
-                    {mintingFeeDetails?.type === "fixed"
-                      ? "Cố định"
-                      : "Phần trăm"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Giá trị cấu hình
-                  </span>
-                  <span className="font-semibold">
-                    {mintingFeeDetails?.type === "fixed"
-                      ? `${formatNumber(
-                          mintingFeeDetails?.value || 0
-                        )} ${TOKEN_DEAULT_CURRENCY}`
-                      : `${mintingFeeDetails?.value || 0}%`}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Giá NFT</span>
-                  <span className="font-semibold">
-                    {formatNumber(getNftBasePrice())} {TOKEN_DEAULT_CURRENCY}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-base font-semibold text-primary">
-                  <span>Tổng phí cần thanh toán</span>
-                  <span>
-                    {formatNumber(mintingFeeAmount || 0)}{" "}
-                    {TOKEN_DEAULT_CURRENCY}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                if (payingMintingFee) return;
-                setWithdrawDialogOpen(false);
-                resetMintingFeeState();
-              }}
-              disabled={payingMintingFee}
+              onClick={() => setWithdrawDialogOpen(false)}
+              disabled={isWithdrawing}
             >
               Thoát
             </Button>
             <Button
               type="button"
               variant="default"
-              onClick={handlePayMintingFee}
-              disabled={
-                mintingFeeLoading ||
-                payingMintingFee ||
-                Boolean(mintingFeeError)
-              }
+              onClick={handleWithdrawConfirm}
+              disabled={isWithdrawing}
             >
-              {payingMintingFee ? "Đang thanh toán..." : "Đồng ý"}
+              {isWithdrawing ? "Đang xử lý..." : "Đồng ý"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -897,11 +760,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
               <div className="flex items-center gap-3">
                 <img
                   src={nftImage}
-                  alt={nft.name}
+                  alt={nftName || "NFT"}
                   className="w-16 h-16 rounded-lg object-cover"
                 />
                 <div>
-                  <h3 className="font-semibold">{nft.name}</h3>
+                  <h3 className="font-semibold">{nftName || "—"}</h3>
                   <p className="text-sm text-muted-foreground">
                     Token ID: {withdrawResult?.tokenId || "N/A"}
                   </p>
