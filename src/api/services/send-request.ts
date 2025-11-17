@@ -30,6 +30,7 @@ export interface DigitizationRequest {
   status: string;
   price?: number;
   availablePercentage?: number;
+  fullDescription?: string;
   image?: {
     id: string;
     url: string;

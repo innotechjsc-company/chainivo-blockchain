@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, ArrowLeft } from "lucide-react";
+import { Heart, ArrowLeft, FileDown } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
@@ -44,6 +45,11 @@ export default function InvestmentNFTDetailPage() {
   const [shareDetail, setShareDetail] = useState<any>(null);
   const [shareDetailLoading, setShareDetailLoading] = useState<boolean>(false);
   const [showAllShareDetail, setShowAllShareDetail] = useState<boolean>(false);
+  const [certificateModalOpen, setCertificateModalOpen] =
+    useState<boolean>(false);
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [certificateScale, setCertificateScale] = useState(1);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -168,6 +174,257 @@ export default function InvestmentNFTDetailPage() {
   const pricePerShare: number = Number(data?.pricePerShare ?? 0);
   const totalCost = Math.max(1, quantity) * (pricePerShare || 0);
   const currency = String((data?.currency || "ETH").toUpperCase());
+  const userWalletLowerCase = user?.walletAddress?.toLowerCase() ?? null;
+
+  const userTransactions = useMemo(() => {
+    if (!userWalletLowerCase || !Array.isArray(transactions)) {
+      return [];
+    }
+
+    return transactions.filter(
+      (tx) =>
+        String(tx?.walletAddress || "")
+          .toLowerCase()
+          .trim() === userWalletLowerCase
+    );
+  }, [transactions, userWalletLowerCase]);
+
+  const averageUserInvestment = useMemo(() => {
+    if (!userTransactions.length) return 0;
+
+    const totalValue = userTransactions.reduce((sum: number, tx: any) => {
+      const nftItem = tx?.nft;
+      const shares = Number(nftItem?.soldShares ?? 0);
+      const sharePrice = Number(nftItem?.pricePerShare ?? 0);
+
+      return sum + shares * sharePrice;
+    }, 0);
+
+    return totalValue / userTransactions.length;
+  }, [userTransactions]);
+
+  const handleOpenCertificateModal = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để xem chứng chỉ NFT");
+      return;
+    }
+    if (!userTransactions.length) {
+      toast.error("Bạn chưa có chứng chỉ NFT nào");
+      return;
+    }
+    setCertificateModalOpen(true);
+  };
+
+  const handleDownloadCertificatePdf = async () => {
+    if (!certificateRef.current) {
+      toast.error("Không tìm thấy nội dung chứng chỉ để tải PDF");
+      return;
+    }
+    const printWindow = window.open("", "", "width=900,height=1200");
+    if (!printWindow) {
+      toast.error("Trình duyệt đang chặn cửa sổ tải PDF");
+      return;
+    }
+    const styles = Array.from(
+      document.querySelectorAll("style, link[rel='stylesheet']")
+    )
+      .map((node) => node.outerHTML)
+      .join("");
+    const certificateHtml = certificateRef.current.outerHTML;
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Chainivo NFT Certificate</title>
+          ${styles}
+          <style>
+            :root {
+              color-scheme: light;
+            }
+            body { margin: 0; padding: 24px; background: #fdfaf3; font-family: 'Inter', 'Times New Roman', serif; }
+            @page { size: A4; margin: 16mm; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+            .certificate-wrapper { max-width: 940px; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          ${certificateHtml}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    const waitForResources = () => {
+      const links = Array.from(
+        printWindow.document.querySelectorAll("link[rel='stylesheet']")
+      );
+      if (!links.length) return Promise.resolve<void[]>([]);
+      return Promise.all(
+        links.map(
+          (link) =>
+            new Promise<void>((resolve) => {
+              const stylesheet = link as HTMLLinkElement;
+              if (stylesheet.sheet) {
+                resolve();
+              } else {
+                stylesheet.addEventListener("load", () => resolve(), {
+                  once: true,
+                });
+                stylesheet.addEventListener("error", () => resolve(), {
+                  once: true,
+                });
+              }
+            })
+        )
+      );
+    };
+    try {
+      await waitForResources();
+      if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+        await printWindow.document.fonts.ready;
+      }
+    } catch (error) {
+      console.warn("Không thể tải đầy đủ stylesheet trong cửa sổ in", error);
+    }
+    requestAnimationFrame(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+    });
+  };
+
+  const renderCertificate = (options?: { attachRef?: boolean }) => (
+    <div
+      ref={options?.attachRef ? certificateRef : undefined}
+      className="certificate-wrapper"
+    >
+      <Card className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-amber-50/90 to-amber-100/50 border-0 shadow-2xl">
+        <CardContent className="p-8 md:p-12 relative">
+          <div className="absolute inset-4 border-2 border-yellow-500/60 rounded-sm pointer-events-none"></div>
+          <div className="absolute inset-6 border border-yellow-400/40 rounded-sm pointer-events-none"></div>
+
+          <div className="absolute top-6 left-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute top-6 right-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute bottom-6 left-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute bottom-6 right-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+
+          <div className="flex flex-col items-center justify-center mb-6 space-y-2">
+            <div className="w-20 h-20 rounded-full border-2 border-amber-200/70 bg-white/70 flex items-center justify-center shadow-lg">
+              <img
+                src="/logo hinh.png"
+                alt="Chainivo logo"
+                className="w-12 h-12 object-contain select-none"
+                draggable={false}
+              />
+            </div>
+            <div className="text-center uppercase tracking-[0.4em] text-amber-900 font-black text-sm">
+              chainivo
+            </div>
+            <div className="text-center uppercase tracking-[0.6em] text-amber-700 text-[10px] font-semibold">
+              blockchain
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <p className="text-sm md:text-base text-amber-900/70 font-semibold tracking-wider uppercase">
+              Xác nhận quyền sở hữu cổ phần NFT
+            </p>
+          </div>
+
+          <div className="text-center mb-8 space-y-6">
+            <div className="relative">
+              <div className="absolute left-0 top-1/2 w-1/4 border-t-2 border-dashed border-amber-800/40"></div>
+              <div className="absolute right-0 top-1/2 w-1/4 border-t-2 border-dashed border-amber-800/40"></div>
+              <div className="text-base md:text-xl font-mono text-blue-700 font-semibold tracking-wide whitespace-nowrap overflow-x-auto no-scrollbar">
+                {user?.walletAddress || "Người sở hữu"}
+              </div>
+            </div>
+
+            <div className="text-xs md:text-sm text-gray-500/80 leading-relaxed max-w-2xl mx-auto space-y-2">
+              <p>
+                Đã được xác nhận là chủ sở hữu hợp pháp của cổ phần NFT với các
+                thông tin chi tiết như sau:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-3xl mx-auto">
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                ID NFT trên blockchain
+              </div>
+              <div className="text-sm font-bold text-amber-900 font-mono">
+                Token ID: {data?.tokenId || "—"}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tên NFT
+              </div>
+              <div className="text-base font-bold text-amber-900">
+                {data?.name || "—"}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tổng số cổ phần NFT
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {formatAmount(data?.totalShares)} phần
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tổng số cổ phần sở hữu
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {(() => {
+                  if (!shareDetail) return "—";
+                  if (
+                    typeof shareDetail === "object" &&
+                    "shares" in shareDetail
+                  )
+                    return `${formatAmount(shareDetail.shares)} phần`;
+                  if (Array.isArray(shareDetail)) {
+                    const totalShares = shareDetail.reduce(
+                      (sum: number, item: any) =>
+                        sum + Number(item?.shares || item?.totalShares || 0),
+                      0
+                    );
+                    return `${formatAmount(totalShares)} phần`;
+                  }
+                  return "—";
+                })()}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm md:col-span-2">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Đơn giá trung bình
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {formatAmount(averageUserInvestment)}{" "}
+                {data?.currency?.toUpperCase() || "CAN"}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   useEffect(() => {
     const id = String(params?.id || "");
@@ -214,6 +471,32 @@ export default function InvestmentNFTDetailPage() {
     fetchShareDetail();
   }, [params?.id, user]);
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!certificateModalOpen) {
+      setCertificateScale(1);
+      return;
+    }
+    const updateScale = () => {
+      const el = certificateRef.current;
+      if (!el) return;
+      const contentHeight = el.offsetHeight;
+      const viewport = window.innerHeight * 0.9 - 150;
+      if (contentHeight > viewport && viewport > 0) {
+        const scaleValue = Math.max(viewport / contentHeight, 0.5);
+        setCertificateScale(scaleValue);
+      } else {
+        setCertificateScale(1);
+      }
+    };
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, [certificateModalOpen, data, shareDetail, averageUserInvestment]);
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -230,18 +513,19 @@ export default function InvestmentNFTDetailPage() {
               {data?.name || "NFT Investment"}
             </h1>
           </div>
-          <div className="mb-2">
-            <p> Mô tả : </p>
-            <CollapsibleDescription
-              html={String(data?.description || "").replace(/\n/g, "<br/>")}
-            />
-          </div>
+          {data?.description && (
+            <div className="mb-2">
+              <CollapsibleDescription
+                html={String(data?.description || "").replace(/\n/g, "<br/>")}
+              />
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Image and stats */}
-          <div className="lg:col-span-7 space-y-4 flex flex-col">
-            <Card className="border-0 shadow-none bg-transparent flex-1">
-              <div className="relative w-full h-full min-h-[calc(100vh-8rem)] mx-auto rounded-lg overflow-hidden">
+          <div className="lg:col-span-7 flex flex-col">
+            <Card className="border-0 shadow-none bg-transparent  w-full h-[80vh] min-h-[320px]">
+              <div className="relative w-full h-[80vh] min-h-[320px] mx-auto rounded-lg overflow-hidden">
                 <img
                   src={imageSrc}
                   alt={data?.name || "NFT"}
@@ -262,25 +546,47 @@ export default function InvestmentNFTDetailPage() {
                 </button>
               </div>
             </Card>
-            <div>
+            <div className="mt-12 relative z-10">
               <Card className="glass">
                 <CardContent className="p-6">
-                  <Tabs defaultValue="documents" className="space-y-6">
+                  <Tabs defaultValue="details" className="space-y-6">
                     <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
-                      <TabsTrigger
-                        value="documents"
-                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
-                      >
-                        Tài liệu và tập tin
-                      </TabsTrigger>
                       <TabsTrigger
                         value="details"
                         className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
                       >
                         Chi tiết NFT
                       </TabsTrigger>
+                      <TabsTrigger
+                        value="documents"
+                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
+                      >
+                        Tài liệu và tập tin
+                      </TabsTrigger>
                     </TabsList>
-
+                    <TabsContent value="details" className="space-y-4">
+                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
+                      {data?.fullDescription ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Mô tả chi tiết:
+                          </p>
+                          <CollapsibleDescription
+                            html={String(
+                              data?.fullDescription?.html
+                                ? data.fullDescription.html
+                                : data.fullDescription
+                                ? data.fullDescription
+                                : ""
+                            ).replace(/\n/g, "<br/>")}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          Không có mô tả chi tiết
+                        </p>
+                      )}
+                    </TabsContent>
                     <TabsContent value="documents" className="space-y-6">
                       <h2 className="text-2xl font-bold">
                         Tài liệu và tập tin
@@ -359,27 +665,6 @@ export default function InvestmentNFTDetailPage() {
                         </div>
                       )}
                     </TabsContent>
-
-                    <TabsContent value="details" className="space-y-4">
-                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
-                      {data?.fullDescription ? (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            Mô tả chi tiết:
-                          </p>
-                          <CollapsibleDescription
-                            html={String(data.fullDescription || "").replace(
-                              /\n/g,
-                              "<br/>"
-                            )}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          Không có mô tả chi tiết
-                        </p>
-                      )}
-                    </TabsContent>
                   </Tabs>
                 </CardContent>
               </Card>
@@ -389,18 +674,7 @@ export default function InvestmentNFTDetailPage() {
           {/* Right: Detail card */}
           <div className="lg:col-span-5 space-y-6 flex flex-col mt-6">
             <Card className="glass">
-              <CardContent className="p-5  space-y-5">
-                {/* <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Người bán
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAddress(data?.walletAddress)}
-                    </div>
-                  </div>
-                </div> */}
-
+              <CardContent className="p-2  space-y-5">
                 {/* Pricing section */}
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
@@ -467,6 +741,7 @@ export default function InvestmentNFTDetailPage() {
                     type="number"
                     min={0}
                     value={quantity}
+                    disabled={data?.availableShares === 0}
                     onChange={(e) => setQuantity(Number(e.target.value || 0))}
                     className={`bg-background/50 border-cyan-500/30 focus:border-cyan-500/60 ${
                       quantity > totalShares
@@ -485,40 +760,49 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      toast.error(
-                        "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
-                      );
-                      return;
-                    }
-                    const isConnected =
-                      LocalStorageService.isConnectedToWallet();
-                    if (!isConnected) {
-                      setShowConnectModal(true);
-                      return;
-                    }
-                    setShowConfirmation(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-5 h-5"
+                {Number(data?.availableShares || 0) > 0 ? (
+                  <Button
+                    onClick={() => {
+                      if (!user) {
+                        toast.error(
+                          "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
+                        );
+                        return;
+                      }
+                      const isConnected =
+                        LocalStorageService.isConnectedToWallet();
+                      if (!isConnected) {
+                        setShowConnectModal(true);
+                        return;
+                      }
+                      setShowConfirmation(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
                   >
-                    <circle cx="9" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                  </svg>
-                  Mua cổ phần
-                </Button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-5 h-5"
+                    >
+                      <circle cx="9" cy="21" r="1" />
+                      <circle cx="20" cy="21" r="1" />
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                    Mua cổ phần
+                  </Button>
+                ) : (
+                  <Button
+                    disabled
+                    className="w-full bg-gray-500/40 text-gray-300 font-semibold gap-2 h-12 cursor-not-allowed"
+                  >
+                    Đã hết cổ phần bán
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -574,6 +858,70 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            {Number(data?.soldShares || 0) > 0 && (
+              <Card
+                className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenCertificateModal}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleOpenCertificateModal();
+                  }
+                }}
+              >
+                <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent)] pointer-events-none" />
+                <CardContent className="relative p-5 space-y-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">
+                        Chứng nhận cổ phần của tôi
+                      </h3>
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 underline underline-offset-4">
+                      Xem chi tiết
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-white/10 p-3 border border-white/20 backdrop-blur-sm">
+                      <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
+                        ID NFT trên blockchain
+                      </p>
+                      <p className="text-sm font-semibold font-mono">
+                        {data?.tokenId || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-white/10 p-3 border border-white/20 backdrop-blur-sm">
+                      <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
+                        Tổng số cổ phần sở hữu
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {(() => {
+                          if (!shareDetail) return "—";
+                          if (
+                            typeof shareDetail === "object" &&
+                            "shares" in shareDetail
+                          ) {
+                            return `${formatAmount(shareDetail.shares)} phần`;
+                          }
+                          if (Array.isArray(shareDetail)) {
+                            const totalShares = shareDetail.reduce(
+                              (sum: number, item: any) =>
+                                sum +
+                                Number(item?.shares || item?.totalShares || 0),
+                              0
+                            );
+                            return `${formatAmount(totalShares)} phần`;
+                          }
+                          return "—";
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="glass">
               <CardContent className="p-5">
@@ -657,6 +1005,7 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="glass">
               <CardContent className="p-5">
                 <h3 className="font-semibold mb-4 text-white">
@@ -757,6 +1106,7 @@ export default function InvestmentNFTDetailPage() {
             </Card>
           </div>
         </div>
+
         <div className="mt-12">
           <Card className="glass">
             <CardContent className="p-6">
@@ -897,6 +1247,57 @@ export default function InvestmentNFTDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {isClient &&
+          certificateModalOpen &&
+          createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="relative w-full max-w-5xl bg-background/95 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+                <div className="sticky top-0 z-10 flex flex-col gap-2 bg-background/95 px-6 pt-6 pb-2 border-b border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">
+                        Chứng chỉ xác nhận NFT
+                      </h2>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => setCertificateModalOpen(false)}
+                      >
+                        Đóng
+                      </Button>
+                      <Button
+                        className="gap-2 cursor-pointer"
+                        onClick={handleDownloadCertificatePdf}
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Tải PDF
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Toàn bộ thông tin chứng chỉ sở hữu NFT của bạn
+                  </p>
+                </div>
+                <div className="p-6 pb-8">
+                  <div
+                    className="flex justify-center"
+                    style={{
+                      transform: `scale(${certificateScale})`,
+                      transformOrigin: "top center",
+                      transition: "transform 0.2s ease",
+                    }}
+                  >
+                    {renderCertificate({ attachRef: true })}
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <DialogContent
@@ -1016,6 +1417,8 @@ export default function InvestmentNFTDetailPage() {
 
 function CollapsibleDescription({ html }: { html: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMultiLine, setIsMultiLine] = useState(false);
+  const measureRef = useRef<HTMLSpanElement>(null);
 
   const collapsedText = useMemo(() => {
     if (!html) return "";
@@ -1026,6 +1429,19 @@ function CollapsibleDescription({ html }: { html: string }) {
       .replace(/\s+/g, " ")
       .trim();
   }, [html]);
+
+  useEffect(() => {
+    const measureEl = measureRef.current;
+    if (!measureEl) return;
+    const computedStyle = window.getComputedStyle(measureEl);
+    const lineHeight = parseFloat(computedStyle.lineHeight || "0");
+    if (!lineHeight) {
+      setIsMultiLine(false);
+      return;
+    }
+    const isOverflowing = measureEl.scrollHeight - 1 > lineHeight;
+    setIsMultiLine(isOverflowing);
+  }, [collapsedText]);
 
   if (isExpanded) {
     return (
@@ -1048,17 +1464,32 @@ function CollapsibleDescription({ html }: { html: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground leading-relaxed flex-1 truncate">
+    <div className="relative w-full">
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-muted-foreground leading-relaxed flex-1 ${
+            isMultiLine ? "truncate" : ""
+          }`}
+        >
+          {collapsedText}
+        </span>
+        {isMultiLine && (
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
+            onClick={() => setIsExpanded(true)}
+          >
+            Xem thêm
+          </button>
+        )}
+      </div>
+      <span
+        ref={measureRef}
+        className="invisible absolute left-0 top-0 w-full whitespace-normal leading-relaxed pointer-events-none select-none"
+        aria-hidden="true"
+      >
         {collapsedText}
       </span>
-      <button
-        type="button"
-        className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
-        onClick={() => setIsExpanded(true)}
-      >
-        Xem thêm
-      </button>
     </div>
   );
 }

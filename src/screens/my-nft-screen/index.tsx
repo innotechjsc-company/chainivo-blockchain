@@ -7,6 +7,7 @@ import { useAppSelector } from "@/stores";
 import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
 import { NFTCard } from "@/components/nft";
+import NFTInvestCard from "@/components/nft/NFTInvestCard";
 
 export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
@@ -37,7 +38,6 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
         );
 
         setNfts(investmentNFTs);
-        debugger;
       } catch (err: unknown) {
         setError("Khong the tai danh sach NFT co phan");
       } finally {
@@ -92,7 +92,7 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
-          <NFTCard
+          <NFTInvestCard
             key={nft.id}
             nft={nft}
             showActions={true}
