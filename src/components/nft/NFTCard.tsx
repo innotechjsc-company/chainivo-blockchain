@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import { formatNumber } from "@/utils/formatters";
 import { Send } from "lucide-react";
-import { config } from "@/api/config";
+import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { NFTService } from "@/api/services/nft-service";
+import { FeeService } from "@/api/services";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/stores";
@@ -79,6 +80,14 @@ export default function NFTCard({
   const [isTransferring, setIsTransferring] = useState(false);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [mintingFeeAmount, setMintingFeeAmount] = useState<number | null>(null);
+  const [mintingFeeDetails, setMintingFeeDetails] = useState<{
+    type: "fixed" | "percentage";
+    value: number;
+  } | null>(null);
+  const [mintingFeeLoading, setMintingFeeLoading] = useState(false);
+  const [payingMintingFee, setPayingMintingFee] = useState(false);
+  const [mintingFeeError, setMintingFeeError] = useState<string | null>(null);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -101,6 +110,26 @@ export default function NFTCard({
 
   // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || type !== undefined;
+
+  const getNftBasePrice = (): number => {
+    const basePrice =
+      (nft as any)?.nft?.salePrice ??
+      (nft as any)?.nft?.price ??
+      nft.salePrice ??
+      nft.price ??
+      0;
+
+    const parsedPrice = Number(basePrice);
+    return Number.isNaN(parsedPrice) ? 0 : parsedPrice;
+  };
+
+  const resetMintingFeeState = () => {
+    setMintingFeeAmount(null);
+    setMintingFeeDetails(null);
+    setMintingFeeLoading(false);
+    setMintingFeeError(null);
+    setPayingMintingFee(false);
+  };
 
   // Function to get NFT image from API backend or fallback to default
   const getNFTImage = (nft: NFTItem): string => {
@@ -239,6 +268,116 @@ export default function NFTCard({
     }
   };
 
+  const handleOpenMintingFeeModal = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!walletAddress) {
+      toast.error("Vui lòng kết nối ví trước khi thực hiện rút NFT.");
+      return;
+    }
+
+    resetMintingFeeState();
+    setWithdrawDialogOpen(true);
+    setMintingFeeLoading(true);
+
+    try {
+      const feeResponse = await FeeService.getSystemFees();
+      const feeData = feeResponse?.data as any;
+
+      let mintingFeeConfig: any =
+        feeData?.mintingFee ||
+        feeData?.fees?.mintingFee ||
+        (Array.isArray(feeData)
+          ? feeData.find(
+              (fee: any) =>
+                fee?.code === "mintingFee" ||
+                fee?.name === "mintingFee" ||
+                fee?.key === "mintingFee"
+            )
+          : undefined);
+
+      if (!mintingFeeConfig && feeData?.data) {
+        mintingFeeConfig = feeData.data?.mintingFee;
+      }
+
+      const feeType = (mintingFeeConfig?.type || "percentage") as
+        | "fixed"
+        | "percentage";
+      const feeValue = Number(mintingFeeConfig?.value || 0);
+      const nftPrice = getNftBasePrice();
+
+      let calculatedAmount = 0;
+      if (feeValue > 0) {
+        calculatedAmount =
+          feeType === "fixed" ? feeValue : (nftPrice * feeValue) / 100;
+      }
+
+      setMintingFeeDetails({
+        type: feeType,
+        value: feeValue,
+      });
+      setMintingFeeAmount(calculatedAmount);
+
+      if (!mintingFeeConfig || feeValue === 0) {
+        toast.info(
+          "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
+        );
+      }
+    } catch (error: any) {
+      console.error("Lỗi khi lấy phí minting:", error);
+      setMintingFeeError(
+        error?.message ||
+          "Không thể lấy thông tin phí minting. Vui lòng thử lại."
+      );
+    } finally {
+      setMintingFeeLoading(false);
+    }
+  };
+
+  const handlePayMintingFee = async () => {
+    if (mintingFeeLoading) return;
+
+    const amount = mintingFeeAmount ?? 0;
+
+    if (amount <= 0) {
+      setWithdrawDialogOpen(false);
+      await handleWithdrawConfirm();
+      return;
+    }
+
+    if (!walletAddress) {
+      toast.error("Không tìm thấy địa chỉ ví. Vui lòng kết nối lại.");
+      return;
+    }
+
+    setPayingMintingFee(true);
+    try {
+      await TransferService.sendCanTransfer({
+        fromAddress: walletAddress,
+        toAddressData: config.WALLET_ADDRESSES.ADMIN,
+        amountCan: amount,
+        gasLimit: 200000,
+        gasBoostPercent: 80,
+      });
+
+      toast.success("Thanh toán phí minting thành công.");
+      setWithdrawDialogOpen(false);
+      await handleWithdrawConfirm();
+    } catch (error: any) {
+      console.error("Lỗi khi thanh toán phí minting:", error);
+      const errorMessage =
+        error?.message ||
+        error?.data?.message ||
+        "Thanh toán phí thất bại. Vui lòng thử lại.";
+      toast.error(errorMessage);
+    } finally {
+      setPayingMintingFee(false);
+    }
+  };
+
   // Handler cho rút NFT về ví
   const handleWithdrawConfirm = async (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -330,75 +469,94 @@ export default function NFTCard({
     if (!shouldShowActions) return null;
     return (
       <div className="flex gap-2 w-full flex-col">
-        {nft?.type === "mysteryBox" && (
-          <Button
-            onClick={(e) => handleAction(e, "open")}
-            disabled={!isMysteryBoxOpenable}
-            className={`
-              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-              transition-all disabled:pointer-events-none disabled:opacity-50
-              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-              h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
-              ${
-                isMysteryBoxOpenable
-                  ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl"
-                  : "bg-gray-700 text-gray-400"
-              }
-            `}
-          >
-            {isMysteryBoxOpenable ? (
-              <>
-                <span className="text-lg">🎁</span>
-                <span>Mở hộp quà</span>
-                <span className="text-lg">✨</span>
-              </>
-            ) : (
-              <>
-                <span>🔒</span>
-                <span>Chưa thể mở</span>
-              </>
+        {nft?.type === "mysteryBox" && !nft.isStaking && !nft.isSale && (
+          <MysteryRewardsPopover
+            rewards={nft.rewards}
+            trigger={
+              <Button
+                onClick={(e) => handleAction(e, "open")}
+                disabled={!isMysteryBoxOpenable}
+                className={`
+                  inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+                  transition-all disabled:pointer-events-none disabled:opacity-50
+                  [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+                  outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+                  aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+                  h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
+                  ${
+                    isMysteryBoxOpenable
+                      ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl"
+                      : "bg-gray-700 text-gray-400"
+                  }
+                `}
+              >
+                {isMysteryBoxOpenable ? (
+                  <>
+                    <span>🎁</span>
+                    <span>Mở hộp quà</span>
+                    <span>✨</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔒</span>
+                    <span>Chưa thể mở</span>
+                  </>
+                )}
+              </Button>
+            }
+          />
+        )}
+        {!nft.isStaking && !nft.isSale ? (
+          <div className="flex w-full gap-2 items-center">
+            {nft?.isMinted === false ? (
+              <Button
+                onClick={handleOpenMintingFeeModal}
+                className="
+         inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+        transition-all disabled:pointer-events-none disabled:opacity-50
+        [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+        outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+        aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+        h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
+        bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+      "
+              >
+                Rút về ví
+              </Button>
+            ) : null}
+            {!nft.isSale && (
+              <Button
+                onClick={(e) => handleAction(e, "sell")}
+                className="
+        inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+        transition-all disabled:pointer-events-none disabled:opacity-50
+        [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+        outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+        aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+        h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
+        bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+      "
+              >
+                Đăng bán
+              </Button>
             )}
+          </div>
+        ) : (
+          <Button
+            onClick={(e) => handleAction(e, "cancel")}
+            className="
+inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+transition-all disabled:pointer-events-none disabled:opacity-50
+[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
+bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+"
+          >
+            Huỷ{" "}
           </Button>
         )}
-        <div className="flex w-full gap-2 items-center">
-          {nft?.isMinted === false ? (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                setWithdrawDialogOpen(true);
-              }}
-              className="
-          inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-          transition-all disabled:pointer-events-none disabled:opacity-50
-          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-          h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-        "
-            >
-              Rút về ví
-            </Button>
-          ) : null}
-          {!nft.isSale && (
-            <Button
-              onClick={(e) => handleAction(e, "sell")}
-              className="
-          inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-          transition-all disabled:pointer-events-none disabled:opacity-50
-          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-          h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
-          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-        "
-            >
-              Đăng bán
-            </Button>
-          )}
-        </div>
       </div>
     );
   };
@@ -484,7 +642,7 @@ export default function NFTCard({
             </div>
 
             {/* Rewards popover */}
-            <MysteryRewardsPopover rewards={nft.rewards} />
+            {/* <MysteryRewardsPopover rewards={nft.rewards} /> */}
 
             {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
@@ -591,30 +749,97 @@ export default function NFTCard({
         )}
       </div>
 
-      <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+      <Dialog
+        open={withdrawDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !payingMintingFee) {
+            setWithdrawDialogOpen(false);
+            resetMintingFeeState();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xác nhận rút NFT về ví</DialogTitle>
+            <DialogTitle>Thanh toán phí rút NFT</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn rút NFT này về ví?
+              Để rút NFT về ví, vui lòng thanh toán cước phí minting cho hệ
+              thống.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {mintingFeeLoading ? (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Spinner className="h-4 w-4" />
+                <span>Đang tải thông tin phí...</span>
+              </div>
+            ) : mintingFeeError ? (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
+                {mintingFeeError}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Loại phí</span>
+                  <span className="font-medium capitalize">
+                    {mintingFeeDetails?.type === "fixed"
+                      ? "Cố định"
+                      : "Phần trăm"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Giá trị cấu hình
+                  </span>
+                  <span className="font-semibold">
+                    {mintingFeeDetails?.type === "fixed"
+                      ? `${formatNumber(
+                          mintingFeeDetails?.value || 0
+                        )} ${TOKEN_DEAULT_CURRENCY}`
+                      : `${mintingFeeDetails?.value || 0}%`}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Giá NFT</span>
+                  <span className="font-semibold">
+                    {formatNumber(getNftBasePrice())} {TOKEN_DEAULT_CURRENCY}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-base font-semibold text-primary">
+                  <span>Tổng phí cần thanh toán</span>
+                  <span>
+                    {formatNumber(mintingFeeAmount || 0)}{" "}
+                    {TOKEN_DEAULT_CURRENCY}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setWithdrawDialogOpen(false)}
-              disabled={isWithdrawing}
+              onClick={() => {
+                if (payingMintingFee) return;
+                setWithdrawDialogOpen(false);
+                resetMintingFeeState();
+              }}
+              disabled={payingMintingFee}
             >
               Thoát
             </Button>
             <Button
               type="button"
               variant="default"
-              onClick={handleWithdrawConfirm}
-              disabled={isWithdrawing}
+              onClick={handlePayMintingFee}
+              disabled={
+                mintingFeeLoading ||
+                payingMintingFee ||
+                Boolean(mintingFeeError)
+              }
             >
-              {isWithdrawing ? "Đang xử lý..." : "Đồng ý"}
+              {payingMintingFee ? "Đang thanh toán..." : "Đồng ý"}
             </Button>
           </DialogFooter>
         </DialogContent>

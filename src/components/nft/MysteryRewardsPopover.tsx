@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, cloneElement } from "react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import MysteryRewardsPreview from './MysteryRewardsPreview';
-import type { TokenReward, NFTReward } from '@/types/NFT';
+} from "@/components/ui/popover";
+import MysteryRewardsPreview from "./MysteryRewardsPreview";
+import type { TokenReward, NFTReward } from "@/types/NFT";
 
 interface MysteryRewardsPopoverProps {
   rewards?: {
@@ -15,11 +15,13 @@ interface MysteryRewardsPopoverProps {
     nfts?: NFTReward[];
   };
   className?: string;
+  trigger?: React.ReactElement;
 }
 
 export default function MysteryRewardsPopover({
   rewards,
   className = '',
+  trigger,
 }: MysteryRewardsPopoverProps) {
   const [open, setOpen] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -60,9 +62,42 @@ export default function MysteryRewardsPopover({
     );
   }
 
+  const defaultTrigger = (
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpen(!open);
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`
+              inline-flex items-center gap-1 text-xs
+              text-purple-600 dark:text-purple-400
+              hover:text-purple-700 dark:hover:text-purple-300
+              cursor-pointer transition-colors
+              ${className}
+            `}
+    >
+      <span>🎁</span>
+      <span>{rewardsCount} thưởng</span>
+    </span>
+  );
+
+  const triggerElement = trigger
+    ? cloneElement(trigger, {
+        onMouseEnter: (event: React.MouseEvent) => {
+          trigger.props.onMouseEnter?.(event);
+          handleMouseEnter();
+        },
+        onMouseLeave: (event: React.MouseEvent) => {
+          trigger.props.onMouseLeave?.(event);
+          handleMouseLeave();
+        },
+      })
+    : defaultTrigger;
+
   return (
     <>
-      {/* Backdrop cho mobile */}
       {open && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -71,26 +106,7 @@ export default function MysteryRewardsPopover({
       )}
 
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(!open);
-            }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            className={`
-              inline-flex items-center gap-1 text-xs
-              text-purple-600 dark:text-purple-400
-              hover:text-purple-700 dark:hover:text-purple-300
-              cursor-pointer transition-colors
-              ${className}
-            `}
-          >
-            <span>🎁</span>
-            <span>{rewardsCount} thưởng</span>
-          </span>
-        </PopoverTrigger>
+        <PopoverTrigger asChild>{triggerElement}</PopoverTrigger>
 
         <PopoverContent
           side="right"

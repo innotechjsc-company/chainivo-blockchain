@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import type { NFTItem } from "@/types/NFT";
 import LevelBadge from "./LevelBadge";
 import NFTTypeBadge from "./NFTTypeBadge";
@@ -62,6 +63,7 @@ export default function NFTInvestCard({
   onClick,
   onRefreshNFTs,
 }: NFTCardProps) {
+  const router = useRouter();
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -250,7 +252,9 @@ export default function NFTInvestCard({
   const handleCardClick = () => {
     if (onClick) {
       onClick(nft.id);
+      return;
     }
+    router.push(`/investment-nft/${(nft as any)?.nft?.id}`);
   };
 
   // Handler cho rút NFT về ví
@@ -396,10 +400,10 @@ export default function NFTInvestCard({
             ? "hover:shadow-2xl"
             : ""
         }
-        ${onClick ? "cursor-pointer" : ""}
+        cursor-pointer
         ${className}
       `}
-      onClick={onClick ? handleCardClick : undefined}
+      onClick={handleCardClick}
     >
       {/* Badges overlay trên ảnh */}
       <div className="relative">

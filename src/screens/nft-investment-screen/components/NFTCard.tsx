@@ -332,13 +332,6 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <ShoppingCart className="w-4 h-4" />
             {isSoldOut ? "Hết cổ phần" : "Mua cổ phần"}
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRestrictedInvestment}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>
