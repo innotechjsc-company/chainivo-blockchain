@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,8 @@ export default function InvestmentNFTDetailPage() {
   const [certificateModalOpen, setCertificateModalOpen] =
     useState<boolean>(false);
   const certificateRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [certificateScale, setCertificateScale] = useState(1);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -468,6 +471,32 @@ export default function InvestmentNFTDetailPage() {
     fetchShareDetail();
   }, [params?.id, user]);
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!certificateModalOpen) {
+      setCertificateScale(1);
+      return;
+    }
+    const updateScale = () => {
+      const el = certificateRef.current;
+      if (!el) return;
+      const contentHeight = el.offsetHeight;
+      const viewport = window.innerHeight * 0.9 - 150;
+      if (contentHeight > viewport && viewport > 0) {
+        const scaleValue = Math.max(viewport / contentHeight, 0.5);
+        setCertificateScale(scaleValue);
+      } else {
+        setCertificateScale(1);
+      }
+    };
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, [certificateModalOpen, data, shareDetail, averageUserInvestment]);
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -846,7 +875,9 @@ export default function InvestmentNFTDetailPage() {
                 <CardContent className="relative p-5 space-y-4 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold">Chứng nhận NFT</h3>
+                      <h3 className="text-xl font-bold">
+                        Chứng nhận cổ phần của tôi
+                      </h3>
                     </div>
                     <span className="text-xs font-semibold text-white/80 underline underline-offset-4">
                       Xem chi tiết
@@ -1217,40 +1248,55 @@ export default function InvestmentNFTDetailPage() {
           </Card>
         </div>
 
-        <Dialog
-          open={certificateModalOpen}
-          onOpenChange={setCertificateModalOpen}
-        >
-          <DialogContent className="w-full max-w-none max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">
-                Chứng chỉ xác nhận NFT
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Xem và tải chứng chỉ sở hữu cổ phần NFT của bạn
-              </p>
-            </DialogHeader>
-            <div className="space-y-4 w-full">
-              {renderCertificate({ attachRef: true })}
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setCertificateModalOpen(false)}
-                  className=" cursor-pointer"
-                >
-                  Đóng
-                </Button>
-                <Button
-                  className="gap-2 cursor-pointer"
-                  onClick={handleDownloadCertificatePdf}
-                >
-                  <FileDown className="w-4 h-4" />
-                  Tải PDF
-                </Button>
+        {isClient &&
+          certificateModalOpen &&
+          createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="relative w-full max-w-5xl bg-background/95 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+                <div className="sticky top-0 z-10 flex flex-col gap-2 bg-background/95 px-6 pt-6 pb-2 border-b border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">
+                        Chứng chỉ xác nhận NFT
+                      </h2>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => setCertificateModalOpen(false)}
+                      >
+                        Đóng
+                      </Button>
+                      <Button
+                        className="gap-2 cursor-pointer"
+                        onClick={handleDownloadCertificatePdf}
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Tải PDF
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Toàn bộ thông tin chứng chỉ sở hữu NFT của bạn
+                  </p>
+                </div>
+                <div className="p-6 pb-8">
+                  <div
+                    className="flex justify-center"
+                    style={{
+                      transform: `scale(${certificateScale})`,
+                      transformOrigin: "top center",
+                      transition: "transform 0.2s ease",
+                    }}
+                  >
+                    {renderCertificate({ attachRef: true })}
+                  </div>
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </div>,
+            document.body
+          )}
 
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
