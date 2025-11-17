@@ -1080,6 +1080,147 @@ export default function InvestmentNFTDetailPage() {
           </div>
         </div>
 
+        <div className="mt-12">
+          <Card className="glass">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
+              {transactionsLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Đang tải lịch sử giao dịch...</p>
+                </div>
+              ) : Array.isArray(transactions) && transactions?.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Người mua
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Số cổ phần
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Tổng tiền
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Thời gian
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Stake
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Hash giao dịch
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((tx: any, idx: number) => {
+                        // Handle buyer address/username
+                        const displayBuyer = formatAddress(tx?.walletAddress);
+
+                        // Handle shares
+                        const shares = tx.shares || tx.quantity || 0;
+
+                        // Handle total price
+                        const totalPrice =
+                          tx.totalPrice ||
+                          tx.total_price ||
+                          tx.price ||
+                          tx.amount ||
+                          0;
+                        const txCurrency = (
+                          tx.currency ||
+                          currency ||
+                          TOKEN_DEAULT_CURRENCY
+                        ).toUpperCase();
+
+                        // Handle timestamp
+                        const timestamp =
+                          tx.createdAt || tx.created_at || tx.date || "-";
+                        let formattedDate = "-";
+                        if (timestamp !== "-") {
+                          try {
+                            formattedDate = new Date(timestamp).toLocaleString(
+                              "vi-VN"
+                            );
+                          } catch {
+                            formattedDate = timestamp;
+                          }
+                        }
+
+                        // Handle transaction hash
+                        const txHash =
+                          tx.transactionHash ||
+                          tx.transaction_hash ||
+                          tx.txHash ||
+                          "-";
+
+                        // Handle status
+                        const status = tx.status || "success";
+                        const statusColor =
+                          status === "success" || status === "completed"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : status === "pending"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400";
+                        const statusLabel =
+                          status === "success"
+                            ? "Thành công"
+                            : status === "pending"
+                            ? "Đang xử lý"
+                            : "Thất bại";
+
+                        return (
+                          <tr
+                            key={idx}
+                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-medium text-white">
+                              {displayBuyer}
+                            </td>
+                            <td className="py-3 px-4 text-cyan-400 font-semibold">
+                              {formatAmount(shares)} CP
+                            </td>
+                            <td className="py-3 px-4 font-semibold">
+                              {formatAmount(totalPrice)} {txCurrency}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {formattedDate}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge className={`text-xs ${statusColor}`}>
+                                {statusLabel}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-xs font-mono">
+                              {txHash !== "-" ? (
+                                <a
+                                  href={`https://www.oklink.com/amoy/tx/${txHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
+                                >
+                                  {formatAddress(txHash)}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Chưa có lịch sử giao dịch</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         <Dialog
           open={certificateModalOpen}
           onOpenChange={setCertificateModalOpen}
