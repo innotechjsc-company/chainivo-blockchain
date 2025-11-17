@@ -35,6 +35,8 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   );
   const soldShares: number = Number(nft?.soldShares ?? 0);
   const totalShares: number = Number(nft?.availableShares ?? 0);
+  const remainingShares: number = Number(nft?.availableShares ?? 0);
+  const isSoldOut = remainingShares <= 0;
   const progressPercentage =
     totalShares > 0 ? (soldShares / totalShares) * 100 : 0;
 
@@ -319,11 +321,16 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
         <div className="flex gap-2">
           <Button
             variant="default"
-            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
+            disabled={isSoldOut}
+            className={`flex-1 gap-2 text-white ${
+              isSoldOut
+                ? "bg-gray-500/60 cursor-not-allowed opacity-80"
+                : "bg-gradient-to-r from-cyan-500 to-purple-500 cursor-pointer hover:from-cyan-600 hover:to-purple-600"
+            }`}
             onClick={handleRestrictedInvestment}
           >
             <ShoppingCart className="w-4 h-4" />
-            Mua cổ phần
+            {isSoldOut ? "Hết cổ phần" : "Mua cổ phần"}
           </Button>
           <Button
             variant="outline"
