@@ -227,6 +227,9 @@ export default function NFTCard({
         setIsLoading(false);
       }
     }
+    if (onActionClick) {
+      onActionClick(nft, action);
+    }
   };
 
   // Handler cho onClick cũ
@@ -325,42 +328,77 @@ export default function NFTCard({
   // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
-    if (type === "investment") return null;
     return (
       <div className="flex gap-2 w-full flex-col">
-        {nft?.isMinted === false ? (
+        {nft?.type === "mysteryBox" && (
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              setWithdrawDialogOpen(true);
-            }}
-            className="
-          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
-          transition-all disabled:pointer-events-none disabled:opacity-50
-          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
-          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
-          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
-        "
+            onClick={(e) => handleAction(e, "open")}
+            disabled={!isMysteryBoxOpenable}
+            className={`
+              inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+              transition-all disabled:pointer-events-none disabled:opacity-50
+              [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+              outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+              aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+              h-9 px-4 py-2 has-[>svg]:px-3 flex-1 gap-2 cursor-pointer
+              ${
+                isMysteryBoxOpenable
+                  ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:bg-primary/90 text-white shadow-lg hover:shadow-xl"
+                  : "bg-gray-700 text-gray-400"
+              }
+            `}
           >
-            Rút về ví
+            {isMysteryBoxOpenable ? (
+              <>
+                <span className="text-lg">🎁</span>
+                <span>Mở hộp quà</span>
+                <span className="text-lg">✨</span>
+              </>
+            ) : (
+              <>
+                <span>🔒</span>
+                <span>Chưa thể mở</span>
+              </>
+            )}
           </Button>
-        ) : null}
-        <Button
-          onClick={(e) => handleAction(e, "sell")}
-          className="
-          inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+        )}
+        <div className="flex w-full gap-2 items-center">
+          {nft?.isMinted === false ? (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setWithdrawDialogOpen(true);
+              }}
+              className="
+          inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
           transition-all disabled:pointer-events-none disabled:opacity-50
           [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
           outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
           aria-invalid:ring-destructive/40 aria-invalid:border-destructive
-          h-9 px-4 py-2 has-[>svg]:px-3 w-full gap-2 cursor-pointer
+          h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
           bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
         "
-        >
-          Đăng bán
-        </Button>
+            >
+              Rút về ví
+            </Button>
+          ) : null}
+          {!nft.isSale && (
+            <Button
+              onClick={(e) => handleAction(e, "sell")}
+              className="
+          inline-flex flex-1 min-w-0 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium
+          transition-all disabled:pointer-events-none disabled:opacity-50
+          [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+          outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]
+          aria-invalid:ring-destructive/40 aria-invalid:border-destructive
+          h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
+          bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
+        "
+            >
+              Đăng bán
+            </Button>
+          )}
+        </div>
       </div>
     );
   };
@@ -421,13 +459,13 @@ export default function NFTCard({
       <div className="flex flex-col flex-1 p-4 space-y-3">
         {/* Tên NFT */}
         <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
-          {(nft as any)?.nft?.name}
+          {(nft as any)?.name}
         </h3>
 
         {/* Mô tả */}
-        {(nft as any)?.nft?.description && (
+        {(nft as any)?.description && (
           <p className="text-sm text-gray-400 line-clamp-2">
-            {(nft as any)?.nft?.description}
+            {(nft as any)?.description}
           </p>
         )}
 
@@ -530,6 +568,22 @@ export default function NFTCard({
                 </div>
               </div>
             )}
+            {nft.isSale && (
+              <div className="space-y-2">
+                {/* Staking status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Trạng thái:</span>
+                  <span className="text-sm font-medium text-gray-100">
+                    Đã bán
+                  </span>
+                </div>
+              </div>
+            )}
+            {/* {
+              nft.type === "investment" && (
+
+              )
+            } */}
 
             {/* Action button */}
             {actionSection && <div className="mt-auto">{actionSection}</div>}
