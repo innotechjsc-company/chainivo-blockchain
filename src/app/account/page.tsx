@@ -133,11 +133,8 @@ export default function AccountManagementPage() {
 
   const handleTabChange = (value: string) => {
     setTabValue(value);
-    if (value === "wallet") {
-      router.replace("/account?section=wallet");
-    } else {
-      router.replace("/account");
-    }
+    // Luôn lưu tab value vào URL để giữ nguyên khi reload
+    router.replace(`/account?section=${value}`);
   };
 
   // Validation: Chi cho phep chu (co dau), so, khoang trang
