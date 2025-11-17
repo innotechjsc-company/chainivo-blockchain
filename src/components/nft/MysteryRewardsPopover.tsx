@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useRef, useEffect, cloneElement } from "react";
 import {
@@ -20,7 +20,7 @@ interface MysteryRewardsPopoverProps {
 
 export default function MysteryRewardsPopover({
   rewards,
-  className = '',
+  className = "",
   trigger,
 }: MysteryRewardsPopoverProps) {
   const [open, setOpen] = useState(false);
@@ -52,7 +52,8 @@ export default function MysteryRewardsPopover({
     };
   }, []);
 
-  const rewardsCount = (rewards?.tokens?.length || 0) + (rewards?.nfts?.length || 0);
+  const rewardsCount =
+    (rewards?.tokens?.length || 0) + (rewards?.nfts?.length || 0);
 
   if (rewardsCount === 0) {
     return (
@@ -84,13 +85,22 @@ export default function MysteryRewardsPopover({
   );
 
   const triggerElement = trigger
-    ? cloneElement(trigger, {
+    ? cloneElement(trigger as React.ReactElement<any>, {
         onMouseEnter: (event: React.MouseEvent) => {
-          trigger.props.onMouseEnter?.(event);
+          if (
+            typeof (trigger.props as Record<string, unknown>).onMouseEnter ===
+            "function"
+          ) {
+            (
+              trigger.props as Record<string, (e: React.MouseEvent) => void>
+            ).onMouseEnter?.(event);
+          }
           handleMouseEnter();
         },
         onMouseLeave: (event: React.MouseEvent) => {
-          trigger.props.onMouseLeave?.(event);
+          (
+            trigger.props as Record<string, (e: React.MouseEvent) => void>
+          ).onMouseLeave?.(event);
           handleMouseLeave();
         },
       })
