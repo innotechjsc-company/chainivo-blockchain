@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import type { NFTCurrency } from '@/types/NFT';
+import React from "react";
+import type { NFTCurrency } from "@/types/NFT";
 
 interface InvestmentProgressBarProps {
   soldShares: number;
@@ -18,7 +18,7 @@ export default function InvestmentProgressBar({
   totalInvestors,
   pricePerShare,
   currency,
-  className = '',
+  className = "",
 }: InvestmentProgressBarProps) {
   // Tính tỷ lệ phần trăm đã bán
   const percentage = totalShares > 0 ? (soldShares / totalShares) * 100 : 0;
@@ -59,12 +59,6 @@ export default function InvestmentProgressBar({
         </div>
       </div>
 
-      {/* Số cổ phần còn lại */}
-      {availableShares > 0 && (
-        <div className="text-xs text-emerald-600 dark:text-emerald-400">
-          Còn {availableShares} cổ phần có sẵn
-        </div>
-      )}
       {availableShares === 0 && (
         <div className="text-xs text-red-600 dark:text-red-400 font-medium">
           Đã bán hết

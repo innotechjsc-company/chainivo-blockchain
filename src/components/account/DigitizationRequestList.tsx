@@ -68,6 +68,24 @@ const getStatusBadge = (status: string) => {
   );
 };
 
+// Helper function để parse description và trả về HTML content
+const parseDescription = (description: string | undefined | null): string => {
+  if (!description) return "—";
+
+  try {
+    // Thử parse JSON nếu description là JSON string
+    const parsed = JSON.parse(description);
+    if (parsed && typeof parsed === "object" && parsed.html) {
+      return parsed.html;
+    }
+  } catch (e) {
+    // Nếu không phải JSON, trả về description như HTML
+  }
+
+  // Nếu description đã là HTML string, trả về trực tiếp
+  return description;
+};
+
 export function DigitizationRequestList({
   onRefresh,
 }: DigitizationRequestListProps) {
@@ -453,9 +471,9 @@ export function DigitizationRequestList({
                     <div className="text-xs text-muted-foreground mb-1">
                       Mô tả
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <div className="text-sm text-muted-foreground line-clamp-2 prose prose-sm max-w-none">
                       {request.description || "—"}
-                    </p>
+                    </div>
                   </div>
 
                   {/* Address */}
@@ -747,9 +765,12 @@ export function DigitizationRequestList({
               {/* Description */}
               <div className="space-y-2">
                 <div className="text-xs text-muted-foreground">Mô tả</div>
-                <div className="text-sm text-muted-foreground">
-                  {selectedRequest.description}
-                </div>
+                <div
+                  className="text-sm text-muted-foreground prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: parseDescription(selectedRequest.fullDescription),
+                  }}
+                />
               </div>
 
               {/* Address */}
