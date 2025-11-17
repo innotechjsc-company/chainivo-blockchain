@@ -494,9 +494,9 @@ export default function InvestmentNFTDetailPage() {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Image and stats */}
-          <div className="lg:col-span-7 space-y-4 flex flex-col">
-            <Card className="border-0 shadow-none bg-transparent flex-1">
-              <div className="relative w-full h-full min-h-[calc(100vh-8rem)] mx-auto rounded-lg overflow-hidden">
+          <div className="lg:col-span-7 flex flex-col">
+            <Card className="border-0 shadow-none bg-transparent  w-full h-[80vh] min-h-[320px]">
+              <div className="relative w-full h-[80vh] min-h-[320px] mx-auto rounded-lg overflow-hidden">
                 <img
                   src={imageSrc}
                   alt={data?.name || "NFT"}
@@ -517,7 +517,7 @@ export default function InvestmentNFTDetailPage() {
                 </button>
               </div>
             </Card>
-            <div>
+            <div className="mt-12 relative z-10">
               <Card className="glass">
                 <CardContent className="p-6">
                   <Tabs defaultValue="details" className="space-y-6">
