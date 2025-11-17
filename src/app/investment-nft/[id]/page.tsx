@@ -543,10 +543,13 @@ export default function InvestmentNFTDetailPage() {
                             Mô tả chi tiết:
                           </p>
                           <CollapsibleDescription
-                            html={String(data.fullDescription || "").replace(
-                              /\n/g,
-                              "<br/>"
-                            )}
+                            html={String(
+                              data?.fullDescription?.html
+                                ? data.fullDescription.html
+                                : data.fullDescription
+                                ? data.fullDescription
+                                : ""
+                            ).replace(/\n/g, "<br/>")}
                           />
                         </div>
                       ) : (
@@ -1231,6 +1234,8 @@ export default function InvestmentNFTDetailPage() {
 
 function CollapsibleDescription({ html }: { html: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMultiLine, setIsMultiLine] = useState(false);
+  const measureRef = useRef<HTMLSpanElement>(null);
 
   const collapsedText = useMemo(() => {
     if (!html) return "";
@@ -1241,6 +1246,19 @@ function CollapsibleDescription({ html }: { html: string }) {
       .replace(/\s+/g, " ")
       .trim();
   }, [html]);
+
+  useEffect(() => {
+    const measureEl = measureRef.current;
+    if (!measureEl) return;
+    const computedStyle = window.getComputedStyle(measureEl);
+    const lineHeight = parseFloat(computedStyle.lineHeight || "0");
+    if (!lineHeight) {
+      setIsMultiLine(false);
+      return;
+    }
+    const isOverflowing = measureEl.scrollHeight - 1 > lineHeight;
+    setIsMultiLine(isOverflowing);
+  }, [collapsedText]);
 
   if (isExpanded) {
     return (
@@ -1263,17 +1281,32 @@ function CollapsibleDescription({ html }: { html: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground leading-relaxed flex-1 truncate">
+    <div className="relative w-full">
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-muted-foreground leading-relaxed flex-1 ${
+            isMultiLine ? "truncate" : ""
+          }`}
+        >
+          {collapsedText}
+        </span>
+        {isMultiLine && (
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
+            onClick={() => setIsExpanded(true)}
+          >
+            Xem thêm
+          </button>
+        )}
+      </div>
+      <span
+        ref={measureRef}
+        className="invisible absolute left-0 top-0 w-full whitespace-normal leading-relaxed pointer-events-none select-none"
+        aria-hidden="true"
+      >
         {collapsedText}
       </span>
-      <button
-        type="button"
-        className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
-        onClick={() => setIsExpanded(true)}
-      >
-        Xem thêm
-      </button>
     </div>
   );
 }
