@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, ArrowLeft } from "lucide-react";
+import { Heart, ArrowLeft, FileDown } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
@@ -44,6 +44,9 @@ export default function InvestmentNFTDetailPage() {
   const [shareDetail, setShareDetail] = useState<any>(null);
   const [shareDetailLoading, setShareDetailLoading] = useState<boolean>(false);
   const [showAllShareDetail, setShowAllShareDetail] = useState<boolean>(false);
+  const [certificateModalOpen, setCertificateModalOpen] =
+    useState<boolean>(false);
+  const certificateRef = useRef<HTMLDivElement>(null);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -168,6 +171,257 @@ export default function InvestmentNFTDetailPage() {
   const pricePerShare: number = Number(data?.pricePerShare ?? 0);
   const totalCost = Math.max(1, quantity) * (pricePerShare || 0);
   const currency = String((data?.currency || "ETH").toUpperCase());
+  const userWalletLowerCase = user?.walletAddress?.toLowerCase() ?? null;
+
+  const userTransactions = useMemo(() => {
+    if (!userWalletLowerCase || !Array.isArray(transactions)) {
+      return [];
+    }
+
+    return transactions.filter(
+      (tx) =>
+        String(tx?.walletAddress || "")
+          .toLowerCase()
+          .trim() === userWalletLowerCase
+    );
+  }, [transactions, userWalletLowerCase]);
+
+  const averageUserInvestment = useMemo(() => {
+    if (!userTransactions.length) return 0;
+
+    const totalValue = userTransactions.reduce((sum: number, tx: any) => {
+      const nftItem = tx?.nft;
+      const shares = Number(nftItem?.soldShares ?? 0);
+      const sharePrice = Number(nftItem?.pricePerShare ?? 0);
+
+      return sum + shares * sharePrice;
+    }, 0);
+
+    return totalValue / userTransactions.length;
+  }, [userTransactions]);
+
+  const handleOpenCertificateModal = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để xem chứng chỉ NFT");
+      return;
+    }
+    if (!userTransactions.length) {
+      toast.error("Bạn chưa có chứng chỉ NFT nào");
+      return;
+    }
+    setCertificateModalOpen(true);
+  };
+
+  const handleDownloadCertificatePdf = async () => {
+    if (!certificateRef.current) {
+      toast.error("Không tìm thấy nội dung chứng chỉ để tải PDF");
+      return;
+    }
+    const printWindow = window.open("", "", "width=900,height=1200");
+    if (!printWindow) {
+      toast.error("Trình duyệt đang chặn cửa sổ tải PDF");
+      return;
+    }
+    const styles = Array.from(
+      document.querySelectorAll("style, link[rel='stylesheet']")
+    )
+      .map((node) => node.outerHTML)
+      .join("");
+    const certificateHtml = certificateRef.current.outerHTML;
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Chainivo NFT Certificate</title>
+          ${styles}
+          <style>
+            :root {
+              color-scheme: light;
+            }
+            body { margin: 0; padding: 24px; background: #fdfaf3; font-family: 'Inter', 'Times New Roman', serif; }
+            @page { size: A4; margin: 16mm; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+            .certificate-wrapper { max-width: 940px; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          ${certificateHtml}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    const waitForResources = () => {
+      const links = Array.from(
+        printWindow.document.querySelectorAll("link[rel='stylesheet']")
+      );
+      if (!links.length) return Promise.resolve<void[]>([]);
+      return Promise.all(
+        links.map(
+          (link) =>
+            new Promise<void>((resolve) => {
+              const stylesheet = link as HTMLLinkElement;
+              if (stylesheet.sheet) {
+                resolve();
+              } else {
+                stylesheet.addEventListener("load", () => resolve(), {
+                  once: true,
+                });
+                stylesheet.addEventListener("error", () => resolve(), {
+                  once: true,
+                });
+              }
+            })
+        )
+      );
+    };
+    try {
+      await waitForResources();
+      if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+        await printWindow.document.fonts.ready;
+      }
+    } catch (error) {
+      console.warn("Không thể tải đầy đủ stylesheet trong cửa sổ in", error);
+    }
+    requestAnimationFrame(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+    });
+  };
+
+  const renderCertificate = (options?: { attachRef?: boolean }) => (
+    <div
+      ref={options?.attachRef ? certificateRef : undefined}
+      className="certificate-wrapper"
+    >
+      <Card className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-amber-50/90 to-amber-100/50 border-0 shadow-2xl">
+        <CardContent className="p-8 md:p-12 relative">
+          <div className="absolute inset-4 border-2 border-yellow-500/60 rounded-sm pointer-events-none"></div>
+          <div className="absolute inset-6 border border-yellow-400/40 rounded-sm pointer-events-none"></div>
+
+          <div className="absolute top-6 left-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute top-6 right-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute bottom-6 left-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+          <div className="absolute bottom-6 right-6 text-yellow-600/40 text-2xl">
+            ❋
+          </div>
+
+          <div className="flex flex-col items-center justify-center mb-6 space-y-2">
+            <div className="w-20 h-20 rounded-full border-2 border-amber-200/70 bg-white/70 flex items-center justify-center shadow-lg">
+              <img
+                src="/logo hinh.png"
+                alt="Chainivo logo"
+                className="w-12 h-12 object-contain select-none"
+                draggable={false}
+              />
+            </div>
+            <div className="text-center uppercase tracking-[0.4em] text-amber-900 font-black text-sm">
+              chainivo
+            </div>
+            <div className="text-center uppercase tracking-[0.6em] text-amber-700 text-[10px] font-semibold">
+              blockchain
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <p className="text-sm md:text-base text-amber-900/70 font-semibold tracking-wider uppercase">
+              Xác nhận quyền sở hữu cổ phần NFT
+            </p>
+          </div>
+
+          <div className="text-center mb-8 space-y-6">
+            <div className="relative">
+              <div className="absolute left-0 top-1/2 w-1/4 border-t-2 border-dashed border-amber-800/40"></div>
+              <div className="absolute right-0 top-1/2 w-1/4 border-t-2 border-dashed border-amber-800/40"></div>
+              <div className="text-base md:text-xl font-mono text-blue-700 font-semibold tracking-wide whitespace-nowrap overflow-x-auto no-scrollbar">
+                {user?.walletAddress || "Người sở hữu"}
+              </div>
+            </div>
+
+            <div className="text-xs md:text-sm text-gray-500/80 leading-relaxed max-w-2xl mx-auto space-y-2">
+              <p>
+                Đã được xác nhận là chủ sở hữu hợp pháp của cổ phần NFT với các
+                thông tin chi tiết như sau:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-3xl mx-auto">
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                ID NFT trên blockchain
+              </div>
+              <div className="text-sm font-bold text-amber-900 font-mono">
+                Token ID: {data?.tokenId || "—"}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tên NFT
+              </div>
+              <div className="text-base font-bold text-amber-900">
+                {data?.name || "—"}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tổng số cổ phần NFT
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {formatAmount(data?.totalShares)} phần
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Tổng số cổ phần sở hữu
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {(() => {
+                  if (!shareDetail) return "—";
+                  if (
+                    typeof shareDetail === "object" &&
+                    "shares" in shareDetail
+                  )
+                    return `${formatAmount(shareDetail.shares)} phần`;
+                  if (Array.isArray(shareDetail)) {
+                    const totalShares = shareDetail.reduce(
+                      (sum: number, item: any) =>
+                        sum + Number(item?.shares || item?.totalShares || 0),
+                      0
+                    );
+                    return `${formatAmount(totalShares)} phần`;
+                  }
+                  return "—";
+                })()}
+              </div>
+            </div>
+
+            <div className="bg-white/60 rounded-lg border border-amber-200/50 p-4 shadow-sm md:col-span-2">
+              <div className="text-xs text-amber-900/60 mb-1 font-semibold uppercase tracking-wide">
+                Đơn giá trung bình
+              </div>
+              <div className="text-lg font-bold text-amber-900">
+                {formatAmount(averageUserInvestment)}{" "}
+                {data?.currency?.toUpperCase() || "CAN"}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   useEffect(() => {
     const id = String(params?.id || "");
@@ -230,12 +484,13 @@ export default function InvestmentNFTDetailPage() {
               {data?.name || "NFT Investment"}
             </h1>
           </div>
-          <div className="mb-2">
-            <p> Mô tả : </p>
-            <CollapsibleDescription
-              html={String(data?.description || "").replace(/\n/g, "<br/>")}
-            />
-          </div>
+          {data?.description && (
+            <div className="mb-2">
+              <CollapsibleDescription
+                html={String(data?.description || "").replace(/\n/g, "<br/>")}
+              />
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Image and stats */}
@@ -265,22 +520,41 @@ export default function InvestmentNFTDetailPage() {
             <div>
               <Card className="glass">
                 <CardContent className="p-6">
-                  <Tabs defaultValue="documents" className="space-y-6">
+                  <Tabs defaultValue="details" className="space-y-6">
                     <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
-                      <TabsTrigger
-                        value="documents"
-                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
-                      >
-                        Tài liệu và tập tin
-                      </TabsTrigger>
                       <TabsTrigger
                         value="details"
                         className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
                       >
                         Chi tiết NFT
                       </TabsTrigger>
+                      <TabsTrigger
+                        value="documents"
+                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
+                      >
+                        Tài liệu và tập tin
+                      </TabsTrigger>
                     </TabsList>
-
+                    <TabsContent value="details" className="space-y-4">
+                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
+                      {data?.fullDescription ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Mô tả chi tiết:
+                          </p>
+                          <CollapsibleDescription
+                            html={String(data.fullDescription || "").replace(
+                              /\n/g,
+                              "<br/>"
+                            )}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          Không có mô tả chi tiết
+                        </p>
+                      )}
+                    </TabsContent>
                     <TabsContent value="documents" className="space-y-6">
                       <h2 className="text-2xl font-bold">
                         Tài liệu và tập tin
@@ -359,27 +633,6 @@ export default function InvestmentNFTDetailPage() {
                         </div>
                       )}
                     </TabsContent>
-
-                    <TabsContent value="details" className="space-y-4">
-                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
-                      {data?.fullDescription ? (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            Mô tả chi tiết:
-                          </p>
-                          <CollapsibleDescription
-                            html={String(data.fullDescription || "").replace(
-                              /\n/g,
-                              "<br/>"
-                            )}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          Không có mô tả chi tiết
-                        </p>
-                      )}
-                    </TabsContent>
                   </Tabs>
                 </CardContent>
               </Card>
@@ -389,18 +642,7 @@ export default function InvestmentNFTDetailPage() {
           {/* Right: Detail card */}
           <div className="lg:col-span-5 space-y-6 flex flex-col mt-6">
             <Card className="glass">
-              <CardContent className="p-5  space-y-5">
-                {/* <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Người bán
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAddress(data?.walletAddress)}
-                    </div>
-                  </div>
-                </div> */}
-
+              <CardContent className="p-2  space-y-5">
                 {/* Pricing section */}
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
@@ -467,6 +709,7 @@ export default function InvestmentNFTDetailPage() {
                     type="number"
                     min={0}
                     value={quantity}
+                    disabled={data?.availableShares === 0}
                     onChange={(e) => setQuantity(Number(e.target.value || 0))}
                     className={`bg-background/50 border-cyan-500/30 focus:border-cyan-500/60 ${
                       quantity > totalShares
@@ -485,40 +728,49 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      toast.error(
-                        "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
-                      );
-                      return;
-                    }
-                    const isConnected =
-                      LocalStorageService.isConnectedToWallet();
-                    if (!isConnected) {
-                      setShowConnectModal(true);
-                      return;
-                    }
-                    setShowConfirmation(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-5 h-5"
+                {Number(data?.availableShares || 0) > 0 ? (
+                  <Button
+                    onClick={() => {
+                      if (!user) {
+                        toast.error(
+                          "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
+                        );
+                        return;
+                      }
+                      const isConnected =
+                        LocalStorageService.isConnectedToWallet();
+                      if (!isConnected) {
+                        setShowConnectModal(true);
+                        return;
+                      }
+                      setShowConfirmation(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
                   >
-                    <circle cx="9" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                  </svg>
-                  Mua cổ phần
-                </Button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-5 h-5"
+                    >
+                      <circle cx="9" cy="21" r="1" />
+                      <circle cx="20" cy="21" r="1" />
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                    Mua cổ phần
+                  </Button>
+                ) : (
+                  <Button
+                    disabled
+                    className="w-full bg-gray-500/40 text-gray-300 font-semibold gap-2 h-12 cursor-not-allowed"
+                  >
+                    Đã hết cổ phần bán
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -574,6 +826,72 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            <Card
+              className="glass cursor-pointer transition-transform hover:scale-[1.01]"
+              role="button"
+              tabIndex={0}
+              onClick={handleOpenCertificateModal}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleOpenCertificateModal();
+                }
+              }}
+            >
+              <CardContent className="p-5">
+                <h3 className="font-semibold mb-4 text-white">
+                  Chứng nhận NFT
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      ID NFT trên blockchain
+                    </div>
+                    <div className="text-sm font-semibold text-white capitalize">
+                      {data?.tokenId || "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Tổng số cổ phần sở hữu
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {(() => {
+                        if (!shareDetail) return "—";
+                        if (
+                          typeof shareDetail === "object" &&
+                          "shares" in shareDetail
+                        ) {
+                          return `${formatAmount(shareDetail.shares)} phần`;
+                        }
+                        if (Array.isArray(shareDetail)) {
+                          const totalShares = shareDetail.reduce(
+                            (sum: number, item: any) =>
+                              sum +
+                              Number(item?.shares || item?.totalShares || 0),
+                            0
+                          );
+                          return `${formatAmount(totalShares)} phần`;
+                        }
+                        return "—";
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Đơn giá trung bình
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {formatAmount(averageUserInvestment)}{" "}
+                    </div>
+                  </div> */}
+                </div>
+                <div className="col-span-2 mt-4 text-right text-xs text-muted-foreground">
+                  Nhấn để mở chứng chỉ chi tiết và tải PDF
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="glass">
               <CardContent className="p-5">
@@ -657,6 +975,7 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="glass">
               <CardContent className="p-5">
                 <h3 className="font-semibold mb-4 text-white">
@@ -757,146 +1076,42 @@ export default function InvestmentNFTDetailPage() {
             </Card>
           </div>
         </div>
-        <div className="mt-12">
-          <Card className="glass">
-            <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
-              {transactionsLoading ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>Đang tải lịch sử giao dịch...</p>
-                </div>
-              ) : Array.isArray(transactions) && transactions?.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Người mua
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Số cổ phần
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Tổng tiền
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Thời gian
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Stake
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
-                          Hash giao dịch
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map((tx: any, idx: number) => {
-                        // Handle buyer address/username
-                        const displayBuyer = formatAddress(tx?.walletAddress);
 
-                        // Handle shares
-                        const shares = tx.shares || tx.quantity || 0;
+        <Dialog
+          open={certificateModalOpen}
+          onOpenChange={setCertificateModalOpen}
+        >
+          <DialogContent className="w-full max-w-none max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">
+                Chứng chỉ xác nhận NFT
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Xem và tải chứng chỉ sở hữu cổ phần NFT của bạn
+              </p>
+            </DialogHeader>
+            <div className="space-y-4 w-full">
+              {renderCertificate({ attachRef: true })}
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setCertificateModalOpen(false)}
+                  className=" cursor-pointer"
+                >
+                  Đóng
+                </Button>
+                <Button
+                  className="gap-2 cursor-pointer"
+                  onClick={handleDownloadCertificatePdf}
+                >
+                  <FileDown className="w-4 h-4" />
+                  Tải PDF
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-                        // Handle total price
-                        const totalPrice =
-                          tx.totalPrice ||
-                          tx.total_price ||
-                          tx.price ||
-                          tx.amount ||
-                          0;
-                        const txCurrency = (
-                          tx.currency ||
-                          currency ||
-                          TOKEN_DEAULT_CURRENCY
-                        ).toUpperCase();
-
-                        // Handle timestamp
-                        const timestamp =
-                          tx.createdAt || tx.created_at || tx.date || "-";
-                        let formattedDate = "-";
-                        if (timestamp !== "-") {
-                          try {
-                            formattedDate = new Date(timestamp).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            formattedDate = timestamp;
-                          }
-                        }
-
-                        // Handle transaction hash
-                        const txHash =
-                          tx.transactionHash ||
-                          tx.transaction_hash ||
-                          tx.txHash ||
-                          "-";
-
-                        // Handle status
-                        const status = tx.status || "success";
-                        const statusColor =
-                          status === "success" || status === "completed"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : status === "pending"
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400";
-                        const statusLabel =
-                          status === "success"
-                            ? "Thành công"
-                            : status === "pending"
-                            ? "Đang xử lý"
-                            : "Thất bại";
-
-                        return (
-                          <tr
-                            key={idx}
-                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
-                          >
-                            <td className="py-3 px-4 font-medium text-white">
-                              {displayBuyer}
-                            </td>
-                            <td className="py-3 px-4 text-cyan-400 font-semibold">
-                              {formatAmount(shares)} CP
-                            </td>
-                            <td className="py-3 px-4 font-semibold">
-                              {formatAmount(totalPrice)} {txCurrency}
-                            </td>
-                            <td className="py-3 px-4 text-muted-foreground">
-                              {formattedDate}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge className={`text-xs ${statusColor}`}>
-                                {statusLabel}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4 text-xs font-mono">
-                              {txHash !== "-" ? (
-                                <a
-                                  href={`https://www.oklink.com/amoy/tx/${txHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-cyan-400 hover:text-cyan-300 hover:underline break-all"
-                                >
-                                  {formatAddress(txHash)}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>Chưa có lịch sử giao dịch</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <DialogContent
