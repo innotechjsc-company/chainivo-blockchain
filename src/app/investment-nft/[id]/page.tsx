@@ -829,72 +829,68 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Card
-              className="glass cursor-pointer transition-transform hover:scale-[1.01]"
-              role="button"
-              tabIndex={0}
-              onClick={handleOpenCertificateModal}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  handleOpenCertificateModal();
-                }
-              }}
-            >
-              <CardContent className="p-5">
-                <h3 className="font-semibold mb-4 text-white">
-                  Chứng nhận NFT
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      ID NFT trên blockchain
+            {Number(data?.soldShares || 0) > 0 && (
+              <Card
+                className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenCertificateModal}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleOpenCertificateModal();
+                  }
+                }}
+              >
+                <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent)] pointer-events-none" />
+                <CardContent className="relative p-5 space-y-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">Chứng nhận NFT</h3>
                     </div>
-                    <div className="text-sm font-semibold text-white capitalize">
-                      {data?.tokenId || "—"}
+                    <span className="text-xs font-semibold text-white/80 underline underline-offset-4">
+                      Xem chi tiết
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-white/10 p-3 border border-white/20 backdrop-blur-sm">
+                      <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
+                        ID NFT trên blockchain
+                      </p>
+                      <p className="text-sm font-semibold font-mono">
+                        {data?.tokenId || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-white/10 p-3 border border-white/20 backdrop-blur-sm">
+                      <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
+                        Tổng số cổ phần sở hữu
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {(() => {
+                          if (!shareDetail) return "—";
+                          if (
+                            typeof shareDetail === "object" &&
+                            "shares" in shareDetail
+                          ) {
+                            return `${formatAmount(shareDetail.shares)} phần`;
+                          }
+                          if (Array.isArray(shareDetail)) {
+                            const totalShares = shareDetail.reduce(
+                              (sum: number, item: any) =>
+                                sum +
+                                Number(item?.shares || item?.totalShares || 0),
+                              0
+                            );
+                            return `${formatAmount(totalShares)} phần`;
+                          }
+                          return "—";
+                        })()}
+                      </p>
                     </div>
                   </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Tổng số cổ phần sở hữu
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {(() => {
-                        if (!shareDetail) return "—";
-                        if (
-                          typeof shareDetail === "object" &&
-                          "shares" in shareDetail
-                        ) {
-                          return `${formatAmount(shareDetail.shares)} phần`;
-                        }
-                        if (Array.isArray(shareDetail)) {
-                          const totalShares = shareDetail.reduce(
-                            (sum: number, item: any) =>
-                              sum +
-                              Number(item?.shares || item?.totalShares || 0),
-                            0
-                          );
-                          return `${formatAmount(totalShares)} phần`;
-                        }
-                        return "—";
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Đơn giá trung bình
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(averageUserInvestment)}{" "}
-                    </div>
-                  </div> */}
-                </div>
-                <div className="col-span-2 mt-4 text-right text-xs text-muted-foreground">
-                  Nhấn để mở chứng chỉ chi tiết và tải PDF
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="glass">
               <CardContent className="p-5">
