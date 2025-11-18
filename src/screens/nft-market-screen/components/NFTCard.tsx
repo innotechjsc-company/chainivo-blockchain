@@ -267,7 +267,7 @@ export const NFTCard = ({
         <div className="flex gap-2 mt-auto">
           <Button
             variant="default"
-            className="flex-1 gap-2 cursor-pointer"
+            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2  cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               if (onClick) {
@@ -277,7 +277,7 @@ export const NFTCard = ({
               }
             }}
           >
-            Xem chi tiết
+            Mua ngay
           </Button>
         </div>
       </CardContent>

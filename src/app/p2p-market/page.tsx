@@ -22,6 +22,7 @@ import { formatAmount, getLevelBadge, getNFTType } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 import { formatNumber } from "@/utils/formatters";
+import { useAppSelector } from "@/stores";
 
 interface CollectionItem {
   id: string;
@@ -38,6 +39,8 @@ interface MarketItem {
   image?: string;
   level: string;
   type: string;
+  isMinted: boolean;
+  walletAddress: string;
 }
 
 const mockCollections: CollectionItem[] = [
@@ -70,6 +73,7 @@ export default function P2PMarketPage() {
   const [isPriceRangeActive, setIsPriceRangeActive] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
   // Build full image URL from backend or fallback to default
   const getNFTImage = (nft: any): string => {
     const extract = (imageData: any): string | null => {
@@ -491,20 +495,30 @@ export default function P2PMarketPage() {
                             {getNFTType(item.type ?? "normal")}
                           </div>
                         </div>
+                        <div className="text-left">
+                          <div className="text-xs text-muted-foreground">
+                            Đã mint NFT
+                          </div>
+                          <div className="text-lg font-bold">
+                            {item?.isMinted ? "Có" : "Không"}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex gap-2 mt-auto">
-                        <Button
-                          className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
-                          size="sm"
-                          onClick={() => {
-                            router.push(`/nft/${item.id}?type=other`);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                          Mua ngay
-                        </Button>
-                      </div>
+                      {item?.walletAddress !== user?.walletAddress && (
+                        <div className="flex gap-2 mt-auto">
+                          <Button
+                            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
+                            size="sm"
+                            onClick={() => {
+                              router.push(`/nft/${item.id}?type=other`);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                            Mua ngay
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))
