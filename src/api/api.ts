@@ -278,6 +278,11 @@ export const API_ENDPOINTS = {
       `/api/investment/get-transactions/${phaseId}`,
     GET_NEW_TRANSACTIONS: "/api/investment/get-transactions/new-transaction",
   },
+
+  RANK: {
+    LIST: "/api/rank/list",
+    BUY: "/api/rank/buy",
+  },
 } as const;
 
 export interface ApiResponse<T = any> {
@@ -304,7 +309,8 @@ export interface AvatarObject {
 export interface RankObject {
   id: string;
   name: string;
-  requiredPoints: number;
+  level: string;
+  requiredPoints?: number;
   benefits?: string;
   createdAt?: string;
   updatedAt?: string;
