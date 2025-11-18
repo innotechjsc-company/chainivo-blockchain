@@ -59,18 +59,27 @@ export const NFTGridCard = ({
 
   // Xử lý chuyển trang
   const handlePrevious = () => {
-    handlePageClick(localCurrentPage - 1);
+    handlePageClick(currentPage - 1);
   };
 
   const handleNext = () => {
-    handlePageClick(localCurrentPage + 1);
+    handlePageClick(currentPage + 1);
   };
 
   const handlePageClick = (page: number) => {
     if (page === currentPage) {
       return;
     }
-    onPageChange?.(page);
+
+    // Scroll to top khi chuyển trang
+    window.scrollTo({ top: 400, behavior: "smooth" });
+
+    // Cập nhật state hoặc gọi callback
+    if (isControlled) {
+      onPageChange?.(page);
+    } else {
+      setLocalCurrentPage(page);
+    }
   };
 
   // Tính toán các số trang hiển thị - hiển thị tất cả số trang

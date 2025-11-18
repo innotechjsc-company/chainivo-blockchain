@@ -42,7 +42,7 @@ export default function InvestmentNFTDetailPage() {
   const user = useAppSelector((state) => state.auth.user);
   const [showConnectModal, setShowConnectModal] = useState<boolean>(false);
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
-  const [shareDetail, setShareDetail] = useState<any>(null);
+  const [shareDetail, setShareDetail] = useState<any[]>([]);
   const [shareDetailLoading, setShareDetailLoading] = useState<boolean>(false);
   const [showAllShareDetail, setShowAllShareDetail] = useState<boolean>(false);
   const [certificateModalOpen, setCertificateModalOpen] =
@@ -156,13 +156,14 @@ export default function InvestmentNFTDetailPage() {
       setShareDetailLoading(true);
       const response = await NFTService.getShareDetail({ nftId });
       if (response.success && response.data) {
+        debugger;
         setShareDetail(response.data?.dataDetail);
       } else {
-        setShareDetail(null);
+        setShareDetail([]);
       }
     } catch (error) {
       console.error("Error fetching share detail:", error);
-      setShareDetail(null);
+      setShareDetail([]);
     } finally {
       setShareDetailLoading(false);
     }
@@ -812,7 +813,11 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            {Number(data?.soldShares || 0) > 0 && (
+            {Number(data?.soldShares || 0) > 0 &&
+            shareDetail &&
+            shareDetail?.some(
+              (item: any) => item?.buyer?.walletAddress === user?.walletAddress
+            ) ? (
               <Card
                 className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
                 role="button"
@@ -852,7 +857,7 @@ export default function InvestmentNFTDetailPage() {
                       </p>
                       <p className="text-sm font-semibold">
                         {(() => {
-                          if (!shareDetail) return "—";
+                          if (!shareDetail.length) return "—";
                           if (
                             typeof shareDetail === "object" &&
                             "shares" in shareDetail
@@ -860,18 +865,40 @@ export default function InvestmentNFTDetailPage() {
                             return `${formatAmount(shareDetail.shares)} phần`;
                           }
                           if (Array.isArray(shareDetail)) {
-                            const totalShares = shareDetail.reduce(
-                              (sum: number, item: any) =>
-                                sum +
-                                Number(item?.shares || item?.totalShares || 0),
-                              0
+                            const myShares = shareDetail.find(
+                              (item: any) =>
+                                item?.buyer?.walletAddress ===
+                                user?.walletAddress
                             );
-                            return `${formatAmount(totalShares)} phần`;
+                            return `${formatAmount(
+                              myShares?.shares || myShares?.totalShares || 0
+                            )} phần`;
                           }
                           return "—";
                         })()}
                       </p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card
+                className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
+                role="banner"
+                tabIndex={0}
+              >
+                <CardContent className="relative p-5 space-y-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">
+                        Chứng nhận cổ phần của tôi
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="rounded-lg ">
+                    <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
+                      Sau khi mua cổ phần, bạn sẽ nhận được chứng chỉ NFT
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -980,13 +1007,13 @@ export default function InvestmentNFTDetailPage() {
                 ) : shareDetail ? (
                   <div className="space-y-4">
                     {/* Tổng số cổ phần đã mua */}
-                    {shareDetail.shares !== undefined && (
+                    {shareDetail.length > 0 && (
                       <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-4">
                         <div className="text-xs text-muted-foreground mb-1">
                           Danh sách người mua cổ phần
                         </div>
                         <div className="text-2xl font-bold text-cyan-400">
-                          {formatAmount(shareDetail.shares)} CP
+                          {formatAmount(shareDetail.length)} CP
                         </div>
                       </div>
                     )}
