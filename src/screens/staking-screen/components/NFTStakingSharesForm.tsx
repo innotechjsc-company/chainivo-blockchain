@@ -103,6 +103,13 @@ export const NFTStakingSharesForm = ({
     nftPrice >= (selectedPoolData.minStake || 0) &&
     nftPrice <= (selectedPoolData.maxStake || Infinity);
 
+  // Kiểm tra điều kiện staking: allowStakingOfShares === false HOẶC (allowStakingOfShares === true VÀ isStaking === true)
+  const isNotEligibleForStaking =
+    selectedUserNFT &&
+    (selectedUserNFT.allowStakingOfShares === false ||
+      (selectedUserNFT.allowStakingOfShares === true &&
+        selectedUserNFT?.nft?.isStaking === true));
+
   const fetchMyNFTOwnerships = async () => {
     if (!userInfo || !userInfo.walletAddress) {
       setInvestNFTs([]);
@@ -462,6 +469,15 @@ export const NFTStakingSharesForm = ({
                 </div>
               )}
             </div>
+            {isNotEligibleForStaking && (
+              <div className="p-4 bg-red-500/10 rounded-lg space-y-2 border border-red-500/20 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-red-500">
+                    ⚠️ NFT không đủ điều kiện để staking
+                  </span>
+                </div>
+              </div>
+            )}
             {selectedUserNFT?.isStaking === true && (
               <div className="p-4 bg-red-500/10 rounded-lg space-y-2 border border-red-500/20 animate-fade-in">
                 <div className="flex items-center gap-2">
@@ -497,7 +513,9 @@ export const NFTStakingSharesForm = ({
               <Button
                 type="submit"
                 className="w-full h-12 text-lg cursor-pointer"
-                disabled={selectedUserNFT?.isStaking === true}
+                disabled={
+                  selectedUserNFT?.isStaking === true || isNotEligibleForStaking
+                }
               >
                 <Zap className="h-5 w-5 mr-2" />
                 {loading || isLoading

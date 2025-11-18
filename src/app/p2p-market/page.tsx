@@ -492,6 +492,7 @@ export default function P2PMarketPage() {
                           </div>
                         </div>
                       </div>
+
                       <div className="flex gap-2 mt-auto">
                         <Button
                           className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"

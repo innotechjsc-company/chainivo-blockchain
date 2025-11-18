@@ -253,7 +253,8 @@ export function ListNFTDialog({
                 <div className="flex-1">
                   <p className="font-medium">{nft.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Giá gốc: {nft.price} {nft.currency.toUpperCase()}
+                    Giá gốc: {Number(nft.price).toLocaleString("vi-VN")}{" "}
+                    {nft.currency.toUpperCase()}
                   </p>
                 </div>
               </div>
