@@ -16,7 +16,7 @@ export const NFTMarketplace = () => {
   const {
     mysteryBoxData,
     loading,
-  } = useNFTFilters([]);
+  } = useNFTFilters([], true);
 
   // Fetch featured NFTs from API - similar to otherNFTsData
   useEffect(() => {
