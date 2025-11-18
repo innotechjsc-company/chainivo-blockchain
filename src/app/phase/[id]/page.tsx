@@ -32,7 +32,11 @@ import { LiveTransactionFeed } from "@/screens/phase-screen/component/LiveTransa
 import PhaseService, { Phase } from "@/api/services/phase-service";
 import TransferService, { TransferParams } from "@/services/TransferService";
 import { useAuth } from "@/components/header/hooks/useAuth";
-import { config } from "@/api/config";
+import {
+  config,
+  TOKEN_DEAULT_CURRENCY,
+  TOKEN_DEAULT_CURRENCY_INVESTMENT,
+} from "@/api/config";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/services/ToastService";
 import { formatAmount } from "@/lib/utils";
@@ -62,7 +66,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
   // Kiểm tra query param scrollToTop và scrollToCalculator
   const shouldScrollToTop = searchParams?.get("scrollToTop") === "true";
-  const shouldScrollToCalculator = searchParams?.get("scrollToCalculator") === "true";
+  const shouldScrollToCalculator =
+    searchParams?.get("scrollToCalculator") === "true";
   useEffect(() => {
     let isMounted = true;
     async function fetchPhase() {
@@ -391,7 +396,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     ${phase.pricePerToken}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    USD per CAN
+                    {TOKEN_DEAULT_CURRENCY_INVESTMENT} per{" "}
+                    {TOKEN_DEAULT_CURRENCY}
                   </p>
                 </CardContent>
               </Card>
@@ -429,7 +435,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     {remainingMillions}M
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    CAN tokens
+                    {TOKEN_DEAULT_CURRENCY} tokens
                   </p>
                 </CardContent>
               </Card>
@@ -448,7 +454,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     ${phase.totalRaised?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    USD raised
+                    {TOKEN_DEAULT_CURRENCY_INVESTMENT} raised
                   </p>
                 </CardContent>
               </Card>
@@ -525,7 +531,8 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       min="0"
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Giá mỗi token: ${phase.pricePerToken} / CAN
+                      Giá mỗi token: ${phase.pricePerToken} /{" "}
+                      {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                     </p>
                   </div>
 
@@ -541,13 +548,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                             : "text-muted-foreground"
                         }
                       >
-                        {formatAmount(bonusTokens)} CAN
+                        {formatAmount(bonusTokens)} {TOKEN_DEAULT_CURRENCY}
                       </span>
                     </div>
                     <div className="border-t border-primary/20 pt-3 flex justify-between">
                       <span className="font-semibold">Tổng nhận được:</span>
                       <span className="text-2xl font-bold gradient-text">
-                        {formatAmount(totalTokens)} CAN
+                        {formatAmount(totalTokens)} {TOKEN_DEAULT_CURRENCY}
                       </span>
                     </div>
                   </div>

@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import MyNFTScreen from "@/screens/my-nft-screen";
 import { DigitizingNftScreen } from "@/screens/digitizing-nft-screen";
 import { DigitizationRequestList } from "@/components/account/DigitizationRequestList";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface Profile {
   name: string;
@@ -410,7 +411,7 @@ export default function AccountManagementPage() {
                       Số dư TOKEN
                     </div>
                     <div className="text-2xl font-bold gradient-text">
-                      {canBalance?.toLocaleString()} CAN
+                      {canBalance?.toLocaleString()} {TOKEN_DEAULT_CURRENCY}
                     </div>
                   </div>
                   <div className="glass p-4 rounded-lg">
