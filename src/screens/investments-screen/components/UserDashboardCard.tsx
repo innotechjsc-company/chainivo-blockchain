@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, TrendingUp, Award, Activity, Clock } from "lucide-react";
+import { TOKEN_DEAULT_CURRENCY_INVESTMENT } from "@/api/config";
 
 interface UserProfile {
   username: string;
@@ -141,7 +142,9 @@ export const UserDashboardCard = ({
               <div className="text-2xl font-bold text-secondary">
                 ${profile.total_invested?.toLocaleString() || 0}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">USD</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {TOKEN_DEAULT_CURRENCY_INVESTMENT}
+              </p>
             </CardContent>
           </Card>
 

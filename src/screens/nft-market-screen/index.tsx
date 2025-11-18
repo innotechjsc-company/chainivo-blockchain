@@ -5,6 +5,7 @@ import { NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 import { NFTMarketHeaderCardMarketNft } from "./components/NFTMarketHeaderCardMarketNft";
+import { NFTGridSteryBoxCard } from "./components/NFTGridSteryBoxCard";
 
 export default function NFTMarketScreen() {
   const { nfts } = useNFTData();
@@ -62,6 +63,14 @@ export default function NFTMarketScreen() {
           <>
             {otherNFTsData.length > 0 && (
               <div className="mb-8">
+                <NFTGridSteryBoxCard
+                  nfts={mysteryBoxData}
+                  title="NFT Hộp bí ẩn"
+                  initialCount={9}
+                  totalPages={mysteryBoxTotalPages}
+                  currentPage={mysteryBoxCurrentPage}
+                  onPageChange={(page) => fetchMysteryBoxNFTs(page, 9)}
+                />
                 <NFTGridCard
                   nfts={otherNFTsData}
                   title="NFT Marketplace"
@@ -69,14 +78,6 @@ export default function NFTMarketScreen() {
                   totalPages={totalPages}
                   currentPage={currentPage}
                   onPageChange={(page) => fetchOtherNFTs(page, 9)}
-                />
-                <NFTGridCard
-                  nfts={mysteryBoxData}
-                  title="NFT Hộp bí ẩn"
-                  initialCount={9}
-                  totalPages={mysteryBoxTotalPages}
-                  currentPage={mysteryBoxCurrentPage}
-                  onPageChange={(page) => fetchMysteryBoxNFTs(page, 9)}
                 />
               </div>
             )}

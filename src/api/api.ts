@@ -3,8 +3,8 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService, ToastService } from "@/services";
-import { AuthService } from "./services/auth-service";
 import router from "next/router";
+import { AuthService } from "./services/auth-service";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -54,8 +54,9 @@ api.interceptors.response.use(
     // Neu loi 401 -> thu refresh token truoc khi logout
     if (error.response?.status === 401) {
       // Kiem tra xem co phai la refresh token request khong (tranh vong lap)
-      const isRefreshTokenRequest =
-        originalRequest.url?.includes("/api/users/refresh-token");
+      const isRefreshTokenRequest = originalRequest.url?.includes(
+        "/api/users/refresh-token"
+      );
 
       // Neu la refresh token request ma van bi 401 -> token khong hop le, logout
       if (isRefreshTokenRequest) {

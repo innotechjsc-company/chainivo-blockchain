@@ -12,6 +12,7 @@ import {
   TOKEN_DEAULT_CURRENCY_INVESTMENT,
 } from "@/api/config";
 
+// investments
 interface InvestmentPhasesCardProps {
   phases: Phase[];
   isLoading: boolean;
@@ -35,6 +36,13 @@ export const InvestmentPhasesCard = ({
   const isLoading = isLoadingProps || false;
   const error = errorProps || null;
 // investments
+
+  // Handler cho card click - scroll to top khi navigate
+  const handleCardClick = (phaseId: string) => {
+    // Thêm query param để đánh dấu cần scroll to top
+    router.push(`/phase/${phaseId}?scrollToTop=true`);
+  };
+
   return (
     <section id="invest" className="py-20 relative">
       <div className="container mx-auto px-4">
@@ -102,7 +110,8 @@ export const InvestmentPhasesCard = ({
             phases.map((phase, index) => (
               <Card
                 key={phase.id}
-                className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
+                onClick={() => handleCardClick(phase.id)}
+                className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 cursor-pointer ${
                   phase.status === "active"
                     ? "border-2 border-primary animate-glow"
                     : ""
@@ -132,35 +141,45 @@ export const InvestmentPhasesCard = ({
                 </div>
 
                 {/* Phase Info */}
-                <div className="space-y-4 mt-8">
-                  <h3 className="text-2xl font-bold">{phase.name}</h3>
+                <div className="space-y-3 mt-8">
+                  <h3 className="text-xl font-bold">{phase.name}</h3>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Tổng cung:</span>
-                      <span className="text-xl font-semibold gradient-text">
+                      <span className="text-sm text-muted-foreground">
+                        Tổng cung:
+                      </span>
+                      <span className="text-base font-semibold gradient-text">
                         {phase.totalTokens.toLocaleString("en-US")}{" "}
                         {TOKEN_DEAULT_CURRENCY}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Giá bán:</span>
-                      <span className="text-xl text-primary">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Giá bán:
+                      </span>
+                      <span className="text-base font-semibold text-primary">
                         {phase.pricePerToken} {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                       </span>
                     </div>
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Đã bán:</span>
-                      <span className="font-semibold">{phase.soldTokens}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Đã bán:
+                      </span>
+                      <span className="text-base font-semibold">
+                        {phase.soldTokens}
+                      </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Tiến độ</span>
-                      <span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Tiến độ:
+                      </span>
+                      <span className="text-sm font-semibold">
                         {Math.round(
                           (phase.totalTokens > 0
                             ? (phase.soldTokens / phase.totalTokens) * 100
@@ -168,6 +187,48 @@ export const InvestmentPhasesCard = ({
                         )}
                         %
                       </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Thời gian:
+                      </span>
+                      {phase.startDate && phase.endDate ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-white/90">
+                            {(() => {
+                              try {
+                                return new Date(
+                                  phase.startDate
+                                ).toLocaleDateString("vi-VN", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                });
+                              } catch {
+                                return phase.startDate;
+                              }
+                            })()}
+                          </span>
+                          <span className="text-sm text-white/60">-</span>
+                          <span className="text-sm text-white/90">
+                            {(() => {
+                              try {
+                                return new Date(
+                                  phase.endDate
+                                ).toLocaleDateString("vi-VN", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                });
+                              } catch {
+                                return phase.endDate;
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-white/60">—</span>
+                      )}
                     </div>
                     <Progress
                       value={
@@ -200,7 +261,13 @@ export const InvestmentPhasesCard = ({
                         phase.status === "active" ? "default" : "outline"
                       }
                       disabled={phase.status !== "active"}
-                      onClick={() => router.push(`/phase/${phase.id}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Thêm query param để scroll đến phần đầu tư
+                        router.push(
+                          `/phase/${phase.id}?scrollToCalculator=true`
+                        );
+                      }}
                     >
                       {phase.status === "active"
                         ? "Đầu tư ngay"

@@ -7,6 +7,7 @@ import {
   UserProfile,
   useUserProfile,
 } from "@/screens/investments-screen/hooks/useUserProfile";
+import { TOKEN_DEAULT_CURRENCY_INVESTMENT } from "@/api/config";
 
 export const UserDashboard = () => {
   const { profile, loading, error } = useUserProfile();
@@ -61,7 +62,9 @@ export const UserDashboard = () => {
               <div className="text-2xl font-bold text-secondary">
                 ${profile.total_invested?.toLocaleString() || 0}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">USD</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {TOKEN_DEAULT_CURRENCY_INVESTMENT}
+              </p>
             </CardContent>
           </Card>
 

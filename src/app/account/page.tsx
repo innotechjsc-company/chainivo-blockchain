@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import MyNFTScreen from "@/screens/my-nft-screen";
 import { DigitizingNftScreen } from "@/screens/digitizing-nft-screen";
 import { DigitizationRequestList } from "@/components/account/DigitizationRequestList";
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 
 interface Profile {
   name: string;
@@ -133,11 +134,8 @@ export default function AccountManagementPage() {
 
   const handleTabChange = (value: string) => {
     setTabValue(value);
-    if (value === "wallet") {
-      router.replace("/account?section=wallet");
-    } else {
-      router.replace("/account");
-    }
+    // Luôn lưu tab value vào URL để giữ nguyên khi reload
+    router.replace(`/account?section=${value}`);
   };
 
   // Validation: Chi cho phep chu (co dau), so, khoang trang
@@ -145,11 +143,11 @@ export default function AccountManagementPage() {
     const trimmedName = name.trim();
 
     if (trimmedName.length === 0) {
-      return "Ten khong duoc de trong";
+      return "Tên không được để trống";
     }
 
     if (trimmedName.length > 100) {
-      return "Ten khong duoc vuot qua 100 ky tu";
+      return "Ten khong duoc vuot qua 100 ky tu ";
     }
 
     // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
@@ -413,7 +411,7 @@ export default function AccountManagementPage() {
                       Số dư TOKEN
                     </div>
                     <div className="text-2xl font-bold gradient-text">
-                      {canBalance?.toLocaleString()} CAN
+                      {canBalance?.toLocaleString()} {TOKEN_DEAULT_CURRENCY}
                     </div>
                   </div>
                   <div className="glass p-4 rounded-lg">
@@ -436,6 +434,189 @@ export default function AccountManagementPage() {
                       ${profile?.total_invested?.toLocaleString()}
                     </div>
                   </div>
+                </div>
+
+                {/* Thông tin chi tiết của user */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Email
+                    </div>
+                    <div className="text-base font-medium">
+                      {user?.email || "—"}
+                    </div>
+                  </div>
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Địa chỉ ví
+                    </div>
+                    <div className="text-base font-mono text-xs break-all">
+                      {user?.walletAddress || "Chưa kết nối"}
+                    </div>
+                  </div>
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Vai trò
+                    </div>
+                    <div className="text-base font-medium capitalize">
+                      {user?.role || "user"}
+                    </div>
+                  </div>
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Điểm tích lũy
+                    </div>
+                    <div className="text-base font-bold gradient-text">
+                      {user?.points?.toLocaleString() || 0} điểm
+                    </div>
+                  </div>
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Mã giới thiệu
+                    </div>
+                    <div className="text-base font-mono font-medium">
+                      {user?.refCode || "—"}
+                    </div>
+                  </div>
+                  <div className="glass p-4 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Đăng nhập lần cuối
+                    </div>
+                    <div className="text-base font-medium">
+                      {user?.lastLogin
+                        ? new Date(user.lastLogin).toLocaleString("vi-VN")
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trạng thái xác minh */}
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold mb-3">
+                    Trạng thái xác minh
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="glass p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Xác minh Email
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isEmailVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
+                        >
+                          {user?.isEmailVerified
+                            ? "Đã xác minh"
+                            : "Chưa xác minh"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="glass p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Xác minh KYC
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isKYCVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
+                        >
+                          {user?.isKYCVerified
+                            ? "Đã xác minh"
+                            : "Chưa xác minh"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="glass p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Xác minh Ví
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isWalletVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
+                        >
+                          {user?.isWalletVerified
+                            ? "Đã xác minh"
+                            : "Chưa xác minh"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bio nếu có */}
+                {user?.bio && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold mb-3">Giới thiệu</h4>
+                    <div className="glass p-4 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        {user.bio}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thông tin tài khoản */}
+                <div className="mb-6 pt-6 border-t border-white/10">
+                  <h4 className="text-lg font-semibold mb-3">
+                    Thông tin tài khoản
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Trạng thái tài khoản
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isActive && !user?.isSuspended
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-red-500/20 text-red-500"
+                          }`}
+                        >
+                          {user?.isSuspended
+                            ? "Đã bị khóa"
+                            : user?.isActive
+                            ? "Hoạt động"
+                            : "Không hoạt động"}
+                        </span>
+                      </div>
+                      {user?.suspensionReason && (
+                        <p className="text-xs text-red-500 mt-2">
+                          Lý do: {user.suspensionReason}
+                        </p>
+                      )}
+                    </div>
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Ngày tạo tài khoản
+                      </div>
+                      <div className="text-base font-medium">
+                        {user?.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+                          : "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsChangePasswordOpen(true)}
+                  >
+                    Thay đổi mật khẩu
+                  </Button>
                 </div>
               </Card>
             </TabsContent>

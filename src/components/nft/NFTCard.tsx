@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/stores";
 import TransferService from "@/services/TransferService";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -88,6 +89,7 @@ export default function NFTCard({
   const [mintingFeeLoading, setMintingFeeLoading] = useState(false);
   const [payingMintingFee, setPayingMintingFee] = useState(false);
   const [mintingFeeError, setMintingFeeError] = useState<string | null>(null);
+  const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -310,17 +312,19 @@ export default function NFTCard({
       const nftPrice = getNftBasePrice();
 
       let calculatedAmount = 0;
-      if (feeValue > 0) {
-        calculatedAmount =
-          feeType === "fixed" ? feeValue : (nftPrice * feeValue) / 100;
+      if (feeValue > 0 && feeType === "percentage") {
+        calculatedAmount = (nftPrice * feeValue) / 100;
+        debugger;
+      } else if (feeValue > 0 && feeType === "fixed") {
+        calculatedAmount = feeValue;
+        debugger;
       }
-
       setMintingFeeDetails({
         type: feeType,
         value: feeValue,
       });
       setMintingFeeAmount(calculatedAmount);
-
+      debugger;
       if (!mintingFeeConfig || feeValue === 0) {
         toast.info(
           "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
@@ -337,14 +341,22 @@ export default function NFTCard({
     }
   };
 
-  const handlePayMintingFee = async () => {
+  const handlePayMintingFee = async (e?: React.MouseEvent) => {
+    // Ngăn chặn event bubble lên card onClick
+    e?.preventDefault();
+    e?.stopPropagation();
+
     if (mintingFeeLoading) return;
 
     const amount = mintingFeeAmount ?? 0;
-
     if (amount <= 0) {
       setWithdrawDialogOpen(false);
-      await handleWithdrawConfirm();
+      setShowLoadingSpinner(true);
+      try {
+        await handleWithdrawConfirm();
+      } finally {
+        setShowLoadingSpinner(false);
+      }
       return;
     }
 
@@ -354,6 +366,7 @@ export default function NFTCard({
     }
 
     setPayingMintingFee(true);
+    setShowLoadingSpinner(true);
     try {
       await TransferService.sendCanTransfer({
         fromAddress: walletAddress,
@@ -375,6 +388,7 @@ export default function NFTCard({
       toast.error(errorMessage);
     } finally {
       setPayingMintingFee(false);
+      setShowLoadingSpinner(false);
     }
   };
 
@@ -416,7 +430,7 @@ export default function NFTCard({
           responseData?.token?.id ??
           (nft as any)?.tokenId ??
           (nft as any)?.token_id;
-
+        debugger;
         // Tạo link tra cứu giao dịch
         const explorerUrl = contractAddress
           ? `https://amoy.polygonscan.com/token/${contractAddress}${
@@ -615,29 +629,29 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
 
       {/* Card content */}
       <div className="flex flex-col flex-1 p-4 space-y-3">
-        {/* Tên NFT */}
-        <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
-          {(nft as any)?.name}
+        {/* Tên NFT - Fixed height */}
+        <h3 className="text-lg font-bold line-clamp-1 text-gray-100 min-h-[1.5rem]">
+          {(nft as any)?.name || "—"}
         </h3>
 
-        {/* Mô tả */}
-        {(nft as any)?.description && (
-          <p className="text-sm text-gray-400 line-clamp-2">
-            {(nft as any)?.description}
-          </p>
-        )}
+        {/* Mô tả - Fixed height */}
+        <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem]">
+          {(nft as any)?.description || "—"}
+        </p>
 
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === "mysteryBox" ? (
           <div className="flex flex-col flex-1 gap-3">
             {/* Divider */}
             <div className="border-t border-gray-700" />
-            {/* Giá hộp */}
-            <div className="flex items-center justify-between">
+            {/* Giá hộp - Fixed height */}
+            <div className="flex items-center justify-between min-h-[1.75rem]">
               <span className="text-sm text-gray-400">Giá hộp:</span>
               <span className="text-lg font-bold text-gray-100">
-                {formatNumber(nft.price)}{" "}
-                <span className="text-sm uppercase">{nft.currency}</span>
+                {formatNumber(nft.price || 0)}{" "}
+                <span className="text-sm uppercase">
+                  {nft.currency ? nft.currency.toUpperCase() : "CAN"}
+                </span>
               </span>
             </div>
 
@@ -647,9 +661,9 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
         ) : (
-          <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-3">
-            {/* Giá cho các loại NFT khác */}
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-2">
+            {/* Giá cho các loại NFT khác - Fixed height */}
+            <div className="flex items-center justify-between min-h-[1.75rem]">
               <span className="text-sm text-gray-400">
                 {nft.type === "investment" ? "Giá/cổ phần:" : "Giá:"}
               </span>
@@ -659,7 +673,8 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                     (nft as any)?.nft?.salePrice ??
                     (nft as any)?.nft?.price ??
                     nft.salePrice ??
-                    nft.price
+                    nft.price ??
+                    0
                 )}{" "}
                 <span className="text-sm uppercase">
                   {nft.currency
@@ -670,15 +685,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </span>
               </span>
             </div>
-            {nft.shares && nft.shares > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Cổ phần nắm giữ:</span>
-                <span className="text-lg font-bold text-gray-100">
-                  {formatNumber(nft.shares)}
-                  <span className="text-sm uppercase">{nft.currency}</span>
-                </span>
-              </div>
-            )}
 
             {/* Investment-specific content */}
             {nft.type === "investment" &&
@@ -700,36 +706,29 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </>
               )}
 
-            {/* Stats cho Normal/Rank NFT */}
-            {(nft.type === "normal" || nft.type === "rank") && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <span></span>
-                  <span></span>
-                </div>
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            )}
-
-            {/* My NFT specific content */}
+            {/* My NFT specific content - Fixed height */}
             {type === "my-nft" && (
               <div className="space-y-2">
-                {/* Staking status */}
-                <div className="flex items-center justify-between">
+                {/* Staking status - Fixed height */}
+                <div className="flex items-center justify-between min-h-[1.5rem]">
                   <span className="text-sm text-gray-400">Staking:</span>
                   <span className="text-sm font-medium text-gray-100">
                     {(nft as any).isStaking === true ? "Có" : "Chưa"}
                   </span>
                 </div>
+                {/* Minted status - Fixed height */}
+                <div className="flex items-center justify-between min-h-[1.5rem]">
+                  <span className="text-sm text-gray-400">Minted:</span>
+                  <span className="text-sm font-medium text-gray-100">
+                    {(nft as any).isMinted === true ? "Đã Mint" : "Chưa Mint"}
+                  </span>
+                </div>
               </div>
             )}
+            {/* Trạng thái bán - Fixed height */}
             {nft.isSale && (
               <div className="space-y-2">
-                {/* Staking status */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between min-h-[1.5rem]">
                   <span className="text-sm text-gray-400">Trạng thái:</span>
                   <span className="text-sm font-medium text-gray-100">
                     Đã bán
@@ -737,11 +736,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </div>
               </div>
             )}
-            {/* {
-              nft.type === "investment" && (
-
-              )
-            } */}
 
             {/* Action button */}
             {actionSection && <div className="mt-auto">{actionSection}</div>}
@@ -758,7 +752,12 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
           }
         }}
       >
-        <DialogContent>
+        <DialogContent
+          onClick={(e) => {
+            // Ngăn chặn event bubble lên card onClick
+            e.stopPropagation();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Thanh toán phí rút NFT</DialogTitle>
             <DialogDescription>
@@ -787,28 +786,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                       : "Phần trăm"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Giá trị cấu hình
-                  </span>
-                  <span className="font-semibold">
-                    {mintingFeeDetails?.type === "fixed"
-                      ? `${formatNumber(
-                          mintingFeeDetails?.value || 0
-                        )} ${TOKEN_DEAULT_CURRENCY}`
-                      : `${mintingFeeDetails?.value || 0}%`}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Giá NFT</span>
-                  <span className="font-semibold">
-                    {formatNumber(getNftBasePrice())} {TOKEN_DEAULT_CURRENCY}
-                  </span>
-                </div>
+
                 <div className="flex items-center justify-between text-base font-semibold text-primary">
                   <span>Tổng phí cần thanh toán</span>
                   <span>
-                    {formatNumber(mintingFeeAmount || 0)}{" "}
+                    {formatNumber(mintingFeeAmount ?? 0)}{" "}
                     {TOKEN_DEAULT_CURRENCY}
                   </span>
                 </div>
@@ -832,7 +814,10 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             <Button
               type="button"
               variant="default"
-              onClick={handlePayMintingFee}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePayMintingFee(e);
+              }}
               disabled={
                 mintingFeeLoading ||
                 payingMintingFee ||
@@ -858,6 +843,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
           </div>,
           document.body
         )}
+
+      {/* Loading spinner cho thanh toán phí minting */}
+      {showLoadingSpinner &&
+        isMounted &&
+        createPortal(<LoadingSpinner />, document.body)}
 
       {/* Modal thông báo thành công */}
       <Dialog
