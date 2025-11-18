@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,6 +45,7 @@ interface PhaseDetailPageProps {
 
 export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,10 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const calculatorRef = useRef<HTMLDivElement>(null);
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
+
+  // Kiểm tra query param scrollToTop và scrollToCalculator
+  const shouldScrollToTop = searchParams?.get("scrollToTop") === "true";
+  const shouldScrollToCalculator = searchParams?.get("scrollToCalculator") === "true";
   useEffect(() => {
     let isMounted = true;
     async function fetchPhase() {
@@ -68,12 +73,32 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
         if (isMounted) {
           if (res.success && res.data) {
             setPhase(res.data);
-            // Auto-scroll to calculator section after data loads
+            // Xử lý scroll dựa trên query param
             setTimeout(() => {
-              calculatorRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              });
+              if (shouldScrollToTop) {
+                // Scroll to top nếu có scrollToTop query param
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                // Xóa query param sau khi scroll
+                router.replace(`/phase/${resolvedParams?.id}`, {
+                  scroll: false,
+                });
+              } else if (shouldScrollToCalculator) {
+                // Scroll đến calculator section nếu có scrollToCalculator query param
+                calculatorRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                // Xóa query param sau khi scroll
+                router.replace(`/phase/${resolvedParams?.id}`, {
+                  scroll: false,
+                });
+              } else {
+                // Mặc định: auto-scroll to calculator section
+                calculatorRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }
             }, 500);
           } else {
             setError(res.error || "Không thể tải dữ liệu giai đoạn");
@@ -139,10 +164,10 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
     // Xử lý bonus - kiểm tra undefined, null, NaN và clamp 0-100%
     let bonus = phase.bonus ?? 0; // Default 0 nếu undefined/null
-    if (typeof bonus !== 'number' || isNaN(bonus)) {
+    if (typeof bonus !== "number" || isNaN(bonus)) {
       bonus = 0;
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Phase bonus không hợp lệ, sử dụng mặc định 0%');
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Phase bonus không hợp lệ, sử dụng mặc định 0%");
       }
     }
     // Clamp bonus trong khoảng [0, 100]
@@ -509,7 +534,13 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <span className="text-muted-foreground">
                         Bonus ({bonus.toFixed(1)}%):
                       </span>
-                      <span className={bonus > 0 ? "font-bold text-emerald-400" : "text-muted-foreground"}>
+                      <span
+                        className={
+                          bonus > 0
+                            ? "font-bold text-emerald-400"
+                            : "text-muted-foreground"
+                        }
+                      >
                         {formatAmount(bonusTokens)} CAN
                       </span>
                     </div>
@@ -808,7 +839,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
               const baseTokens = usdcAmount / Number(phase.pricePerToken);
               // Xu ly bonus - kiem tra undefined, null, NaN va clamp 0-100%
               let phaseBonus = phase.bonus ?? 0;
-              if (typeof phaseBonus !== 'number' || isNaN(phaseBonus)) {
+              if (typeof phaseBonus !== "number" || isNaN(phaseBonus)) {
                 phaseBonus = 0;
               }
               const validBonus = Math.max(0, Math.min(100, phaseBonus));

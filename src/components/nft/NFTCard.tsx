@@ -629,29 +629,29 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
 
       {/* Card content */}
       <div className="flex flex-col flex-1 p-4 space-y-3">
-        {/* Tên NFT */}
-        <h3 className="text-lg font-bold line-clamp-1 text-gray-100">
-          {(nft as any)?.name}
+        {/* Tên NFT - Fixed height */}
+        <h3 className="text-lg font-bold line-clamp-1 text-gray-100 min-h-[1.5rem]">
+          {(nft as any)?.name || "—"}
         </h3>
 
-        {/* Mô tả */}
-        {(nft as any)?.description && (
-          <p className="text-sm text-gray-400 line-clamp-2">
-            {(nft as any)?.description}
-          </p>
-        )}
+        {/* Mô tả - Fixed height */}
+        <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem]">
+          {(nft as any)?.description || "—"}
+        </p>
 
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === "mysteryBox" ? (
           <div className="flex flex-col flex-1 gap-3">
             {/* Divider */}
             <div className="border-t border-gray-700" />
-            {/* Giá hộp */}
-            <div className="flex items-center justify-between">
+            {/* Giá hộp - Fixed height */}
+            <div className="flex items-center justify-between min-h-[1.75rem]">
               <span className="text-sm text-gray-400">Giá hộp:</span>
               <span className="text-lg font-bold text-gray-100">
-                {formatNumber(nft.price)}{" "}
-                <span className="text-sm uppercase">{nft.currency}</span>
+                {formatNumber(nft.price || 0)}{" "}
+                <span className="text-sm uppercase">
+                  {nft.currency ? nft.currency.toUpperCase() : "CAN"}
+                </span>
               </span>
             </div>
 
@@ -661,9 +661,9 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             {actionSection && <div className="mt-auto">{actionSection}</div>}
           </div>
         ) : (
-          <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-3">
-            {/* Giá cho các loại NFT khác */}
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col flex-1 border-t border-gray-700 pt-3 space-y-2">
+            {/* Giá cho các loại NFT khác - Fixed height */}
+            <div className="flex items-center justify-between min-h-[1.75rem]">
               <span className="text-sm text-gray-400">
                 {nft.type === "investment" ? "Giá/cổ phần:" : "Giá:"}
               </span>
@@ -673,7 +673,8 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                     (nft as any)?.nft?.salePrice ??
                     (nft as any)?.nft?.price ??
                     nft.salePrice ??
-                    nft.price
+                    nft.price ??
+                    0
                 )}{" "}
                 <span className="text-sm uppercase">
                   {nft.currency
@@ -684,15 +685,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </span>
               </span>
             </div>
-            {nft.shares && nft.shares > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Cổ phần nắm giữ:</span>
-                <span className="text-lg font-bold text-gray-100">
-                  {formatNumber(nft.shares)}
-                  <span className="text-sm uppercase">{nft.currency}</span>
-                </span>
-              </div>
-            )}
 
             {/* Investment-specific content */}
             {nft.type === "investment" &&
@@ -714,36 +706,29 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </>
               )}
 
-            {/* Stats cho Normal/Rank NFT */}
-            {(nft.type === "normal" || nft.type === "rank") && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <span></span>
-                  <span></span>
-                </div>
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            )}
-
-            {/* My NFT specific content */}
+            {/* My NFT specific content - Fixed height */}
             {type === "my-nft" && (
               <div className="space-y-2">
-                {/* Staking status */}
-                <div className="flex items-center justify-between">
+                {/* Staking status - Fixed height */}
+                <div className="flex items-center justify-between min-h-[1.5rem]">
                   <span className="text-sm text-gray-400">Staking:</span>
                   <span className="text-sm font-medium text-gray-100">
                     {(nft as any).isStaking === true ? "Có" : "Chưa"}
                   </span>
                 </div>
+                {/* Minted status - Fixed height */}
+                <div className="flex items-center justify-between min-h-[1.5rem]">
+                  <span className="text-sm text-gray-400">Minted:</span>
+                  <span className="text-sm font-medium text-gray-100">
+                    {(nft as any).isMinted === true ? "Đã Mint" : "Chưa Mint"}
+                  </span>
+                </div>
               </div>
             )}
+            {/* Trạng thái bán - Fixed height */}
             {nft.isSale && (
               <div className="space-y-2">
-                {/* Staking status */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between min-h-[1.5rem]">
                   <span className="text-sm text-gray-400">Trạng thái:</span>
                   <span className="text-sm font-medium text-gray-100">
                     Đã bán
@@ -751,11 +736,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </div>
               </div>
             )}
-            {/* {
-              nft.type === "investment" && (
-
-              )
-            } */}
 
             {/* Action button */}
             {actionSection && <div className="mt-auto">{actionSection}</div>}

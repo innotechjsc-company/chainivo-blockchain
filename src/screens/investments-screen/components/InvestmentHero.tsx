@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/chart";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Phase } from "@/api";
-import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import {
+  TOKEN_DEAULT_CURRENCY,
+  TOKEN_DEAULT_CURRENCY_INVESTMENT,
+} from "@/api/config";
 
 interface BlockchainData {
   total_can_supply: number;
@@ -179,8 +182,8 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
                     {
                       phases.find((p: Phase) => p.status === "active")
                         ?.pricePerToken
-                    }
-                    /{TOKEN_DEAULT_CURRENCY}
+                    }{" "}
+                    {TOKEN_DEAULT_CURRENCY_INVESTMENT}/{TOKEN_DEAULT_CURRENCY}
                   </div>
                 </div>
 
@@ -231,7 +234,7 @@ export const InvestmentHero: React.FC<InvestmentHeroProps> = ({
 
                 <Button
                   size="default"
-                  className="w-full font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
+                  className="w-full font-semibold shadow-lg bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
                   onClick={() =>
                     router.push(
                       `/phase/${

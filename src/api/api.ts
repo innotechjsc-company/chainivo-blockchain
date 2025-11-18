@@ -3,7 +3,6 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService, ToastService } from "@/services";
-import router from "next/router";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -56,10 +55,15 @@ api.interceptors.response.use(
         LocalStorageService.clearAuthData();
       } catch {}
       if (typeof window !== "undefined") {
-        ToastService.error(
-          "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
-        );
-        router.push("/auth?tab=login");
+        // Kiểm tra xem đã ở trang login chưa để tránh redirect vô hạn
+        const currentPath = window.location.pathname;
+        if (currentPath !== "/auth" && !currentPath.startsWith("/auth")) {
+          ToastService.error(
+            "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+          );
+          // Sử dụng window.location.href để navigate (App Router compatible)
+          window.location.href = "/auth?tab=login";
+        }
       }
       return Promise.reject(error);
     }

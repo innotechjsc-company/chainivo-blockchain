@@ -462,15 +462,17 @@ export default function NFTDetailPage() {
               <h1 className="text-4xl font-bold mb-2">
                 {nftData.name ?? "Không rõ"}
               </h1>
-              <div>
-                <p> Mô tả : </p>
-                <CollapsibleDescription
-                  html={String(nftData?.description || "").replace(
-                    /\n/g,
-                    "<br/>"
-                  )}
-                />
-              </div>
+              {nftData?.description && (
+                <div>
+                  <CollapsibleDescription
+                    html={String(nftData?.description || "").replace(
+                      /\n/g,
+                      "<br/>"
+                    )}
+                  />
+                </div>
+              )}
+
               <p>
                 {user?.walletAddress === nftData?.walletAddress
                   ? "NFT của bạn"
@@ -601,6 +603,52 @@ export default function NFTDetailPage() {
                             return String(nftData.createdAt);
                           }
                         })()}
+                      </div>
+                    </div>
+                  )}
+                  {/* Trạng thái bán */}
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Trạng thái bán
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {(nftData as any)?.isSale === true
+                        ? "Đã bán"
+                        : "Chưa bán"}
+                    </div>
+                  </div>
+                  {/* Trạng thái Mint */}
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Trạng thái Mint
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {(nftData as any)?.isMinted === true
+                        ? "Đã Mint"
+                        : "Chưa Mint"}
+                    </div>
+                  </div>
+                  {/* Trạng thái Staking */}
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Trạng thái Staking
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {(nftData as any)?.isStaking === true
+                        ? "Đang staking"
+                        : "Chưa staking"}
+                    </div>
+                  </div>
+                  {/* Token ID */}
+                  {((nftData as any)?.tokenId ||
+                    (nftData as any)?.token_id) && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Token ID
+                      </div>
+                      <div className="text-sm font-semibold text-white font-mono">
+                        {(nftData as any)?.tokenId ||
+                          (nftData as any)?.token_id}
                       </div>
                     </div>
                   )}
