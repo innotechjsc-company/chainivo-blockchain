@@ -504,308 +504,262 @@ export default function InvestmentNFTDetailPage() {
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
 
-        {/* <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
-        </Button> */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">
-              {data?.name || "NFT Investment"}
-            </h1>
-          </div>
-          {data?.description && (
-            <div className="mb-2">
-              <CollapsibleDescription
-                html={String(data?.description || "").replace(/\n/g, "<br/>")}
+        </Button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Image section */}
+          <div className="space-y-4">
+            <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
+              <img
+                src={imageSrc}
+                alt={data?.name || "NFT"}
+                className="object-cover w-full h-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/nft-box.jpg";
+                }}
               />
-            </div>
-          )}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left: Image and stats */}
-          <div className="lg:col-span-7 flex flex-col">
-            <Card className="border-0 shadow-none bg-transparent  w-full h-[80vh] min-h-[320px]">
-              <div className="relative w-full h-[80vh] min-h-[320px] mx-auto rounded-lg overflow-hidden">
-                <img
-                  src={imageSrc}
-                  alt={data?.name || "NFT"}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) =>
-                    ((e.target as HTMLImageElement).src = "/nft-box.jpg")
-                  }
-                />
-                <button
-                  className="absolute top-4 right-4 w-9 h-9 rounded-full backdrop-blur flex items-center justify-center mr-2"
-                  aria-label="like"
-                >
-                  {data?.level && (
-                    <Badge variant="secondary">
-                      {getLevelBadge(data.level)}
-                    </Badge>
-                  )}
-                </button>
-              </div>
-            </Card>
-            <div className="mt-12 relative z-10">
-              <Card className="glass">
-                <CardContent className="p-6">
-                  <Tabs defaultValue="details" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
-                      <TabsTrigger
-                        value="details"
-                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
-                      >
-                        Chi tiết NFT
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="documents"
-                        className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
-                      >
-                        Tài liệu và tập tin
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="details" className="space-y-4">
-                      <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
-                      {data?.fullDescription ? (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            Mô tả chi tiết:
-                          </p>
-                          <CollapsibleDescription
-                            html={String(
-                              data?.fullDescription?.html
-                                ? data.fullDescription.html
-                                : data.fullDescription
-                                ? data.fullDescription
-                                : ""
-                            ).replace(/\n/g, "<br/>")}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          Không có mô tả chi tiết
-                        </p>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="documents" className="space-y-6">
-                      <h2 className="text-2xl font-bold">
-                        Tài liệu và tập tin
-                      </h2>
-                      {Array.isArray(data?.documents) &&
-                      data.documents.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {data.documents.map((doc: any, idx: number) => {
-                            const docName =
-                              doc?.name ||
-                              doc?.filename ||
-                              `Tài liệu ${idx + 1}`;
-                            const docUrl = doc?.url || doc?.link || "";
-                            const docType =
-                              doc?.type || doc?.mimeType || "file";
-                            const fileSize = doc?.filesize || doc?.size || 0;
-
-                            const formatFileSize = (bytes: number) => {
-                              if (!bytes) return "0 B";
-                              const k = 1024;
-                              const sizes = ["B", "KB", "MB", "GB"];
-                              const i = Math.floor(
-                                Math.log(bytes) / Math.log(k)
-                              );
-                              return `${
-                                Math.round((bytes / Math.pow(k, i)) * 100) / 100
-                              } ${sizes[i]}`;
-                            };
-
-                            const getFileIcon = (type: string) => {
-                              const t = (type || "").toLowerCase();
-                              if (t.includes("pdf")) return "📄";
-                              if (t.includes("image")) return "🖼️";
-                              if (t.includes("video")) return "🎥";
-                              if (t.includes("audio")) return "🎵";
-                              if (t.includes("zip") || t.includes("rar"))
-                                return "📦";
-                              return "📎";
-                            };
-
-                            return (
-                              <a
-                                key={idx}
-                                href={docUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                                    {getFileIcon(docType)}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
-                                      {docName}
-                                    </h3>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {formatFileSize(fileSize)}
-                                    </p>
-                                    {docType && (
-                                      <div className="mt-2 inline-flex text-xs px-2 py-1 rounded bg-primary/20 text-primary">
-                                        {(
-                                          docType.split("/")[1] || docType
-                                        ).toUpperCase()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground py-12">
-                          <p>Không có tài liệu</p>
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+              {data?.level && (
+                <div className="absolute top-3 right-3">
+                  <Badge variant="secondary">{getLevelBadge(data.level)}</Badge>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right: Detail card */}
-          <div className="lg:col-span-5 space-y-6 flex flex-col mt-6">
+          {/* Details section */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                {data?.name || "Không rõ"}
+              </h1>
+              <div>
+                <p> Mô tả : </p>
+                <CollapsibleDescription
+                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
+                />
+              </div>
+            </div>
+
+            {/* Tabs section */}
             <Card className="glass">
-              <CardContent className="p-4  space-y-5">
-                {/* Pricing section */}
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Tổng số cổ phần
-                    </div>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                      {formatAmount(data?.totalShares)}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Cổ phần mở bán
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">
-                      {formatAmount(data?.availableShares + data?.soldShares)}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1 mr-1">
-                      Đơn giá
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                      {formatAmount(data?.pricePerShare)}{" "}
-                      {data?.currency?.toUpperCase()}
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      Tiến trình bán
-                    </span>
-                    {totalShares > 0 && (
-                      <span className="text-muted-foreground">
-                        <span className="text-purple-400 font-semibold">
-                          {progress}%
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                  <Progress value={progress} className="h-2.5" />
-                  <div className="mt-2 text-xs text-cyan-400 font-semibold">
-                    <span className="font-semibold text-cyan-400">
-                      {sharesSold} CP /{" "}
-                      {Number(totalShares).toLocaleString("us-EN")} CP
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <div className="text-xs text-muted-foreground">
-                    Số cổ phần muốn mua
-                  </div>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={quantity}
-                    disabled={data?.availableShares === 0}
-                    onChange={(e) => setQuantity(Number(e.target.value || 0))}
-                    className={`bg-background/50 border-cyan-500/30 focus:border-cyan-500/60 ${
-                      quantity > totalShares
-                        ? "border-red-500 focus:border-red-400"
-                        : ""
-                    }`}
-                  />
-                  {quantity > totalShares && (
-                    <div className="text-xs text-red-400">
-                      Cổ phần bạn muốn đầu tư hiện tại đã vượt qua cổ phần được
-                      mở bán
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground">
-                    Tổng: {formatAmount(totalCost)} {currency}
-                  </div>
-                </div>
-
-                {Number(data?.availableShares || 0) > 0 ? (
-                  <Button
-                    onClick={() => {
-                      if (!user) {
-                        toast.error(
-                          "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
-                        );
-                        return;
-                      }
-                      const isConnected =
-                        LocalStorageService.isConnectedToWallet();
-                      if (!isConnected) {
-                        setShowConnectModal(true);
-                        return;
-                      }
-                      setShowConfirmation(true);
-                    }}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-5 h-5"
+              <CardContent className="p-6">
+                <Tabs defaultValue="details" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
+                    <TabsTrigger
+                      value="details"
+                      className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
                     >
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
-                    Mua cổ phần
-                  </Button>
-                ) : (
-                  <Button
-                    disabled
-                    className="w-full bg-gray-500/40 text-gray-300 font-semibold gap-2 h-12 cursor-not-allowed"
-                  >
-                    Đã hết cổ phần bán
-                  </Button>
-                )}
+                      Chi tiết NFT
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="documents"
+                      className="text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-white"
+                    >
+                      Tài liệu và tập tin
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="details" className="space-y-4">
+                    <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
+                    {data?.fullDescription ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Mô tả chi tiết:
+                        </p>
+                        <CollapsibleDescription
+                          html={String(
+                            data?.fullDescription?.html
+                              ? data.fullDescription.html
+                              : data.fullDescription
+                              ? data.fullDescription
+                              : ""
+                          ).replace(/\n/g, "<br/>")}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Không có mô tả chi tiết
+                      </p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="documents" className="space-y-6">
+                    <h2 className="text-2xl font-bold">Tài liệu và tập tin</h2>
+                    {Array.isArray(data?.documents) &&
+                    data.documents.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {data.documents.map((doc: any, idx: number) => {
+                          const docName =
+                            doc?.name || doc?.filename || `Tài liệu ${idx + 1}`;
+                          const docUrl = doc?.url || doc?.link || "";
+                          const docType = doc?.type || doc?.mimeType || "file";
+                          const fileSize = doc?.filesize || doc?.size || 0;
+
+                          const formatFileSize = (bytes: number) => {
+                            if (!bytes) return "0 B";
+                            const k = 1024;
+                            const sizes = ["B", "KB", "MB", "GB"];
+                            const i = Math.floor(Math.log(bytes) / Math.log(k));
+                            return `${
+                              Math.round((bytes / Math.pow(k, i)) * 100) / 100
+                            } ${sizes[i]}`;
+                          };
+
+                          const getFileIcon = (type: string) => {
+                            const t = (type || "").toLowerCase();
+                            if (t.includes("pdf")) return "📄";
+                            if (t.includes("image")) return "🖼️";
+                            if (t.includes("video")) return "🎥";
+                            if (t.includes("audio")) return "🎵";
+                            if (t.includes("zip") || t.includes("rar"))
+                              return "📦";
+                            return "📎";
+                          };
+
+                          return (
+                            <a
+                              key={idx}
+                              href={docUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group glass rounded-lg p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105 cursor-pointer border border-primary/20 hover:border-primary/50"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                                  {getFileIcon(docType)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                                    {docName}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {formatFileSize(fileSize)}
+                                  </p>
+                                  {docType && (
+                                    <div className="mt-2 inline-flex text-xs px-2 py-1 rounded bg-primary/20 text-primary">
+                                      {(
+                                        docType.split("/")[1] || docType
+                                      ).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground py-12">
+                        <p>Không có tài liệu</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
+
+            {/* Price */}
+            <div className="glass rounded-xl p-4">
+              <div className="text-sm text-muted-foreground mb-1">
+                Giá/cổ phần
+              </div>
+              <div className="text-3xl font-bold gradient-text">
+                {formatAmount(data?.pricePerShare || 0)}{" "}
+                {data?.currency?.toUpperCase() || TOKEN_DEAULT_CURRENCY}
+              </div>
+              <div className="pt-2">
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Tiến trình bán</span>
+                  {totalShares > 0 && (
+                    <span className="text-muted-foreground">
+                      <span className="text-purple-400 font-semibold">
+                        {progress}%
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <Progress value={progress} className="h-2.5" />
+                <div className="mt-2 text-xs text-cyan-400 font-semibold">
+                  <span className="font-semibold text-cyan-400">
+                    {sharesSold} CP /{" "}
+                    {Number(totalShares).toLocaleString("us-EN")} CP
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="text-xs text-muted-foreground">
+                  Số cổ phần muốn mua
+                </div>
+                <Input
+                  type="number"
+                  min={0}
+                  value={quantity}
+                  disabled={data?.availableShares === 0}
+                  onChange={(e) => setQuantity(Number(e.target.value || 0))}
+                  className={`bg-background/50 border-cyan-500/30 focus:border-cyan-500/60 ${
+                    quantity > totalShares
+                      ? "border-red-500 focus:border-red-400"
+                      : ""
+                  }`}
+                />
+                {quantity > totalShares && (
+                  <div className="text-xs text-red-400">
+                    Cổ phần bạn muốn đầu tư hiện tại đã vượt qua cổ phần được mở
+                    bán
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground">
+                  Tổng: {formatAmount(totalCost)} {currency}
+                </div>
+              </div>
+
+              {Number(data?.availableShares || 0) > 0 ? (
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      toast.error(
+                        "Bạn vui lòng đăng nhập để tiếp tục mua cổ phần"
+                      );
+                      return;
+                    }
+                    const isConnected =
+                      LocalStorageService.isConnectedToWallet();
+                    if (!isConnected) {
+                      setShowConnectModal(true);
+                      return;
+                    }
+                    setShowConfirmation(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer mt-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5"
+                  >
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                  Mua cổ phần
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  className="w-full bg-gray-500/40 text-gray-300 font-semibold gap-2 h-12 cursor-not-allowed mt-4"
+                >
+                  Đã hết cổ phần bán
+                </Button>
+              )}
+            </div>
 
             {/* Connect Wallet Modal */}
             <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
@@ -1282,12 +1236,12 @@ export default function InvestmentNFTDetailPage() {
               <div className="relative w-full max-w-5xl bg-background/95 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
                 <div className="sticky top-0 z-10 flex flex-col gap-2 bg-background/95 px-6 pt-6 pb-2 border-b border-white/5">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="mt-[20%]">
                       <h2 className="text-2xl font-bold text-white">
                         Chứng chỉ xác nhận NFT
                       </h2>
                     </div>
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-[20%]">
                       <Button
                         variant="outline"
                         className="cursor-pointer"
