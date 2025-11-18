@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NFTCard } from "./NFTCard";
 import { NFT } from "../hooks";
 import { useRouter } from "next/navigation";
+import { NFTType } from "@/types";
 
 interface NFTGridCardProps {
   nfts: NFT[];
@@ -137,7 +138,7 @@ export const NFTGridCard = ({
             >
               <NFTCard
                 nft={nft}
-                type={title === "NFT của tôi" ? "tier" : "other"}
+                type={nft.type as NFTType}
                 onClick={onClickNFT}
                 onLikeChange={handleLikeChange}
                 isLiked={isLiked}
