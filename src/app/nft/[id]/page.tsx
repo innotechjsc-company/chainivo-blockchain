@@ -23,16 +23,25 @@ import { Card, CardContent } from "@/components/ui/card";
 
 function CollapsibleDescription({ html }: { html: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [halfHeight, setHalfHeight] = useState<number>(0);
+  const [collapsedHeight, setCollapsedHeight] = useState<number>(0);
+  const [isMultiLine, setIsMultiLine] = useState(false);
   const descRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = descRef.current;
     if (!el) return;
+
     const compute = () => {
       const full = el.scrollHeight || 0;
-      setHalfHeight(Math.max(0, Math.floor(full / 2)));
+      const style = window.getComputedStyle(el);
+      const lineHeight = parseFloat(style.lineHeight || "0") || 0;
+      const multiLine = full - 1 > lineHeight + 1;
+      setIsMultiLine(multiLine);
+      setCollapsedHeight(
+        multiLine ? Math.max(lineHeight, Math.floor(full / 2)) : lineHeight
+      );
     };
+
     const id = window.setTimeout(compute, 0);
     window.addEventListener("resize", compute);
     return () => {
@@ -41,33 +50,48 @@ function CollapsibleDescription({ html }: { html: string }) {
     };
   }, [html]);
 
+  const showToggle = isMultiLine;
+
   return (
-    <div>
-      <div className="relative">
+    <div className="space-y-2">
+      <div className="relative flex items-start gap-2">
         <div
           ref={descRef}
-          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
+          className="text-muted-foreground leading-relaxed transition-[max-height] duration-300 ease-in-out flex-1"
           style={{
             maxHeight: isExpanded
               ? "none"
-              : halfHeight
-              ? `${halfHeight}px`
+              : collapsedHeight
+              ? `${collapsedHeight}px`
               : "6rem",
             overflow: "hidden",
           }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        {!isExpanded && (
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+        {!isExpanded && showToggle && (
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0 ml-2"
+            onClick={() => setIsExpanded(true)}
+          >
+            Xem thêm
+          </button>
+        )}
+        {!isExpanded && showToggle && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent" />
         )}
       </div>
-      <button
-        type="button"
-        className="text-primary text-sm font-medium hover:underline cursor-pointer"
-        onClick={() => setIsExpanded((v) => !v)}
-      >
-        {isExpanded ? "Thu gọn" : "Xem thêm"}
-      </button>
+      {isExpanded && showToggle && (
+        <div className="text-right">
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer"
+            onClick={() => setIsExpanded(false)}
+          >
+            Thu gọn
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -482,7 +506,7 @@ export default function NFTDetailPage() {
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
-              <div className="text-3xl font-bold gradient-text">
+              <div className="text-3xl font-bold gradient-text font-semibold leading-tigh">
                 {(() => {
                   const raw = (nftData as any)?.salePrice
                     ? nftData?.salePrice
@@ -501,15 +525,15 @@ export default function NFTDetailPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="default"
-                    className="flex-1 gap-2 mt-2 cursor-pointer"
+                    className="flex-1 gap-2 mt-2  bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!user) {
                         toast.error("Bạn vui lòng đăng nhập để tiếp tục");
                         return;
                       }
-                      if (type !== "other") {
-                        toast.success("Bạn đã sở hữu NFT này");
+                      if (!nftData?.isSale) {
+                        toast.success("NFT này đã bán");
                         return;
                       }
                       const isConnected =
@@ -529,9 +553,9 @@ export default function NFTDetailPage() {
                     )}
                     {buyLoading
                       ? "Đang xử lý..."
-                      : type === "other"
+                      : nftData?.isSale
                       ? "Mua ngay"
-                      : "Đã sở hữu"}
+                      : "NFT đã bán"}
                   </Button>
                 </div>
               )}
@@ -568,6 +592,26 @@ export default function NFTDetailPage() {
                     </div>
                   </div>
                   {Boolean(nftData?.price) && (
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Giá gốc
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {(() => {
+                          const raw = (nftData as any)?.price;
+
+                          const n =
+                            typeof raw === "string"
+                              ? parseFloat(raw)
+                              : Number(raw);
+                          const safe = Number.isFinite(n) ? n : 0;
+                          return safe.toLocaleString("vi-VN");
+                        })()}{" "}
+                        {TOKEN_DEAULT_CURRENCY}
+                      </div>
+                    </div>
+                  )}
+                  {Boolean(nftData?.salePrice) && (
                     <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
                       <div className="text-xs text-muted-foreground mb-1">
                         Giá bán
@@ -652,6 +696,14 @@ export default function NFTDetailPage() {
                       </div>
                     </div>
                   )}
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Người bán
+                    </div>
+                    <div className="text-sm font-semibold text-white font-mono">
+                      {formatAddress((nftData as any)?.walletAddress)}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -735,14 +787,14 @@ export default function NFTDetailPage() {
         )}
 
         {/* Transaction History Section */}
-        <div className="mt-8">
-          <div className="glass rounded-xl p-6">
+        <div className="mt-8 ">
+          <div className="glass rounded-xl p-6 ">
             <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
             {Array.isArray(transactions) && transactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border/50">
+                    <tr>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
                         Loại
                       </th>
@@ -762,111 +814,46 @@ export default function NFTDetailPage() {
                   </thead>
                   <tbody>
                     {transactions.map((tx: any, idx: number) => {
-                      const txType =
-                        tx.type || tx.transaction_type || "transfer";
-                      // Handle from address (could be object or string)
-                      let fromAddr = "-";
-                      if (tx.from) {
-                        fromAddr =
-                          typeof tx.from === "object" && tx.from?.address
-                            ? tx.from.address
-                            : typeof tx.from === "string"
-                            ? tx.from
-                            : "-";
-                      } else if (tx.fromAddress) {
-                        fromAddr =
-                          typeof tx.fromAddress === "object" &&
-                          tx.fromAddress?.address
-                            ? tx.fromAddress.address
-                            : typeof tx.fromAddress === "string"
-                            ? tx.fromAddress
-                            : "-";
-                      } else if (tx.seller?.walletAddress) {
-                        fromAddr = tx.seller.walletAddress;
-                      } else if (tx.seller?.address) {
-                        fromAddr = tx.seller.address;
-                      }
-
-                      // Handle to address (could be object or string)
-                      let toAddr = "-";
-                      if (tx.to) {
-                        toAddr =
-                          typeof tx.to === "object" && tx.to?.address
-                            ? tx.to.address
-                            : typeof tx.to === "string"
-                            ? tx.to
-                            : "-";
-                      } else if (tx.toAddress) {
-                        toAddr =
-                          typeof tx.toAddress === "object" &&
-                          tx.toAddress?.address
-                            ? tx.toAddress.address
-                            : typeof tx.toAddress === "string"
-                            ? tx.toAddress
-                            : "-";
-                      } else if (tx.buyer?.walletAddress) {
-                        toAddr = tx.buyer.walletAddress;
-                      } else if (tx.buyer?.address) {
-                        toAddr = tx.buyer.address;
-                      }
-
-                      const amount =
-                        tx.amount ||
-                        tx.salePrice ||
-                        tx.price ||
-                        tx.value ||
-                        tx.total_value ||
-                        0;
-                      const currency = tx.currency || TOKEN_DEAULT_CURRENCY;
-
-                      const timestamp =
-                        tx.timestamp ||
-                        tx.createdAt ||
-                        tx.created_at ||
-                        tx.date ||
-                        "-";
-
                       return (
-                        <tr
-                          key={idx}
-                          className="border-b border-border/30 hover:bg-muted/20 transition-colors"
-                        >
+                        <tr key={idx} className="">
                           <td className="py-3 px-4">
                             <Badge
                               variant={
-                                txType === "buy" || txType === "purchase"
+                                tx.type === "buy" || tx.type === "purchase"
                                   ? "default"
-                                  : txType === "sell"
+                                  : tx.type === "sell"
                                   ? "destructive"
                                   : "outline"
                               }
-                              className="text-xs"
+                              className="text-xs border-none shadow-none"
                             >
-                              {txType === "buy" || txType === "purchase"
+                              {tx.type === "buy" || tx.type === "purchase"
                                 ? "Mua"
-                                : txType === "sell"
+                                : tx.type === "sell"
                                 ? "Bán"
-                                : "Chuyển"}
+                                : "P2P"}
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-sm font-mono">
-                            {formatAddress(fromAddr)}
+                            {formatAddress(tx?.buyer?.walletAddress || "")}
                           </td>
                           <td className="py-3 px-4 text-sm font-mono">
-                            {formatAddress(toAddr)}
+                            {formatAddress(tx?.seller?.walletAddress || "")}
                           </td>
+
                           <td className="py-3 px-4 text-sm font-semibold">
-                            {Number(amount).toLocaleString("vi-VN")} {currency}
+                            {Number(tx?.nft?.salePrice).toLocaleString("vi-VN")}{" "}
+                            {tx?.nft?.currency.toUpperCase()}
                           </td>
                           <td className="py-3 px-4 text-sm text-muted-foreground">
-                            {timestamp !== "-"
+                            {tx.createdAt !== "-"
                               ? (() => {
                                   try {
-                                    return new Date(timestamp).toLocaleString(
-                                      "vi-VN"
-                                    );
+                                    return new Date(
+                                      tx.createdAt
+                                    ).toLocaleString("vi-VN");
                                   } catch {
-                                    return timestamp;
+                                    return tx.createdAt;
                                   }
                                 })()
                               : "-"}
