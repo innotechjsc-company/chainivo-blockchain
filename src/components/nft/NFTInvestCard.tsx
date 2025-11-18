@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/stores";
 import TransferService from "@/services/TransferService";
+import { LocalStorageService } from "@/services";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -86,6 +87,9 @@ export default function NFTInvestCard({
   const walletAddress = useAppSelector(
     (state) => state.wallet.wallet?.address || ""
   );
+
+  // Lấy user từ Redux store
+  const user = useAppSelector((state) => state.auth.user);
 
   // Kiểm tra component đã mount (để tránh lỗi SSR với portal)
   useEffect(() => {
@@ -346,7 +350,60 @@ export default function NFTInvestCard({
   // Render action button dựa vào type
   const renderActionButton = () => {
     if (!shouldShowActions) return null;
-    if (type === "investment" || nftType === "investment") return null;
+
+    // Investment NFT - hiển thị nút "Mua cổ phần"
+    if (type === "investment" || nftType === "investment") {
+      const availableShares = Number((nft as any)?.nft?.availableShares ?? 0);
+
+      if (availableShares > 0) {
+        return (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!user) {
+                toast.error("Bạn vui lòng đăng nhập để tiếp tục mua cổ phần");
+                return;
+              }
+              const isConnected = LocalStorageService.isConnectedToWallet();
+              if (!isConnected) {
+                toast.error("Vui lòng kết nối ví để mua cổ phần");
+                return;
+              }
+              // Navigate to detail page
+              router.push(`/investment-nft/${(nft as any)?.nft?.id ?? nft.id}`);
+            }}
+            className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5"
+            >
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            Mua cổ phần
+          </Button>
+        );
+      } else {
+        return (
+          <Button
+            disabled
+            className="w-full bg-gray-500/40 text-gray-300 font-semibold gap-2 h-12 cursor-not-allowed"
+          >
+            Hết cổ phần
+          </Button>
+        );
+      }
+    }
+
+    // Các loại NFT khác
     const nftIsMinted = (nft as any)?.nft?.isMinted ?? nft.isMinted;
     return (
       <div className="flex gap-2 w-full flex-col">

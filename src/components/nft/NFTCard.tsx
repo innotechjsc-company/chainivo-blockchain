@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/stores";
 import TransferService from "@/services/TransferService";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
 interface NFTCardProps {
   nft: NFTItem;
@@ -88,6 +89,7 @@ export default function NFTCard({
   const [mintingFeeLoading, setMintingFeeLoading] = useState(false);
   const [payingMintingFee, setPayingMintingFee] = useState(false);
   const [mintingFeeError, setMintingFeeError] = useState<string | null>(null);
+  const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
   const borderClass =
     LEVEL_BORDER_CLASSES[nft.level] || LEVEL_BORDER_CLASSES["1"];
 
@@ -310,17 +312,19 @@ export default function NFTCard({
       const nftPrice = getNftBasePrice();
 
       let calculatedAmount = 0;
-      if (feeValue > 0) {
-        calculatedAmount =
-          feeType === "fixed" ? feeValue : (nftPrice * feeValue) / 100;
+      if (feeValue > 0 && feeType === "percentage") {
+        calculatedAmount = (nftPrice * feeValue) / 100;
+        debugger;
+      } else if (feeValue > 0 && feeType === "fixed") {
+        calculatedAmount = feeValue;
+        debugger;
       }
-
       setMintingFeeDetails({
         type: feeType,
         value: feeValue,
       });
       setMintingFeeAmount(calculatedAmount);
-
+      debugger;
       if (!mintingFeeConfig || feeValue === 0) {
         toast.info(
           "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
@@ -337,14 +341,22 @@ export default function NFTCard({
     }
   };
 
-  const handlePayMintingFee = async () => {
+  const handlePayMintingFee = async (e?: React.MouseEvent) => {
+    // Ngăn chặn event bubble lên card onClick
+    e?.preventDefault();
+    e?.stopPropagation();
+
     if (mintingFeeLoading) return;
 
     const amount = mintingFeeAmount ?? 0;
-
     if (amount <= 0) {
       setWithdrawDialogOpen(false);
-      await handleWithdrawConfirm();
+      setShowLoadingSpinner(true);
+      try {
+        await handleWithdrawConfirm();
+      } finally {
+        setShowLoadingSpinner(false);
+      }
       return;
     }
 
@@ -354,6 +366,7 @@ export default function NFTCard({
     }
 
     setPayingMintingFee(true);
+    setShowLoadingSpinner(true);
     try {
       await TransferService.sendCanTransfer({
         fromAddress: walletAddress,
@@ -375,6 +388,7 @@ export default function NFTCard({
       toast.error(errorMessage);
     } finally {
       setPayingMintingFee(false);
+      setShowLoadingSpinner(false);
     }
   };
 
@@ -416,7 +430,7 @@ export default function NFTCard({
           responseData?.token?.id ??
           (nft as any)?.tokenId ??
           (nft as any)?.token_id;
-
+        debugger;
         // Tạo link tra cứu giao dịch
         const explorerUrl = contractAddress
           ? `https://amoy.polygonscan.com/token/${contractAddress}${
@@ -758,7 +772,12 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
           }
         }}
       >
-        <DialogContent>
+        <DialogContent
+          onClick={(e) => {
+            // Ngăn chặn event bubble lên card onClick
+            e.stopPropagation();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Thanh toán phí rút NFT</DialogTitle>
             <DialogDescription>
@@ -787,28 +806,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                       : "Phần trăm"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Giá trị cấu hình
-                  </span>
-                  <span className="font-semibold">
-                    {mintingFeeDetails?.type === "fixed"
-                      ? `${formatNumber(
-                          mintingFeeDetails?.value || 0
-                        )} ${TOKEN_DEAULT_CURRENCY}`
-                      : `${mintingFeeDetails?.value || 0}%`}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Giá NFT</span>
-                  <span className="font-semibold">
-                    {formatNumber(getNftBasePrice())} {TOKEN_DEAULT_CURRENCY}
-                  </span>
-                </div>
+
                 <div className="flex items-center justify-between text-base font-semibold text-primary">
                   <span>Tổng phí cần thanh toán</span>
                   <span>
-                    {formatNumber(mintingFeeAmount || 0)}{" "}
+                    {formatNumber(mintingFeeAmount ?? 0)}{" "}
                     {TOKEN_DEAULT_CURRENCY}
                   </span>
                 </div>
@@ -832,7 +834,10 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             <Button
               type="button"
               variant="default"
-              onClick={handlePayMintingFee}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePayMintingFee(e);
+              }}
               disabled={
                 mintingFeeLoading ||
                 payingMintingFee ||
@@ -858,6 +863,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
           </div>,
           document.body
         )}
+
+      {/* Loading spinner cho thanh toán phí minting */}
+      {showLoadingSpinner &&
+        isMounted &&
+        createPortal(<LoadingSpinner />, document.body)}
 
       {/* Modal thông báo thành công */}
       <Dialog
