@@ -416,7 +416,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     {phase.totalInvestors?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Investors
+                    Nhà đầu tư
                   </p>
                 </CardContent>
               </Card>
@@ -454,7 +454,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     ${phase.totalRaised?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {TOKEN_DEAULT_CURRENCY_INVESTMENT} raised
+                    {TOKEN_DEAULT_CURRENCY_INVESTMENT} Tăng trưởng
                   </p>
                 </CardContent>
               </Card>
