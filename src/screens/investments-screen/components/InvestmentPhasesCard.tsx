@@ -16,19 +16,25 @@ interface InvestmentPhasesCardProps {
   phases: Phase[];
   isLoading: boolean;
   error: string | null;
+  gridColsClass?: string;
+  showDetailsButton?: boolean;
+  activeButtonClassName?: string;
 }
 
 export const InvestmentPhasesCard = ({
   phases: phasesProps,
   isLoading: isLoadingProps,
   error: errorProps,
+  gridColsClass = "md:grid-cols-3 lg:grid-cols-4",
+  showDetailsButton = true,
+  activeButtonClassName = "",
 }: InvestmentPhasesCardProps) => {
   const router = useRouter();
 
   const phases = phasesProps || [];
   const isLoading = isLoadingProps || false;
   const error = errorProps || null;
-
+// investments
   return (
     <section id="invest" className="py-20 relative">
       <div className="container mx-auto px-4">
@@ -37,7 +43,7 @@ export const InvestmentPhasesCard = ({
             <span className="gradient-text">Giai đoạn đầu tư</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
+            Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất 
           </p>
           {isLoading && (
             <p className="text-sm text-muted-foreground mt-2">
@@ -46,7 +52,7 @@ export const InvestmentPhasesCard = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className={`grid grid-cols-1 ${gridColsClass} gap-6`}>
           {isLoading &&
             Array.from({ length: 4 }).map((_, index) => (
               <Card
@@ -175,15 +181,21 @@ export const InvestmentPhasesCard = ({
 
                   {/* Action Buttons */}
                   <div className="space-y-2">
+                    {showDetailsButton && (
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => router.push(`/phase/${phase.id}`)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    )}
                     <Button
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => router.push(`/phase/${phase.id}`)}
-                    >
-                      Xem chi tiết
-                    </Button>
-                    <Button
-                      className="w-full"
+                      className={`w-full ${
+                        phase.status === "active" && activeButtonClassName
+                          ? activeButtonClassName
+                          : ""
+                      }`}
                       variant={
                         phase.status === "active" ? "default" : "outline"
                       }
