@@ -88,16 +88,16 @@ export const MembershipTiers = () => {
                 key={tier.id}
                 className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
                   tier.popular ? "border-2 border-primary animate-glow" : ""
-                } ${isCurrentRank ? "border-2 border-yellow-500" : ""}`}
+                } ${isCurrentRank ? "border-2 border-primary animate-glow" : ""}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <CardContent className="p-0">
                   {/* Overlay chỉ cho ranks THẤP HƠN (không áp dụng cho rank hiện tại) */}
                   {isLowerRank && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center border border-primary/30">
                       <div className="text-center p-4">
-                        <Lock className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm font-semibold text-muted-foreground">
+                        <Lock className="w-12 h-12 mx-auto mb-2 text-foreground/90" />
+                        <p className="text-sm font-semibold text-foreground">
                           {ineligibilityReason}
                         </p>
                       </div>
@@ -106,7 +106,7 @@ export const MembershipTiers = () => {
 
                   {/* Current Rank Badge hoặc Popular Badge */}
                   {isCurrentRank ? (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1 z-20">
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold z-20">
                       <span>👑</span>
                       <span>HẠNG HIỆN TẠI</span>
                     </div>
