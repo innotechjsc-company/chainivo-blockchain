@@ -73,6 +73,20 @@ export const useNFTFilters = (nfts: NFT[]) => {
     return [];
   };
 
+  const shuffleNFTList = <T>(items: T[]): T[] => {
+    if (!Array.isArray(items) || items.length <= 1) {
+      return items;
+    }
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = temp;
+    }
+    return shuffled;
+  };
+
   const fetchOtherNFTs = async (page: number = 1, limit: number = 9) => {
     try {
       setLoading(true);
@@ -100,7 +114,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
           list = normalizeNFTCollection(data);
         }
 
-        setOtherNFTsData(list);
+        setOtherNFTsData(list.length ? shuffleNFTList(list) : list);
         // Lấy thông tin pagination từ response - ưu tiên data.totalPages
         const totalPagesFromData =
           data?.totalPages ||
@@ -179,7 +193,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
           list = normalizeNFTCollection(data);
         }
 
-        setMysteryBoxData(list);
+        setMysteryBoxData(list.length ? shuffleNFTList(list) : list);
         // Lấy thông tin pagination từ response - ưu tiên data.totalPages
         const totalPagesFromData =
           data?.totalPages ||

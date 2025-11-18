@@ -54,6 +54,7 @@ export default function InvestmentNFTDetailPage() {
   const infoCardRef = useRef<HTMLDivElement>(null);
   const shareListCardRef = useRef<HTMLDivElement>(null);
   const [totalCardsHeight, setTotalCardsHeight] = useState<number>(0);
+  const DETAIL_PANEL_MAX_HEIGHT = 645;
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -645,11 +646,12 @@ export default function InvestmentNFTDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Image section */}
           <div className="space-y-6">
-            <div className="relative  rounded-2xl overflow-hidden glass flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
                 src={imageSrc}
                 alt={data?.name || "NFT"}
-                className="object-cover w-[800px] h-[645px] relative overflow-hidden  flex items-center justify-center"
+                className="object-cover w-[800px] relative overflow-hidden  flex items-center justify-center"
+                style={{ height: `${DETAIL_PANEL_MAX_HEIGHT}px` }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "/nft-box.jpg";
@@ -660,6 +662,16 @@ export default function InvestmentNFTDetailPage() {
                   <Badge variant="secondary">{getLevelBadge(data.level)}</Badge>
                 </div>
               )}
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                {data?.name || "Không rõ"}
+              </h1>
+              <div>
+                <CollapsibleDescription
+                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
+                />
+              </div>
             </div>
             {/* Tabs section */}
             <Card className="glass">
@@ -771,18 +783,12 @@ export default function InvestmentNFTDetailPage() {
           </div>
 
           {/* Details section */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {data?.name || "Không rõ"}
-              </h1>
-              <div>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
-
+          <div
+            className="space-y-6 lg:pr-3 lg:sticky lg:top-21"
+            style={{
+              maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px`,
+            }}
+          >
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">
@@ -1033,7 +1039,8 @@ export default function InvestmentNFTDetailPage() {
                 </CardContent>
               </Card>
             )}
-
+          </div>
+          <div className="space-y-6">
             <Card ref={infoCardRef} className="glass">
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-4 text-white">

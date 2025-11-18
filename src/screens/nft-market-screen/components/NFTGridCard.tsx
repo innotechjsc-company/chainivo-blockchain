@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NFTCard } from "./NFTCard";
@@ -36,6 +36,7 @@ export const NFTGridCard = ({
   onPageChange,
 }: NFTGridCardProps) => {
   const router = useRouter();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   // Sử dụng props nếu có, nếu không thì dùng local state
   const [localCurrentPage, setLocalCurrentPage] = useState(1);
@@ -102,6 +103,11 @@ export const NFTGridCard = ({
     }
     onPageChange?.(page);
     setLocalCurrentPage(page);
+    titleRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
   };
 
   // Tính toán các số trang hiển thị - hiển thị tất cả số trang
@@ -124,7 +130,9 @@ export const NFTGridCard = ({
 
   return (
     <div className="mb-12">
-      <h2 className="text-2xl font-bold mb-6 gradient-text">{title}</h2>
+      <h2 ref={titleRef} className="text-2xl font-bold mb-6 gradient-text">
+        {title}
+      </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {displayedNFTs.map((nft, index) => {
