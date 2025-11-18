@@ -39,6 +39,7 @@ interface CoinStakingFormProps {
   addPendingStake: (stakeData: any) => string;
   updateStakeStatus: (id: string, updates: any) => void;
   removeStake: (id: string) => void;
+  setSelectedValue: (value: string) => void;
 }
 
 export const CoinStakingForm = ({
@@ -53,6 +54,7 @@ export const CoinStakingForm = ({
   addPendingStake,
   updateStakeStatus,
   removeStake,
+  setSelectedValue,
 }: CoinStakingFormProps) => {
   const user = useAppSelector((state) => state.auth.user);
   const [amount, setAmount] = useState("");
@@ -61,6 +63,10 @@ export const CoinStakingForm = ({
   const [selectedPool, setSelectedPool] = useState<string>("");
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingStakeAmount, setPendingStakeAmount] = useState<number>(0);
+
+  useEffect(() => {
+    setSelectedValue(selectedPool);
+  }, [selectedPool]);
 
   // Hàm format số với dấu phẩy
   const formatNumberWithCommas = (value: string): string => {
@@ -434,7 +440,7 @@ export const CoinStakingForm = ({
                 className={`text-lg h-12 ${
                   isExceedBalance || isInvalidStakeAmount
                     ? "border-red-500 focus:border-red-500"
-                    : ""
+                    : "border-primary focus:border-primary/30"
                 }`}
               />
 
@@ -526,7 +532,8 @@ export const CoinStakingForm = ({
             <div className="staking-form-actions">
               <Button
                 type="submit"
-                className="w-full h-12 text-lg cursor-pointer"
+                variant="default"
+                className="w-full h-12 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 cursor-pointer"
                 disabled={!isValidAmount || loading}
               >
                 <Zap className="h-5 w-5 mr-2" />
