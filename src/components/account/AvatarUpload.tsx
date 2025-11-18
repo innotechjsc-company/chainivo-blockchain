@@ -3,11 +3,12 @@
 import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, CheckCircle2 } from 'lucide-react';
 import { constants } from '@/api/constants';
 
 interface AvatarUploadProps {
   currentAvatar?: string;
+  previewUrl?: string | null; // Preview from parent component
   userName: string;
   onAvatarSelect: (file: File | null, previewUrl: string | null) => void;
   disabled?: boolean;
@@ -16,6 +17,7 @@ interface AvatarUploadProps {
 
 export function AvatarUpload({
   currentAvatar,
+  previewUrl: externalPreviewUrl = null,
   userName,
   onAvatarSelect,
   disabled = false,
@@ -24,11 +26,17 @@ export function AvatarUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  // Use external preview URL from parent (backup system), or local preview
+  const displayPreviewUrl = externalPreviewUrl || previewUrl;
 
   // Clear preview khi currentAvatar thay đổi (sau khi upload thành công)
   useEffect(() => {
     if (currentAvatar && previewUrl) {
+      console.log('[AVATAR-UPLOAD] Clearing preview after successful upload');
       setPreviewUrl(null);
+      setFileName(null);
     }
   }, [currentAvatar, previewUrl]);
 
@@ -56,12 +64,20 @@ export function AvatarUpload({
     setFileError(null);
 
     if (!file) {
+      console.log('[AVATAR-UPLOAD] No file selected');
       return;
     }
+
+    console.log('[AVATAR-UPLOAD] File selected:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
 
     // Validate file
     const validationError = validateFile(file);
     if (validationError) {
+      console.error('[AVATAR-UPLOAD] Validation error:', validationError);
       setFileError(validationError);
       onAvatarSelect(null, null);
       if (fileInputRef.current) {
@@ -74,14 +90,25 @@ export function AvatarUpload({
     const reader = new FileReader();
     reader.onload = (e) => {
       const preview = e.target?.result as string;
+      console.log('[AVATAR-UPLOAD] Preview generated:', {
+        previewLength: preview.length,
+        previewStart: preview.substring(0, 50) + '...'
+      });
       setPreviewUrl(preview);
+      setFileName(file.name);
       onAvatarSelect(file, preview);
+    };
+    reader.onerror = (error) => {
+      console.error('[AVATAR-UPLOAD] FileReader error:', error);
+      setFileError('Loi doc file');
     };
     reader.readAsDataURL(file);
   };
 
   const handleClearAvatar = () => {
+    console.log('[AVATAR-UPLOAD] Clearing avatar preview');
     setPreviewUrl(null);
+    setFileName(null);
     setFileError(null);
     onAvatarSelect(null, null);
     if (fileInputRef.current) {
@@ -93,16 +120,61 @@ export function AvatarUpload({
     fileInputRef.current?.click();
   };
 
-  const displayAvatar = previewUrl || currentAvatar || constants.user.DEFAULT_AVATAR;
   const initials = userName?.[0]?.toUpperCase() || 'U';
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <Avatar className="w-24 h-24">
-        <AvatarImage src={displayAvatar} alt={userName} />
-        <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-      </Avatar>
+      {/* Avatar Display Section */}
+      <div className="flex gap-6 items-start">
+        {/* Current Avatar */}
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground font-medium">Ảnh hiện tại</p>
+          <Avatar className="w-24 h-24 border-2 border-muted">
+            <AvatarImage
+              src={currentAvatar || constants.user.DEFAULT_AVATAR}
+              alt={`Current avatar of ${userName}`}
+              onError={(e) => {
+                console.warn('[AVATAR-UPLOAD] Current avatar failed to load:', currentAvatar);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <AvatarFallback className="text-2xl bg-muted">{initials}</AvatarFallback>
+          </Avatar>
+        </div>
 
+        {/* Preview Avatar (Conditionally Show) */}
+        {displayPreviewUrl && (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-green-600 font-medium">Ảnh mới</p>
+              <CheckCircle2 className="w-3 h-3 text-green-600" />
+            </div>
+            <div className="relative">
+              <Avatar className="w-24 h-24 border-2 border-green-500 ring-2 ring-green-100">
+                <AvatarImage
+                  src={displayPreviewUrl}
+                  alt={`Avatar preview of ${fileName}`}
+                  onError={(e) => {
+                    console.error('[AVATAR-UPLOAD] Preview failed to load:', {
+                      previewStart: displayPreviewUrl.substring(0, 50)
+                    });
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('[AVATAR-UPLOAD] Preview loaded successfully');
+                  }}
+                />
+                <AvatarFallback className="text-2xl bg-green-100">{initials}</AvatarFallback>
+              </Avatar>
+            </div>
+            {fileName && (
+              <p className="text-xs text-muted-foreground">{fileName}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* File Input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -113,6 +185,7 @@ export function AvatarUpload({
         aria-label="Avatar upload"
       />
 
+      {/* Action Buttons */}
       <div className="flex gap-2">
         <Button
           type="button"
@@ -123,17 +196,17 @@ export function AvatarUpload({
           className="gap-2"
         >
           <Upload className="w-4 h-4" />
-          Chọn ảnh 
+          {displayPreviewUrl ? "Chọn ảnh khác" : "Chọn ảnh"}
         </Button>
 
-        {previewUrl && (
+        {displayPreviewUrl && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleClearAvatar}
             disabled={disabled}
-            className="gap-2"
+            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
           >
             <X className="w-4 h-4" />
             Xoá
@@ -141,10 +214,17 @@ export function AvatarUpload({
         )}
       </div>
 
-      {fileError && <p className="text-sm text-red-500">{fileError}</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      {previewUrl && (
-        <p className="text-xs text-green-500">Ảnh mới sẽ được upload khi cập nhật</p>
+      {/* Status Messages */}
+      {fileError && (
+        <p className="text-sm text-red-500 text-center">{fileError}</p>
+      )}
+      {error && (
+        <p className="text-sm text-red-500 text-center">{error}</p>
+      )}
+      {displayPreviewUrl && (
+        <div className="text-center">
+          <p className="text-xs text-green-600 font-medium">✓ Ảnh mới sẽ được upload khi bạn click "Cập nhật"</p>
+        </div>
       )}
     </div>
   );

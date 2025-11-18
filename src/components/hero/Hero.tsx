@@ -39,13 +39,16 @@ export const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Button asChild className="gap-2">
+            <Button
+              asChild
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-gradient-to-r from-primary to-secondary text-foreground hover:opacity-90 shadow-[0_0_30px_hsl(var(--primary)/0.4)] h-12 rounded-md text-lg px-8"
+            >
               <Link href="/investments">
                 <Rocket className="w-4 h-4" />
                 Bắt đầu đầu tư
               </Link>
             </Button>
-            <Button asChild className="gap-2">
+            <Button asChild className="gap-2 h-12 text-lg px-8">
               <Link href="/about">
                 <Info className="w-4 h-4" />
                 Tìm hiểu thêm

@@ -163,7 +163,8 @@ export const AboutUsScreen = () => {
                   Đội ngũ lãnh đạo
                 </h2>
                 <p className="text-muted-foreground">
-                  Những chuyên gia hàng đầu với kinh nghiệm dày dặn trong lĩnh vực công nghệ và tài chính
+                  Những chuyên gia hàng đầu với kinh nghiệm dày dặn trong lĩnh
+                  vực công nghệ và tài chính
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -39,54 +39,66 @@ export function getNFTType(type: string) {
 export const formatAmount = (valueInput: unknown) => {
   const value = Number(valueInput || 0);
   const decimals = 0;
- // Xu ly gia tri null/undefined
- if (value === null || value === undefined) return "0";
- if (isNaN(value)) return "0";
+  // Xu ly gia tri null/undefined
+  if (value === null || value === undefined) return "0";
+  if (isNaN(value)) return "0";
 
- const absValue = Math.abs(value);
- const isNegative = value < 0;
+  const absValue = Math.abs(value);
+  const isNegative = value < 0;
 
- // Neu >= 1 billion: rut gon thanh B
- if (absValue >= 1_000_000_000) {
-   const billions = absValue / 1_000_000_000;
-   // Format phan so truoc, roi them 'B'
-   const numberPart = billions >= 10
-     ? Math.floor(billions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-     : billions.toFixed(1);
-   return isNegative ? `-${numberPart}B` : `${numberPart}B`;
- }
+  // Neu >= 1 billion: rut gon thanh B
+  if (absValue >= 1_000_000_000) {
+    const billions = absValue / 1_000_000_000;
+    // Format phan so truoc, roi them 'B'
+    const numberPart =
+      billions >= 10
+        ? Math.floor(billions)
+            .toString()
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        : billions.toFixed(1);
+    return isNegative ? `-${numberPart}B` : `${numberPart}B`;
+  }
 
- // Neu >= 1 million: rut gon thanh M
- if (absValue >= 1_000_000) {
-   const millions = absValue / 1_000_000;
-   // Format phan so truoc, roi them 'M'
-   const numberPart = millions >= 10
-     ? Math.floor(millions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-     : millions.toFixed(1);
-   return isNegative ? `-${numberPart}M` : `${numberPart}M`;
- }
+  // Neu >= 1 million: rut gon thanh M
+  if (absValue >= 1_000_000) {
+    const millions = absValue / 1_000_000;
+    // Format phan so truoc, roi them 'M'
+    const numberPart =
+      millions >= 10
+        ? Math.floor(millions)
+            .toString()
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        : millions.toFixed(1);
+    return isNegative ? `-${numberPart}M` : `${numberPart}M`;
+  }
 
- // Neu >= 10,000: rut gon thanh K
- if (absValue >= 10_000) {
-   const thousands = absValue / 1_000;
-   // Format phan so truoc, roi them 'K'
-   const numberPart = thousands >= 10
-     ? Math.floor(thousands).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-     : thousands.toFixed(1);
-   return isNegative ? `-${numberPart}K` : `${numberPart}K`;
- }
+  // Neu >= 10,000: rut gon thanh K
+  if (absValue >= 10_000) {
+    const thousands = absValue / 1_000;
+    // Format phan so truoc, roi them 'K'
+    const numberPart =
+      thousands >= 10
+        ? Math.floor(thousands)
+            .toString()
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        : thousands.toFixed(1);
+    return isNegative ? `-${numberPart}K` : `${numberPart}K`;
+  }
 
- // Neu < 10,000: format day du voi dau phan cach
- const fixedValue = decimals > 0 ? absValue.toFixed(decimals) : Math.round(absValue);
- const [integerPart, decimalPart] = fixedValue.toString().split(".");
+  // Neu < 10,000: format day du voi dau phan cach
+  const fixedValue =
+    decimals > 0 ? absValue.toFixed(decimals) : Math.round(absValue);
+  const [integerPart, decimalPart] = fixedValue.toString().split(".");
 
- // Them dau phan cach hang nghin (,) cho phan nguyen
- const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // Them dau phan cach hang nghin (,) cho phan nguyen
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
- // Neu co phan thap phan, them dau cham (.)
- let result = decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+  // Neu co phan thap phan, them dau cham (.)
+  let result = decimalPart
+    ? `${formattedInteger}.${decimalPart}`
+    : formattedInteger;
 
- return isNegative ? `-${result}` : result;
+  return isNegative ? `-${result}` : result;
 };
 
 export const autoConnect = async () => {

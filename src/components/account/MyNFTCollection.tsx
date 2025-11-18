@@ -6,6 +6,8 @@ import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
 import { NFTCard, MysteryBoxAnimationWrapper } from "@/components/nft";
 import { ListNFTDialog } from "./ListNFTDialog";
+import { CancelSaleDialog } from "./CancelSaleDialog";
+import { NFTFilters } from "./NFTFilters";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -14,43 +16,26 @@ import { useRouter } from "next/navigation";
 import { NFTService } from "@/api/services/nft-service";
 import { ToastService } from "@/services/ToastService";
 import type { OpenBoxResponse } from "@/api/services/mystery-box-service";
+import { LoadingSpinner } from "@/lib/loadingSpinner";
 
-// Loading Skeleton Component
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Stats Skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="glass p-4">
-            <div className="h-16 bg-muted animate-pulse rounded" />
-          </Card>
-        ))}
-      </div>
-
-      {/* Tabs Skeleton */}
-      <div className="h-10 w-full max-w-md bg-muted animate-pulse rounded" />
-
-      {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="glass overflow-hidden">
-            <div className="aspect-square bg-muted animate-pulse" />
-            <CardContent className="p-4 space-y-2">
-              <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
-              <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+interface MyNFTCollectionProps {
+  type?: string;
 }
 
-export function MyNFTCollection() {
+export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   // Su dung hook fetch NFT collection
-  const { nfts, stats, loading, error, filter, setFilter, refetch } =
-    useMyNFTCollection();
+  const {
+    nfts,
+    stats,
+    loading,
+    error,
+    filter,
+    setFilter,
+    advancedFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
+    refetch,
+  } = useMyNFTCollection();
 
   // State cho List NFT Dialog
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
@@ -59,6 +44,10 @@ export function MyNFTCollection() {
   // State cho Open Box Animation
   const [selectedBoxNFT, setSelectedBoxNFT] = useState<NFTItem | null>(null);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
+
+  // State cho Cancel Sale Dialog
+  const [nftToCancel, setNftToCancel] = useState<NFTItem | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const router = useRouter();
 
@@ -77,7 +66,7 @@ export function MyNFTCollection() {
   // Handler gọi API mở hộp (được gọi bởi MysteryBoxAnimationWrapper)
   const handleOpenBoxAPI = async (): Promise<OpenBoxResponse> => {
     if (!selectedBoxNFT) {
-      throw new Error('Không có hộp nào được chọn');
+      throw new Error("Không có hộp nào được chọn");
     }
 
     // Goi API mo hop
@@ -86,7 +75,9 @@ export function MyNFTCollection() {
     if (response.success && response.data) {
       return response.data;
     } else {
-      throw new Error(response.error || response.message || 'Có lỗi xảy ra khi mở hộp');
+      throw new Error(
+        response.error || response.message || "Có lỗi xảy ra khi mở hộp"
+      );
     }
   };
 
@@ -98,7 +89,7 @@ export function MyNFTCollection() {
     // Refetch NFT collection để cập nhật danh sách
     refetch();
 
-    ToastService.success('Phần thưởng đã được chuyển vào tài khoản của bạn!');
+    ToastService.success("Phần thưởng đã được chuyển vào tài khoản của bạn!");
   };
 
   // Handler khi có lỗi
@@ -107,25 +98,32 @@ export function MyNFTCollection() {
     ToastService.error(error);
   };
 
+  // Handler hủy đăng bán NFT
+  const handleCancelSale = (nft: NFTItem) => {
+    setNftToCancel(nft);
+    setCancelDialogOpen(true);
+  };
+
   // Handler chung cho action clicks từ NFTCard
-  const handleActionClick = (nft: NFTItem, action: 'sell' | 'buy' | 'open') => {
-    if (action === 'sell') {
+  const handleActionClick = (
+    nft: NFTItem,
+    action: "sell" | "buy" | "open" | "cancel"
+  ) => {
+    if (action === "sell") {
       handleListForSale(nft);
-    } else if (action === 'open') {
+    } else if (action === "open") {
       handleOpenBox(nft);
+    } else if (action === "cancel") {
+      handleCancelSale(nft);
     }
   };
 
   const onClickMyNFT = (id: string) => {
     router.push(`/nft/${id}?type=tier`);
   };
-  // Loading state
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
 
   // Error state
-  if (error) {
+  if (error && !loading) {
     return (
       <Card className="glass p-6">
         <div className="flex items-center gap-3 text-destructive">
@@ -140,7 +138,13 @@ export function MyNFTCollection() {
   }
 
   return (
-    <div className=" space-y-6 ">
+    <div className="space-y-6 relative ">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+          <LoadingSpinner />
+        </div>
+      )}
       {/* Stats Cards */}
       <NFTStatsCards {...stats} />
 
@@ -158,6 +162,13 @@ export function MyNFTCollection() {
         </TabsList>
       </Tabs>
 
+      {/* Advanced Filters - Loc NFT theo type, level, price */}
+      <NFTFilters
+        filters={advancedFilters}
+        onFiltersChange={setAdvancedFilters}
+        onReset={resetAdvancedFilters}
+      />
+
       {nfts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Không có NFT nào</p>
@@ -168,10 +179,11 @@ export function MyNFTCollection() {
             <NFTCard
               key={nft.id}
               nft={nft}
-              type="tier"
-              onActionClick={handleActionClick}
+              type={type}
+              onActionClick={handleActionClick as any}
               onListForSale={handleListForSale}
               onClick={() => onClickMyNFT(nft.id)}
+              onRefreshNFTs={refetch}
             />
           ))}
         </div>
@@ -182,6 +194,14 @@ export function MyNFTCollection() {
         nft={selectedNFT}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onSuccess={refetch}
+      />
+
+      {/* Cancel Sale Dialog */}
+      <CancelSaleDialog
+        nft={nftToCancel}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
         onSuccess={refetch}
       />
 

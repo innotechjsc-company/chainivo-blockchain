@@ -7,6 +7,7 @@ import { TrendingUp, Clock, Users } from "lucide-react";
 import { PhaseService } from "@/api/services/phase-service";
 import { TransactionHistoryResponse } from "@/types/TransactionHistory";
 import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { useAppSelector } from "@/stores";
 
 interface Transaction {
   id: string;
@@ -28,6 +29,7 @@ export const LiveTransactionFeed = ({
 }: LiveTransactionFeedProps) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const transactionsRef = useRef<any[]>([]);
+  const user = useAppSelector((state) => state.auth.user);
 
   const getLatestTransactionId = (transactionList: any[]) => {
     if (!transactionList.length) {
@@ -53,7 +55,7 @@ export const LiveTransactionFeed = ({
   };
 
   useEffect(() => {
-    if (!phaseId) {
+    if (!phaseId || !user) {
       return undefined;
     }
 
@@ -134,7 +136,7 @@ export const LiveTransactionFeed = ({
         clearInterval(pollingTimer);
       }
     };
-  }, [phaseId, limit]);
+  }, [phaseId, limit, user?.id]);
 
   const formatTime = (timestamp: string | Date) => {
     const parsedTimestamp = dayjs(timestamp);

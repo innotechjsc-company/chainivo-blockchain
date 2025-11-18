@@ -1,5 +1,6 @@
 "use client";
 
+import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/utils/formatters";
 import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
@@ -137,7 +138,7 @@ export const NFTMarketHeaderCard = ({
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
               {formatNumber(analytics?.averageFloorPrice?.toString() ?? "0")}{" "}
-              CAN
+              {TOKEN_DEAULT_CURRENCY}
             </div>
           </CardHeader>
           <CardContent className="pb-2">

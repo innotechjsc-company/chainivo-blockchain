@@ -15,7 +15,7 @@ import {
 import { useAppSelector } from "@/stores";
 import { ArrowLeft, ShoppingCart, Clock, DollarSign } from "lucide-react";
 import { NFT, NFTService } from "@/api/services/nft-service";
-import { toast, TransferService } from "@/services";
+import { toast, TransferService, LocalStorageService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -87,6 +87,8 @@ export default function NFTDetailPage() {
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const id = params?.id as string;
@@ -279,24 +281,102 @@ export default function NFTDetailPage() {
     ? formatAddress(user.walletAddress)
     : "Anonymous";
 
+  /**
+   * Utility function để wrap API calls với timeout và retry logic
+   * @param fn - Function cần thực thi
+   * @param timeoutMs - Thời gian timeout (mặc định 60000ms = 60s)
+   * @param maxRetries - Số lần retry tối đa (mặc định 3)
+   * @param retryDelayMs - Thời gian delay giữa các lần retry (mặc định 2000ms = 2s)
+   */
+  const withTimeoutAndRetry = async <T,>(
+    fn: () => Promise<T>,
+    timeoutMs: number = 60000,
+    maxRetries: number = 3,
+    retryDelayMs: number = 2000
+  ): Promise<T> => {
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📍 Attempt ${attempt}/${maxRetries}...`);
+
+        // Tạo promise với timeout
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Request timeout after ${timeoutMs}ms`));
+          }, timeoutMs);
+        });
+
+        // Race giữa API call và timeout
+        const result = await Promise.race([fn(), timeoutPromise]);
+
+        console.log(`✅ Success on attempt ${attempt}`);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage =
+          error?.message || error?.toString() || "Unknown error";
+
+        console.error(`❌ Attempt ${attempt} failed:`, errorMessage);
+
+        // Nếu là lỗi timeout hoặc network error, retry
+        const shouldRetry =
+          errorMessage.includes("timeout") ||
+          errorMessage.includes("network") ||
+          errorMessage.includes("fetch") ||
+          errorMessage.includes("ECONNREFUSED") ||
+          errorMessage.includes("ETIMEDOUT") ||
+          error?.code === "ECONNREFUSED" ||
+          error?.code === "ETIMEDOUT";
+
+        if (shouldRetry && attempt < maxRetries) {
+          console.log(`⏳ Retrying in ${retryDelayMs}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+
+        // Nếu không nên retry hoặc đã hết số lần retry, throw error
+        throw error;
+      }
+    }
+
+    // Nếu đã hết số lần retry
+    throw lastError || new Error("Max retries exceeded");
+  };
+
   const handleBuyNFT = async () => {
     if (!nftData || buyLoading) return;
     setBuyLoading(true);
 
     try {
-      const response = await TransferService.sendCanTransfer({
-        fromAddress: user?.walletAddress ?? "",
-        // toAddressData: nftData?.creator?.address ?? "",
-        amountCan:
-          Number(nftData?.salePrice ? nftData?.salePrice : nftData?.price) ?? 0,
-      });
+      // Gọi TransferService với timeout và retry
+      const response = await withTimeoutAndRetry(
+        () =>
+          TransferService.sendCanTransfer({
+            fromAddress: user?.walletAddress ?? "",
+            amountCan:
+              Number(
+                nftData?.salePrice ? nftData?.salePrice : nftData?.price
+              ) ?? 0,
+          }),
+        60000, // 60s timeout
+        3, // 3 lần retry
+        2000 // 2s delay giữa các lần retry
+      );
 
       // Nếu có transactionHash thì coi như thành công
       if (response?.transactionHash) {
-        let result = await NFTService.buyP2PList({
-          nftId: nftData?.id,
-          transactionHash: response?.transactionHash,
-        });
+        // Gọi buyP2PList với timeout và retry
+        const result = await withTimeoutAndRetry(
+          () =>
+            NFTService.buyP2PList({
+              nftId: nftData?.id,
+              transactionHash: response?.transactionHash,
+            }),
+          30000, // 30s timeout cho API call
+          3, // 3 lần retry
+          2000 // 2s delay
+        );
 
         if (result.success) {
           setBuyLoading(false);
@@ -317,6 +397,24 @@ export default function NFTDetailPage() {
       }
     } catch (error: any) {
       setBuyLoading(false);
+      const errorMessage =
+        error?.message || error?.toString() || "Unknown error";
+
+      // Hiển thị thông báo lỗi cụ thể
+      if (errorMessage.includes("timeout")) {
+        toast.error("Mua NFT thất bại: Request timeout. Vui lòng thử lại sau.");
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
+        toast.error(
+          "Mua NFT thất bại: Lỗi kết nối mạng. Vui lòng kiểm tra kết nối và thử lại."
+        );
+      } else {
+        toast.error(`Mua NFT thất bại: ${errorMessage}`);
+      }
+
+      console.error("❌ handleBuyNFT Error:", error);
     }
   };
   return (
@@ -404,11 +502,21 @@ export default function NFTDetailPage() {
                     className="flex-1 gap-2 mt-2 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (type === "other") {
-                        setConfirmDialogOpen(true);
-                      } else {
-                        toast.success("Bạn đã sở hữu NFT này");
+                      if (!user) {
+                        toast.error("Bạn vui lòng đăng nhập để tiếp tục");
+                        return;
                       }
+                      if (type !== "other") {
+                        toast.success("Bạn đã sở hữu NFT này");
+                        return;
+                      }
+                      const isConnected =
+                        LocalStorageService.isConnectedToWallet();
+                      if (!isConnected) {
+                        setShowConnectModal(true);
+                        return;
+                      }
+                      setConfirmDialogOpen(true);
                     }}
                     disabled={buyLoading}
                   >
@@ -464,10 +572,15 @@ export default function NFTDetailPage() {
                       </div>
                       <div className="text-sm font-semibold text-white">
                         {(() => {
-                          const n = Number(nftData?.price);
-                          return Number.isFinite(n)
-                            ? n.toLocaleString("vi-VN")
-                            : String(nftData?.price);
+                          const raw = (nftData as any)?.salePrice
+                            ? nftData?.salePrice
+                            : nftData?.price;
+                          const n =
+                            typeof raw === "string"
+                              ? parseFloat(raw)
+                              : Number(raw);
+                          const safe = Number.isFinite(n) ? n : 0;
+                          return safe.toLocaleString("vi-VN");
                         })()}{" "}
                         {TOKEN_DEAULT_CURRENCY}
                       </div>
@@ -486,24 +599,6 @@ export default function NFTDetailPage() {
                             );
                           } catch {
                             return String(nftData.createdAt);
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  {nftData?.updatedAt && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Cập nhật
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {(() => {
-                          try {
-                            return new Date(nftData.updatedAt).toLocaleString(
-                              "vi-VN"
-                            );
-                          } catch {
-                            return String(nftData.updatedAt);
                           }
                         })()}
                       </div>
@@ -769,6 +864,58 @@ export default function NFTDetailPage() {
               disabled={buyLoading}
             >
               Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Wallet Modal */}
+      <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kết nối ví</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Vui lòng kết nối ví để thực hiện mua NFT.
+          </div>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setShowConnectModal(false)}
+              disabled={connectingWallet}
+            >
+              Huỷ
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={async () => {
+                try {
+                  setConnectingWallet(true);
+                  const eth = (window as any)?.ethereum;
+                  if (!eth?.isMetaMask) {
+                    setConnectingWallet(false);
+                    setShowConnectModal(false);
+                    return;
+                  }
+                  await eth.request({ method: "eth_requestAccounts" });
+                  LocalStorageService.setWalletConnectionStatus(true);
+                  try {
+                    window.dispatchEvent(
+                      new Event("wallet:connection-changed")
+                    );
+                  } catch {}
+                  setShowConnectModal(false);
+                  setConfirmDialogOpen(true);
+                } catch (_e) {
+                  setShowConnectModal(false);
+                } finally {
+                  setConnectingWallet(false);
+                }
+              }}
+              disabled={connectingWallet}
+            >
+              {connectingWallet ? "Đang kết nối..." : "Kết nối"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,11 +1,42 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { NFTService } from '@/api/services/nft-service';
-import type { NFTItem, Pagination, NFTStats } from '@/types/NFT';
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { NFTService } from "@/api/services/nft-service";
+import type {
+  NFTItem,
+  Pagination,
+  NFTStats,
+  NFTType,
+  NFTLevel,
+} from "@/types/NFT";
 
 // Type cho filter tabs
-export type NFTFilterType = 'all' | 'sale' | 'not-listed';
+export type NFTFilterType =
+  | "all"
+  | "sale"
+  | "not-listed"
+  | "can-sell"
+  | "can-staking";
+
+// Type cho advanced filters
+export interface AdvancedFilters {
+  type: NFTType | "all";
+  level: NFTLevel | "all";
+  priceRange: {
+    min: number;
+    max: number;
+  };
+}
+
+// Default advanced filters
+const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
+  type: "all",
+  level: "all",
+  priceRange: {
+    min: 0,
+    max: Infinity,
+  },
+};
 
 interface UseMyNFTCollectionResult {
   nfts: NFTItem[];
@@ -14,6 +45,9 @@ interface UseMyNFTCollectionResult {
   error: string | null;
   filter: NFTFilterType;
   setFilter: (filter: NFTFilterType) => void;
+  advancedFilters: AdvancedFilters;
+  setAdvancedFilters: (filters: AdvancedFilters) => void;
+  resetAdvancedFilters: () => void;
   pagination: Pagination;
   refetch: () => void;
 }
@@ -34,7 +68,10 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   const [allNFTs, setAllNFTs] = useState<NFTItem[]>([]); // Luu toan bo NFT
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<NFTFilterType>('all');
+  const [filter, setFilter] = useState<NFTFilterType>("all");
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(
+    DEFAULT_ADVANCED_FILTERS
+  );
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -54,19 +91,19 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
       const response = await NFTService.getNFTsByOwner({
         page: 1,
         limit: 100, // Tang limit de lay het NFT
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
+        sortBy: "createdAt",
+        sortOrder: "desc",
       });
 
       if (response.success && response.data) {
         setAllNFTs(response.data.nfts);
         setPagination(response.data.pagination);
       } else {
-        setError(response.message || 'Khong the tai danh sach NFT');
+        setError(response.message || "Khong the tai danh sach NFT");
         setAllNFTs([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khong xac dinh');
+      setError(err instanceof Error ? err.message : "Loi khong xac dinh");
       setAllNFTs([]);
     } finally {
       setLoading(false);
@@ -78,21 +115,57 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     fetchNFTs();
   }, [fetchNFTs]);
 
-  // Filter NFTs o client-side dua tren filter state
+  // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
-    if (filter === 'sale') {
-      return allNFTs.filter((nft) => nft.isSale === true);
-    } else if (filter === 'not-listed') {
-      return allNFTs.filter((nft) => nft.isSale === false);
+    let filtered = allNFTs;
+    // Filter theo sale status (all/sale/not-listed/can-sell/can-staking)
+    if (filter === "sale") {
+      filtered = filtered.filter((nft) => nft.isSale === true);
+    } else if (filter === "not-listed") {
+      filtered = filtered.filter((nft) => nft.isSale === false);
+    } else if (filter === "can-sell") {
+      filtered = filtered.filter((nft) => nft.isSale === false);
+    } else if (filter === "can-staking") {
+      filtered = filtered.filter((nft) => nft.isStaking === false);
     }
-    return allNFTs; // 'all'
-  }, [allNFTs, filter]);
+
+    // Filter theo type (normal, rank, mysteryBox, investment)
+    if (advancedFilters.type !== "all") {
+      filtered = filtered.filter((nft) => nft.type === advancedFilters.type);
+    }
+
+    // Filter theo level (rarity: 1, 2, 3, 4, 5)
+    if (advancedFilters.level !== "all") {
+      filtered = filtered.filter((nft) => nft.level === advancedFilters.level);
+    }
+
+    // Filter theo price range
+    if (
+      advancedFilters.priceRange.min > 0 ||
+      advancedFilters.priceRange.max < Infinity
+    ) {
+      filtered = filtered.filter((nft) => {
+        const price = nft.salePrice || nft.price;
+        return (
+          price >= advancedFilters.priceRange.min &&
+          price <= advancedFilters.priceRange.max
+        );
+      });
+    }
+
+    return filtered;
+  }, [allNFTs, filter, advancedFilters]);
 
   // Tinh toan stats tu TOAN BO NFTs
-  const stats = useMemo((): NFTStats => {
+  const stats = useMemo((): NFTStats & {
+    canSell: number;
+    canStaking: number;
+  } => {
     const totalNFTs = allNFTs.length;
     const onSale = allNFTs.filter((nft) => nft.isSale === true).length;
     const notListed = allNFTs.filter((nft) => nft.isSale === false).length;
+    const canSell = allNFTs.filter((nft) => nft.isSale === false).length;
+    const canStaking = allNFTs.filter((nft) => nft.isStaking === false).length;
     const inactive = allNFTs.filter((nft) => !nft.isActive).length;
 
     // Tinh tong gia tri: uu tien salePrice, neu khong co thi dung price
@@ -106,6 +179,8 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
       notListed,
       totalValue,
       inactive,
+      canSell,
+      canStaking,
     };
   }, [allNFTs]);
 
@@ -116,6 +191,11 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  // Reset advanced filters handler
+  const resetAdvancedFilters = useCallback(() => {
+    setAdvancedFilters(DEFAULT_ADVANCED_FILTERS);
+  }, []);
+
   return {
     nfts,
     stats,
@@ -123,6 +203,9 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     error,
     filter,
     setFilter: handleSetFilter,
+    advancedFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
     pagination,
     refetch: fetchNFTs,
   };

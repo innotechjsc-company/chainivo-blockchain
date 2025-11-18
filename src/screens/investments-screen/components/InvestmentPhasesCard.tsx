@@ -131,7 +131,7 @@ export const InvestmentPhasesCard = ({
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Tổng cung :</span>
+                      <span className="text-muted-foreground">Tổng cung:</span>
                       <span className="text-xl font-semibold gradient-text">
                         {phase.totalTokens.toLocaleString("en-US")}{" "}
                         {TOKEN_DEAULT_CURRENCY}

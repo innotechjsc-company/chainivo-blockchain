@@ -24,6 +24,7 @@ export interface Phase {
   isWhitelistRequired: boolean;
   whitelistAddresses: string[];
   id: string;
+  bonus?: number; // Tỷ lệ bonus phần trăm (0-100%), optional vì các phase cũ có thể không có
 }
 
 export interface InvestmentData {

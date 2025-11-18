@@ -7,9 +7,9 @@ import { useAppSelector } from "@/stores";
 import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
 import { NFTCard } from "@/components/nft";
+import NFTInvestCard from "@/components/nft/NFTInvestCard";
 
-// Trang quan ly NFT cua toi (chi hien thi NFT dau tu)
-export default function MyNFTScreen(): JSX.Element {
+export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
@@ -17,14 +17,12 @@ export default function MyNFTScreen(): JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect neu chua dang nhap
   useEffect(() => {
     if (isAuthenticated === false) {
       router.replace("/auth?tab=login");
     }
   }, [isAuthenticated, router]);
 
-  // Fetch my NFTs khi da dang nhap
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -33,11 +31,12 @@ export default function MyNFTScreen(): JSX.Element {
       setError(null);
       try {
         const res = await NFTService.getMyNFTOwnerships({ page: 1, limit: 50 });
-        const items = res?.data?.nfts ?? [];
+        const items = res?.data?.ownerships ?? [];
         // Loc client-side: chi lay NFT co type = 'investment'
         const investmentNFTs = items.filter(
-          (item) => item.type === "investment"
+          (item: any) => item?.nft?.type === "investment"
         );
+
         setNfts(investmentNFTs);
       } catch (err: unknown) {
         setError("Khong the tai danh sach NFT co phan");
@@ -49,9 +48,16 @@ export default function MyNFTScreen(): JSX.Element {
     fetchMyNFTs();
   }, [isAuthenticated]);
 
-  const handleNFTAction = (nft: NFTItem, action: "sell" | "buy" | "open") => {
+  const handleNFTAction = (
+    nft: NFTItem,
+    action: "sell" | "buy" | "open" | "cancel"
+  ) => {
     console.log(`Action ${action} on NFT:`, nft.id);
-    // TODO: Implement action handlers (sell, buy, open mystery box)
+    // TODO: Implement action handlers (sell, buy, open mystery box, cancel listing)
+    // - open: Open mystery box -> fetch rewards
+    // - sell: List NFT for sale
+    // - buy: Purchase NFT from marketplace
+    // - cancel: Cancel NFT listing
   };
 
   const content = useMemo(() => {
@@ -86,11 +92,14 @@ export default function MyNFTScreen(): JSX.Element {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {nfts.map((nft) => (
-          <NFTCard
+          <NFTInvestCard
             key={nft.id}
             nft={nft}
             showActions={true}
-            onActionClick={handleNFTAction}
+            onActionClick={(nft, action) =>
+              handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
+            }
+            type={type}
           />
         ))}
       </div>

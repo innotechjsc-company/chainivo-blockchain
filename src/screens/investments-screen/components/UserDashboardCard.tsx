@@ -117,7 +117,7 @@ export const UserDashboardCard = ({
           <Card className="glass border-primary/30 hover:border-primary/60 transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-foreground/80">
-                Số dư CAN
+                Số dư TOKEN
               </CardTitle>
               <Wallet className="w-4 h-4 text-primary" />
             </CardHeader>

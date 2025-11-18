@@ -46,7 +46,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { NFT, NFTService } from "@/api/services/nft-service";
-import { toast, TransferService } from "@/services";
+import { toast, TransferService, LocalStorageService } from "@/services";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { formatAmount, getLevelBadge } from "@/lib/utils";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -75,6 +75,8 @@ export default function NFTDetailPage() {
   const [comments, setComments] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
   const id = params?.id as string;
   const type = (searchParams?.get("type") || params?.type) as
     | "tier"
@@ -269,6 +271,84 @@ export default function NFTDetailPage() {
     }
   };
 
+  // Rewards Table Component
+  const RewardsTable = () => {
+    if (nftData?.type !== "mysteryBox" || !nftData?.rewards || nftData.rewards.length === 0) {
+      return null;
+    }
+
+    return (
+      <Card className="glass border-purple-500/30 bg-purple-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-purple-300">
+            <ShoppingBag className="w-5 h-5" />
+            Giải thưởng trong hộp quà ({nftData.rewards.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-purple-500/20">
+                <tr className="text-muted-foreground">
+                  <th className="text-left py-3 px-4 font-medium">STT</th>
+                  <th className="text-left py-3 px-4 font-medium">Loại</th>
+                  <th className="text-left py-3 px-4 font-medium">Chi tiết</th>
+                  <th className="text-left py-3 px-4 font-medium">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nftData.rewards.map((reward: any, index: number) => (
+                  <tr
+                    key={reward.id || index}
+                    className="border-b border-purple-500/10 hover:bg-purple-500/5 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-white font-mono">{index + 1}</td>
+                    <td className="py-3 px-4">
+                      <Badge
+                        variant="outline"
+                        className={`
+                          ${reward.rewardType === "nft"
+                            ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                            : "bg-green-500/20 text-green-300 border-green-500/30"
+                          }
+                        `}
+                      >
+                        {reward.rewardType === "nft" ? "NFT" : "Token"}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-white">
+                      {reward.rewardType === "nft" ? (
+                        <span className="text-blue-300">Cấp {reward.rank || "—"}</span>
+                      ) : (
+                        <span className="text-green-300 flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {formatAmount(reward.tokenMinQuantity || 0)} - {formatAmount(reward.tokenMaxQuantity || 0)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge
+                        variant="outline"
+                        className={`
+                          ${reward.isOpenable
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                            : "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                          }
+                        `}
+                      >
+                        {reward.isOpenable ? "✓ Có thể mở" : "Chưa mở"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   if (buyLoading) {
     return <LoadingSpinner />;
   }
@@ -285,7 +365,7 @@ export default function NFTDetailPage() {
           Quay lại
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12">
           {/* Image section */}
           <div className="space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
@@ -315,6 +395,11 @@ export default function NFTDetailPage() {
                   lượt bình luận
                 </div>
               </div>
+            </div>
+
+            {/* Rewards - visible on tablet+ only */}
+            <div className="hidden md:block">
+              <RewardsTable />
             </div>
           </div>
 
@@ -347,6 +432,16 @@ export default function NFTDetailPage() {
                   className="flex-1 gap-2 mt-2 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (!user) {
+                      toast.error("Bạn vui lòng đăng nhập để tiếp tục mua ");
+                      return;
+                    }
+                    const isConnected =
+                      LocalStorageService.isConnectedToWallet();
+                    if (!isConnected) {
+                      setShowConnectModal(true);
+                      return;
+                    }
                     setConfirmDialogOpen(true);
                   }}
                   disabled={buyLoading}
@@ -460,6 +555,13 @@ export default function NFTDetailPage() {
                 </pre>
               </div>
             )}
+
+
+          </div>
+
+          {/* Rewards - visible on mobile only */}
+          <div className="md:hidden">
+            <RewardsTable />
           </div>
         </div>
 
@@ -576,6 +678,58 @@ export default function NFTDetailPage() {
               disabled={buyLoading}
             >
               Đồng ý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Wallet Modal */}
+      <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kết nối ví</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Vui lòng kết nối ví để thực hiện mua NFT.
+          </div>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setShowConnectModal(false)}
+              disabled={connectingWallet}
+            >
+              Huỷ
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={async () => {
+                try {
+                  setConnectingWallet(true);
+                  const eth = (window as any)?.ethereum;
+                  if (!eth?.isMetaMask) {
+                    setConnectingWallet(false);
+                    setShowConnectModal(false);
+                    return;
+                  }
+                  await eth.request({ method: "eth_requestAccounts" });
+                  LocalStorageService.setWalletConnectionStatus(true);
+                  try {
+                    window.dispatchEvent(
+                      new Event("wallet:connection-changed")
+                    );
+                  } catch {}
+                  setShowConnectModal(false);
+                  setConfirmDialogOpen(true);
+                } catch (_e) {
+                  setShowConnectModal(false);
+                } finally {
+                  setConnectingWallet(false);
+                }
+              }}
+              disabled={connectingWallet}
+            >
+              {connectingWallet ? "Đang kết nối..." : "Kết nối"}
             </Button>
           </DialogFooter>
         </DialogContent>

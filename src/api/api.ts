@@ -2,7 +2,8 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { config } from "./config";
 import { Phase } from "./services/phase-service";
-import { LocalStorageService } from "@/services";
+import { LocalStorageService, ToastService } from "@/services";
+import router from "next/router";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -49,56 +50,18 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu lỗi 401 và chưa retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        // Nếu đang refresh, đưa request vào queue
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
+    // Neu loi 401 -> thong bao va chuyen ve trang login
+    if (error.response?.status === 401) {
       try {
-        // Gọi API refresh token
-        const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
-        const { refreshedToken, exp, user } = response.data;
-
-        // Lưu token mới vào LocalStorageService
-        LocalStorageService.setToken(refreshedToken, exp);
-        if (user) {
-          LocalStorageService.setUserInfo(user);
-        }
-
-        // Update token cho các requests trong queue
-        processQueue(null, refreshedToken);
-
-        // Retry request gốc với token mới
-        originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh token thất bại -> clear storage và redirect
-        processQueue(refreshError, null);
         LocalStorageService.clearAuthData();
-
-        // Chỉ redirect nếu đang ở browser (không phải SSR)
-        if (typeof window !== "undefined") {
-          // window.location.href = "/auth?tab=login";
-        }
-
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+      } catch {}
+      if (typeof window !== "undefined") {
+        ToastService.error(
+          "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+        );
+        router.push("/auth?tab=login");
       }
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
@@ -106,12 +69,23 @@ api.interceptors.response.use(
 );
 
 export const API_ENDPOINTS = {
+  NOTIFICATION: {
+    GET_MY_NOTIFICATIONS: "/api/notification/my-notifications",
+    READ_ALL_NOTIFICATIONS: "/api/notification/read-all",
+    READ_NOTIFICATION: (id: string) => `/api/notification/read/${id}`,
+  },
   AUTH: {
     LOGIN: "/api/users/login",
     REGISTER: "/api/users",
     REFRESH: "/api/users/refresh-token",
     LOGOUT: "/api/users/logout",
     WITH_AUTH: "/api/with-auth",
+  },
+
+  DIGITAL_REQUEST: {
+    LIST: "/api/digitization-request/send-request",
+    DETAIL: "/api/digitization-request/my-request",
+    CONFIRM: "/api/digitization-request/user-confirm",
   },
 
   INVESTMENT: {
@@ -136,6 +110,7 @@ export const API_ENDPOINTS = {
     UNLIKE: "/api/nft/unlike",
     COMMENT: "/api/nft/comment",
     POST_FOR_SALE: "/api/nft-market/post-for-sale",
+    CAN_FOR_SALE: "/api/nft-market/cancel-sale",
     P2P_LIST: "/api/nft-market/for-sale",
     LIST_INVESTMENT: "/api/investment-nft/list",
     BUY_INVESTMENT_NFT: "/api/investment-nft/buy-shares",
@@ -146,6 +121,11 @@ export const API_ENDPOINTS = {
     INVESTMENT_NFT_HISTORY_TRANSACTION: (nftId: string) =>
       `/api/nft-investment-history?where[nft][equals]=${nftId}`,
     OPEN_BOX: "/api/nft/open-box",
+    Mint_NFT_BLOCKCHAIN: "/api/nft/mint-to-blockchain",
+    SHARE_DETAIL: (nftId: string) =>
+      `/api/investment-nft/share-details?nftId=${nftId}`,
+    CHECK_OWNERSHIP: (nftId: string, walletAddress: string) =>
+      `/api/nft-market/check-owner-nft?tokenId=${nftId}&walletAddress=${walletAddress}`,
   },
 
   STAKING: {
@@ -155,6 +135,14 @@ export const API_ENDPOINTS = {
     UNSTAKE: (stakeId: string) => `/api/staking/unstake/${stakeId}`,
     CLAIM: (stakeId: string) => `/api/staking/claim/${stakeId}`,
     USER_STAKES: (userId: string) => `/api/staking/user-stakes/${userId}`,
+  },
+
+  FEE: {
+    GET_FEE: "/api/globals/system-fees",
+  },
+
+  BENEFITS: {
+    LIST: "/api/benefits-digi",
   },
 
   AIRDROP: {
@@ -187,7 +175,8 @@ export const API_ENDPOINTS = {
     UPDATE_USER_PROFILE: "/api/users/profile",
     CHANGE_PASSWORD: "/api/user/change-password",
     UPDATE_PROFILE: "/api/user/update-profile",
-    GET_PROFILE: "/api/user/profile",
+    GET_PROFILE: "/api/users/me",
+    GET_ME: "/api/users/me",
   },
   ABOUT: {
     LEADERS: "/api/leadership-team",
@@ -222,6 +211,88 @@ export interface AvatarObject {
   width: number;
   height: number;
   type: string;
+}
+
+// Rank object khi populate tu relationship
+export interface RankObject {
+  id: string;
+  name: string;
+  requiredPoints: number;
+  benefits?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Day du response tu /api/users/me (PayloadCMS)
+export interface UserMeResponse {
+  user: {
+    id: string;
+    email: string;
+    collection: string;
+    _strategy: string;
+    _verified?: boolean;
+
+    // Thong tin co ban
+    name?: string;
+    avatar?: string | AvatarObject; // Co the la ID hoac object neu depth > 0
+    bio?: string;
+
+    // Thong tin vi
+    walletAddress?: string;
+
+    // Vai tro & Quyen han
+    role: string; // 'user' | 'investor' | 'creator' | 'moderator' | 'admin'
+
+    // Trang thai xac minh
+    isEmailVerified?: boolean;
+    isKYCVerified?: boolean;
+    isWalletVerified?: boolean;
+
+    // Trang thai tai khoan
+    isActive?: boolean;
+    isSuspended?: boolean;
+    suspensionReason?: string;
+
+    // Theo doi dang nhap
+    lastLogin?: string;
+
+    // Ma gioi thieu
+    refCode?: string;
+
+    // Rank & Points
+    rank?: string | RankObject; // Co the la ID hoac object neu depth > 0
+    points?: number;
+
+    // Timestamps
+    createdAt: string;
+    updatedAt: string;
+  };
+  message?: string;
+  exp?: number;
+}
+
+// Simplified user profile cho app su dung
+export interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string; // Da parse tu avatar.url
+  bio?: string;
+  walletAddress?: string;
+  role: string;
+  isEmailVerified?: boolean;
+  isKYCVerified?: boolean;
+  isWalletVerified?: boolean;
+  isActive?: boolean;
+  isSuspended?: boolean;
+  suspensionReason?: string;
+  lastLogin?: string;
+  refCode?: string;
+  rank?: RankObject; // Da parse neu co
+  rankId?: string; // ID cua rank neu chua populate
+  points?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateProfileResponse {
