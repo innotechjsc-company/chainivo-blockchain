@@ -35,7 +35,7 @@ export const InvestmentPhasesCard = ({
   const phases = phasesProps || [];
   const isLoading = isLoadingProps || false;
   const error = errorProps || null;
-// investments
+  // investments
 
   // Handler cho card click - scroll to top khi navigate
   const handleCardClick = (phaseId: string) => {
@@ -51,7 +51,7 @@ export const InvestmentPhasesCard = ({
             <span className="gradient-text">Giai đoạn đầu tư</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất 
+            Tham gia đầu tư sớm để nhận được lợi nhuận tốt nhất
           </p>
           {isLoading && (
             <p className="text-sm text-muted-foreground mt-2">
@@ -252,7 +252,7 @@ export const InvestmentPhasesCard = ({
                       </Button>
                     )} */}
                     <Button
-                      className={`w-full ${
+                      className={`w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn ${
                         phase.status === "active" && activeButtonClassName
                           ? activeButtonClassName
                           : ""

@@ -33,6 +33,10 @@ export function getNFTType(type: string) {
       return "NFT hạng";
     case "mysteryBox":
       return "NFT hộp bí ẩn";
+    case "investment":
+      return "NFT đầu tư";
+    default:
+      return "—";
   }
 }
 
