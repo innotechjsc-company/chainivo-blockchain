@@ -242,7 +242,7 @@ export const InvestmentPhasesCard = ({
 
                   {/* Action Buttons */}
                   <div className="space-y-2">
-                    {showDetailsButton && (
+                    {/* {showDetailsButton && (
                       <Button
                         className="w-full"
                         variant="outline"
@@ -250,7 +250,7 @@ export const InvestmentPhasesCard = ({
                       >
                         Xem chi tiết
                       </Button>
-                    )}
+                    )} */}
                     <Button
                       className={`w-full ${
                         phase.status === "active" && activeButtonClassName
