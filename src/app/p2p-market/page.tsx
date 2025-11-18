@@ -495,14 +495,6 @@ export default function P2PMarketPage() {
                             {getNFTType(item.type ?? "normal")}
                           </div>
                         </div>
-                        <div className="text-left">
-                          <div className="text-xs text-muted-foreground">
-                            Đã mint NFT
-                          </div>
-                          <div className="text-lg font-bold">
-                            {item?.isMinted ? "Có" : "Không"}
-                          </div>
-                        </div>
                       </div>
 
                       {item?.walletAddress !== user?.walletAddress && (
@@ -514,7 +506,6 @@ export default function P2PMarketPage() {
                               router.push(`/nft/${item.id}?type=other`);
                             }}
                           >
-                            <Eye className="w-4 h-4" />
                             Mua ngay
                           </Button>
                         </div>

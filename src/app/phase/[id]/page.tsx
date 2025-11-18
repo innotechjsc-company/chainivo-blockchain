@@ -373,7 +373,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   <Progress value={progressPercent} className="h-3 bg-white/20">
                     <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500 animate-glow" />
                   </Progress>
-                  <p className="text-xs text-center opacity-80">
+                  <p className="text-xs text-center opacity-80 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn">
                     {phase.status === "active" &&
                       `Còn ${(100 - progressPercent).toFixed(
                         0
@@ -545,7 +545,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       type="number"
                       value={investAmount}
                       onChange={(e) => setInvestAmount(e.target.value)}
-                      className="text-lg"
+                      className="text-lg border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50"
                       placeholder="Vui lòng nhập số tiền đầu tư "
                       min="0"
                     />
@@ -584,7 +584,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   </div>
 
                   <Button
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
                     size="lg"
                     variant={phase.status === "active" ? "default" : "outline"}
                     disabled={phase.status !== "active" || buyLoading}
@@ -610,7 +610,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     }}
                   >
                     {buyLoading && phase.status === "active" ? (
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2 ">
                         <Spinner className="size-4" />
                         Đang xử lý...
                       </span>
