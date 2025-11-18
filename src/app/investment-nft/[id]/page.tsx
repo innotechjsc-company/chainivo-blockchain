@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, ArrowLeft, FileDown } from "lucide-react";
+import Link from "next/link";
+import { Heart, ArrowLeft, FileDown, Copy } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
@@ -87,12 +88,61 @@ export default function InvestmentNFTDetailPage() {
     return `${base}${path}`;
   };
 
+  const handleCopyValue = async (value?: string, label?: string) => {
+    if (!value) {
+      toast.error("Không có dữ liệu để sao chép");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label || "Giá trị"} đã được sao chép`);
+    } catch (error) {
+      console.error("Copy error:", error);
+      toast.error("Không thể sao chép nội dung");
+    }
+  };
+
   const imageSrc = useMemo(() => {
     return (
       getImageUrl(data?.image || data?.imageUrl || data?.image_url) ||
       (data?.type === "tier" ? "/tier-gold.jpg" : "/nft-box.jpg")
     );
   }, [data]);
+
+  const fullDescriptionHtml = useMemo(() => {
+    const fullDesc = data?.fullDescription ?? data?.description ?? "";
+
+    if (typeof fullDesc === "string") {
+      return fullDesc.replace(/\n/g, "<br/>");
+    }
+
+    if (typeof fullDesc === "object" && fullDesc !== null) {
+      if (typeof fullDesc.html === "string") {
+        return fullDesc.html.replace(/\n/g, "<br/>");
+      }
+
+      if (typeof fullDesc.content === "string") {
+        return fullDesc.content.replace(/\n/g, "<br/>");
+      }
+
+      if (typeof fullDesc.text === "string") {
+        return fullDesc.text.replace(/\n/g, "<br/>");
+      }
+
+      if (typeof fullDesc.json === "string") {
+        try {
+          const parsed = JSON.parse(fullDesc.json);
+          if (typeof parsed === "string") {
+            return parsed.replace(/\n/g, "<br/>");
+          }
+        } catch {
+          // ignore parse error
+        }
+      }
+    }
+
+    return "";
+  }, [data?.fullDescription, data?.description]);
 
   const handleBuyNFT = async () => {
     if (!data || buyLoading) return;
@@ -191,6 +241,57 @@ export default function InvestmentNFTDetailPage() {
           .trim() === userWalletLowerCase
     );
   }, [transactions, userWalletLowerCase]);
+
+  const currentDateTime = useMemo(() => {
+    if (userTransactions.length) {
+      const parseDate = (tx: any) => {
+        const raw =
+          tx?.createdAt ||
+          tx?.created_at ||
+          tx?.date ||
+          tx?.updatedAt ||
+          tx?.timestamp;
+        const parsed = raw ? new Date(raw) : null;
+        return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+      };
+
+      const latestTx = userTransactions.reduce(
+        (latest: Date | null, tx: any) => {
+          const txDate = parseDate(tx);
+          if (!txDate) return latest;
+          if (!latest || txDate > latest) return txDate;
+          return latest;
+        },
+        null
+      );
+
+      if (latestTx) {
+        try {
+          return new Intl.DateTimeFormat("vi-VN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }).format(latestTx);
+        } catch {
+          return latestTx.toLocaleString("vi-VN");
+        }
+      }
+    }
+
+    return new Intl.DateTimeFormat("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date());
+  }, [userTransactions]);
 
   const averageUserInvestment = useMemo(() => {
     if (!userTransactions.length) return 0;
@@ -321,8 +422,8 @@ export default function InvestmentNFTDetailPage() {
             ❋
           </div>
 
-          <div className="flex flex-col items-center justify-center mb-6 space-y-2">
-            <div className="w-20 h-20 rounded-full border-2 border-amber-200/70 bg-white/70 flex items-center justify-center shadow-lg">
+          <div className="flex gap-1 items-center justify-center mb-6 space-y-2">
+            <div className="w-20 h-20 flex items-center justify-center mt-2 ">
               <img
                 src="/logo hinh.png"
                 alt="Chainivo logo"
@@ -330,11 +431,13 @@ export default function InvestmentNFTDetailPage() {
                 draggable={false}
               />
             </div>
-            <div className="text-center uppercase tracking-[0.4em] text-amber-900 font-black text-sm">
-              chainivo
-            </div>
-            <div className="text-center uppercase tracking-[0.6em] text-amber-700 text-[10px] font-semibold">
-              blockchain
+            <div className="flex flex-col items-center justify-center flex-col">
+              <div className="text-center uppercase tracking-[0.4em] text-amber-900 font-black text-sm">
+                chainivo
+              </div>
+              <div className="text-center uppercase tracking-[0.6em] text-amber-700 text-[10px] font-semibold">
+                blockchain
+              </div>
             </div>
           </div>
 
@@ -385,7 +488,7 @@ export default function InvestmentNFTDetailPage() {
                 Tổng số cổ phần NFT
               </div>
               <div className="text-lg font-bold text-amber-900">
-                {formatAmount(data?.totalShares)} phần
+                {formatAmount(data?.totalShares)} cổ phần
               </div>
             </div>
 
@@ -400,14 +503,14 @@ export default function InvestmentNFTDetailPage() {
                     typeof shareDetail === "object" &&
                     "shares" in shareDetail
                   )
-                    return `${formatAmount(shareDetail.shares)} phần`;
+                    return `${formatAmount(shareDetail.shares)} cổ phần`;
                   if (Array.isArray(shareDetail)) {
                     const totalShares = shareDetail.reduce(
                       (sum: number, item: any) =>
                         sum + Number(item?.shares || item?.totalShares || 0),
                       0
                     );
-                    return `${formatAmount(totalShares)} phần`;
+                    return `${formatAmount(totalShares)} cổ phần`;
                   }
                   return "—";
                 })()}
@@ -423,6 +526,19 @@ export default function InvestmentNFTDetailPage() {
                 {data?.currency?.toUpperCase() || TOKEN_DEAULT_CURRENCY}
               </div>
             </div>
+          </div>
+          <div className="w-full flex justify-center">
+            <span className="text-sm md:text-base  text-amber-900/70 font-semibold leading-relaxed text-center flex items-center gap-2">
+              HÀ NỘI, {currentDateTime} -
+              <Link
+                href={config.API_BASE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-amber-900 cursor-pointer"
+              >
+                {config.API_BASE_URL.toUpperCase()}
+              </Link>
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -568,13 +684,7 @@ export default function InvestmentNFTDetailPage() {
                     {data?.fullDescription ? (
                       <div className="space-y-2">
                         <CollapsibleDescription
-                          html={String(
-                            data?.fullDescription?.html
-                              ? data.fullDescription.html
-                              : data.fullDescription
-                              ? data.fullDescription
-                              : ""
-                          ).replace(/\n/g, "<br/>")}
+                          html={fullDescriptionHtml}
                           maxHeight={totalCardsHeight}
                         />
                       </div>
@@ -875,7 +985,9 @@ export default function InvestmentNFTDetailPage() {
                             typeof shareDetail === "object" &&
                             "shares" in shareDetail
                           ) {
-                            return `${formatAmount(shareDetail.shares)} phần`;
+                            return `${formatAmount(
+                              shareDetail.shares
+                            )} cổ phần`;
                           }
                           if (Array.isArray(shareDetail)) {
                             const myShares = shareDetail.find(
@@ -885,7 +997,7 @@ export default function InvestmentNFTDetailPage() {
                             );
                             return `${formatAmount(
                               myShares?.shares || myShares?.totalShares || 0
-                            )} phần`;
+                            )} cổ phần`;
                           }
                           return "—";
                         })()}
@@ -945,7 +1057,7 @@ export default function InvestmentNFTDetailPage() {
                         Tổng cổ phần
                       </div>
                       <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.totalShares)} phần
+                        {formatAmount(data?.totalShares)} cổ phần
                       </div>
                     </div>
                   )}
@@ -955,7 +1067,7 @@ export default function InvestmentNFTDetailPage() {
                         Cổ phần mua tối thiểu
                       </div>
                       <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.minSharesPerPurchase ?? 1)} phần
+                        {formatAmount(data?.minSharesPerPurchase ?? 1)} cổ phần
                       </div>
                     </div>
                   )}
@@ -964,7 +1076,7 @@ export default function InvestmentNFTDetailPage() {
                       Đã bán
                     </div>
                     <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.soldShares)} phần
+                      {formatAmount(data?.soldShares)} cổ phần
                     </div>
                   </div>
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
@@ -972,7 +1084,7 @@ export default function InvestmentNFTDetailPage() {
                       Còn lại
                     </div>
                     <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.availableShares)} phần
+                      {formatAmount(data?.availableShares)} cổ phần
                     </div>
                   </div>
 
@@ -993,7 +1105,42 @@ export default function InvestmentNFTDetailPage() {
                       Số nhà đầu tư
                     </div>
                     <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.totalInvestors)} người
+                      {formatAmount(data?.totalInvestors)} nhà đầu tư
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      TokendID
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {data?.tokenId || "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                    <div className="text-xs text-muted-foreground mb-1 ">
+                      <span className="font-semibol mr-2">SmartContract</span>
+                      <span>
+                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopyValue(
+                                config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS,
+                                "SmartContract"
+                              )
+                            }
+                            className=" rounded-md border border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                            aria-label="Sao chép địa chỉ SmartContract"
+                          >
+                            <Copy className="w-4 h-4 text-cyan-300" />
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
+                      <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
+                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1019,18 +1166,6 @@ export default function InvestmentNFTDetailPage() {
                   </div>
                 ) : shareDetail ? (
                   <div className="space-y-4">
-                    {/* Tổng số cổ phần đã mua */}
-                    {shareDetail.length > 0 && (
-                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-4">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Danh sách người mua cổ phần
-                        </div>
-                        <div className="text-2xl font-bold text-cyan-400">
-                          {formatAmount(shareDetail.length)} CP
-                        </div>
-                      </div>
-                    )}
-
                     {shareDetail &&
                       Array.isArray(shareDetail) &&
                       shareDetail.length > 0 && (
@@ -1447,7 +1582,7 @@ function CollapsibleDescription({
     return (
       <div className="">
         <div
-          className="text-muted-foreground leading-relaxed overflow-y-auto h-[585px]"
+          className="text-muted-foreground leading-relaxed overflow-y-auto h-[700px]"
           dangerouslySetInnerHTML={{ __html: html }}
         />
         <div className="text-right">
