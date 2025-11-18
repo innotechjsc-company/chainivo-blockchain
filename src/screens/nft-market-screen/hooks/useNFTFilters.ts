@@ -13,7 +13,7 @@ export interface NFTFiltersState {
   shares?: string[];
 }
 
-export const useNFTFilters = (nfts: NFT[]) => {
+export const useNFTFilters = (nfts: NFT[], isSteryBoxView: boolean) => {
   const [filters, setFilters] = useState<NFTFiltersState>({
     rarity: [],
     priceRange: [0, 10000],
@@ -166,7 +166,7 @@ export const useNFTFilters = (nfts: NFT[]) => {
     }
   };
 
-  const fetchMysteryBoxNFTs = async (page: number = 1, limit: number = 9) => {
+  const fetchMysteryBoxNFTs = async (page: number = 1, limit: number = 20) => {
     try {
       setLoading(true);
       const response = await NFTService.allNFTInMarketplace({
@@ -301,11 +301,11 @@ export const useNFTFilters = (nfts: NFT[]) => {
       }
     };
     fetchData();
-  }, [userInfo]);
+  }, [userInfo, isSteryBoxView]);
 
   useEffect(() => {
     GetInfoNFT();
-  }, [userInfo]);
+  }, [userInfo, isSteryBoxView]);
 
   const filteredNFTs = useMemo(() => {
     return nfts.filter((nft) => {

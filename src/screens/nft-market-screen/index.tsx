@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -8,6 +9,8 @@ import { NFTMarketHeaderCardMarketNft } from "./components/NFTMarketHeaderCardMa
 import { NFTGridSteryBoxCard } from "./components/NFTGridSteryBoxCard";
 
 export default function NFTMarketScreen() {
+  const searchParams = useSearchParams();
+  const isSteryBoxView = searchParams?.get("type") === "sterybox";
   const { nfts } = useNFTData();
   const { stats, volumeData, priceData } = useNFTStats();
   const {
@@ -27,7 +30,7 @@ export default function NFTMarketScreen() {
     mysteryBoxData,
     mysteryBoxTotalPages,
     mysteryBoxCurrentPage,
-  } = useNFTFilters(nfts);
+  } = useNFTFilters(nfts, isSteryBoxView);
 
   const isLoading = loading;
 
@@ -89,7 +92,11 @@ export default function NFTMarketScreen() {
   }, [pickRandomMysteryBoxItems]);
 
   useEffect(() => {
-    if (!Array.isArray(mysteryBoxData) || mysteryBoxData.length <= 3) {
+    if (
+      !Array.isArray(mysteryBoxData) ||
+      mysteryBoxData.length <= 3 ||
+      isSteryBoxView
+    ) {
       return;
     }
 
@@ -100,7 +107,13 @@ export default function NFTMarketScreen() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [mysteryBoxData, pickRandomMysteryBoxItems]);
+  }, [mysteryBoxData, pickRandomMysteryBoxItems, isSteryBoxView]);
+
+  const steryBoxItems = isSteryBoxView
+    ? mysteryBoxData
+    : displayedMysteryBoxItems;
+  const hasMysteryBoxItems =
+    Array.isArray(steryBoxItems) && steryBoxItems.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,12 +122,14 @@ export default function NFTMarketScreen() {
 
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Market Header */}
-        <NFTMarketHeaderCardMarketNft
-          stats={stats}
-          volumeData={volumeData}
-          priceData={priceData}
-          analytics={otherNFTsAnalytics}
-        />
+        {!isSteryBoxView && (
+          <NFTMarketHeaderCardMarketNft
+            stats={stats}
+            volumeData={volumeData}
+            priceData={priceData}
+            analytics={otherNFTsAnalytics}
+          />
+        )}
 
         {/* Filters */}
         <NFTFiltersCard
@@ -132,25 +147,29 @@ export default function NFTMarketScreen() {
           />
         ) : (
           <>
-            {otherNFTsData.length > 0 && (
+            {hasMysteryBoxItems && (
               <div className="mb-8">
                 <NFTGridSteryBoxCard
-                  nfts={displayedMysteryBoxItems}
+                  nfts={steryBoxItems}
                   title="NFT Hộp bí ẩn"
-                  initialCount={3}
+                  initialCount={
+                    isSteryBoxView && steryBoxItems ? steryBoxItems.length : 3
+                  }
                   totalPages={mysteryBoxTotalPages}
                   currentPage={mysteryBoxCurrentPage}
                   onPageChange={(page) => fetchMysteryBoxNFTs(page, 9)}
                 />
-                <NFTGridCard
-                  nfts={otherNFTsData}
-                  title="NFT Marketplace"
-                  initialCount={9}
-                  totalPages={totalPages}
-                  currentPage={currentPage}
-                  onPageChange={(page) => fetchOtherNFTs(page, 9)}
-                />
               </div>
+            )}
+            {!isSteryBoxView && otherNFTsData.length > 0 && (
+              <NFTGridCard
+                nfts={otherNFTsData}
+                title="NFT Marketplace"
+                initialCount={9}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={(page) => fetchOtherNFTs(page, 9)}
+              />
             )}
           </>
         )}
