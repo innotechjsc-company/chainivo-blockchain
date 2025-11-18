@@ -308,7 +308,7 @@ export default function P2PMarketPage() {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-3"
+                    className="pl-3 border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50"
                     placeholder="Tìm kiếm NFT theo tên"
                   />
                 </div>
@@ -317,7 +317,7 @@ export default function P2PMarketPage() {
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Độ hiếm</span>
                     <Select value={rarity} onValueChange={setRarity}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50">
                         <SelectValue placeholder="-- Chọn độ hiếm --" />
                       </SelectTrigger>
                       <SelectContent>
@@ -334,7 +334,7 @@ export default function P2PMarketPage() {
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Loại</span>
                     <Select value={assetType} onValueChange={setAssetType}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50">
                         <SelectValue placeholder="-- Chọn loại --" />
                       </SelectTrigger>
                       <SelectContent>
@@ -466,12 +466,20 @@ export default function P2PMarketPage() {
                         {getLevelBadge(item.level as string)}
                       </Badge>
                     </div>
-                    <CardContent className="p-4 flex-1 flex flex-col">
+                    <CardContent className="pb-4 flex-1 flex flex-col space-y-2">
                       <h3 className="text-lg font-bold mb-2 truncate">
                         {item.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {item.collection}
+                      <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
+                        Người bán:{" "}
+                        <p className="font-mono text-foreground">
+                          {item.walletAddress
+                            ? `${item.walletAddress.slice(
+                                0,
+                                4
+                              )}...${item.walletAddress.slice(-4)}`
+                            : "—"}
+                        </p>
                       </p>
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
@@ -495,14 +503,6 @@ export default function P2PMarketPage() {
                             {getNFTType(item.type ?? "normal")}
                           </div>
                         </div>
-                        <div className="text-left">
-                          <div className="text-xs text-muted-foreground">
-                            Đã mint NFT
-                          </div>
-                          <div className="text-lg font-bold">
-                            {item?.isMinted ? "Có" : "Không"}
-                          </div>
-                        </div>
                       </div>
 
                       {item?.walletAddress !== user?.walletAddress && (
@@ -514,7 +514,6 @@ export default function P2PMarketPage() {
                               router.push(`/nft/${item.id}?type=other`);
                             }}
                           >
-                            <Eye className="w-4 h-4" />
                             Mua ngay
                           </Button>
                         </div>
