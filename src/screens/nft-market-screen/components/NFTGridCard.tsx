@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NFTCard } from "./NFTCard";
 import { NFT } from "../hooks";
 import { useRouter } from "next/navigation";
+import { NFTType } from "@/types";
 
 interface NFTGridCardProps {
   nfts: NFT[];

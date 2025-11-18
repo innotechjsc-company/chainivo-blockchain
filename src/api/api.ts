@@ -4,6 +4,7 @@ import { config } from "./config";
 import { Phase } from "./services/phase-service";
 import { LocalStorageService, ToastService } from "@/services";
 import router from "next/router";
+import { AuthService } from "./services/auth-service";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
@@ -50,18 +51,104 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Neu loi 401 -> thong bao va chuyen ve trang login
+    // Neu loi 401 -> thu refresh token truoc khi logout
     if (error.response?.status === 401) {
-      try {
-        LocalStorageService.clearAuthData();
-      } catch {}
-      if (typeof window !== "undefined") {
-        ToastService.error(
-          "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
-        );
-        router.push("/auth?tab=login");
+      // Kiem tra xem co phai la refresh token request khong (tranh vong lap)
+      const isRefreshTokenRequest = originalRequest.url?.includes(
+        "/api/users/refresh-token"
+      );
+
+      // Neu la refresh token request ma van bi 401 -> token khong hop le, logout
+      if (isRefreshTokenRequest) {
+        try {
+          LocalStorageService.clearAuthData();
+        } catch {}
+        if (typeof window !== "undefined") {
+          ToastService.error(
+            "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+          );
+          router.push("/auth?tab=login");
+        }
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
+
+      // Neu request da duoc retry roi -> logout
+      if (originalRequest._retry) {
+        try {
+          LocalStorageService.clearAuthData();
+        } catch {}
+        if (typeof window !== "undefined") {
+          ToastService.error(
+            "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+          );
+          router.push("/auth?tab=login");
+        }
+        return Promise.reject(error);
+      }
+
+      // Neu dang refresh token -> them request vao queue
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      // Bat dau refresh token
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Goi API refresh token
+        const refreshSuccess = await AuthService.refreshToken();
+
+        if (refreshSuccess) {
+          // Refresh thanh cong -> lay token moi va retry request ban dau
+          const newToken = LocalStorageService.getToken();
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            // Process queue voi token moi
+            processQueue(null, newToken);
+            isRefreshing = false;
+            // Retry request ban dau
+            return api(originalRequest);
+          }
+        }
+
+        // Refresh that bai -> logout
+        processQueue(error, null);
+        isRefreshing = false;
+        try {
+          LocalStorageService.clearAuthData();
+        } catch {}
+        if (typeof window !== "undefined") {
+          ToastService.error(
+            "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+          );
+          router.push("/auth?tab=login");
+        }
+        return Promise.reject(error);
+      } catch (refreshError) {
+        // Refresh that bai -> logout
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        try {
+          LocalStorageService.clearAuthData();
+        } catch {}
+        if (typeof window !== "undefined") {
+          ToastService.error(
+            "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
+          );
+          router.push("/auth?tab=login");
+        }
+        return Promise.reject(refreshError);
+      }
     }
 
     return Promise.reject(error);
