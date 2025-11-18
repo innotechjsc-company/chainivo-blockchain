@@ -273,7 +273,11 @@ export default function NFTDetailPage() {
 
   // Rewards Table Component
   const RewardsTable = () => {
-    if (nftData?.type !== "mysteryBox" || !nftData?.rewards || nftData.rewards.length === 0) {
+    if (
+      nftData?.type !== "mysteryBox" ||
+      !nftData?.rewards ||
+      nftData.rewards.length === 0
+    ) {
       return null;
     }
 
@@ -293,7 +297,9 @@ export default function NFTDetailPage() {
                   <th className="text-left py-3 px-4 font-medium">STT</th>
                   <th className="text-left py-3 px-4 font-medium">Loại</th>
                   <th className="text-left py-3 px-4 font-medium">Chi tiết</th>
-                  <th className="text-left py-3 px-4 font-medium">Trạng thái</th>
+                  <th className="text-left py-3 px-4 font-medium">
+                    Trạng thái
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -302,14 +308,17 @@ export default function NFTDetailPage() {
                     key={reward.id || index}
                     className="border-b border-purple-500/10 hover:bg-purple-500/5 transition-colors"
                   >
-                    <td className="py-3 px-4 text-white font-mono">{index + 1}</td>
+                    <td className="py-3 px-4 text-white font-mono">
+                      {index + 1}
+                    </td>
                     <td className="py-3 px-4">
                       <Badge
                         variant="outline"
                         className={`
-                          ${reward.rewardType === "nft"
-                            ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
-                            : "bg-green-500/20 text-green-300 border-green-500/30"
+                          ${
+                            reward.rewardType === "nft"
+                              ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                              : "bg-green-500/20 text-green-300 border-green-500/30"
                           }
                         `}
                       >
@@ -318,11 +327,14 @@ export default function NFTDetailPage() {
                     </td>
                     <td className="py-3 px-4 text-white">
                       {reward.rewardType === "nft" ? (
-                        <span className="text-blue-300">Cấp {reward.rank || "—"}</span>
+                        <span className="text-blue-300">
+                          Cấp {reward.rank || "—"}
+                        </span>
                       ) : (
                         <span className="text-green-300 flex items-center gap-1">
                           <DollarSign className="w-3 h-3" />
-                          {formatAmount(reward.tokenMinQuantity || 0)} - {formatAmount(reward.tokenMaxQuantity || 0)}
+                          {formatAmount(reward.tokenMinQuantity || 0)} -{" "}
+                          {formatAmount(reward.tokenMaxQuantity || 0)}
                         </span>
                       )}
                     </td>
@@ -330,9 +342,10 @@ export default function NFTDetailPage() {
                       <Badge
                         variant="outline"
                         className={`
-                          ${reward.isOpenable
-                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                            : "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                          ${
+                            reward.isOpenable
+                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                              : "bg-gray-500/20 text-gray-300 border-gray-500/30"
                           }
                         `}
                       >
@@ -352,27 +365,19 @@ export default function NFTDetailPage() {
   if (buyLoading) {
     return <LoadingSpinner />;
   }
-
+  const DETAIL_PANEL_MAX_HEIGHT = 645;
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => router.push("/nft-market")}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12">
           {/* Image section */}
           <div className="space-y-4">
-            <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
                 src={getNFTImage(nftData)}
                 alt={nftData.name ?? "NFT"}
-                className="object-cover w-full h-full"
+                className="object-cover w-full relative overflow-hidden  flex items-center justify-center"
+                style={{ height: `${DETAIL_PANEL_MAX_HEIGHT}px` }}
                 onError={(e) => {
                   // Fallback nếu cả ảnh mặc định cũng lỗi
                   const target = e.target as HTMLImageElement;
@@ -397,69 +402,8 @@ export default function NFTDetailPage() {
               </div>
             </div>
 
-            {/* Rewards - visible on tablet+ only */}
-            <div className="hidden md:block">
-              <RewardsTable />
-            </div>
-          </div>
-
-          {/* Details section */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {nftData.name ?? "Không rõ"}
-              </h1>
-              <div>
-                <p> Mô tả : </p>
-                <CollapsibleDescription
-                  html={String(nftData?.description || "").replace(
-                    /\n/g,
-                    "<br/>"
-                  )}
-                />
-              </div>
-            </div>
-            {/* Price */}
-            <div className="glass rounded-xl p-4">
-              <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
-              <div className="text-3xl font-bold gradient-text">
-                {formatAmount((nftData as any)?.price)} {TOKEN_DEAULT_CURRENCY}
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="flex-1 gap-2 mt-2 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!user) {
-                      toast.error("Bạn vui lòng đăng nhập để tiếp tục mua ");
-                      return;
-                    }
-                    const isConnected =
-                      LocalStorageService.isConnectedToWallet();
-                    if (!isConnected) {
-                      setShowConnectModal(true);
-                      return;
-                    }
-                    setConfirmDialogOpen(true);
-                  }}
-                  disabled={buyLoading}
-                >
-                  {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
-                  {buyLoading ? "Đang xử lý..." : "Mua ngay"}
-                </Button>
-              </div>
-              {buyLoading && (
-                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <p className="text-sm text-blue-400 text-center">
-                    Giao dịch đang xử lý...
-                  </p>
-                </div>
-              )}
-            </div>
             <Card className="glass">
-              <CardContent className="p-5">
+              <CardContent>
                 <h3 className="font-semibold mb-4 text-white">
                   Thông tin chi tiết
                 </h3>
@@ -540,6 +484,70 @@ export default function NFTDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Rewards - visible on tablet+ only */}
+            <div className="hidden md:block">
+              <RewardsTable />
+            </div>
+          </div>
+
+          {/* Details section */}
+          <div
+            className="space-y-6 lg:pr-3 lg:sticky lg:top-21"
+            style={{ maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px` }}
+          >
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                {nftData.name ?? "Không rõ"}
+              </h1>
+              <div>
+                <CollapsibleDescription
+                  html={String(nftData?.description || "").replace(
+                    /\n/g,
+                    "<br/>"
+                  )}
+                />
+              </div>
+            </div>
+            {/* Price */}
+            <div className="glass rounded-xl p-4">
+              <div className="text-sm text-muted-foreground mb-1">Giá bán</div>
+              <div className="text-3xl font-bold gradient-text">
+                {formatAmount((nftData as any)?.price)} {TOKEN_DEAULT_CURRENCY}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  className="flex-1 gap-2 mt-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!user) {
+                      toast.error("Bạn vui lòng đăng nhập để tiếp tục mua ");
+                      return;
+                    }
+                    const isConnected =
+                      LocalStorageService.isConnectedToWallet();
+                    if (!isConnected) {
+                      setShowConnectModal(true);
+                      return;
+                    }
+                    setConfirmDialogOpen(true);
+                  }}
+                  disabled={buyLoading}
+                >
+                  {type === "other" ? <ShoppingCart className="w-4 h-4" /> : ""}
+                  {buyLoading ? "Đang xử lý..." : "Mua ngay"}
+                </Button>
+              </div>
+              {buyLoading && (
+                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-sm text-blue-400 text-center">
+                    Giao dịch đang xử lý...
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Metadata (if exists) */}
             {nftData.metadata && (
               <div className="glass rounded-xl p-4">
@@ -555,8 +563,6 @@ export default function NFTDetailPage() {
                 </pre>
               </div>
             )}
-
-
           </div>
 
           {/* Rewards - visible on mobile only */}

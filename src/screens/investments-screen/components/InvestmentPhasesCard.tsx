@@ -12,22 +12,30 @@ import {
   TOKEN_DEAULT_CURRENCY_INVESTMENT,
 } from "@/api/config";
 
+// investments
 interface InvestmentPhasesCardProps {
   phases: Phase[];
   isLoading: boolean;
   error: string | null;
+  gridColsClass?: string;
+  showDetailsButton?: boolean;
+  activeButtonClassName?: string;
 }
 
 export const InvestmentPhasesCard = ({
   phases: phasesProps,
   isLoading: isLoadingProps,
   error: errorProps,
+  gridColsClass = "md:grid-cols-3 lg:grid-cols-4",
+  showDetailsButton = true,
+  activeButtonClassName = "",
 }: InvestmentPhasesCardProps) => {
   const router = useRouter();
 
   const phases = phasesProps || [];
   const isLoading = isLoadingProps || false;
   const error = errorProps || null;
+  // investments
 
   // Handler cho card click - scroll to top khi navigate
   const handleCardClick = (phaseId: string) => {
@@ -52,7 +60,7 @@ export const InvestmentPhasesCard = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className={`grid grid-cols-1 ${gridColsClass} gap-6`}>
           {isLoading &&
             Array.from({ length: 4 }).map((_, index) => (
               <Card
@@ -180,6 +188,15 @@ export const InvestmentPhasesCard = ({
                         %
                       </span>
                     </div>
+                    {/* Bonus */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Bonus:
+                      </span>
+                      <span className="text-base font-semibold text-primary">
+                        {phase.bonus} %
+                      </span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">
                         Thời gian:
@@ -233,9 +250,22 @@ export const InvestmentPhasesCard = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
+                    {/* {showDetailsButton && (
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => router.push(`/phase/${phase.id}`)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    )} */}
                     <Button
-                      className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
+                      className={`w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn ${
+                        phase.status === "active" && activeButtonClassName
+                          ? activeButtonClassName
+                          : ""
+                      }`}
                       variant={
                         phase.status === "active" ? "default" : "outline"
                       }

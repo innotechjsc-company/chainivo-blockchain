@@ -4,6 +4,7 @@ import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/utils/formatters";
 import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface NFTStats {
   totalNFTs: string;
@@ -33,22 +34,56 @@ export const NFTMarketHeaderCard = ({
   analytics,
 }: NFTMarketHeaderCardProps) => {
   console.log("analytics", analytics);
-  const statItems = [
+  const [totalVolume, setTotalVolume] = useState<number>(0);
+  const [averageFloorPrice, setAverageFloorPrice] = useState<number>(0);
+  useEffect(() => {
+    if (analytics?.totalVolume) {
+      setTotalVolume(analytics?.totalVolume);
+    }
+  }, [analytics?.totalVolume]);
+  useEffect(() => {
+    if (analytics?.averageFloorPrice) {
+      setAverageFloorPrice(analytics?.averageFloorPrice);
+    }
+  }, [analytics?.averageFloorPrice]);
+
+  const [dataAnalytics, setDataAnalytics] = useState<any[]>([
     {
       icon: Package,
       label: "Tổng NFT",
-      value: analytics?.totalNFTs,
+      value: 0,
       trend: "+12.5%",
       trendUp: true,
     },
     {
       icon: Users,
       label: "Người dùng hoạt động",
-      value: analytics?.activeUsers,
+      value: 0,
       trend: "+8.3%",
       trendUp: true,
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    if (analytics?.totalNFTs && analytics?.activeUsers) {
+      setDataAnalytics([
+        {
+          icon: Package,
+          label: "Tổng NFT",
+          value: analytics?.totalNFTs,
+          trend: "+12.5%",
+          trendUp: true,
+        },
+        {
+          icon: Users,
+          label: "Người dùng hoạt động",
+          value: analytics?.activeUsers,
+          trend: "+8.3%",
+          trendUp: true,
+        },
+      ]);
+    }
+  }, [analytics]);
 
   return (
     <div className="mb-8">
@@ -65,7 +100,7 @@ export const NFTMarketHeaderCard = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Basic Stats */}
-        {statItems.map((stat, index) => (
+        {dataAnalytics.map((stat, index) => (
           <Card
             key={stat.label}
             className="glass hover:scale-105 transition-all"
@@ -105,7 +140,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Khối lượng giao dịch</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {formatNumber(analytics?.totalVolume?.toString() ?? "0")}
+              {formatNumber(totalVolume)}
             </div>
           </CardHeader>
           <CardContent className="pb-2">
@@ -137,8 +172,7 @@ export const NFTMarketHeaderCard = ({
             </div>
             <CardTitle className="text-lg">Giá sàn TB</CardTitle>
             <div className="text-2xl font-bold gradient-text">
-              {formatNumber(analytics?.averageFloorPrice?.toString() ?? "0")}{" "}
-              {TOKEN_DEAULT_CURRENCY}
+              {formatNumber(averageFloorPrice)} {TOKEN_DEAULT_CURRENCY}
             </div>
           </CardHeader>
           <CardContent className="pb-2">

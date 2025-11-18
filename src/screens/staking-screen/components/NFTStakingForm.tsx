@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,7 @@ interface NFTStakingFormProps {
   addPendingStake?: (stakeData: any) => string;
   updateStakeStatus?: (id: string, updates: any) => void;
   removeStake?: (id: string) => void;
+  setSelectedValue: (value: string) => void;
 }
 
 export const NFTStakingForm = ({
@@ -57,6 +58,7 @@ export const NFTStakingForm = ({
   addPendingStake,
   updateStakeStatus,
   removeStake,
+  setSelectedValue,
 }: NFTStakingFormProps) => {
   const [selectedNFTId, setSelectedNFTId] = useState("");
   const [selectedPoolId, setSelectedPoolId] = useState("");
@@ -92,6 +94,20 @@ export const NFTStakingForm = ({
     nftPrice > (selectedPoolData.maxStake || Infinity);
   const isInvalidNFTPrice = isBelowMinStake || isAboveMaxStake;
 
+  useEffect(() => {
+    if (!userInfo || !userInfo.walletAddress) {
+      return;
+    }
+    setSelectedValue(selectedPoolId);
+    if (
+      selectedPoolId !== "" &&
+      selectedPoolId !== null &&
+      selectedPoolId !== undefined
+    ) {
+      fetchUserNFTs();
+    }
+  }, [selectedPoolId]);
+
   // Kiểm tra NFT hợp lệ: có giá trong khoảng minStake <= price <= maxStake
   const isValidNFTPrice =
     selectedPoolData &&
@@ -100,7 +116,7 @@ export const NFTStakingForm = ({
     nftPrice >= (selectedPoolData.minStake || 0) &&
     nftPrice <= (selectedPoolData.maxStake || Infinity);
 
-  const fetchUserNFTs = async () => {
+  const fetchUserNFTs = useCallback(async () => {
     if (!userInfo || !userInfo.walletAddress) {
       setUserNFTs([]);
       return;
@@ -110,7 +126,12 @@ export const NFTStakingForm = ({
         ownerAddress: userInfo?.walletAddress || "",
       });
       if (response.success) {
-        setUserNFTs((response.data as any).nfts || []);
+        const nfts = (response.data as any).nfts || [];
+        setUserNFTs(
+          nfts.filter(
+            (nft: any) => nft.price >= (selectedPoolData?.minStake || 0)
+          )
+        );
       } else {
         toast.error(response.message);
         setUserNFTs([]);
@@ -118,7 +139,7 @@ export const NFTStakingForm = ({
     } catch (error) {
       setUserNFTs([]);
     }
-  };
+  }, [userInfo, selectedPoolData?.minStake]);
 
   const getStakingPools = async () => {
     const response = await ApiService.get(API_ENDPOINTS.STAKING.POOLS);
@@ -133,7 +154,6 @@ export const NFTStakingForm = ({
   };
 
   useEffect(() => {
-    fetchUserNFTs();
     getStakingPools();
   }, []);
 
@@ -666,37 +686,48 @@ export const NFTStakingForm = ({
               >
                 Chọn NFT để stake
               </Label>
-              <Select value={selectedNFTId} onValueChange={setSelectedNFTId}>
-                <SelectTrigger className="w-full h-10 text-sm">
-                  <SelectValue placeholder="-- Chọn NFT --" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px] overflow-y-auto">
-                  {userNFTs.map((nft, idx) => {
-                    const optionId = String(nft?._id ?? nft?.id ?? idx);
-                    const isStaking = nft?.isStaking ?? false;
-                    return (
-                      <SelectItem
-                        key={optionId}
-                        value={optionId}
-                        className="text-sm"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">
-                            {nft?.name}{" "}
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {nft.isStaking ? (
-                                <span className="!text-green-500 font-semibold">
-                                  Đã staking
-                                </span>
-                              ) : null}
+              {userNFTs.length == 0 && selectedPoolId ? (
+                <div className="p-4 bg-red-500/10 rounded-lg space-y-2 border border-red-500/20 animate-fade-in">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-red-500">
+                      Không có NFT nào để stake
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <Select value={selectedNFTId} onValueChange={setSelectedNFTId}>
+                  <SelectTrigger className="w-full h-10 text-sm border-primary focus:border-primary">
+                    <SelectValue placeholder="-- Chọn NFT --" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {userNFTs.map((nft, idx) => {
+                      const optionId = String(nft?._id ?? nft?.id ?? idx);
+                      const isStaking = nft?.isStaking ?? false;
+                      return (
+                        <SelectItem
+                          key={optionId}
+                          value={optionId}
+                          className="text-sm"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">
+                              {nft?.name}{" "}
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {nft.isStaking ? (
+                                  <span className="!text-green-500 font-semibold">
+                                    Đã staking
+                                  </span>
+                                ) : null}
+                              </span>
                             </span>
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
+
               {selectedUserNFT && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   Số tiền trong gói NFT:{" "}
@@ -738,7 +769,8 @@ export const NFTStakingForm = ({
             <div className="staking-form-actions">
               <Button
                 type="submit"
-                className="w-full h-12 text-lg cursor-pointer"
+                variant="default"
+                className="w-full h-12 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 cursor-pointer"
                 disabled={
                   !selectedUserNFT ||
                   !selectedPoolData ||

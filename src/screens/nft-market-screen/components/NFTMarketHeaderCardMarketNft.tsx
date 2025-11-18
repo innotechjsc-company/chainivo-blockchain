@@ -4,6 +4,7 @@ import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/utils/formatters";
 import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface NFTStats {
@@ -34,27 +35,35 @@ export const NFTMarketHeaderCardMarketNft = ({
   analytics,
 }: NFTMarketHeaderCardMarketNftProps) => {
   const [dataAnalytics, setDataAnalytics] = useState<any>(null);
+
+  const searchParams = useSearchParams();
+  const isSteryBoxView = searchParams?.get("type") === "sterybox";
+
+  const [statsItems, setStatsItems] = useState<any[]>([]);
   useEffect(() => {
     if (analytics?.totalNFTs) {
       setDataAnalytics(analytics);
     }
-  }, [analytics]);
-  const statItems = [
-    {
-      icon: Package,
-      label: "Tổng NFT",
-      value: dataAnalytics?.totalNFTs,
-      trend: "+12.5%",
-      trendUp: true,
-    },
-    {
-      icon: Users,
-      label: "Người dùng hoạt động",
-      value: dataAnalytics?.activeUsers,
-      trend: "+8.3%",
-      trendUp: true,
-    },
-  ];
+  }, [analytics, isSteryBoxView]);
+
+  useEffect(() => {
+    setStatsItems([
+      {
+        icon: Package,
+        label: "Tổng NFT",
+        value: dataAnalytics?.totalNFTs,
+        trend: "+12.5%",
+        trendUp: true,
+      },
+      {
+        icon: Users,
+        label: "Người dùng hoạt động",
+        value: dataAnalytics?.activeUsers,
+        trend: "+8.3%",
+        trendUp: true,
+      },
+    ]);
+  }, [isSteryBoxView, dataAnalytics]);
 
   return (
     <div className="mb-8">
@@ -71,7 +80,7 @@ export const NFTMarketHeaderCardMarketNft = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Basic Stats */}
-        {statItems.map((stat, index) => (
+        {statsItems.map((stat, index) => (
           <Card
             key={stat.label}
             className="glass hover:scale-105 transition-all"

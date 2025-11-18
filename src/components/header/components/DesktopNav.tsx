@@ -1,28 +1,32 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { NAVIGATION_ITEMS } from "../constants";
-import { useAppSelector } from "@/stores";
-import { toast } from "sonner";
 
 export const DesktopNav = () => {
-  const router = useRouter();
-  const user = useAppSelector((state) => state.auth.user);
-  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const pathname = usePathname();
 
   return (
     <nav className="hidden md:flex items-center space-x-8">
-      {NAVIGATION_ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={(e) => {}}
-          className="text-foreground/80 hover:text-primary transition-colors"
-        >
-          {item.label}
-        </Link>
-      ))}
+      {NAVIGATION_ITEMS.map((item) => {
+        const isActive =
+          pathname === item.href || pathname.startsWith(item.href + "/");
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`transition-colors ${
+              isActive
+                ? "text-primary font-semibold"
+                : "text-foreground/80 hover:text-primary"
+            }`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 };

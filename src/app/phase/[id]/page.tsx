@@ -323,9 +323,16 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   {phase.name}
                 </h1>
 
-                <p className="text-2xl md:text-3xl mb-4 font-semibold">
-                  ${phase.pricePerToken} / CAN Token
-                </p>
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <img
+                    src="/usdc-svgrepo-com 3.svg"
+                    alt="USDC"
+                    className="w-8 h-8 md:w-10 md:h-10"
+                  />
+                  <p className="text-2xl md:text-3xl font-semibold">
+                    {phase.pricePerToken} / CAN Token
+                  </p>
+                </div>
 
                 <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
                   {phase.description}
@@ -337,7 +344,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                 className="glass rounded-2xl p-8 border-2 border-white/30 backdrop-blur-xl animate-fade-in"
                 style={{ animationDelay: "0.2s" }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-2xl mx-auto">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <Target className="w-5 h-5" />
@@ -366,7 +373,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   <Progress value={progressPercent} className="h-3 bg-white/20">
                     <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500 animate-glow" />
                   </Progress>
-                  <p className="text-xs text-center opacity-80">
+                  <p className="text-xs text-center opacity-80 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn">
                     {phase.status === "active" &&
                       `Còn ${(100 - progressPercent).toFixed(
                         0
@@ -392,12 +399,18 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold gradient-text">
-                    ${phase.pricePerToken}
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="/usdc-svgrepo-com 3.svg"
+                      alt="USDC"
+                      className="w-6 h-6"
+                    />
+                    <span className="text-3xl font-bold gradient-text">
+                      {phase.pricePerToken}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {TOKEN_DEAULT_CURRENCY_INVESTMENT} per{" "}
-                    {TOKEN_DEAULT_CURRENCY}
+                    {TOKEN_DEAULT_CURRENCY_INVESTMENT}/{TOKEN_DEAULT_CURRENCY}
                   </p>
                 </CardContent>
               </Card>
@@ -450,8 +463,14 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold gradient-text">
-                    ${phase.totalRaised?.toLocaleString?.() || 0}
+                  <div className="text-3xl font-bold gradient-text flex items-center gap-2">
+                    <img
+                      src="/usdc-svgrepo-com 3.svg"
+                      alt="USDC"
+                      className="w-6 h-6"
+                    />
+
+                    {phase.totalRaised?.toLocaleString?.() || 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {TOKEN_DEAULT_CURRENCY_INVESTMENT} Tăng trưởng
@@ -515,7 +534,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     {/* row 2 label with space between */}
                     <div className="flex items-center justify-between text-center">
                       <label className="text-sm font-medium mb-2 block">
-                        Số tiền đầu tư (USD)
+                        Số tiền đầu tư ({TOKEN_DEAULT_CURRENCY_INVESTMENT})
                       </label>
                       <label className="text-sm text-muted-foreground mb-2 block">
                         (Tối thiểu: {phase.minBuyAmount} USDC)
@@ -526,13 +545,18 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       type="number"
                       value={investAmount}
                       onChange={(e) => setInvestAmount(e.target.value)}
-                      className="text-lg"
+                      className="text-lg border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50"
                       placeholder="Vui lòng nhập số tiền đầu tư "
                       min="0"
                     />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Giá mỗi token: ${phase.pricePerToken} /{" "}
-                      {TOKEN_DEAULT_CURRENCY_INVESTMENT}
+                    <p className="text-xs text-muted-foreground mt-2 flex gap-2 items-center">
+                      Giá mỗi token:
+                      <img
+                        src="/usdc-svgrepo-com 3.svg"
+                        alt="USDC"
+                        className="w-4 h-4"
+                      />
+                      {phase.pricePerToken} /{TOKEN_DEAULT_CURRENCY}
                     </p>
                   </div>
 
@@ -560,7 +584,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                   </div>
 
                   <Button
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold-primary/30 cursor-pointer transition-all duration-300 hover:scale-105 animate-[fade-in_1.2s_ease-out] group/btn"
                     size="lg"
                     variant={phase.status === "active" ? "default" : "outline"}
                     disabled={phase.status !== "active" || buyLoading}
@@ -586,7 +610,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                     }}
                   >
                     {buyLoading && phase.status === "active" ? (
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2 ">
                         <Spinner className="size-4" />
                         Đang xử lý...
                       </span>
@@ -604,8 +628,9 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <DialogHeader>
                         <DialogTitle>Xác nhận đầu tư</DialogTitle>
                         <DialogDescription>
-                          Bạn có chắc muốn đầu tư {investAmount} USD vào giai
-                          đoạn {phase.name}?
+                          Bạn có chắc muốn đầu tư {investAmount}{" "}
+                          {TOKEN_DEAULT_CURRENCY_INVESTMENT} vào giai đoạn{" "}
+                          {phase.name}?
                         </DialogDescription>
                       </DialogHeader>
 
@@ -616,25 +641,28 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                             <div className="flex justify-between">
                               <span>Số tiền:</span>
                               <span className="font-medium">
-                                {investAmount} USD
+                                {investAmount}{" "}
+                                {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Giá mỗi token:</span>
                               <span className="font-medium">
-                                {phase.pricePerToken} USD
+                                {phase.pricePerToken}{" "}
+                                {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                               </span>
                             </div>
                             <div className="flex justify-between border-t pt-2">
                               <span>Bonus ({bonus.toFixed(1)}%):</span>
                               <span className="font-medium">
-                                {formatAmount(bonusTokens)} CAN
+                                {formatAmount(bonusTokens)}{" "}
+                                {TOKEN_DEAULT_CURRENCY}
                               </span>
                             </div>
                             <div className="flex justify-between border-t pt-2">
                               <span>Tổng token nhận:</span>
                               <span className="font-semibold">
-                                {totalTokens} CAN
+                                {totalTokens} {TOKEN_DEAULT_CURRENCY}
                               </span>
                             </div>
                           </div>
@@ -673,7 +701,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Shield className="w-4 h-4" />
-                    <span>Bảo mật bởi blockchain technology</span>
+                    <span>Bảo mật bởi Chainivo</span>
                   </div>
                 </CardContent>
               </Card>
@@ -746,27 +774,29 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
                       <DialogHeader>
                         <DialogTitle>Xác nhận đầu tư</DialogTitle>
                         <DialogDescription>
-                          Bạn có chắc muốn đầu tư {investAmount} USD vào giai
-                          đoạn {phase.name}?
+                          Bạn có chắc muốn đầu tư {investAmount}{" "}
+                          {TOKEN_DEAULT_CURRENCY_INVESTMENT} vào giai đoạn{" "}
+                          {phase.name}?
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>Số tiền:</span>
                           <span className="font-medium">
-                            {investAmount} USD
+                            {investAmount} {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Giá mỗi token:</span>
                           <span className="font-medium">
-                            {phase.pricePerToken} USD
+                            {phase.pricePerToken}{" "}
+                            {TOKEN_DEAULT_CURRENCY_INVESTMENT}
                           </span>
                         </div>
                         <div className="flex justify-between border-t pt-2">
                           <span>Bonus ({bonus.toFixed(1)}%):</span>
                           <span className="font-medium">
-                            {formatAmount(bonusTokens)} CAN
+                            {formatAmount(bonusTokens)} {TOKEN_DEAULT_CURRENCY}
                           </span>
                         </div>
                         <div className="flex justify-between border-t pt-2">

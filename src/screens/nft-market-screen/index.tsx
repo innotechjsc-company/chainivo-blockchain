@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { NFTFiltersCard, NFTGridCard } from "./components";
 import { useNFTData, useNFTFilters, useNFTStats } from "./hooks";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
@@ -8,6 +9,8 @@ import { NFTMarketHeaderCardMarketNft } from "./components/NFTMarketHeaderCardMa
 import { NFTGridSteryBoxCard } from "./components/NFTGridSteryBoxCard";
 
 export default function NFTMarketScreen() {
+  const searchParams = useSearchParams();
+  const isSteryBoxView = searchParams?.get("type") === "sterybox";
   const { nfts } = useNFTData();
   const { stats, volumeData, priceData } = useNFTStats();
   const {
@@ -27,9 +30,90 @@ export default function NFTMarketScreen() {
     mysteryBoxData,
     mysteryBoxTotalPages,
     mysteryBoxCurrentPage,
-  } = useNFTFilters(nfts);
+  } = useNFTFilters(nfts, isSteryBoxView);
 
   const isLoading = loading;
+
+  const [displayedMysteryBoxItems, setDisplayedMysteryBoxItems] = useState<
+    any[]
+  >([]);
+
+  const getItemKey = (item: any): string => {
+    return String(
+      item?.id ??
+        item?._id ??
+        item?.tokenId ??
+        item?.token_id ??
+        item?.name ??
+        JSON.stringify(item)
+    );
+  };
+
+  const areSetsEqual = (a: any[], b: any[]): boolean => {
+    if (a.length !== b.length) return false;
+    const aKeys = a.map(getItemKey).sort();
+    const bKeys = b.map(getItemKey).sort();
+    return aKeys.every((key, index) => key === bKeys[index]);
+  };
+
+  const pickRandomMysteryBoxItems = useCallback(
+    (previousItems: any[] = []) => {
+      if (!Array.isArray(mysteryBoxData) || mysteryBoxData.length === 0) {
+        return [];
+      }
+
+      if (mysteryBoxData.length <= 3) {
+        return mysteryBoxData.slice(0, 3);
+      }
+
+      let attempts = 0;
+      let subset: any[] = [];
+
+      do {
+        const shuffled = [...mysteryBoxData];
+        for (let i = shuffled.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = shuffled[i];
+          shuffled[i] = shuffled[j];
+          shuffled[j] = temp;
+        }
+        subset = shuffled.slice(0, 3);
+        attempts += 1;
+      } while (areSetsEqual(subset, previousItems) && attempts < 10);
+
+      return subset;
+    },
+    [mysteryBoxData]
+  );
+
+  useEffect(() => {
+    const initialItems = pickRandomMysteryBoxItems();
+    setDisplayedMysteryBoxItems(initialItems);
+  }, [pickRandomMysteryBoxItems]);
+
+  useEffect(() => {
+    if (
+      !Array.isArray(mysteryBoxData) ||
+      mysteryBoxData.length <= 3 ||
+      isSteryBoxView
+    ) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setDisplayedMysteryBoxItems((prev) => pickRandomMysteryBoxItems(prev));
+    }, 10000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [mysteryBoxData, pickRandomMysteryBoxItems, isSteryBoxView]);
+
+  const steryBoxItems = isSteryBoxView
+    ? mysteryBoxData
+    : displayedMysteryBoxItems;
+  const hasMysteryBoxItems =
+    Array.isArray(steryBoxItems) && steryBoxItems.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,12 +122,14 @@ export default function NFTMarketScreen() {
 
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Market Header */}
-        <NFTMarketHeaderCardMarketNft
-          stats={stats}
-          volumeData={volumeData}
-          priceData={priceData}
-          analytics={otherNFTsAnalytics}
-        />
+        {!isSteryBoxView && (
+          <NFTMarketHeaderCardMarketNft
+            stats={stats}
+            volumeData={volumeData}
+            priceData={priceData}
+            analytics={otherNFTsAnalytics}
+          />
+        )}
 
         {/* Filters */}
         <NFTFiltersCard
@@ -61,25 +147,29 @@ export default function NFTMarketScreen() {
           />
         ) : (
           <>
-            {otherNFTsData.length > 0 && (
+            {hasMysteryBoxItems && (
               <div className="mb-8">
                 <NFTGridSteryBoxCard
-                  nfts={mysteryBoxData}
+                  nfts={steryBoxItems}
                   title="NFT Hộp bí ẩn"
-                  initialCount={9}
+                  initialCount={
+                    isSteryBoxView && steryBoxItems ? steryBoxItems.length : 3
+                  }
                   totalPages={mysteryBoxTotalPages}
                   currentPage={mysteryBoxCurrentPage}
                   onPageChange={(page) => fetchMysteryBoxNFTs(page, 9)}
                 />
-                <NFTGridCard
-                  nfts={otherNFTsData}
-                  title="NFT Marketplace"
-                  initialCount={9}
-                  totalPages={totalPages}
-                  currentPage={currentPage}
-                  onPageChange={(page) => fetchOtherNFTs(page, 9)}
-                />
               </div>
+            )}
+            {!isSteryBoxView && otherNFTsData.length > 0 && (
+              <NFTGridCard
+                nfts={otherNFTsData}
+                title="NFT Marketplace"
+                initialCount={9}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={(page) => fetchOtherNFTs(page, 9)}
+              />
             )}
           </>
         )}

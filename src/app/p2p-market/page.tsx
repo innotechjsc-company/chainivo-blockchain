@@ -41,6 +41,7 @@ interface MarketItem {
   type: string;
   isMinted: boolean;
   walletAddress: string;
+  isSale: boolean;
 }
 
 const mockCollections: CollectionItem[] = [
@@ -299,58 +300,64 @@ export default function P2PMarketPage() {
         <div className="grid grid-cols-12 gap-6">
           {/* Sidebar - Collections */}
           <aside className="col-span-12 md:col-span-3 lg:col-span-3">
-            <Card className="glass sticky top-24">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Tìm kiếm NFT</h3>
+            <Card className="glass sticky top-23 h-[450px] py-[16px]">
+              <CardContent>
+                <div>
+                  <div className="flex items-center justify-between ">
+                    <h3 className="text-sm font-semibold b-4">Tìm kiếm NFT:</h3>
+                  </div>
+                  <div className="my-4">
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-3 border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50"
+                      placeholder="Tìm kiếm NFT theo tên"
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-3"
-                    placeholder="Tìm kiếm NFT theo tên"
-                  />
-                </div>
+
                 <div className="space-y-4">
-                  {/* Do hiem (Rarity) */}
                   <div className="space-y-2">
-                    <span className="text-sm font-medium">Độ hiếm</span>
-                    <Select value={rarity} onValueChange={setRarity}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="-- Chọn độ hiếm --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Thường</SelectItem>
-                        <SelectItem value="2">Bạc</SelectItem>
-                        <SelectItem value="3">Vàng</SelectItem>
-                        <SelectItem value="4">Bạch kim</SelectItem>
-                        <SelectItem value="5">Kim cương</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <span className="text-sm font-medium b-4">Độ hiếm:</span>
+                    <div className="mt-4">
+                      <Select value={rarity} onValueChange={setRarity}>
+                        <SelectTrigger className="border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50">
+                          <SelectValue placeholder="-- Chọn độ hiếm --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Thường</SelectItem>
+                          <SelectItem value="2">Bạc</SelectItem>
+                          <SelectItem value="3">Vàng</SelectItem>
+                          <SelectItem value="4">Bạch kim</SelectItem>
+                          <SelectItem value="5">Kim cương</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Loai (Type) */}
                   <div className="space-y-2">
-                    <span className="text-sm font-medium">Loại</span>
-                    <Select value={assetType} onValueChange={setAssetType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="-- Chọn loại --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">NFT Thường</SelectItem>
-                        <SelectItem value="rank">NFT Hạng</SelectItem>
-                        <SelectItem value="mysteryBox">
-                          NFT Hộp bí ẩn
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <span className="text-sm font-medium">Loại:</span>
+                    <div className="mt-4">
+                      <Select value={assetType} onValueChange={setAssetType}>
+                        <SelectTrigger className="border-cyan-500/60 focus:border-cyan-400 focus:ring-cyan-400/50">
+                          <SelectValue placeholder="-- Chọn loại --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="normal">NFT Thường</SelectItem>
+                          <SelectItem value="rank">NFT Hạng</SelectItem>
+                          <SelectItem value="mysteryBox">
+                            NFT Hộp bí ẩn
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Khoang gia (Price Range) */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Khoảng giá</span>
+                      <span className="text-sm font-medium">Khoảng giá:</span>
                       <span className="text-xs text-muted-foreground">
                         {pendingRange[0].toLocaleString("vi-VN")} -{" "}
                         {pendingRange[1].toLocaleString("vi-VN")}{" "}
@@ -374,8 +381,35 @@ export default function P2PMarketPage() {
                       className="w-full"
                     />
                   </div>
+
+                  {hasSearched && (
+                    <Button
+                      variant="outline"
+                      className="w-full cursor-pointer mt-2 min-h-[36px]"
+                      onClick={() => {
+                        setSearch("");
+                        setRarity("");
+                        setAssetType("");
+                        setUnit("");
+                        setPendingRange([0, 0]);
+                        setIsPriceRangeActive(false);
+                        setCurrentFilterParams(undefined);
+                        setCurrentPage(1);
+                        setSort("all");
+                        fetchP2P(undefined, 1, 9);
+                        setHasSearched(false);
+                      }}
+                    >
+                      Xoá tìm kiếm
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2 absolute bottom-[16px] left-[16px] right-[16px]">
+                  <div></div>
+
                   <Button
-                    className="w-full cursor-pointer"
+                    className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointe mt-2 min-h-[36px] mr-2"
+                    size="sm"
                     onClick={() => {
                       const params: any = {};
                       if (search.trim()) {
@@ -408,27 +442,6 @@ export default function P2PMarketPage() {
                   >
                     Tìm kiếm
                   </Button>
-                  {hasSearched && (
-                    <Button
-                      variant="outline"
-                      className="w-full cursor-pointer"
-                      onClick={() => {
-                        setSearch("");
-                        setRarity("");
-                        setAssetType("");
-                        setUnit("");
-                        setPendingRange([0, 0]);
-                        setIsPriceRangeActive(false);
-                        setCurrentFilterParams(undefined);
-                        setCurrentPage(1);
-                        setSort("all");
-                        fetchP2P(undefined, 1, 9);
-                        setHasSearched(false);
-                      }}
-                    >
-                      Xoá tìm kiếm
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -458,67 +471,77 @@ export default function P2PMarketPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40"></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-                      <Badge
-                        className={`absolute top-4 right-4 z-10 bg-background/80 ${getLevelTextClass(
-                          item.level as string
-                        )} backdrop-blur-sm border`}
-                      >
-                        {getLevelBadge(item.level as string)}
-                      </Badge>
+                      <div className="absolute top-4 right-4 z-10 flex items-center justify-center gap-2">
+                        <Badge
+                          className={`bg-background/80 ${getLevelTextClass(
+                            item.level as string
+                          )} backdrop-blur-sm border`}
+                        >
+                          {getLevelBadge(item.level as string)}
+                        </Badge>
+                      </div>
+                      <div className="absolute top-4 left-4 z-10 flex items-center justify-center gap-2">
+                        <Badge className="bg-background/80 text-foreground backdrop-blur-sm border">
+                          {getNFTType(item.type ?? "normal")}
+                        </Badge>
+                      </div>
                     </div>
-                    <CardContent className="p-4 flex-1 flex flex-col">
+                    <CardContent className="pb-4 flex-1 flex flex-col space-y-2">
                       <h3 className="text-lg font-bold mb-2 truncate">
                         {item.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {item.collection}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
+                        Người bán:{" "}
+                        <span className="font-mono text-foreground">
+                          {item.walletAddress
+                            ? `${item.walletAddress.slice(
+                                0,
+                                4
+                              )}...${item.walletAddress.slice(-4)}`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 mb-3">
+                        <div>
+                          <div className="text-xs text-muted-foreground">
+                            Giá gốc
+                          </div>
+                          <div className="text-lg font-bold flex items-center gap-2">
+                            <div className="truncate max-w-full ">
+                              {formatNumber((item as any)?.price)}{" "}
+                              {item.currency.toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
                         <div>
                           <div className="text-xs text-muted-foreground">
                             Giá bán
                           </div>
                           <div className="text-lg font-bold flex items-center gap-2">
-                            <div className="truncate max-w-full ">
+                            <div className="truncate max-w-full gradient-text ">
                               {(item as any)?.salePrice
                                 ? formatNumber((item as any)?.salePrice)
-                                : formatNumber((item as any)?.price)}
+                                : formatNumber((item as any)?.price)}{" "}
+                              {item.currency.toUpperCase()}
                             </div>
-                            {item.currency.toUpperCase()}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            Loại NFT
-                          </div>
-                          <div className="text-lg font-bold">
-                            {getNFTType(item.type ?? "normal")}
-                          </div>
-                        </div>
-                        <div className="text-left">
-                          <div className="text-xs text-muted-foreground">
-                            Đã mint NFT
-                          </div>
-                          <div className="text-lg font-bold">
-                            {item?.isMinted ? "Có" : "Không"}
                           </div>
                         </div>
                       </div>
 
-                      {item?.walletAddress !== user?.walletAddress && (
-                        <div className="flex gap-2 mt-auto">
-                          <Button
-                            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
-                            size="sm"
-                            onClick={() => {
-                              router.push(`/nft/${item.id}?type=other`);
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                            Mua ngay
-                          </Button>
-                        </div>
-                      )}
+                      {item?.walletAddress !== user?.walletAddress &&
+                        item?.isSale && (
+                          <div className="flex gap-2 mt-auto">
+                            <Button
+                              className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white cursor-pointer"
+                              size="sm"
+                              onClick={() => {
+                                router.push(`/nft/${item.id}?type=other`);
+                              }}
+                            >
+                              Mua ngay
+                            </Button>
+                          </div>
+                        )}
                     </CardContent>
                   </Card>
                 ))
