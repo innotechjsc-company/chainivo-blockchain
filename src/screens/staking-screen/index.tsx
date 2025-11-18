@@ -72,6 +72,18 @@ export const StakingScreen = () => {
 
   // Mock user balance - TODO: Get from user store or API
   const userBalance = 10000; // Mock balance
+  const [selectedValue, setSelectedValue] = useState<string>("");
+
+  useEffect(() => {
+    if (
+      selectedValue !== "" &&
+      selectedValue !== null &&
+      selectedValue !== undefined
+    ) {
+      // scroll to the selected value
+      window.scrollTo({ top: 200, behavior: "smooth" });
+    }
+  }, [selectedValue]);
 
   // Handle coin staking
   const handleCoinStake = async (request: any) => {
@@ -188,24 +200,12 @@ export const StakingScreen = () => {
   // Main content - hiển thị ngay cả khi đang loading actions
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 pt-24">
+      <main className="container mx-auto px-4 py-8 pt-20">
         {/* Hero Section */}
         <div className="mb-12 text-center animate-fade-in">
-          <div className="inline-block mb-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <span className="text-sm font-medium text-primary">
-                Staking Rewards Program
-              </span>
-            </div>
-          </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Stake & Earn
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <span className="gradient-text">Stake & Earn</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Stake CAN token hoặc NFT để nhận phần thưởng liên tục. Nhận thưởng
-            bất cứ lúc nào!
-          </p>
         </div>
 
         {/* Stats Overview - chỉ hiển thị khi có data */}
@@ -264,7 +264,7 @@ export const StakingScreen = () => {
             </TabsTrigger>
             <TabsTrigger
               value="nft-shares"
-              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
+              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
             >
               <Share2 className="h-5 w-5 transition-transform duration-300 group-data-[state=active]:scale-110" />
               Staking NFT shares
@@ -286,6 +286,7 @@ export const StakingScreen = () => {
                 addPendingStake={addPendingStake}
                 updateStakeStatus={updateStakeStatus}
                 removeStake={removeStake}
+                setSelectedValue={setSelectedValue}
               />
 
               <ActiveStakesList
@@ -317,6 +318,7 @@ export const StakingScreen = () => {
                 addPendingStake={addPendingStake}
                 updateStakeStatus={updateStakeStatus}
                 removeStake={removeStake}
+                setSelectedValue={setSelectedValue}
               />
 
               <ActiveStakesList
@@ -346,6 +348,7 @@ export const StakingScreen = () => {
                 addPendingStake={addPendingStake}
                 updateStakeStatus={updateStakeStatus}
                 removeStake={removeStake}
+                setSelectedValue={setSelectedValue}
               />
 
               <ActiveStakesList
