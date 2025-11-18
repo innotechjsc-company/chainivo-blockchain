@@ -8,10 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Eye, Heart, ShoppingBag, Send } from "lucide-react";
 import { NFT } from "../hooks";
 import NFTService from "@/api/services/nft-service";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { config } from "@/api/config";
 import { formatCurrency, formatNumber } from "@/utils/formatters";
 import { getLevelBadge } from "@/lib/utils";
+import MysteryRewardsPopover from "@/components/nft/MysteryRewardsPopover";
+import type { APIRewardItem, NFTReward, TokenReward } from "@/types/NFT";
 
 interface NFTCardProps {
   nft: any;
@@ -21,6 +23,142 @@ interface NFTCardProps {
   onLikeChange?: (id: string, isLiked: boolean) => void;
   isLiked?: boolean;
 }
+
+const SUPPORTED_TOKEN_CURRENCIES: TokenReward["currency"][] = [
+  "can",
+  "usdc",
+  "usdt",
+  "eth",
+];
+
+type MysteryRewardsData = {
+  tokens?: TokenReward[];
+  nfts?: NFTReward[];
+};
+
+const normalizeCurrency = (value: unknown): TokenReward["currency"] => {
+  if (typeof value !== "string") {
+    return "can";
+  }
+
+  const lowerValue = value.toLowerCase() as TokenReward["currency"];
+  return SUPPORTED_TOKEN_CURRENCIES.includes(lowerValue) ? lowerValue : "can";
+};
+
+const getTemplateImage = (imageData: unknown): string => {
+  if (!imageData) return "/nft-box.jpg";
+  if (typeof imageData === "string") {
+    return imageData;
+  }
+  if (
+    typeof imageData === "object" &&
+    imageData !== null &&
+    "url" in imageData &&
+    typeof (imageData as { url: unknown }).url === "string"
+  ) {
+    return (imageData as { url: string }).url;
+  }
+  return "/nft-box.jpg";
+};
+
+const mapApiRewards = (
+  rewards: APIRewardItem[]
+): MysteryRewardsData | undefined => {
+  const tokens: TokenReward[] = [];
+  const nfts: NFTReward[] = [];
+
+  rewards.forEach((reward) => {
+    if (!reward) return;
+
+    if (reward.rewardType === "token") {
+      const minAmount = Number(
+        reward.tokenMinQuantity ?? reward.tokenMaxQuantity ?? 0
+      );
+      const maxAmount = Number(
+        reward.tokenMaxQuantity ?? reward.tokenMinQuantity ?? 0
+      );
+      tokens.push({
+        currency: normalizeCurrency(
+          (reward as unknown as { currency?: string }).currency ??
+            (reward as unknown as { tokenCurrency?: string }).tokenCurrency ??
+            "can"
+        ),
+        minAmount,
+        maxAmount,
+        probability: (reward as { probability?: number }).probability,
+      });
+    } else if (reward.rewardType === "nft") {
+      nfts.push({
+        id: reward.nftTemplate?.id ?? reward.id,
+        name: reward.nftTemplate?.name ?? `NFT #${reward.id}`,
+        image: getTemplateImage(reward.nftTemplate?.image),
+        rarity: (reward.rank as NFTReward["rarity"]) || "1",
+        probability: (reward as { probability?: number }).probability,
+      });
+    }
+  });
+
+  if (!tokens.length && !nfts.length) {
+    return undefined;
+  }
+
+  return {
+    tokens: tokens.length ? tokens : undefined,
+    nfts: nfts.length ? nfts : undefined,
+  };
+};
+
+const normalizeRewards = (input: unknown): MysteryRewardsData | undefined => {
+  if (!input) return undefined;
+
+  if (Array.isArray(input)) {
+    return mapApiRewards(input as APIRewardItem[]);
+  }
+
+  if (typeof input === "object") {
+    const obj = input as {
+      tokens?: TokenReward[];
+      nfts?: NFTReward[];
+      data?: unknown;
+    };
+
+    if (obj.tokens || obj.nfts) {
+      const tokens = obj.tokens?.length ? obj.tokens : undefined;
+      const nfts = obj.nfts?.length ? obj.nfts : undefined;
+
+      if (tokens || nfts) {
+        return { tokens, nfts };
+      }
+    }
+
+    if (obj.data) {
+      return normalizeRewards(obj.data);
+    }
+  }
+
+  return undefined;
+};
+
+const resolveMysteryRewards = (nft: any): MysteryRewardsData | undefined => {
+  if (!nft) return undefined;
+
+  const possibleSources = [
+    nft.rewards,
+    nft.mysteryRewards,
+    nft.rewardDetails,
+    nft.reward,
+    nft.rewardsPreview,
+  ];
+
+  for (const source of possibleSources) {
+    const normalized = normalizeRewards(source);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return undefined;
+};
 
 export const NFTCard = ({
   nft,
@@ -36,6 +174,13 @@ export const NFTCard = ({
     controlledIsLiked ?? Boolean(nft?.isLike || nft?.isLiked)
   );
   const [isLiking, setIsLiking] = useState(false);
+  const mysteryRewards = useMemo(() => resolveMysteryRewards(nft), [nft]);
+  const hasMysteryRewards =
+    type === "mysteryBox" &&
+    Boolean(
+      (mysteryRewards?.tokens?.length || 0) +
+        (mysteryRewards?.nfts?.length || 0)
+    );
 
   useEffect(() => {
     if (controlledIsLiked !== undefined) {
@@ -265,20 +410,42 @@ export const NFTCard = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-auto">
-          <Button
-            variant="default"
-            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2  cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onClick) {
-                onClick(nftId);
-              } else if (nftId) {
-                router.push(`/nft-template/${nftId}?type=${type}`);
+          {hasMysteryRewards ? (
+            <MysteryRewardsPopover
+              rewards={mysteryRewards}
+              trigger={
+                <Button
+                  variant="default"
+                  className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onClick) {
+                      onClick(nftId);
+                    } else if (nftId) {
+                      router.push(`/nft-template/${nftId}?type=${type}`);
+                    }
+                  }}
+                >
+                  Mua ngay
+                </Button>
               }
-            }}
-          >
-            Mua ngay
-          </Button>
+            />
+          ) : (
+            <Button
+              variant="default"
+              className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onClick) {
+                  onClick(nftId);
+                } else if (nftId) {
+                  router.push(`/nft-template/${nftId}?type=${type}`);
+                }
+              }}
+            >
+              Mua ngay
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
