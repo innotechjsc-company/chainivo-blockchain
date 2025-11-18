@@ -188,6 +188,15 @@ export const InvestmentPhasesCard = ({
                         %
                       </span>
                     </div>
+                    {/* Bonus */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Bonus:
+                      </span>
+                      <span className="text-base font-semibold text-primary">
+                        {phase.bonus} %
+                      </span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">
                         Thời gian:

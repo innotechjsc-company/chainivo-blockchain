@@ -88,3 +88,6 @@ export type { MediaUploadResponse } from "./media-service";
 
 export { FeeService } from "./fee-service";
 export type { SystemFeeConfig, GetSystemFeeResponse } from "./fee-service";
+
+export { RankService } from "./rank-service";
+export type { Rank, BuyRankData, BuyRankResponse, GetRanksParams } from "./rank-service";
