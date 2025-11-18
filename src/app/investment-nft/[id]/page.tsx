@@ -828,7 +828,8 @@ export default function InvestmentNFTDetailPage() {
                       : ""
                   }`}
                 />
-                {quantity > totalShares && (
+                {Number(quantity) >
+                  Number(totalShares - data?.soldShares || 0) && (
                   <div className="text-xs text-red-400">
                     Cổ phần bạn muốn đầu tư hiện tại đã vượt qua cổ phần được mở
                     bán
@@ -856,6 +857,10 @@ export default function InvestmentNFTDetailPage() {
                     }
                     setShowConfirmation(true);
                   }}
+                  disabled={
+                    Number(quantity) >
+                    Number(totalShares - data?.soldShares || 0)
+                  }
                   className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold gap-2 h-12 cursor-pointer mt-4"
                 >
                   <svg
