@@ -2,20 +2,6 @@
 const getEnvValue = (key: string, fallback: string): string => {
   const value = process.env[key];
 
-  // Debug log (chỉ log 1 lần khi module được load)
-  if (typeof window === "undefined" && key === "NEXT_PUBLIC_API_BASE_URL") {
-    console.log("🔍 ENV Debug:");
-    console.log("  - Key:", key);
-    console.log("  - Value:", value);
-    console.log("  - Fallback:", fallback);
-    console.log(
-      "  - All NEXT_PUBLIC_ vars:",
-      Object.keys(process.env)
-        .filter((k) => k.startsWith("NEXT_PUBLIC_"))
-        .map((k) => `${k}=${process.env[k]}`)
-    );
-  }
-
   return value || fallback;
 };
 
