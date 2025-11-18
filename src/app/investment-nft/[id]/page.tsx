@@ -156,7 +156,6 @@ export default function InvestmentNFTDetailPage() {
       setShareDetailLoading(true);
       const response = await NFTService.getShareDetail({ nftId });
       if (response.success && response.data) {
-        debugger;
         setShareDetail(response.data?.dataDetail);
       } else {
         setShareDetail([]);
