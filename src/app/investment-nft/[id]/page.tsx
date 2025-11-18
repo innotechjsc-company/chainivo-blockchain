@@ -50,6 +50,9 @@ export default function InvestmentNFTDetailPage() {
   const certificateRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
   const [certificateScale, setCertificateScale] = useState(1);
+  const infoCardRef = useRef<HTMLDivElement>(null);
+  const shareListCardRef = useRef<HTMLDivElement>(null);
+  const [totalCardsHeight, setTotalCardsHeight] = useState<number>(0);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -417,7 +420,7 @@ export default function InvestmentNFTDetailPage() {
               </div>
               <div className="text-lg font-bold text-amber-900">
                 {formatAmount(averageUserInvestment)}{" "}
-                {data?.currency?.toUpperCase() || "CAN"}
+                {data?.currency?.toUpperCase() || TOKEN_DEAULT_CURRENCY}
               </div>
             </div>
           </div>
@@ -476,6 +479,26 @@ export default function InvestmentNFTDetailPage() {
   }, []);
 
   useEffect(() => {
+    const updateTotalCardsHeight = () => {
+      if (infoCardRef.current && shareListCardRef.current) {
+        const infoHeight = infoCardRef.current.offsetHeight;
+        const shareListHeight = shareListCardRef.current.offsetHeight;
+        const totalHeight = infoHeight + shareListHeight;
+        setTotalCardsHeight(totalHeight);
+      }
+    };
+
+    // Delay to ensure DOM is rendered
+    const timer = setTimeout(updateTotalCardsHeight, 100);
+    window.addEventListener("resize", updateTotalCardsHeight);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateTotalCardsHeight);
+    };
+  }, [data, shareDetail, shareDetailLoading, showAllShareDetail]);
+
+  useEffect(() => {
     if (!certificateModalOpen) {
       setCertificateScale(1);
       return;
@@ -503,19 +526,14 @@ export default function InvestmentNFTDetailPage() {
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
 
-        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Image section */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-2xl overflow-hidden glass flex items-center justify-center">
+          <div className="space-y-6">
+            <div className="relative  rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
                 src={imageSrc}
                 alt={data?.name || "NFT"}
-                className="object-cover w-full h-full"
+                className="object-cover w-[800px] h-[645px] relative overflow-hidden  flex items-center justify-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "/nft-box.jpg";
@@ -527,25 +545,9 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Details section */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {data?.name || "Không rõ"}
-              </h1>
-              <div>
-                <p> Mô tả : </p>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
-
             {/* Tabs section */}
             <Card className="glass">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <Tabs defaultValue="details" className="space-y-6">
                   <TabsList className="grid w-full grid-cols-2 bg-background/30 rounded-xl p-1">
                     <TabsTrigger
@@ -561,13 +563,10 @@ export default function InvestmentNFTDetailPage() {
                       Tài liệu và tập tin
                     </TabsTrigger>
                   </TabsList>
-                  <TabsContent value="details" className="space-y-4">
+                  <TabsContent value="details" className="space-y-4 h-[500px]">
                     <h2 className="text-2xl font-bold">Chi tiết NFT</h2>
                     {data?.fullDescription ? (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          Mô tả chi tiết:
-                        </p>
                         <CollapsibleDescription
                           html={String(
                             data?.fullDescription?.html
@@ -576,6 +575,7 @@ export default function InvestmentNFTDetailPage() {
                               ? data.fullDescription
                               : ""
                           ).replace(/\n/g, "<br/>")}
+                          maxHeight={totalCardsHeight}
                         />
                       </div>
                     ) : (
@@ -658,6 +658,20 @@ export default function InvestmentNFTDetailPage() {
                 </Tabs>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Details section */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                {data?.name || "Không rõ"}
+              </h1>
+              <div>
+                <CollapsibleDescription
+                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
+                />
+              </div>
+            </div>
 
             {/* Price */}
             <div className="glass rounded-xl p-4">
@@ -668,7 +682,7 @@ export default function InvestmentNFTDetailPage() {
                 {formatAmount(data?.pricePerShare || 0)}{" "}
                 {data?.currency?.toUpperCase() || TOKEN_DEAULT_CURRENCY}
               </div>
-              <div className="pt-2">
+              <div className="pt-3">
                 <div className="mb-2 flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Tiến trình bán</span>
                   {totalShares > 0 && (
@@ -688,7 +702,7 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-3">
                 <div className="text-xs text-muted-foreground">
                   Số cổ phần muốn mua
                 </div>
@@ -830,14 +844,14 @@ export default function InvestmentNFTDetailPage() {
                 }}
               >
                 <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent)] pointer-events-none" />
-                <CardContent className="relative p-5 space-y-4 text-white">
+                <CardContent className="relative p-4 space-y-4 text-white">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-bold">
                         Chứng nhận cổ phần của tôi
                       </h3>
                     </div>
-                    <span className="text-xs font-semibold text-white/80 underline underline-offset-4">
+                    <span className="text-xs font-semibold text-white/80 ">
                       Xem chi tiết
                     </span>
                   </div>
@@ -886,7 +900,7 @@ export default function InvestmentNFTDetailPage() {
                 role="banner"
                 tabIndex={0}
               >
-                <CardContent className="relative p-5 space-y-4 text-white">
+                <CardContent className="relative p-4 space-y-4 text-white">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-bold">
@@ -894,7 +908,7 @@ export default function InvestmentNFTDetailPage() {
                       </h3>
                     </div>
                   </div>
-                  <div className="rounded-lg ">
+                  <div className="rounded-lg">
                     <p className="text-[10px] uppercase tracking-wide text-white/70 mb-1">
                       Sau khi mua cổ phần, bạn sẽ nhận được chứng chỉ NFT
                     </p>
@@ -903,8 +917,8 @@ export default function InvestmentNFTDetailPage() {
               </Card>
             )}
 
-            <Card className="glass">
-              <CardContent className="p-5">
+            <Card ref={infoCardRef} className="glass">
+              <CardContent className="p-4">
                 <h3 className="font-semibold mb-4 text-white">
                   Thông tin chi tiết
                 </h3>
@@ -914,7 +928,7 @@ export default function InvestmentNFTDetailPage() {
                       Loại NFT
                     </div>
                     <div className="text-sm font-semibold text-white capitalize">
-                      {data?.type || "—"}
+                      {getNFTType(data?.type) || "—"}
                     </div>
                   </div>
                   <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
@@ -941,7 +955,7 @@ export default function InvestmentNFTDetailPage() {
                         Cổ phần mua tối thiểu
                       </div>
                       <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.minSharesPerPurchase)} phần
+                        {formatAmount(data?.minSharesPerPurchase ?? 1)} phần
                       </div>
                     </div>
                   )}
@@ -986,8 +1000,8 @@ export default function InvestmentNFTDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass">
-              <CardContent className="p-5">
+            <Card ref={shareListCardRef} className="glass">
+              <CardContent className="p-4">
                 <h3 className="font-semibold mb-4 text-white">
                   Danh sách người mua cổ phần{" "}
                   <span className="text-cyan-400">
@@ -1089,7 +1103,7 @@ export default function InvestmentNFTDetailPage() {
 
         <div className="mt-12">
           <Card className="glass">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
               {transactionsLoading ? (
                 <div className="text-center py-12 text-muted-foreground">
@@ -1395,7 +1409,13 @@ export default function InvestmentNFTDetailPage() {
   );
 }
 
-function CollapsibleDescription({ html }: { html: string }) {
+function CollapsibleDescription({
+  html,
+  maxHeight,
+}: {
+  html: string;
+  maxHeight?: number;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMultiLine, setIsMultiLine] = useState(false);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -1425,9 +1445,9 @@ function CollapsibleDescription({ html }: { html: string }) {
 
   if (isExpanded) {
     return (
-      <div className="space-y-2">
+      <div className="">
         <div
-          className="text-muted-foreground leading-relaxed space-y-3"
+          className="text-muted-foreground leading-relaxed overflow-y-auto h-[585px]"
           dangerouslySetInnerHTML={{ __html: html }}
         />
         <div className="text-right">
