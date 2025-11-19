@@ -37,24 +37,24 @@ const LEVEL_CONFIGS: Record<NFTLevel, LevelConfig> = {
   },
   "3": {
     label: "Vàng",
-    color: "text-yellow-700 dark:text-yellow-400",
-    bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+    color: "text-yellow-700 dark:text-yellow-800",
+    bgColor: "bg-yellow-100 dark:bg-yellow-400",
     borderColor: "border-yellow-400 dark:border-yellow-600",
     icon: "🟡",
     description: "Cấp độ Vàng - NFT hiếm",
   },
   "4": {
     label: "Bạch kim",
-    color: "text-purple-700 dark:text-purple-400",
-    bgColor: "bg-purple-100 dark:bg-purple-900/30",
+    color: "text-purple-700 dark:text-purple-800",
+    bgColor: "bg-purple-100 dark:bg-purple-400",
     borderColor: "border-purple-400 dark:border-purple-600",
     icon: "🟣",
     description: "Cấp độ Bạch kim - NFT rất hiếm",
   },
   "5": {
     label: "Kim cương",
-    color: "text-cyan-700 dark:text-cyan-400",
-    bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
+    color: "text-cyan-700 dark:text-cyan-800",
+    bgColor: "bg-cyan-100 dark:bg-cyan-400",
     borderColor: "border-cyan-400 dark:border-cyan-600",
     icon: "💎",
     description: "Cấp độ Kim cương - NFT cực hiếm",
@@ -77,7 +77,9 @@ export default function LevelBadge({
 
   // Log warning if level is not valid
   if (!LEVEL_CONFIGS[level]) {
-    console.warn(`[LevelBadge] Invalid level: "${level}" (type: ${typeof level}). Falling back to level "1".`);
+    console.warn(
+      `[LevelBadge] Invalid level: "${level}" (type: ${typeof level}). Falling back to level "1".`
+    );
   }
 
   const badge = (

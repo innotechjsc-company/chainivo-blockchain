@@ -13,6 +13,7 @@ import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
 import { StakingService } from "@/api/services/staking-service";
 import { UserService } from "@/api/services/user-service";
+import { MediaService } from "@/api/services/media-service";
 import { LocalStorageService } from "@/services";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 import { AvatarUpload } from "@/components/account/AvatarUpload";
@@ -27,7 +28,7 @@ import { Spinner } from "@/components/ui/spinner";
 import MyNFTScreen from "@/screens/my-nft-screen";
 import { DigitizingNftScreen } from "@/screens/digitizing-nft-screen";
 import { DigitizationRequestList } from "@/components/account/DigitizationRequestList";
-import { TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import { TOKEN_DEAULT_CURRENCY, config } from "@/api/config";
 
 interface Profile {
   name: string;
@@ -75,26 +76,21 @@ export default function AccountManagementPage() {
   } = useTransactionHistory();
 
   useEffect(() => {
-    // Simulate loading user profile
-    const timer = setTimeout(() => {
-      // Get avatar from localStorage or Redux
-      const userInfo = LocalStorageService.getUserInfo();
-      const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
+    // Get avatar from localStorage or Redux
+    const userInfo = LocalStorageService.getUserInfo();
+    const avatarUrl = userInfo?.avatarUrl || user?.avatarUrl || null;
 
-      // Mock profile data
-      const mockProfile: Profile = {
-        name: user?.name as string,
-        avatarUrl: avatarUrl,
-        can_balance: 12500,
-        membership_tier: "gold",
-        total_invested: 25000,
-      };
-      setProfile(mockProfile);
-      setUsername(mockProfile.name);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    // Mock profile data
+    const mockProfile: Profile = {
+      name: user?.name as string,
+      avatarUrl: avatarUrl,
+      can_balance: 12500,
+      membership_tier: "gold",
+      total_invested: 25000,
+    };
+    setProfile(mockProfile);
+    setUsername(mockProfile.name);
+    setLoading(false);
   }, [user]);
 
   useEffect(() => {
@@ -190,59 +186,25 @@ export default function AccountManagementPage() {
         formData.append("name", trimmedName);
       }
 
+      let uploadedAvatarId: string | undefined;
       if (hasAvatarChange && selectedAvatar) {
-        formData.append("avatar", selectedAvatar);
+        const uploadResponse = await MediaService.uploadAvatar(selectedAvatar);
+        if (uploadResponse.success && uploadResponse.data) {
+          uploadedAvatarId = uploadResponse.data.id;
+          formData.append("avatar", uploadedAvatarId);
+        } else {
+          setUpdateError(uploadResponse.error || "Loi khi upload anh dai dien");
+          setUpdateLoading(false);
+          return;
+        }
       }
 
       // Call API
       const response = await UserService.updateProfile(formData as any);
 
       if (response.success) {
-        const updateData: any = {};
-        let avatarUrl: string | null = null;
-
-        if (hasNameChange) {
-          updateData.name = trimmedName;
-        }
-
-        const actualData = (response.data as any)?.data || response.data;
-
-        if (hasAvatarChange && actualData?.avatarUrl) {
-          avatarUrl = actualData.avatarUrl;
-          updateData.avatarUrl = avatarUrl;
-        } else if (hasAvatarChange && actualData?.avatar?.url) {
-          avatarUrl = actualData.avatar.url;
-          updateData.avatarUrl = avatarUrl;
-        }
-
-        // Update Redux store
-        dispatch(updateProfile(updateData));
-
-        // Update local profile state
-        const newProfileState = {
-          ...profile,
-          name: hasNameChange ? trimmedName : profile?.name || "",
-          avatarUrl:
-            hasAvatarChange && avatarUrl
-              ? avatarUrl
-              : profile?.avatarUrl || null,
-        };
-        setProfile(newProfileState as Profile);
-
-        // Update localStorage with new user info (including avatar URL)
-        const currentUserInfo = LocalStorageService.getUserInfo();
-
-        if (currentUserInfo) {
-          const updatedUserInfo = {
-            ...currentUserInfo,
-            name: hasNameChange ? trimmedName : currentUserInfo.name,
-            avatarUrl:
-              hasAvatarChange && avatarUrl
-                ? avatarUrl
-                : currentUserInfo.avatarUrl,
-          };
-          LocalStorageService.setUserInfo(updatedUserInfo);
-        }
+        // Refetch profile to get the latest data
+        await refetchProfile();
 
         // Clear avatar upload state
         setSelectedAvatar(null);
@@ -294,6 +256,42 @@ export default function AccountManagementPage() {
     }
   };
 
+  const refetchProfile = async () => {
+    try {
+      const response = await UserService.getCurrentUserProfile();
+      if (response.success && response.data) {
+        const userProfile = response.data;
+        const newProfile: Profile = {
+          name: userProfile.name || "",
+          avatarUrl: userProfile.avatarUrl || null,
+          can_balance: profile?.can_balance || 0,
+          membership_tier: profile?.membership_tier || "bronze",
+          total_invested: profile?.total_invested || 0,
+        };
+        setProfile(newProfile);
+        setUsername(newProfile.name);
+        dispatch(
+          updateProfile({
+            name: userProfile.name,
+            avatarUrl: userProfile.avatarUrl,
+          })
+        );
+
+        // Update localStorage as well to prevent useEffect from overwriting with stale data
+        const currentUserInfo = LocalStorageService.getUserInfo();
+        if (currentUserInfo) {
+          LocalStorageService.setUserInfo({
+            ...currentUserInfo,
+            name: userProfile.name || currentUserInfo.name,
+            avatarUrl: userProfile.avatarUrl || currentUserInfo.avatarUrl,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refetch profile:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -308,10 +306,11 @@ export default function AccountManagementPage() {
   }
 
   const tierColors: Record<string, string> = {
-    bronze: "text-orange-600",
-    silver: "text-gray-400",
-    gold: "text-yellow-500",
-    platinum: "text-purple-500",
+    dong: "text-orange-600",
+    bac: "text-gray-400",
+    vang: "text-yellow-500",
+    "kim cuong": "text-purple-500",
+    "kim cương": "text-purple-500",
   };
 
   return (
@@ -332,10 +331,10 @@ export default function AccountManagementPage() {
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
               </TabsTrigger>
-              <TabsTrigger value="wallet">
+              {/* <TabsTrigger value="wallet">
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger value="my-nft">
                 <User className="w-4 h-4 mr-2" />
                 NFT của tôi
@@ -368,6 +367,7 @@ export default function AccountManagementPage() {
                   <div className="flex gap-6">
                     <AvatarUpload
                       currentAvatar={profile?.avatarUrl || ""}
+                      previewUrl={avatarPreview}
                       userName={username}
                       onAvatarSelect={handleAvatarSelect}
                       disabled={updateLoading}
@@ -378,7 +378,7 @@ export default function AccountManagementPage() {
                         <Label htmlFor="name">Tên hiển thị </Label>
                         <Input
                           id="name"
-                          value={user?.name || user?.email}
+                          value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           className="mt-2"
                           maxLength={100}
@@ -419,10 +419,12 @@ export default function AccountManagementPage() {
                       Hạng thành viên
                     </div>
                     <div
-                      className={`text-2xl font-bold capitalize ${tierColors[profile?.membership_tier || "bronze"]
+                      className={`text-2xl font-bold capitalize ${tierColors[
+                        (user as any)?.rank?.name?.toLowerCase() || "dong"
+                      ]
                         }`}
                     >
-                      {profile?.membership_tier}
+                      {(user as any)?.rank?.name || "Đồng"}
                     </div>
                   </div>
                   <div className="glass p-4 rounded-lg">
@@ -435,56 +437,85 @@ export default function AccountManagementPage() {
                   </div>
                 </div>
 
-                {/* Thông tin chi tiết của user */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Email
+                {/* Thông tin tài khoản */}
+                <div className="mb-6 pt-6 border-t border-white/10">
+                  <h4 className="text-lg font-semibold mb-3">
+                    Thông tin tài khoản
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Email
+                      </div>
+                      <div className="text-base font-medium">
+                        {user?.email || "—"}
+                      </div>
                     </div>
-                    <div className="text-base font-medium">
-                      {user?.email || "—"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Địa chỉ ví
+                      </div>
+                      <div className="text-xs font-mono break-all">
+                        {user?.walletAddress || "Chưa kết nối"}
+                      </div>
                     </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Địa chỉ ví
+                    {/* <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Vai trò
+                      </div>
+                      <div className="text-base font-medium capitalize">
+                        {user?.role || "user"}
+                      </div>
+                    </div> */}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Điểm tích lũy
+                      </div>
+                      <div className="text-base font-bold gradient-text">
+                        {user?.points?.toLocaleString() || 0} điểm
+                      </div>
                     </div>
-                    <div className="text-base font-mono text-xs break-all">
-                      {user?.walletAddress || "Chưa kết nối"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Mã giới thiệu
+                      </div>
+                      <div className="text-base font-mono font-medium">
+                        {user?.refCode || "—"}
+                      </div>
                     </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Vai trò
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Trạng thái tài khoản
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isActive && !user?.isSuspended
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-red-500/20 text-red-500"
+                            }`}
+                        >
+                          {user?.isSuspended
+                            ? "Đã bị khóa"
+                            : user?.isActive
+                              ? "Hoạt động"
+                              : "Không hoạt động"}
+                        </span>
+                      </div>
+                      {user?.suspensionReason && (
+                        <p className="text-xs text-red-500 mt-2">
+                          Lý do: {user.suspensionReason}
+                        </p>
+                      )}
                     </div>
-                    <div className="text-base font-medium capitalize">
-                      {user?.role || "user"}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Điểm tích lũy
-                    </div>
-                    <div className="text-base font-bold gradient-text">
-                      {user?.points?.toLocaleString() || 0} điểm
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Mã giới thiệu
-                    </div>
-                    <div className="text-base font-mono font-medium">
-                      {user?.refCode || "—"}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Đăng nhập lần cuối
-                    </div>
-                    <div className="text-base font-medium">
-                      {user?.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString("vi-VN")
-                        : "—"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Ngày tạo tài khoản
+                      </div>
+                      <div className="text-base font-medium">
+                        {user?.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+                          : "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -560,59 +591,6 @@ export default function AccountManagementPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Thông tin tài khoản */}
-                <div className="mb-6 pt-6 border-t border-white/10">
-                  <h4 className="text-lg font-semibold mb-3">
-                    Thông tin tài khoản
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Trạng thái tài khoản
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isActive && !user?.isSuspended
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-red-500/20 text-red-500"
-                            }`}
-                        >
-                          {user?.isSuspended
-                            ? "Đã bị khóa"
-                            : user?.isActive
-                              ? "Hoạt động"
-                              : "Không hoạt động"}
-                        </span>
-                      </div>
-                      {user?.suspensionReason && (
-                        <p className="text-xs text-red-500 mt-2">
-                          Lý do: {user.suspensionReason}
-                        </p>
-                      )}
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Ngày tạo tài khoản
-                      </div>
-                      <div className="text-base font-medium">
-                        {user?.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsChangePasswordOpen(true)}
-                  >
-                    Thay đổi mật khẩu
-                  </Button>
-                </div>
               </Card>
             </TabsContent>
 
