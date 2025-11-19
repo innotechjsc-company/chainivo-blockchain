@@ -254,8 +254,8 @@ export default function AccountManagementPage() {
       } else {
         setUpdateError(
           response.error ||
-            response.message ||
-            "Co loi xay ra khi cap nhat profile"
+          response.message ||
+          "Co loi xay ra khi cap nhat profile"
         );
       }
     } catch (error: any) {
@@ -419,9 +419,8 @@ export default function AccountManagementPage() {
                       Hạng thành viên
                     </div>
                     <div
-                      className={`text-2xl font-bold capitalize ${
-                        tierColors[profile?.membership_tier || "bronze"]
-                      }`}
+                      className={`text-2xl font-bold capitalize ${tierColors[profile?.membership_tier || "bronze"]
+                        }`}
                     >
                       {profile?.membership_tier}
                     </div>
@@ -502,11 +501,10 @@ export default function AccountManagementPage() {
                           Xác minh Email
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isEmailVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isEmailVerified
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-gray-500/20 text-gray-500"
+                            }`}
                         >
                           {user?.isEmailVerified
                             ? "Đã xác minh"
@@ -520,11 +518,10 @@ export default function AccountManagementPage() {
                           Xác minh KYC
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isKYCVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isKYCVerified
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-gray-500/20 text-gray-500"
+                            }`}
                         >
                           {user?.isKYCVerified
                             ? "Đã xác minh"
@@ -538,11 +535,10 @@ export default function AccountManagementPage() {
                           Xác minh Ví
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isWalletVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isWalletVerified
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-gray-500/20 text-gray-500"
+                            }`}
                         >
                           {user?.isWalletVerified
                             ? "Đã xác minh"
@@ -577,17 +573,16 @@ export default function AccountManagementPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isActive && !user?.isSuspended
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-red-500/20 text-red-500"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isActive && !user?.isSuspended
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-red-500/20 text-red-500"
+                            }`}
                         >
                           {user?.isSuspended
                             ? "Đã bị khóa"
                             : user?.isActive
-                            ? "Hoạt động"
-                            : "Không hoạt động"}
+                              ? "Hoạt động"
+                              : "Không hoạt động"}
                         </span>
                       </div>
                       {user?.suspensionReason && (

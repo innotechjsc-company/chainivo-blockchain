@@ -138,56 +138,85 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   }
 
   return (
-    <div className="space-y-6 relative ">
+    <div className="relative">
       {/* Loading Overlay */}
       {loading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
           <LoadingSpinner />
         </div>
       )}
-      {/* Stats Cards */}
-      <NFTStatsCards {...stats} />
 
-      {/* Filter Tabs */}
-      <Tabs
-        value={filter}
-        onValueChange={(value) => setFilter(value as NFTFilterType)}
-      >
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
-          <TabsTrigger value="all">Tất cả ({stats.totalNFTs})</TabsTrigger>
-          <TabsTrigger value="sale">Đang bán ({stats.onSale})</TabsTrigger>
-          <TabsTrigger value="not-listed">
-            NFT của bạn ({stats.notListed})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Layout 2 cột: Sidebar trái (sticky) và Content phải */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar trái - Menu dọc cố định */}
+        <aside className="w-full lg:w-64 flex-shrink-0">
+          <Tabs
+            value={filter}
+            onValueChange={(value) => setFilter(value as NFTFilterType)}
+            className="w-full"
+          >
+            <div className="sticky top-24">
+              <Card className="glass">
+                <CardContent className="p-4">
+                  <TabsList className="flex flex-col w-full h-auto gap-2">
+                    <TabsTrigger
+                      value="all"
+                      className="w-full justify-start text-left"
+                    >
+                      Tất cả ({stats.totalNFTs})
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="sale"
+                      className="w-full justify-start text-left"
+                    >
+                      Đang bán ({stats.onSale})
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="not-listed"
+                      className="w-full justify-start text-left"
+                    >
+                      NFT của bạn ({stats.notListed})
+                    </TabsTrigger>
+                  </TabsList>
+                </CardContent>
+              </Card>
+            </div>
+          </Tabs>
+        </aside>
 
-      {/* Advanced Filters - Loc NFT theo type, level, price */}
-      <NFTFilters
-        filters={advancedFilters}
-        onFiltersChange={setAdvancedFilters}
-        onReset={resetAdvancedFilters}
-      />
+        {/* Content phải - Tất cả các phần còn lại */}
+        <div className="flex-1 space-y-6">
+          {/* Stats Cards */}
+          <NFTStatsCards {...stats} />
 
-      {nfts.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Không có NFT nào</p>
+          {/* Advanced Filters - Loc NFT theo type, level, price */}
+          <NFTFilters
+            filters={advancedFilters}
+            onFiltersChange={setAdvancedFilters}
+            onReset={resetAdvancedFilters}
+          />
+
+          {nfts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Không có NFT nào</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {nfts.map((nft) => (
+                <NFTCard
+                  key={nft.id}
+                  nft={nft}
+                  type={type}
+                  onActionClick={handleActionClick as any}
+                  onListForSale={handleListForSale}
+                  onClick={() => onClickMyNFT(nft.id)}
+                  onRefreshNFTs={refetch}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          {nfts.map((nft) => (
-            <NFTCard
-              key={nft.id}
-              nft={nft}
-              type={type}
-              onActionClick={handleActionClick as any}
-              onListForSale={handleListForSale}
-              onClick={() => onClickMyNFT(nft.id)}
-              onRefreshNFTs={refetch}
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* List NFT Dialog */}
       <ListNFTDialog

@@ -73,104 +73,102 @@ export const MembershipTiers = () => {
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tiers.map((tier, index) => {
-            const Icon = tier.icon;
+              const Icon = tier.icon;
 
-            // Check eligibility
-            const eligible = isRankEligible(tier.level, currentUserRankLevel);
-            const ineligibilityReason = getRankIneligibilityReason(tier.level, currentUserRankLevel);
+              // Check eligibility
+              const eligible = isRankEligible(tier.level, currentUserRankLevel);
+              const ineligibilityReason = getRankIneligibilityReason(tier.level, currentUserRankLevel);
 
-            // Check xem có phải rank hiện tại không
-            const isCurrentRank = currentUserRankLevel && tier.level === currentUserRankLevel;
-            const isLowerRank = currentUserRankLevel && parseInt(tier.level) < parseInt(currentUserRankLevel);
+              // Check xem có phải rank hiện tại không
+              const isCurrentRank = currentUserRankLevel && tier.level === currentUserRankLevel;
+              const isLowerRank = currentUserRankLevel && parseInt(tier.level) < parseInt(currentUserRankLevel);
 
-            return (
-              <Card
-                key={tier.id}
-                className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
-                  tier.popular ? "border-2 border-primary animate-glow" : ""
-                } ${isCurrentRank ? "border-2 border-yellow-500" : ""}`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardContent className="p-0">
-                  {/* Overlay chỉ cho ranks THẤP HƠN (không áp dụng cho rank hiện tại) */}
-                  {isLowerRank && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
-                      <div className="text-center p-4">
-                        <Lock className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm font-semibold text-muted-foreground">
-                          {ineligibilityReason}
-                        </p>
+              return (
+                <Card
+                  key={tier.id}
+                  className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 h-full flex flex-col ${tier.popular ? "border-2 border-primary animate-glow" : ""
+                    } ${isCurrentRank ? "border-2 border-yellow-500" : ""}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <CardContent className="p-0 h-full flex flex-col">
+                    {/* Overlay chỉ cho ranks THẤP HƠN (không áp dụng cho rank hiện tại) */}
+                    {isLowerRank && (
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
+                        <div className="text-center p-4">
+                          <Lock className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            {ineligibilityReason}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Current Rank Badge hoặc Popular Badge */}
-                  {isCurrentRank ? (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1 z-20">
-                      <span>👑</span>
-                      <span>HẠNG HIỆN TẠI</span>
-                    </div>
-                  ) : tier.popular ? (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold z-20">
-                      PHỔ BIẾN
-                    </div>
-                  ) : null}
-
-                  {/* Tier Icon */}
-                  <div
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${tier.color} flex items-center justify-center mb-4 animate-float`}
-                  >
-                    <Icon className="w-8 h-8 text-white" />
-                  </div>
-
-                  {/* Tier Name */}
-                  <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
-
-                  {/* Points Required */}
-                  <div className="mb-6">
-                    <div className="text-3xl font-bold gradient-text">
-                      {tier.points}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Points</div>
-                  </div>
-
-                  {/* Benefits List */}
-                  <div className="space-y-3 mb-6">
-                    {tier.benefits.map((benefit, i) => (
-                      <div key={i} className="flex items-start space-x-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-foreground/90">
-                          {benefit}
-                        </span>
+                    {/* Current Rank Badge hoặc Popular Badge */}
+                    {isCurrentRank ? (
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1 z-20">
+                        <span>👑</span>
+                        <span>HẠNG HIỆN TẠI</span>
                       </div>
-                    ))}
-                  </div>
+                    ) : tier.popular ? (
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-secondary text-foreground px-4 py-1 rounded-bl-xl text-xs font-bold z-20">
+                        PHỔ BIẾN
+                      </div>
+                    ) : null}
 
-                  {/* Action Button */}
-                  <Button
-                    className={`w-full ${
-                      !isCurrentRank && eligible && !buyLoading
+                    {/* Tier Icon */}
+                    <div
+                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${tier.color} flex items-center justify-center mb-4 animate-float`}
+                    >
+                      <Icon className="w-8 h-8 text-white" />
+                    </div>
+
+                    {/* Tier Name */}
+                    <h3 className="text-2xl font-bold mb-2 first-letter:uppercase">{tier.name}</h3>
+
+                    {/* Points Required */}
+                    <div className="mb-6">
+                      <div className="text-3xl font-bold gradient-text">
+                        {tier.points}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Points</div>
+                    </div>
+
+                    {/* Benefits List */}
+                    <div className="space-y-3 mb-6 flex-1">
+                      {tier.benefits.map((benefit, i) => (
+                        <div key={i} className="flex items-start space-x-2">
+                          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-foreground/90">
+                            {benefit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Action Button */}
+                    <Button
+                      className={`w-full ${!isCurrentRank && eligible && !buyLoading
                         ? "bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-foreground font-semibold transition-all duration-300 hover:scale-105"
                         : ""
-                    }`}
-                    variant={tier.popular ? "default" : "outline"}
-                    onClick={() => !isCurrentRank && eligible && handleBuyRank(tier.id, tier.price)}
-                    disabled={isCurrentRank || !eligible || buyLoading}
-                  >
-                    {buyLoading
-                      ? "Đang xử lý..."
-                      : isCurrentRank
-                        ? "Đang sở hữu"
-                        : !eligible
-                          ? ineligibilityReason
-                          : "Mua ngay"
-                    }
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                        }`}
+                      variant={tier.popular ? "default" : "outline"}
+                      onClick={() => !isCurrentRank && eligible && handleBuyRank(tier.id, tier.price)}
+                      disabled={isCurrentRank || !eligible || buyLoading}
+                    >
+                      {buyLoading
+                        ? "Đang xử lý..."
+                        : isCurrentRank
+                          ? "Đang sở hữu"
+                          : !eligible
+                            ? ineligibilityReason
+                            : "Mua ngay"
+                      }
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
 
         {/* Point Info */}
