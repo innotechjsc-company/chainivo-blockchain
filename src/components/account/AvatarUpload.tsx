@@ -31,14 +31,15 @@ export function AvatarUpload({
   // Use external preview URL from parent (backup system), or local preview
   const displayPreviewUrl = externalPreviewUrl || previewUrl;
 
-  // Clear preview khi currentAvatar thay đổi (sau khi upload thành công)
+
+
+  // Sync with parent's preview state
   useEffect(() => {
-    if (currentAvatar && previewUrl) {
-      console.log('[AVATAR-UPLOAD] Clearing preview after successful upload');
+    if (externalPreviewUrl === null) {
       setPreviewUrl(null);
       setFileName(null);
     }
-  }, [currentAvatar, previewUrl]);
+  }, [externalPreviewUrl]);
 
   // File validation constants
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
