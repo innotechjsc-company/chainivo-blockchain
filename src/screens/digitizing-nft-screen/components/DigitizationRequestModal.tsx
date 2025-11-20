@@ -1042,55 +1042,6 @@ export function DigitizationRequestModal({
                 Vị trí đặt tài sản <span className="text-red-500">*</span>
               </Label>
 
-              {/* Bản đồ nhỏ */}
-              <div
-                className="relative w-full rounded-lg overflow-hidden border border-input hover:border-primary transition-colors"
-                style={{ height: "200px" }}
-              >
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, display: "block" }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={getMapUrl()}
-                />
-
-                {/* Nút chọn vị trí hiện tại */}
-                <div className="absolute top-2 right-2 z-10">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGetCurrentLocation();
-                    }}
-                    disabled={gettingLocation}
-                    className="bg-white/90 hover:bg-white text-primary shadow-md"
-                  >
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {gettingLocation ? "Đang lấy..." : "Vị trí hiện tại"}
-                  </Button>
-                </div>
-
-                {/* Overlay click để mở dialog chọn vị trí */}
-                {!selectedLocation && (
-                  <div
-                    className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/5 transition-colors cursor-pointer"
-                    onClick={handleMapClick}
-                  >
-                    <div className="text-center pointer-events-none">
-                      <MapPin className="w-6 h-6 mx-auto mb-1 text-primary" />
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Nhấn để chọn vị trí khác
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Input địa chỉ cụ thể với autocomplete */}
               <div className="relative">
                 <Input
@@ -1149,11 +1100,21 @@ export function DigitizationRequestModal({
 
               {/* Hiển thị tọa độ nếu đã chọn */}
               {selectedLocation && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground space-y-1">
                   <p>
                     Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
                     {selectedLocation.lng.toFixed(6)}
                   </p>
+                  <a
+                    href={`https://www.google.com/maps/place/${selectedLocation.lat.toFixed(
+                      6
+                    )},${selectedLocation.lng.toFixed(6)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Xem vị trí trên Google Maps
+                  </a>
                 </div>
               )}
 

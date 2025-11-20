@@ -46,12 +46,41 @@ export function ListNFTDialog({
     (state) => state.wallet.wallet?.address || ""
   );
 
+  const formatNumberWithCommas = (value: string): string => {
+    let numericValue = value.replace(/[^\d.]/g, "");
+    if (!numericValue) return "";
+
+    const dotIndex = numericValue.indexOf(".");
+    if (dotIndex !== -1) {
+      const integerPart = numericValue.substring(0, dotIndex);
+      const decimalPart = numericValue
+        .substring(dotIndex + 1)
+        .replace(/\./g, "");
+      numericValue = `${integerPart}.${decimalPart}`;
+    }
+
+    const parts = numericValue.split(".");
+    const integerPart = parts[0] || "";
+    const decimalPart = parts[1];
+
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    return decimalPart !== undefined
+      ? `${formattedInteger}.${decimalPart}`
+      : formattedInteger;
+  };
+
+  const parseNumberFromFormatted = (value: string): number => {
+    const numericValue = value.replace(/,/g, "");
+    return parseFloat(numericValue);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!nft) return;
 
-    const priceValue = parseFloat(price);
+    const priceValue = parseNumberFromFormatted(price);
 
     // Validation
     if (!price || isNaN(priceValue) || priceValue <= 0) {
@@ -266,13 +295,14 @@ export function ListNFTDialog({
                 </Label>
                 <Input
                   id="price"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="Nhập giá bán"
                   value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  onChange={(e) =>
+                    setPrice(formatNumberWithCommas(e.target.value))
+                  }
                   disabled={loading}
-                  min="0"
-                  step="0.01"
                   required
                 />
                 <p className="text-xs text-muted-foreground">

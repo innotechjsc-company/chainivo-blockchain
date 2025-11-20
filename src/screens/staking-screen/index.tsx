@@ -250,7 +250,7 @@ export const StakingScreen = () => {
           <TabsList className="grid w-full h-full max-w-3xl mx-auto grid-cols-3 gap-3 p-1 rounded-2xl border border-white/10 bg-white/5 shadow-lg backdrop-blur-lg">
             <TabsTrigger
               value="coin"
-              className="group text-base font-semibold tracking-tight rounded-xl px-4 py-3 flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
+              className="group text-base font-semibold tracking-tight rounded-xl px-5 py-3 w-full flex items-center justify-center gap-3 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground hover:text-primary"
             >
               <Coins className="h-5 w-5 transition-transform duration-300 group-data-[state=active]:scale-110" />
               Staking {TOKEN_DEAULT_CURRENCY}

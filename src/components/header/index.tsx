@@ -295,6 +295,7 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
           onSignIn={handleSignIn}
           onSignOut={handleSignOut}
           onSignUp={handleSignUp}
+          onClose={() => setIsMenuOpen(false)}
         />
       </div>
     </header>
