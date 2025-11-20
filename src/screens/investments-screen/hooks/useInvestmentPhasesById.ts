@@ -30,16 +30,15 @@ export const useInvestmentPhasesById = (id: string) => {
             setPhase(foundPhase);
             setError(null);
           } else {
-            setError("Khong tim thay phase voi ID nay");
+            setError("Không tìm thấy phase id này ");
           }
         } else {
           setError(
-            response.error || response.message || "Khong lay duoc du lieu"
+            response.error || response.message || "Không lấy được dữ liệu "
           );
         }
       } catch (err) {
         setError("Loi ket noi den server");
-        console.error("Error fetching phase by id:", err);
       } finally {
         setLoading(false);
       }

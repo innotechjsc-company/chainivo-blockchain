@@ -93,11 +93,11 @@ export function useTransactionHistory(): UseTransactionHistoryResult {
         setAllTransactions(response.data.transactions);
         setPagination(response.data.pagination);
       } else {
-        setError(response.message || 'Khong the tai lich su giao dich');
+        setError(response.message || 'Không thể tải lịch sử giao dịch');
         setAllTransactions([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khong xac dinh');
+      setError(err instanceof Error ? err.message : 'Lỗi không xác định');
       setAllTransactions([]);
     } finally {
       setLoading(false);
