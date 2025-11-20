@@ -1,8 +1,17 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Bell, Globe, Wallet, User, LogOut, LogIn, UserPlus } from "lucide-react";
+import {
+  Bell,
+  Globe,
+  Wallet,
+  User,
+  LogOut,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
 import { NAVIGATION_ITEMS } from "../constants";
 import type { Notification } from "../constants";
+import { useRouter } from "next/navigation";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -11,6 +20,7 @@ interface MobileMenuProps {
   onSignIn: () => void;
   onSignOut: () => void;
   onSignUp: () => void;
+  onClose: () => void;
 }
 
 export const MobileMenu = ({
@@ -20,7 +30,10 @@ export const MobileMenu = ({
   onSignIn,
   onSignOut,
   onSignUp,
+  onClose,
 }: MobileMenuProps) => {
+  const router = useRouter();
+
   if (!isOpen) return null;
 
   return (
@@ -31,6 +44,7 @@ export const MobileMenu = ({
             key={item.href}
             href={item.href}
             className="text-foreground/80 hover:text-primary transition-colors py-2"
+            onClick={onClose}
           >
             {item.label}
           </Link>
@@ -52,22 +66,50 @@ export const MobileMenu = ({
               <Wallet className="w-4 h-4 mr-2" />
               Kết nối ví
             </Button>
-            <Button variant="ghost" className="w-full">
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                router.push("/account");
+                onClose();
+              }}
+            >
               <User className="w-4 h-4 mr-2" />
               Quản lý tài khoản
             </Button>
-            <Button variant="ghost" className="w-full" onClick={onSignOut}>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                onSignOut();
+                onClose();
+              }}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Đăng xuất
             </Button>
           </>
         ) : (
           <>
-            <Button variant="outline" className="w-full mt-2" onClick={onSignUp}>
+            <Button
+              variant="outline"
+              className="w-full mt-2"
+              onClick={() => {
+                onSignUp();
+                onClose();
+              }}
+            >
               <UserPlus className="w-4 h-4 mr-2" />
               Đăng ký
             </Button>
-            <Button variant="default" className="w-full" onClick={onSignIn}>
+            <Button
+              variant="default"
+              className="w-full"
+              onClick={() => {
+                onSignIn();
+                onClose();
+              }}
+            >
               <LogIn className="w-4 h-4 mr-2" />
               Đăng nhập
             </Button>

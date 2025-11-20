@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, RefreshCw, AlertCircle, Lock } from "lucide-react";
+import { ToastService } from "@/services";
 import { useRankData } from "./hooks/useRankData";
 import { useBuyRank } from "./hooks/useBuyRank";
 import {
@@ -17,13 +18,16 @@ export const MembershipTiers = () => {
   const { tiers, loading, error, refetch } = useRankData();
 
   // Buy rank handler (fix: khong destructuring loading vi UseBuyRankReturn khong co loading)
-  const { handleBuyRank } = useBuyRank(() => {
+  // Buy rank handler
+  const { handleBuyRank, loadingRankId } = useBuyRank(() => {
     // Callback khi mua thanh cong: refetch data
     refetch();
   });
 
   // Lấy current user từ Redux
-  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const { user: currentUser, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   // Lấy level của rank hiện tại
   const currentUserRankLevel = currentUser?.rank?.level;
@@ -95,14 +99,14 @@ export const MembershipTiers = () => {
               return (
                 <Card
                   key={tier.id}
-                  className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
+                  className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 h-full flex flex-col ${
                     tier.popular ? "border-2 border-primary animate-glow" : ""
                   } ${
                     isCurrentRank ? "border-2 border-primary animate-glow" : ""
                   }`}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 flex flex-col h-full">
                     {/* Overlay chỉ cho ranks THẤP HƠN (không áp dụng cho rank hiện tại) */}
                     {isLowerRank && (
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center border border-primary/30">
@@ -148,31 +152,39 @@ export const MembershipTiers = () => {
                     </div>
 
                     {/* Benefits List */}
-                    <div className="space-y-3 mb-6">
-                      {tier.benefits.map((benefit, i) => (
-                        <div key={i} className="flex items-start space-x-2">
-                          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-foreground/90">{benefit}</span>
-                        </div>
-                      ))}
+                    {/* Benefits List */}
+                    <div className="mb-6 min-h-[180px] max-h-[180px] overflow-y-auto bg-white/5 rounded-xl p-4 border border-white/10">
+                      <div className="space-y-3">
+                        {tier.benefits.map((benefit, i) => (
+                          <div key={i} className="flex items-start space-x-2">
+                            <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                            <span className="text-foreground/90 text-sm">
+                              {benefit}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Action Button */}
                     <Button
-                      className={`w-full ${
-                        !isCurrentRank && eligible && !loading
-                          ? "bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-foreground font-semibold transition-all duration-300 hover:scale-105"
-                          : ""
-                      }`}
-                      variant={tier.popular ? "default" : "outline"}
-                      onClick={() =>
-                        !isCurrentRank &&
-                        eligible &&
-                        handleBuyRank(tier.id, tier.price)
+                      className={`w-full mt-auto font-bold shadow-lg transition-all duration-300 
+                          bg-gradient-to-r from-primary to-secondary text-foreground hover:from-primary/90 hover:to-secondary/90 hover:scale-105 disabled:opacity-70`}
+                      variant={isCurrentRank ? "default" : "default"}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          ToastService.error("Vui lòng đăng nhập để mua hạng");
+                          return;
+                        }
+                        if (!isCurrentRank && eligible) {
+                          handleBuyRank(tier.id, tier.price);
+                        }
+                      }}
+                      disabled={
+                        isCurrentRank || !eligible || loading || !!loadingRankId
                       }
-                      disabled={isCurrentRank || !eligible || loading}
                     >
-                      {loading
+                      {loadingRankId === tier.id
                         ? "Đang xử lý..."
                         : isCurrentRank
                         ? "Đang sở hữu"
@@ -210,6 +222,23 @@ export const MembershipTiers = () => {
           </div>
         </div>
       </div>
+
+      {/* Full Screen Loading Overlay */}
+      {loadingRankId && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+          <div className="text-center p-8 glass rounded-2xl shadow-2xl border border-primary/20 max-w-sm mx-4">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-primary/30 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <RefreshCw className="absolute inset-0 w-8 h-8 m-auto text-primary animate-pulse" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Đang xử lý giao dịch</h3>
+            <p className="text-muted-foreground">
+              Vui lòng xác nhận trên ví của bạn và đợi trong giây lát...
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
