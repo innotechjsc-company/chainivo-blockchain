@@ -54,6 +54,7 @@ export default function InvestmentNFTDetailPage() {
   const infoCardRef = useRef<HTMLDivElement>(null);
   const shareListCardRef = useRef<HTMLDivElement>(null);
   const [totalCardsHeight, setTotalCardsHeight] = useState<number>(0);
+  const [ownership, setOwnership] = useState<any>(null);
   const DETAIL_PANEL_MAX_HEIGHT = 645;
 
   const formatAmount = (value: unknown) => {
@@ -313,7 +314,7 @@ export default function InvestmentNFTDetailPage() {
       toast.error("Vui lòng đăng nhập để xem chứng chỉ NFT");
       return;
     }
-    if (!userTransactions.length) {
+    if (ownership?.shares === 0) {
       toast.error("Bạn chưa có chứng chỉ NFT nào");
       return;
     }
@@ -499,21 +500,7 @@ export default function InvestmentNFTDetailPage() {
               </div>
               <div className="text-lg font-bold text-amber-900">
                 {(() => {
-                  if (!shareDetail) return "—";
-                  if (
-                    typeof shareDetail === "object" &&
-                    "shares" in shareDetail
-                  )
-                    return `${formatAmount(shareDetail.shares)} cổ phần`;
-                  if (Array.isArray(shareDetail)) {
-                    const totalShares = shareDetail.reduce(
-                      (sum: number, item: any) =>
-                        sum + Number(item?.shares || item?.totalShares || 0),
-                      0
-                    );
-                    return `${formatAmount(totalShares)} cổ phần`;
-                  }
-                  return "—";
+                  return `${formatAmount(ownership?.shares || 0)} cổ phần`;
                 })()}
               </div>
             </div>
@@ -561,6 +548,7 @@ export default function InvestmentNFTDetailPage() {
         if (isMounted) {
           if (nftResp?.success && nftResp.data) {
             setData((nftResp.data as any).nft);
+            setOwnership((nftResp.data as any)?.userOwnership);
           } else {
             setData(null);
           }
@@ -947,11 +935,7 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            {Number(data?.soldShares || 0) > 0 &&
-            shareDetail &&
-            shareDetail?.some(
-              (item: any) => item?.buyer?.walletAddress === user?.walletAddress
-            ) ? (
+            {Number(ownership?.shares || 0) > 0 ? (
               <Card
                 className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
                 role="button"
@@ -991,26 +975,9 @@ export default function InvestmentNFTDetailPage() {
                       </p>
                       <p className="text-sm font-semibold">
                         {(() => {
-                          if (!shareDetail.length) return "—";
-                          if (
-                            typeof shareDetail === "object" &&
-                            "shares" in shareDetail
-                          ) {
-                            return `${formatAmount(
-                              shareDetail.shares
-                            )} cổ phần`;
-                          }
-                          if (Array.isArray(shareDetail)) {
-                            const myShares = shareDetail.find(
-                              (item: any) =>
-                                item?.buyer?.walletAddress ===
-                                user?.walletAddress
-                            );
-                            return `${formatAmount(
-                              myShares?.shares || myShares?.totalShares || 0
-                            )} cổ phần`;
-                          }
-                          return "—";
+                          return `${formatAmount(
+                            ownership?.shares || 0
+                          )} cổ phần`;
                         })()}
                       </p>
                     </div>

@@ -11,7 +11,7 @@ import type { RootState, AppDispatch } from '@/stores/store';
 
 interface UseBuyRankReturn {
   handleBuyRank: (rankId: string, rankPrice: number) => Promise<void>;
-  loading: boolean;
+  loadingRankId: string | null;
   error: string | null;
 }
 
@@ -19,7 +19,7 @@ interface UseBuyRankReturn {
  * Custom hook để xử lý mua rank
  */
 export const useBuyRank = (onSuccess?: () => void): UseBuyRankReturn => {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingRankId, setLoadingRankId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Redux dispatch
@@ -32,7 +32,7 @@ export const useBuyRank = (onSuccess?: () => void): UseBuyRankReturn => {
 
   const handleBuyRank = async (rankId: string, rankPrice: number) => {
     try {
-      setLoading(true);
+      setLoadingRankId(rankId);
       setError(null);
 
       // 1. Kiểm tra wallet đã kết nối chưa
@@ -142,13 +142,13 @@ export const useBuyRank = (onSuccess?: () => void): UseBuyRankReturn => {
       setError(errorMessage);
       ToastService.error(errorMessage);
     } finally {
-      setLoading(false);
+      setLoadingRankId(null);
     }
   };
 
   return {
     handleBuyRank,
-    loading,
+    loadingRankId,
     error,
   };
 };
