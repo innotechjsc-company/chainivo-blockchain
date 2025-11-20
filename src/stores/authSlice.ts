@@ -61,9 +61,9 @@ export const refreshUserProfile = createAsyncThunk(
       if (response.success && response.data) {
         return response.data;
       }
-      return rejectWithValue('Khong the lay thong tin user');
+      return rejectWithValue('Không thể lấy thông tin user');
     } catch (error: any) {
-      return rejectWithValue(error?.message || 'Loi khi refresh profile');
+      return rejectWithValue(error?.message || 'Lỗi khi làm mới hồ sơ');
     }
   }
 );
