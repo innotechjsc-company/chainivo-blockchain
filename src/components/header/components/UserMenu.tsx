@@ -15,6 +15,10 @@ import {
   X,
   Eye,
   EyeOff,
+  Image,
+  PieChart,
+  FileText,
+  Target,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/screens/investments-screen/hooks/useUserProfile";
@@ -139,23 +143,23 @@ export const UserMenu = ({
           <DropdownMenuItem
             onClick={() => router.push("/account?section=my-nft")}
           >
-            <User className="w-4 h-4 mr-2" />
+            <Image className="w-4 h-4 mr-2" />
             NFT của tôi
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => router.push("/account?section=nft-co-phan")}
           >
-            <User className="w-4 h-4 mr-2" />
+            <PieChart className="w-4 h-4 mr-2" />
             NFT cổ phần
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => router.push("/account?section=digitizing-request")}
           >
-            <User className="w-4 h-4 mr-2" />
+            <FileText className="w-4 h-4 mr-2" />
             Yêu cầu số hóa NFT
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => router.push("/missions")}>
-            <Settings className="w-4 h-4 mr-2" />
+            <Target className="w-4 h-4 mr-2" />
             Nhiệm vụ
           </DropdownMenuItem>
 

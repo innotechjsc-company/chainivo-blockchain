@@ -7,7 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings, FileText } from "lucide-react";
+import {
+  User,
+  Wallet,
+  History,
+  Settings,
+  FileText,
+  Image,
+  PieChart,
+  Users,
+  Copy,
+} from "lucide-react";
+import { toast } from "sonner";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
@@ -244,8 +255,10 @@ export default function AccountManagementPage() {
       const address = user?.walletAddress || "";
       if (!address) return;
       await navigator.clipboard.writeText(address);
+      toast.success("Đã sao chép địa chỉ ví");
     } catch (err) {
       console.error("Failed to copy address:", err);
+      toast.error("Không thể sao chép địa chỉ ví");
     }
   };
   const referralCode = ((user as any)?.refCode as string) || "";
@@ -253,8 +266,10 @@ export default function AccountManagementPage() {
     try {
       if (!referralCode) return;
       await navigator.clipboard.writeText(referralCode);
+      toast.success("Đã sao chép mã giới thiệu");
     } catch (err) {
       console.error("Failed to copy referral code:", err);
+      toast.error("Không thể sao chép mã giới thiệu");
     }
   };
 
@@ -326,9 +341,9 @@ export default function AccountManagementPage() {
           <Tabs
             value={tabValue}
             onValueChange={handleTabChange}
-            className="flex flex-col md:flex-row gap-6 w-full"
+            className="flex flex-col md:flex-row gap-6 w-full items-start"
           >
-            <TabsList className="flex flex-col w-full md:w-64 h-auto bg-transparent space-y-2 p-0">
+            <TabsList className="flex flex-col w-full md:w-64 shrink-0 h-auto bg-transparent space-y-2 p-0">
               <TabsTrigger
                 value="profile"
                 className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
@@ -344,21 +359,21 @@ export default function AccountManagementPage() {
                 value="my-nft"
                 className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
               >
-                <User className="w-4 h-4 mr-2" />
+                <Image className="w-4 h-4 mr-2" />
                 NFT của tôi
               </TabsTrigger>
               <TabsTrigger
                 value="nft-co-phan"
                 className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
               >
-                <User className="w-4 h-4 mr-2" />
+                <PieChart className="w-4 h-4 mr-2" />
                 NFT cổ phần
               </TabsTrigger>
               <TabsTrigger
                 value="referral"
                 className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
               >
-                <User className="w-4 h-4 mr-2" />
+                <Users className="w-4 h-4 mr-2" />
                 Mã giới thiệu
               </TabsTrigger>
               <TabsTrigger
@@ -483,8 +498,20 @@ export default function AccountManagementPage() {
                         <div className="text-sm text-muted-foreground mb-1">
                           Địa chỉ ví
                         </div>
-                        <div className="text-xs font-mono break-all">
-                          {user?.walletAddress || "Chưa kết nối"}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-xs font-mono break-all">
+                            {user?.walletAddress || "Chưa kết nối"}
+                          </div>
+                          {user?.walletAddress && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={handleCopyAddress}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                       {/* <div className="glass p-4 rounded-lg">
@@ -507,8 +534,20 @@ export default function AccountManagementPage() {
                         <div className="text-sm text-muted-foreground mb-1">
                           Mã giới thiệu
                         </div>
-                        <div className="text-base font-mono font-medium">
-                          {user?.refCode || "—"}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-base font-mono font-medium">
+                            {user?.refCode || "—"}
+                          </div>
+                          {user?.refCode && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={handleCopyReferral}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                       <div className="glass p-4 rounded-lg">
