@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Heart, ArrowLeft, FileDown, Copy } from "lucide-react";
+import { Heart, ArrowLeft, FileDown, Copy, MapPin } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
@@ -54,7 +54,19 @@ export default function InvestmentNFTDetailPage() {
   const infoCardRef = useRef<HTMLDivElement>(null);
   const shareListCardRef = useRef<HTMLDivElement>(null);
   const [totalCardsHeight, setTotalCardsHeight] = useState<number>(0);
+  const [ownership, setOwnership] = useState<any>(null);
   const DETAIL_PANEL_MAX_HEIGHT = 645;
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [showLocationConfirmDialog, setShowLocationConfirmDialog] =
+    useState<boolean>(false);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+  const [mapSelectMode, setMapSelectMode] = useState<boolean>(false);
+  const [selectingLocation, setSelectingLocation] = useState<boolean>(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -313,11 +325,168 @@ export default function InvestmentNFTDetailPage() {
       toast.error("Vui lòng đăng nhập để xem chứng chỉ NFT");
       return;
     }
-    if (!userTransactions.length) {
+    if (ownership?.shares === 0) {
       toast.error("Bạn chưa có chứng chỉ NFT nào");
       return;
     }
     setCertificateModalOpen(true);
+  };
+
+  // Handle click on map to select location
+  const handleMapClick = async (e?: React.MouseEvent<HTMLDivElement>) => {
+    // Nếu không có data.address, không cho phép chọn vị trí
+    if (!data?.address) {
+      return;
+    }
+
+    // Nếu không có event (click từ button), mở location picker dialog
+    if (!e) {
+      setShowLocationConfirmDialog(true);
+      return;
+    }
+
+    // Nếu không ở chế độ chọn, mở location picker dialog
+    if (!mapSelectMode) {
+      setShowLocationConfirmDialog(true);
+      return;
+    }
+
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) return;
+
+    setSelectingLocation(true);
+
+    // Lấy bounds của bản đồ dựa trên selectedLocation hoặc bounds mặc định Việt Nam
+    let minLat = 20.9;
+    let maxLat = 21.1;
+    let minLng = 105.8;
+    let maxLng = 105.9;
+
+    // Nếu có selectedLocation, sử dụng bounds xung quanh nó
+    if (selectedLocation) {
+      const bbox = 0.02; // Bbox size
+      minLat = selectedLocation.lat - bbox;
+      maxLat = selectedLocation.lat + bbox;
+      minLng = selectedLocation.lng - bbox;
+      maxLng = selectedLocation.lng + bbox;
+    }
+
+    // Tính toán tọa độ từ vị trí click
+    const rect = mapContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const width = rect.width;
+    const height = rect.height;
+
+    // Chuyển đổi pixel coordinates sang lat/lng
+    // Lat: từ trên xuống dưới (maxLat -> minLat)
+    // Lng: từ trái sang phải (minLng -> maxLng)
+    const lat = maxLat - (y / height) * (maxLat - minLat);
+    const lng = minLng + (x / width) * (maxLng - minLng);
+
+    // Reverse geocoding để lấy địa chỉ
+    let addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      if (data.display_name) {
+        addressText = data.display_name;
+      }
+    } catch (error) {
+      console.error("Error getting address from coordinates:", error);
+    }
+
+    const location = {
+      lat,
+      lng,
+      address: addressText,
+    };
+
+    setSelectedLocation(location);
+    setMapSelectMode(false);
+    setSelectingLocation(false);
+    toast.success("Đã chọn vị trí trên bản đồ");
+  };
+
+  const handleConfirmLocationAccess = () => {
+    setShowLocationConfirmDialog(false);
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelected = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    setSelectedLocation(location);
+    setShowLocationPicker(false);
+    toast.success("Vị trí đã được chọn thành công");
+  };
+
+  // Helper function để parse address từ JSON string
+  const parseAddressFromData = (
+    address: string | undefined | null
+  ): {
+    lat: number;
+    lng: number;
+    address: string;
+  } | null => {
+    if (!address) return null;
+
+    try {
+      // Thử parse JSON nếu address là JSON string
+      const parsed = JSON.parse(address);
+      if (parsed && typeof parsed === "object") {
+        // Kiểm tra có lat và long (hoặc lng)
+        const lat = parsed.lat || parsed.latitude;
+        const lng = parsed.long || parsed.lng || parsed.longitude;
+        const addressText = parsed.address || address;
+
+        if (lat && lng) {
+          return {
+            lat: typeof lat === "number" ? lat : parseFloat(lat),
+            lng: typeof lng === "number" ? lng : parseFloat(lng),
+            address: addressText,
+          };
+        }
+      }
+    } catch (e) {
+      // Nếu không phải JSON, trả về null
+    }
+
+    return null;
+  };
+
+  const getMapUrl = () => {
+    if (selectedLocation) {
+      return `https://www.openstreetmap.org/export/embed.html?bbox=${
+        selectedLocation.lng - 0.01
+      },${selectedLocation.lat - 0.01},${selectedLocation.lng + 0.01},${
+        selectedLocation.lat + 0.01
+      }&layer=mapnik&marker=${selectedLocation.lat},${selectedLocation.lng}`;
+    }
+    return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
+  };
+
+  const handleOpenGoogleMaps = () => {
+    let location = selectedLocation;
+
+    if (!location && data?.address) {
+      const parsed = parseAddressFromData(data.address);
+      if (parsed) {
+        location = parsed;
+      }
+    }
+
+    if (!location) {
+      toast.error("Khong tim thay vi tri de mo ban do");
+      return;
+    }
+
+    const url = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleDownloadCertificatePdf = async () => {
@@ -499,21 +668,7 @@ export default function InvestmentNFTDetailPage() {
               </div>
               <div className="text-lg font-bold text-amber-900">
                 {(() => {
-                  if (!shareDetail) return "—";
-                  if (
-                    typeof shareDetail === "object" &&
-                    "shares" in shareDetail
-                  )
-                    return `${formatAmount(shareDetail.shares)} cổ phần`;
-                  if (Array.isArray(shareDetail)) {
-                    const totalShares = shareDetail.reduce(
-                      (sum: number, item: any) =>
-                        sum + Number(item?.shares || item?.totalShares || 0),
-                      0
-                    );
-                    return `${formatAmount(totalShares)} cổ phần`;
-                  }
-                  return "—";
+                  return `${formatAmount(ownership?.shares || 0)} cổ phần`;
                 })()}
               </div>
             </div>
@@ -561,6 +716,7 @@ export default function InvestmentNFTDetailPage() {
         if (isMounted) {
           if (nftResp?.success && nftResp.data) {
             setData((nftResp.data as any).nft);
+            setOwnership((nftResp.data as any)?.userOwnership);
           } else {
             setData(null);
           }
@@ -590,6 +746,22 @@ export default function InvestmentNFTDetailPage() {
     fetchTransactionHistory();
     fetchShareDetail();
   }, [params?.id, user]);
+
+  // Parse và set selectedLocation từ data.address khi data được load
+  useEffect(() => {
+    if (data?.address) {
+      const parsedLocation = parseAddressFromData(data.address);
+      if (parsedLocation) {
+        setSelectedLocation(parsedLocation);
+      } else {
+        // Nếu không parse được, reset selectedLocation
+        setSelectedLocation(null);
+      }
+    } else {
+      // Nếu không có address, reset selectedLocation
+      setSelectedLocation(null);
+    }
+  }, [data?.address]);
 
   useEffect(() => {
     setIsClient(true);
@@ -642,10 +814,19 @@ export default function InvestmentNFTDetailPage() {
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="mb-2">
+          <h1 className="text-4xl font-bold mb-2">
+            {data?.name || "Không rõ"}
+          </h1>
+          <div>
+            <CollapsibleDescription
+              html={String(data?.description || "").replace(/\n/g, "<br/>")}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 relative z-10">
           {/* Image section */}
-          <div className="space-y-6">
+          <div className="space-y-6 mb-12 lg:mb-0 lg:pb-8">
             <div className="relative rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
                 src={imageSrc}
@@ -663,16 +844,7 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               )}
             </div>
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {data?.name || "Không rõ"}
-              </h1>
-              <div>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
+
             {/* Tabs section */}
             <Card className="glass">
               <CardContent className="p-4">
@@ -780,13 +952,226 @@ export default function InvestmentNFTDetailPage() {
                 </Tabs>
               </CardContent>
             </Card>
+
+            <div className="space-y-6">
+              <Card ref={infoCardRef} className="glass">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-4 text-white">
+                    Thông tin chi tiết
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Loại NFT
+                      </div>
+                      <div className="text-sm font-semibold text-white capitalize">
+                        {getNFTType(data?.type) || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Độ hiếm
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {getLevelBadge(data?.level as string)}
+                      </div>
+                    </div>
+                    {data?.isFractional && (
+                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Tổng cổ phần
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {formatAmount(data?.totalShares)} cổ phần
+                        </div>
+                      </div>
+                    )}
+                    {data?.isFractional && (
+                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Cổ phần mua tối thiểu
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {formatAmount(data?.minSharesPerPurchase ?? 1)} cổ
+                          phần
+                        </div>
+                      </div>
+                    )}
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Đã bán
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.soldShares)} cổ phần
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Còn lại
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.availableShares)} cổ phần
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Cho phép stake
+                      </div>
+                      <div className="text-sm font-semibold">
+                        {(data as any)?.allowStakingOfShares ? (
+                          <span className="text-emerald-400">✓ Có</span>
+                        ) : (
+                          <span className="text-red-400">✗ Không </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Số nhà đầu tư
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.totalInvestors)} nhà đầu tư
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        TokendID
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {data?.tokenId || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1 ">
+                        <span className="font-semibol mr-2">SmartContract</span>
+                        <span>
+                          {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopyValue(
+                                  config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS,
+                                  "SmartContract"
+                                )
+                              }
+                              className=" rounded-md border border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                              aria-label="Sao chép địa chỉ SmartContract"
+                            >
+                              <Copy className="w-4 h-4 text-cyan-300" />
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
+                        <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
+                          {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card ref={shareListCardRef} className="glass">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-4 text-white">
+                    Danh sách người mua cổ phần{" "}
+                    <span className="text-cyan-400">
+                      ({shareDetail?.length || 0})
+                    </span>
+                  </h3>
+                  {shareDetailLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Spinner className="w-6 h-6 mx-auto mb-2" />
+                      <p>Đang tải lịch sử mua cổ phần...</p>
+                    </div>
+                  ) : !user ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Vui lòng đăng nhập để xem lịch sử mua cổ phần</p>
+                    </div>
+                  ) : shareDetail ? (
+                    <div className="space-y-4">
+                      {shareDetail &&
+                        Array.isArray(shareDetail) &&
+                        shareDetail.length > 0 && (
+                          <div className="mt-4">
+                            <div
+                              className="space-y-2 overflow-y-auto pr-2"
+                              style={{
+                                maxHeight: showAllShareDetail
+                                  ? "600px"
+                                  : "400px",
+                                minHeight: "200px",
+                              }}
+                            >
+                              {(showAllShareDetail
+                                ? shareDetail
+                                : shareDetail.slice(0, 10)
+                              ).map((purchase: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rounded-md border border-border/50 bg-background/30 p-3 hover:bg-background/50 transition-colors"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Người mua:{" "}
+                                        {purchase.buyer?.walletAddress
+                                          ? `${purchase.buyer.walletAddress.slice(
+                                              0,
+                                              4
+                                            )}...${purchase.buyer.walletAddress.slice(
+                                              -4
+                                            )}`
+                                          : "—"}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-semibold text-cyan-400">
+                                        {formatAmount(
+                                          purchase.totalShares || 0
+                                        )}{" "}
+                                        CP
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {shareDetail.length > 10 && (
+                              <div className="mt-4 text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setShowAllShareDetail(!showAllShareDetail)
+                                  }
+                                  className="text-primary hover:text-primary/80"
+                                >
+                                  {showAllShareDetail ? "Thu gọn" : `Xem thêm `}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Không có dữ liệu lịch sử mua cổ phần</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Details section */}
           <div
-            className="space-y-6 lg:pr-3 lg:sticky lg:top-21"
+            className="space-y-6 lg:pr-3 lg:sticky lg:top-24 lg:self-start"
             style={{
-              maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px`,
+              maxHeight: `calc(100vh - 120px)`,
+              overflowY: "auto",
             }}
           >
             {/* Price */}
@@ -947,11 +1332,7 @@ export default function InvestmentNFTDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            {Number(data?.soldShares || 0) > 0 &&
-            shareDetail &&
-            shareDetail?.some(
-              (item: any) => item?.buyer?.walletAddress === user?.walletAddress
-            ) ? (
+            {Number(ownership?.shares || 0) > 0 ? (
               <Card
                 className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-cyan-500/30 via-purple-500/30 to-indigo-600/30 cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-purple-900/20"
                 role="button"
@@ -991,26 +1372,9 @@ export default function InvestmentNFTDetailPage() {
                       </p>
                       <p className="text-sm font-semibold">
                         {(() => {
-                          if (!shareDetail.length) return "—";
-                          if (
-                            typeof shareDetail === "object" &&
-                            "shares" in shareDetail
-                          ) {
-                            return `${formatAmount(
-                              shareDetail.shares
-                            )} cổ phần`;
-                          }
-                          if (Array.isArray(shareDetail)) {
-                            const myShares = shareDetail.find(
-                              (item: any) =>
-                                item?.buyer?.walletAddress ===
-                                user?.walletAddress
-                            );
-                            return `${formatAmount(
-                              myShares?.shares || myShares?.totalShares || 0
-                            )} cổ phần`;
-                          }
-                          return "—";
+                          return `${formatAmount(
+                            ownership?.shares || 0
+                          )} cổ phần`;
                         })()}
                       </p>
                     </div>
@@ -1039,216 +1403,139 @@ export default function InvestmentNFTDetailPage() {
                 </CardContent>
               </Card>
             )}
-          </div>
-          <div className="space-y-6">
-            <Card ref={infoCardRef} className="glass">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-white">
-                  Thông tin chi tiết
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Loại NFT
-                    </div>
-                    <div className="text-sm font-semibold text-white capitalize">
-                      {getNFTType(data?.type) || "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Độ hiếm
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {getLevelBadge(data?.level as string)}
-                    </div>
-                  </div>
-                  {data?.isFractional && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Tổng cổ phần
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.totalShares)} cổ phần
-                      </div>
-                    </div>
-                  )}
-                  {data?.isFractional && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Cổ phần mua tối thiểu
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.minSharesPerPurchase ?? 1)} cổ phần
-                      </div>
-                    </div>
-                  )}
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Đã bán
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.soldShares)} cổ phần
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Còn lại
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.availableShares)} cổ phần
-                    </div>
-                  </div>
 
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Cho phép stake
-                    </div>
-                    <div className="text-sm font-semibold">
-                      {(data as any)?.allowStakingOfShares ? (
-                        <span className="text-emerald-400">✓ Có</span>
-                      ) : (
-                        <span className="text-red-400">✗ Không </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Số nhà đầu tư
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.totalInvestors)} nhà đầu tư
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      TokendID
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {data?.tokenId || "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1 ">
-                      <span className="font-semibol mr-2">SmartContract</span>
-                      <span>
-                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyValue(
-                                config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS,
-                                "SmartContract"
-                              )
+            {/* Bản đồ */}
+            <Card className="glass">
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
+                    {data?.address && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant={mapSelectMode ? "default" : "outline"}
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMapSelectMode(!mapSelectMode);
+                            if (!mapSelectMode) {
+                              toast.info("Nhấn vào bản đồ để chọn vị trí");
+                            } else {
+                              toast.info("Đã tắt chế độ chọn vị trí");
                             }
-                            className=" rounded-md border border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-colors cursor-pointer"
-                            aria-label="Sao chép địa chỉ SmartContract"
-                          >
-                            <Copy className="w-4 h-4 text-cyan-300" />
-                          </button>
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
-                      <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
-                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card ref={shareListCardRef} className="glass">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-white">
-                  Danh sách người mua cổ phần{" "}
-                  <span className="text-cyan-400">
-                    ({shareDetail?.length || 0})
-                  </span>
-                </h3>
-                {shareDetailLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Spinner className="w-6 h-6 mx-auto mb-2" />
-                    <p>Đang tải lịch sử mua cổ phần...</p>
-                  </div>
-                ) : !user ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Vui lòng đăng nhập để xem lịch sử mua cổ phần</p>
-                  </div>
-                ) : shareDetail ? (
-                  <div className="space-y-4">
-                    {shareDetail &&
-                      Array.isArray(shareDetail) &&
-                      shareDetail.length > 0 && (
-                        <div className="mt-4">
-                          <div
-                            className="space-y-2 overflow-y-auto pr-2"
-                            style={{
-                              maxHeight: showAllShareDetail ? "600px" : "400px",
-                              minHeight: "200px",
+                          }}
+                          className={
+                            mapSelectMode
+                              ? "bg-cyan-500 text-white border-cyan-500"
+                              : "text-xs"
+                          }
+                        >
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {mapSelectMode ? "Đang chọn..." : "Chọn trên bản đồ"}
+                        </Button>
+                        {selectedLocation && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMapClick();
                             }}
+                            className="text-xs"
                           >
-                            {(showAllShareDetail
-                              ? shareDetail
-                              : shareDetail.slice(0, 10)
-                            ).map((purchase: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="rounded-md border border-border/50 bg-background/30 p-3 hover:bg-background/50 transition-colors"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      Người mua:{" "}
-                                      {purchase.buyer?.walletAddress
-                                        ? `${purchase.buyer.walletAddress.slice(
-                                            0,
-                                            4
-                                          )}...${purchase.buyer.walletAddress.slice(
-                                            -4
-                                          )}`
-                                        : "—"}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-sm font-semibold text-cyan-400">
-                                      {formatAmount(purchase.totalShares || 0)}{" "}
-                                      CP
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                            Thay đổi vị trí
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleOpenGoogleMaps}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                    >
+                      Xem chi tiết trên Google Maps
+                    </button>
+                  </div>
+                  <div
+                    ref={mapContainerRef}
+                    className={`relative w-full rounded-lg overflow-hidden border border-cyan-500/20 transition-colors ${
+                      data?.address
+                        ? "cursor-pointer hover:border-cyan-500/40"
+                        : "cursor-default"
+                    }`}
+                    style={{ height: "125px", minHeight: "125px" }}
+                    onClick={data?.address ? handleMapClick : undefined}
+                  >
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{
+                        border: 0,
+                        display: "block",
+                        pointerEvents:
+                          data?.address && mapSelectMode ? "none" : "auto",
+                      }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={getMapUrl()}
+                    />
+
+                    {/* Overlay cho chế độ chọn vị trí - chỉ hiển thị nếu có data.address */}
+                    {data?.address && mapSelectMode && (
+                      <div className="absolute inset-0 bg-transparent cursor-crosshair z-20">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-cyan-500/50">
+                            <p className="text-sm font-medium text-cyan-400 flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Nhấn vào bản đồ để chọn vị trí
+                            </p>
                           </div>
-                          {shareDetail.length > 10 && (
-                            <div className="mt-4 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  setShowAllShareDetail(!showAllShareDetail)
-                                }
-                                className="text-primary hover:text-primary/80"
-                              >
-                                {showAllShareDetail ? "Thu gọn" : `Xem thêm `}
-                              </Button>
-                            </div>
-                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
+
+                    {/* Overlay click để mở dialog chọn vị trí - chỉ hiển thị nếu có data.address */}
+                    {data?.address && !selectedLocation && !mapSelectMode && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none z-10">
+                        <div className="text-center text-white">
+                          <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
+                          <p className="text-sm font-medium">
+                            Nhấn để chọn vị trí
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Loading overlay khi đang chọn vị trí */}
+                    {selectingLocation && (
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-30">
+                        <div className="bg-background rounded-lg px-4 py-2 flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-sm text-muted-foreground">
+                            Đang lấy thông tin vị trí...
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Không có dữ liệu lịch sử mua cổ phần</p>
-                  </div>
-                )}
+                  {selectedLocation && (
+                    <div className="text-sm text-muted-foreground pt-2">
+                      <p className="font-semibold text-white mb-1">Địa chỉ:</p>
+                      <p>{selectedLocation.address}</p>
+                      <p className="text-xs mt-1">
+                        Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                        {selectedLocation.lng.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-12  clear-both">
           <Card className="glass">
             <CardContent className="p-4">
               <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
@@ -1439,6 +1726,41 @@ export default function InvestmentNFTDetailPage() {
             document.body
           )}
 
+        {/* Location Confirm Dialog */}
+        <Dialog
+          open={showLocationConfirmDialog}
+          onOpenChange={setShowLocationConfirmDialog}
+        >
+          <DialogContent className="glass border-cyan-500/20">
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">
+                Xác nhận truy cập vị trí
+              </DialogTitle>
+            </DialogHeader>
+            <div className="text-muted-foreground py-4">
+              <p>
+                Bạn có muốn chọn vị trí trên bản đồ không? Chúng tôi sẽ mở
+                Google Maps để bạn có thể chọn vị trí.
+              </p>
+            </div>
+            <DialogFooter className="gap-3 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setShowLocationConfirmDialog(false)}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirmLocationAccess}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold"
+              >
+                Cho phép
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <DialogContent
@@ -1552,6 +1874,155 @@ export default function InvestmentNFTDetailPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function LocationPickerForm({
+  onLocationSelected,
+  onCancel,
+}: {
+  onLocationSelected: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLat(latitude.toString());
+        setLng(longitude.toString());
+
+        // Reverse geocoding để lấy địa chỉ
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Không thể lấy vị trí hiện tại");
+        setLoading(false);
+      }
+    );
+  };
+
+  const handleSubmit = () => {
+    if (!lat || !lng) {
+      toast.error("Vui lòng nhập tọa độ hoặc sử dụng vị trí hiện tại");
+      return;
+    }
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      toast.error("Tọa độ không hợp lệ");
+      return;
+    }
+
+    if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      toast.error("Tọa độ nằm ngoài phạm vi hợp lệ");
+      return;
+    }
+
+    onLocationSelected({
+      lat: latNum,
+      lng: lngNum,
+      address: address || `${latNum}, ${lngNum}`,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Hoặc sử dụng vị trí hiện tại
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGetCurrentLocation}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "Đang lấy vị trí..." : "Lấy vị trí hiện tại"}
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Địa chỉ (tùy chọn)
+        </label>
+        <Input
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Nhập địa chỉ"
+          className="bg-background/50 border-cyan-500/60"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">Vĩ độ (Lat)</label>
+          <Input
+            type="number"
+            step="any"
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+            placeholder="21.0285"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">
+            Kinh độ (Lng)
+          </label>
+          <Input
+            type="number"
+            step="any"
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+            placeholder="105.8542"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          Hủy
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+        >
+          Xác nhận
+        </Button>
+      </div>
     </div>
   );
 }
