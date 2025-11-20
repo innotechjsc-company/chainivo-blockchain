@@ -470,6 +470,25 @@ export default function InvestmentNFTDetailPage() {
     return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
   };
 
+  const handleOpenGoogleMaps = () => {
+    let location = selectedLocation;
+
+    if (!location && data?.address) {
+      const parsed = parseAddressFromData(data.address);
+      if (parsed) {
+        location = parsed;
+      }
+    }
+
+    if (!location) {
+      toast.error("Khong tim thay vi tri de mo ban do");
+      return;
+    }
+
+    const url = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const handleDownloadCertificatePdf = async () => {
     if (!certificateRef.current) {
       toast.error("Không tìm thấy nội dung chứng chỉ để tải PDF");
@@ -795,7 +814,16 @@ export default function InvestmentNFTDetailPage() {
       <main className="container mx-auto px-4 pt-20 pb-12">
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
-
+        <div className="mb-2">
+          <h1 className="text-4xl font-bold mb-2">
+            {data?.name || "Không rõ"}
+          </h1>
+          <div>
+            <CollapsibleDescription
+              html={String(data?.description || "").replace(/\n/g, "<br/>")}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 relative z-10">
           {/* Image section */}
           <div className="space-y-6 mb-12 lg:mb-0 lg:pb-8">
@@ -1142,19 +1170,10 @@ export default function InvestmentNFTDetailPage() {
           <div
             className="space-y-6 lg:pr-3 lg:sticky lg:top-24 lg:self-start"
             style={{
-              maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px`,
+              maxHeight: `calc(100vh - 120px)`,
+              overflowY: "auto",
             }}
           >
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {data?.name || "Không rõ"}
-              </h1>
-              <div>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">
@@ -1386,14 +1405,10 @@ export default function InvestmentNFTDetailPage() {
             )}
 
             {/* Bản đồ */}
-            <Card className="glass relative z-20">
-              <CardContent className="p-3">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-white flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-cyan-400" />
-                      Vị trí
-                    </h3>
+            <Card className="glass">
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
                     {data?.address && (
                       <div className="flex gap-2">
@@ -1433,6 +1448,13 @@ export default function InvestmentNFTDetailPage() {
                         )}
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={handleOpenGoogleMaps}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                    >
+                      Xem chi tiết trên Google Maps
+                    </button>
                   </div>
                   <div
                     ref={mapContainerRef}
@@ -1441,7 +1463,7 @@ export default function InvestmentNFTDetailPage() {
                         ? "cursor-pointer hover:border-cyan-500/40"
                         : "cursor-default"
                     }`}
-                    style={{ height: "300px", minHeight: "300px" }}
+                    style={{ height: "125px", minHeight: "125px" }}
                     onClick={data?.address ? handleMapClick : undefined}
                   >
                     <iframe
