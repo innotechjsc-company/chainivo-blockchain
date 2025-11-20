@@ -64,6 +64,9 @@ export default function InvestmentNFTDetailPage() {
   const [showLocationConfirmDialog, setShowLocationConfirmDialog] =
     useState<boolean>(false);
   const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+  const [mapSelectMode, setMapSelectMode] = useState<boolean>(false);
+  const [selectingLocation, setSelectingLocation] = useState<boolean>(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -329,8 +332,82 @@ export default function InvestmentNFTDetailPage() {
     setCertificateModalOpen(true);
   };
 
-  const handleMapClick = () => {
-    setShowLocationConfirmDialog(true);
+  // Handle click on map to select location
+  const handleMapClick = async (e?: React.MouseEvent<HTMLDivElement>) => {
+    // Nếu không có data.address, không cho phép chọn vị trí
+    if (!data?.address) {
+      return;
+    }
+
+    // Nếu không có event (click từ button), mở location picker dialog
+    if (!e) {
+      setShowLocationConfirmDialog(true);
+      return;
+    }
+
+    // Nếu không ở chế độ chọn, mở location picker dialog
+    if (!mapSelectMode) {
+      setShowLocationConfirmDialog(true);
+      return;
+    }
+
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) return;
+
+    setSelectingLocation(true);
+
+    // Lấy bounds của bản đồ dựa trên selectedLocation hoặc bounds mặc định Việt Nam
+    let minLat = 20.9;
+    let maxLat = 21.1;
+    let minLng = 105.8;
+    let maxLng = 105.9;
+
+    // Nếu có selectedLocation, sử dụng bounds xung quanh nó
+    if (selectedLocation) {
+      const bbox = 0.02; // Bbox size
+      minLat = selectedLocation.lat - bbox;
+      maxLat = selectedLocation.lat + bbox;
+      minLng = selectedLocation.lng - bbox;
+      maxLng = selectedLocation.lng + bbox;
+    }
+
+    // Tính toán tọa độ từ vị trí click
+    const rect = mapContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const width = rect.width;
+    const height = rect.height;
+
+    // Chuyển đổi pixel coordinates sang lat/lng
+    // Lat: từ trên xuống dưới (maxLat -> minLat)
+    // Lng: từ trái sang phải (minLng -> maxLng)
+    const lat = maxLat - (y / height) * (maxLat - minLat);
+    const lng = minLng + (x / width) * (maxLng - minLng);
+
+    // Reverse geocoding để lấy địa chỉ
+    let addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      if (data.display_name) {
+        addressText = data.display_name;
+      }
+    } catch (error) {
+      console.error("Error getting address from coordinates:", error);
+    }
+
+    const location = {
+      lat,
+      lng,
+      address: addressText,
+    };
+
+    setSelectedLocation(location);
+    setMapSelectMode(false);
+    setSelectingLocation(false);
+    toast.success("Đã chọn vị trí trên bản đồ");
   };
 
   const handleConfirmLocationAccess = () => {
@@ -346,6 +423,40 @@ export default function InvestmentNFTDetailPage() {
     setSelectedLocation(location);
     setShowLocationPicker(false);
     toast.success("Vị trí đã được chọn thành công");
+  };
+
+  // Helper function để parse address từ JSON string
+  const parseAddressFromData = (
+    address: string | undefined | null
+  ): {
+    lat: number;
+    lng: number;
+    address: string;
+  } | null => {
+    if (!address) return null;
+
+    try {
+      // Thử parse JSON nếu address là JSON string
+      const parsed = JSON.parse(address);
+      if (parsed && typeof parsed === "object") {
+        // Kiểm tra có lat và long (hoặc lng)
+        const lat = parsed.lat || parsed.latitude;
+        const lng = parsed.long || parsed.lng || parsed.longitude;
+        const addressText = parsed.address || address;
+
+        if (lat && lng) {
+          return {
+            lat: typeof lat === "number" ? lat : parseFloat(lat),
+            lng: typeof lng === "number" ? lng : parseFloat(lng),
+            address: addressText,
+          };
+        }
+      }
+    } catch (e) {
+      // Nếu không phải JSON, trả về null
+    }
+
+    return null;
   };
 
   const getMapUrl = () => {
@@ -616,6 +727,22 @@ export default function InvestmentNFTDetailPage() {
     fetchTransactionHistory();
     fetchShareDetail();
   }, [params?.id, user]);
+
+  // Parse và set selectedLocation từ data.address khi data được load
+  useEffect(() => {
+    if (data?.address) {
+      const parsedLocation = parseAddressFromData(data.address);
+      if (parsedLocation) {
+        setSelectedLocation(parsedLocation);
+      } else {
+        // Nếu không parse được, reset selectedLocation
+        setSelectedLocation(null);
+      }
+    } else {
+      // Nếu không có address, reset selectedLocation
+      setSelectedLocation(null);
+    }
+  }, [data?.address]);
 
   useEffect(() => {
     setIsClient(true);
@@ -1263,37 +1390,104 @@ export default function InvestmentNFTDetailPage() {
                     <MapPin className="w-5 h-5 text-cyan-400" />
                     Vị trí
                   </h3>
-                  {selectedLocation && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleMapClick}
-                      className="text-xs"
-                    >
-                      Thay đổi vị trí
-                    </Button>
+                  {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
+                  {data?.address && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant={mapSelectMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMapSelectMode(!mapSelectMode);
+                          if (!mapSelectMode) {
+                            toast.info("Nhấn vào bản đồ để chọn vị trí");
+                          } else {
+                            toast.info("Đã tắt chế độ chọn vị trí");
+                          }
+                        }}
+                        className={
+                          mapSelectMode
+                            ? "bg-cyan-500 text-white border-cyan-500"
+                            : "text-xs"
+                        }
+                      >
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {mapSelectMode ? "Đang chọn..." : "Chọn trên bản đồ"}
+                      </Button>
+                      {selectedLocation && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMapClick();
+                          }}
+                          className="text-xs"
+                        >
+                          Thay đổi vị trí
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div
-                  className="relative w-full rounded-lg overflow-hidden border border-cyan-500/20 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                  ref={mapContainerRef}
+                  className={`relative w-full rounded-lg overflow-hidden border border-cyan-500/20 transition-colors ${
+                    data?.address
+                      ? "cursor-pointer hover:border-cyan-500/40"
+                      : "cursor-default"
+                  }`}
                   style={{ height: "300px", minHeight: "300px" }}
-                  onClick={handleMapClick}
+                  onClick={data?.address ? handleMapClick : undefined}
                 >
                   <iframe
                     width="100%"
                     height="100%"
-                    style={{ border: 0, display: "block" }}
+                    style={{
+                      border: 0,
+                      display: "block",
+                      pointerEvents:
+                        data?.address && mapSelectMode ? "none" : "auto",
+                    }}
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
                     src={getMapUrl()}
                   />
-                  {!selectedLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none">
+
+                  {/* Overlay cho chế độ chọn vị trí - chỉ hiển thị nếu có data.address */}
+                  {data?.address && mapSelectMode && (
+                    <div className="absolute inset-0 bg-transparent cursor-crosshair z-20">
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-cyan-500/50">
+                          <p className="text-sm font-medium text-cyan-400 flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            Nhấn vào bản đồ để chọn vị trí
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Overlay click để mở dialog chọn vị trí - chỉ hiển thị nếu có data.address */}
+                  {data?.address && !selectedLocation && !mapSelectMode && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none z-10">
                       <div className="text-center text-white">
                         <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
                         <p className="text-sm font-medium">
                           Nhấn để chọn vị trí
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading overlay khi đang chọn vị trí */}
+                  {selectingLocation && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-30">
+                      <div className="bg-background rounded-lg px-4 py-2 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-muted-foreground">
+                          Đang lấy thông tin vị trí...
                         </p>
                       </div>
                     </div>
