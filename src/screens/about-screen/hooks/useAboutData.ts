@@ -63,11 +63,11 @@ export const useAboutData = () => {
 
     // Name validation: required, min 2, max 50, khong chua script tags
     if (!data.name || data.name.trim().length < 2) {
-      errors.name = "Ho va ten phai co it nhat 2 ky tu";
+      errors.name = "Họ và tên phải có ít nhất 2 ký tự";
     } else if (data.name.length > 50) {
-      errors.name = "Ho va ten khong duoc qua 50 ky tu";
+      errors.name = "Họ và tên không được quá 50 ký tự";
     } else if (/<script|<\/script|javascript:|onerror=/i.test(data.name)) {
-      errors.name = "Ho va ten chua ky tu khong hop le";
+      errors.name = "Họ và tên chứa ký tự không hợp lệ";
     }
 
     // Email validation: required, format hop le, max 100
@@ -122,17 +122,17 @@ export const useAboutData = () => {
     //   const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
     //   const cleanPhone = data.phone.replace(/\s/g, '');
     //   if (!phoneRegex.test(cleanPhone)) {
-    //     errors.phone = 'So dien thoai khong hop le (dau so VN: 03x, 05x, 07x, 08x, 09x)';
+    //     errors.phone = 'Số điện thoại không hợp lệ (đầu số VN: 03x, 05x, 07x, 08x, 09x)';
     //   }
     // }
 
     // Message validation: required, min 20, max 1000
     if (!data.message || data.message.trim().length < 20) {
-      errors.message = "Noi dung phai co it nhat 20 ky tu";
+      errors.message = "Nội dung phải có ít nhất 20 ký tự";
     } else if (data.message.length > 5000) {
-      errors.message = "Noi dung khong duoc qua 5000 ky tu";
+      errors.message = "Nội dung không được quá 5000 ký tự";
     } else if (/<script|<\/script|javascript:|onerror=/i.test(data.message)) {
-      errors.message = "Noi dung chua ky tu khong hop le";
+      errors.message = "Nội dung chứa ký tự không hợp lệ";
     }
 
     return errors;
@@ -157,7 +157,7 @@ export const useAboutData = () => {
         setLeadersError(
           response.error ||
             response.message ||
-            "Khong lay duoc danh sach leaders"
+            "Không lấy được danh sách leaders"
         );
         setLeadersError(
           response.error ||
@@ -167,11 +167,8 @@ export const useAboutData = () => {
         setLeaders([]);
       }
     } catch (error) {
-      setLeadersError("Loi ket noi den server");
-      setLeadersError("Loi ket noi den server");
+      setLeadersError("Lỗi kết nối đến server");
       setLeaders([]);
-      console.error("Error fetching leaders:", error);
-      console.error("Error fetching leaders:", error);
     } finally {
       setLeadersLoading(false);
     }
@@ -274,8 +271,8 @@ export const useAboutData = () => {
       dispatch(
         addNotification({
           type: "error",
-          title: "Loi nhap lieu",
-          message: "Vui long kiem tra lai thong tin",
+          title: "Lỗi nhập liệu",
+          message: "Vui lòng kiểm tra lại thông tin",
         })
       );
       return;
@@ -295,8 +292,8 @@ export const useAboutData = () => {
     dispatch(
       addNotification({
         type: "success",
-        title: "Da gui thanh cong",
-        message: "Chung toi se lien he voi ban trong thoi gian som nhat!",
+        title: "Đã gửi thành công",
+        message: "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất!",
       })
     );
 

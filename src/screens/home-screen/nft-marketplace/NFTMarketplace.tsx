@@ -13,10 +13,7 @@ export const NFTMarketplace = () => {
   const [dataAnalytics, setDataAnalytics] = useState<any>(null);
 
   // Use hook to fetch mystery box NFTs
-  const {
-    mysteryBoxData,
-    loading,
-  } = useNFTFilters([], true);
+  const { mysteryBoxData, loading } = useNFTFilters([], true);
 
   // Fetch featured NFTs from API - similar to otherNFTsData
   useEffect(() => {
@@ -101,9 +98,9 @@ export const NFTMarketplace = () => {
             {mysteryBoxData.length > 0 && (
               <NFTCarouselCard
                 nfts={mysteryBoxData}
-                title="Hộp bí ấn"
+                title="Hộp bí ẩn"
                 displayCount={3}
-                rotationInterval={5000}
+                rotationInterval={10000}
                 viewAllLink="/nft-market"
               />
             )}
@@ -114,7 +111,7 @@ export const NFTMarketplace = () => {
                 nfts={featuredNFTs}
                 title="P2P Marketplace"
                 displayCount={3}
-                rotationInterval={5000}
+                rotationInterval={10000}
                 viewAllLink="/p2p-market"
               />
             )}

@@ -1,6 +1,5 @@
 import { ApiService, API_ENDPOINTS } from "../api";
 import { LocalStorageService } from "@/services";
-import { UserService } from "./user-service";
 
 export interface LoginCredentials {
   email: string;
@@ -35,14 +34,26 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    _verified: boolean;
+    _verified?: boolean;
     createdAt: string;
     updatedAt: string;
     name?: string;
     walletAddress?: string;
     role?: string;
-    avatarUrl?: string;
     bio?: string;
+
+    // Avatar co the la Object hoac String
+    avatar?: {
+      id: string;
+      url: string;
+      alt?: string;
+      filename?: string;
+      mimeType?: string;
+      width?: number;
+      height?: number;
+      thumbnailURL?: string | null;
+    };
+    avatarUrl?: string;
 
     // Trang thai xac minh
     isEmailVerified?: boolean;
@@ -56,15 +67,72 @@ export interface AuthResponse {
 
     // Theo doi dang nhap
     lastLogin?: string;
+    sessions?: any[]; // Khong luu vao localStorage
 
     // Ma gioi thieu & Rank
     refCode?: string;
     rank?: any; // RankObject hoac string ID
     rankId?: string;
     points?: number;
+
+    // User stats
+    childrenCount?: number;
+    totalInvestmentAmount?: number;
+    totalNFTCount?: number;
   };
   token: string;
   exp: number;
+}
+
+/**
+ * Helper function de transform raw user data tu backend ve format AuthUser cua frontend
+ * Xu ly cac truong hop:
+ * - avatar object -> avatarUrl string
+ * - rank object -> giu nguyen
+ * - loai bo sessions (bao mat + tiet kiem dung luong)
+ */
+function transformUserData(rawUser: any): any {
+  return {
+    id: rawUser.id,
+    email: rawUser.email,
+    name: rawUser.name || '',
+    walletAddress: rawUser.walletAddress || '',
+    role: rawUser.role || 'user',
+
+    // Transform avatar tu Object -> String URL
+    avatarUrl: rawUser.avatar?.url || rawUser.avatarUrl || '',
+
+    // Rank (giu nguyen object)
+    rank: rawUser.rank,
+    rankId: rawUser.rank?.id || rawUser.rankId,
+
+    // User stats
+    points: rawUser.points || 0,
+    refCode: rawUser.refCode || '',
+    childrenCount: rawUser.childrenCount || 0,
+    totalInvestmentAmount: rawUser.totalInvestmentAmount || 0,
+    totalNFTCount: rawUser.totalNFTCount || 0,
+
+    // Verification status
+    isEmailVerified: rawUser.isEmailVerified || false,
+    isKYCVerified: rawUser.isKYCVerified || false,
+    isWalletVerified: rawUser.isWalletVerified || false,
+
+    // Account status
+    isActive: rawUser.isActive !== false, // Default true
+    isSuspended: rawUser.isSuspended || false,
+    suspensionReason: rawUser.suspensionReason,
+
+    // Timestamps
+    lastLogin: rawUser.lastLogin,
+    createdAt: rawUser.createdAt,
+    updatedAt: rawUser.updatedAt,
+
+    // Bio (neu co)
+    bio: rawUser.bio,
+
+    // KHONG luu sessions (rui ro bao mat + ton dung luong)
+  };
 }
 
 export class AuthService {
@@ -168,47 +236,21 @@ export class AuthService {
       // Handle new Payload CMS response format
       if (response.data) {
         const authData = response.data as AuthResponse;
-
         if (authData.token && authData.user) {
           // Store token with expiration
           this.setToken(authData.token, authData.exp);
 
-          // Goi API getCurrentUserProfile de lay day du thong tin user tu backend
-          // Bao gom avatar, refCode, points, rank, va cac trang thai xac minh
-          let fullUserProfile = null;
+          // Transform raw user data tu backend ve format frontend
+          // Xu ly avatar object -> avatarUrl string, loai bo sessions, v.v.
+          const transformedUser = transformUserData(authData.user);
 
-          try {
-            const profileResponse = await UserService.getCurrentUserProfile();
+          // Store transformed user info vao LocalStorage
+          this.setUserInfo(transformedUser);
 
-            if (profileResponse.success && profileResponse.data) {
-              fullUserProfile = profileResponse.data;
-            }
-          } catch (error) {
-            console.warn("Khong the lay profile day du:", error);
-            // Van tiep tuc login, chi thieu mot so thong tin bo sung
-          }
-
-          // Store user info with all fields including avatar URL, refCode, points, rank
-          const userInfo = fullUserProfile || {
-            id: authData.user.id,
-            email: authData.user.email,
-            name: authData.user.name || "",
-            walletAddress: authData.user.walletAddress || "",
-            role: authData.user.role || "user",
-            avatarUrl: authData.user.avatarUrl || "",
-            createdAt: authData.user.createdAt,
-            updatedAt: authData.user.updatedAt,
-          };
-
-          this.setUserInfo(userInfo);
-
-          // Return authData voi day du thong tin user de frontend nhan duoc
+          // Return authData voi transformed user data
           return {
             ...authData,
-            user: {
-              ...authData.user,
-              ...userInfo,
-            },
+            user: transformedUser,
           };
         }
       }
