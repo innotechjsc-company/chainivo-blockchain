@@ -816,16 +816,7 @@ export default function InvestmentNFTDetailPage() {
                 </div>
               )}
             </div>
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                {data?.name || "Không rõ"}
-              </h1>
-              <div>
-                <CollapsibleDescription
-                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
-                />
-              </div>
-            </div>
+
             {/* Tabs section */}
             <Card className="glass">
               <CardContent className="p-4">
@@ -933,6 +924,218 @@ export default function InvestmentNFTDetailPage() {
                 </Tabs>
               </CardContent>
             </Card>
+
+            <div className="space-y-6">
+              <Card ref={infoCardRef} className="glass">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-4 text-white">
+                    Thông tin chi tiết
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Loại NFT
+                      </div>
+                      <div className="text-sm font-semibold text-white capitalize">
+                        {getNFTType(data?.type) || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Độ hiếm
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {getLevelBadge(data?.level as string)}
+                      </div>
+                    </div>
+                    {data?.isFractional && (
+                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Tổng cổ phần
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {formatAmount(data?.totalShares)} cổ phần
+                        </div>
+                      </div>
+                    )}
+                    {data?.isFractional && (
+                      <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Cổ phần mua tối thiểu
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {formatAmount(data?.minSharesPerPurchase ?? 1)} cổ
+                          phần
+                        </div>
+                      </div>
+                    )}
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Đã bán
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.soldShares)} cổ phần
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Còn lại
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.availableShares)} cổ phần
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Cho phép stake
+                      </div>
+                      <div className="text-sm font-semibold">
+                        {(data as any)?.allowStakingOfShares ? (
+                          <span className="text-emerald-400">✓ Có</span>
+                        ) : (
+                          <span className="text-red-400">✗ Không </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Số nhà đầu tư
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {formatAmount(data?.totalInvestors)} nhà đầu tư
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        TokendID
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {data?.tokenId || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
+                      <div className="text-xs text-muted-foreground mb-1 ">
+                        <span className="font-semibol mr-2">SmartContract</span>
+                        <span>
+                          {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopyValue(
+                                  config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS,
+                                  "SmartContract"
+                                )
+                              }
+                              className=" rounded-md border border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                              aria-label="Sao chép địa chỉ SmartContract"
+                            >
+                              <Copy className="w-4 h-4 text-cyan-300" />
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
+                        <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
+                          {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card ref={shareListCardRef} className="glass">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-4 text-white">
+                    Danh sách người mua cổ phần{" "}
+                    <span className="text-cyan-400">
+                      ({shareDetail?.length || 0})
+                    </span>
+                  </h3>
+                  {shareDetailLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Spinner className="w-6 h-6 mx-auto mb-2" />
+                      <p>Đang tải lịch sử mua cổ phần...</p>
+                    </div>
+                  ) : !user ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Vui lòng đăng nhập để xem lịch sử mua cổ phần</p>
+                    </div>
+                  ) : shareDetail ? (
+                    <div className="space-y-4">
+                      {shareDetail &&
+                        Array.isArray(shareDetail) &&
+                        shareDetail.length > 0 && (
+                          <div className="mt-4">
+                            <div
+                              className="space-y-2 overflow-y-auto pr-2"
+                              style={{
+                                maxHeight: showAllShareDetail
+                                  ? "600px"
+                                  : "400px",
+                                minHeight: "200px",
+                              }}
+                            >
+                              {(showAllShareDetail
+                                ? shareDetail
+                                : shareDetail.slice(0, 10)
+                              ).map((purchase: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rounded-md border border-border/50 bg-background/30 p-3 hover:bg-background/50 transition-colors"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Người mua:{" "}
+                                        {purchase.buyer?.walletAddress
+                                          ? `${purchase.buyer.walletAddress.slice(
+                                              0,
+                                              4
+                                            )}...${purchase.buyer.walletAddress.slice(
+                                              -4
+                                            )}`
+                                          : "—"}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-semibold text-cyan-400">
+                                        {formatAmount(
+                                          purchase.totalShares || 0
+                                        )}{" "}
+                                        CP
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {shareDetail.length > 10 && (
+                              <div className="mt-4 text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setShowAllShareDetail(!showAllShareDetail)
+                                  }
+                                  className="text-primary hover:text-primary/80"
+                                >
+                                  {showAllShareDetail ? "Thu gọn" : `Xem thêm `}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Không có dữ liệu lịch sử mua cổ phần</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Details section */}
@@ -942,6 +1145,16 @@ export default function InvestmentNFTDetailPage() {
               maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px`,
             }}
           >
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                {data?.name || "Không rõ"}
+              </h1>
+              <div>
+                <CollapsibleDescription
+                  html={String(data?.description || "").replace(/\n/g, "<br/>")}
+                />
+              </div>
+            </div>
             {/* Price */}
             <div className="glass rounded-xl p-4">
               <div className="text-sm text-muted-foreground mb-1">
@@ -1171,344 +1384,136 @@ export default function InvestmentNFTDetailPage() {
                 </CardContent>
               </Card>
             )}
-          </div>
-          <div className="space-y-6">
-            <Card ref={infoCardRef} className="glass">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-white">
-                  Thông tin chi tiết
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Loại NFT
-                    </div>
-                    <div className="text-sm font-semibold text-white capitalize">
-                      {getNFTType(data?.type) || "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Độ hiếm
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {getLevelBadge(data?.level as string)}
-                    </div>
-                  </div>
-                  {data?.isFractional && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Tổng cổ phần
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.totalShares)} cổ phần
-                      </div>
-                    </div>
-                  )}
-                  {data?.isFractional && (
-                    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Cổ phần mua tối thiểu
-                      </div>
-                      <div className="text-sm font-semibold text-white">
-                        {formatAmount(data?.minSharesPerPurchase ?? 1)} cổ phần
-                      </div>
-                    </div>
-                  )}
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Đã bán
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.soldShares)} cổ phần
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Còn lại
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.availableShares)} cổ phần
-                    </div>
-                  </div>
 
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Cho phép stake
-                    </div>
-                    <div className="text-sm font-semibold">
-                      {(data as any)?.allowStakingOfShares ? (
-                        <span className="text-emerald-400">✓ Có</span>
-                      ) : (
-                        <span className="text-red-400">✗ Không </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Số nhà đầu tư
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {formatAmount(data?.totalInvestors)} nhà đầu tư
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      TokendID
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {data?.tokenId || "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors">
-                    <div className="text-xs text-muted-foreground mb-1 ">
-                      <span className="font-semibol mr-2">SmartContract</span>
-                      <span>
-                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyValue(
-                                config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS,
-                                "SmartContract"
-                              )
-                            }
-                            className=" rounded-md border border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-colors cursor-pointer"
-                            aria-label="Sao chép địa chỉ SmartContract"
-                          >
-                            <Copy className="w-4 h-4 text-cyan-300" />
-                          </button>
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
-                      <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
-                        {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card ref={shareListCardRef} className="glass">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-white">
-                  Danh sách người mua cổ phần{" "}
-                  <span className="text-cyan-400">
-                    ({shareDetail?.length || 0})
-                  </span>
-                </h3>
-                {shareDetailLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Spinner className="w-6 h-6 mx-auto mb-2" />
-                    <p>Đang tải lịch sử mua cổ phần...</p>
-                  </div>
-                ) : !user ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Vui lòng đăng nhập để xem lịch sử mua cổ phần</p>
-                  </div>
-                ) : shareDetail ? (
-                  <div className="space-y-4">
-                    {shareDetail &&
-                      Array.isArray(shareDetail) &&
-                      shareDetail.length > 0 && (
-                        <div className="mt-4">
-                          <div
-                            className="space-y-2 overflow-y-auto pr-2"
-                            style={{
-                              maxHeight: showAllShareDetail ? "600px" : "400px",
-                              minHeight: "200px",
-                            }}
-                          >
-                            {(showAllShareDetail
-                              ? shareDetail
-                              : shareDetail.slice(0, 10)
-                            ).map((purchase: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="rounded-md border border-border/50 bg-background/30 p-3 hover:bg-background/50 transition-colors"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      Người mua:{" "}
-                                      {purchase.buyer?.walletAddress
-                                        ? `${purchase.buyer.walletAddress.slice(
-                                            0,
-                                            4
-                                          )}...${purchase.buyer.walletAddress.slice(
-                                            -4
-                                          )}`
-                                        : "—"}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-sm font-semibold text-cyan-400">
-                                      {formatAmount(purchase.totalShares || 0)}{" "}
-                                      CP
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {shareDetail.length > 10 && (
-                            <div className="mt-4 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  setShowAllShareDetail(!showAllShareDetail)
-                                }
-                                className="text-primary hover:text-primary/80"
-                              >
-                                {showAllShareDetail ? "Thu gọn" : `Xem thêm `}
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Không có dữ liệu lịch sử mua cổ phần</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Bản đồ - Tách ra khỏi sticky container để tránh đè lên card lịch sử giao dịch */}
-        <div className="mt-8 w-full">
-          <Card className="glass relative z-20">
-            <CardContent className="p-3">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-white flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-cyan-400" />
-                    Vị trí
-                  </h3>
-                  {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
-                  {data?.address && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant={mapSelectMode ? "default" : "outline"}
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMapSelectMode(!mapSelectMode);
-                          if (!mapSelectMode) {
-                            toast.info("Nhấn vào bản đồ để chọn vị trí");
-                          } else {
-                            toast.info("Đã tắt chế độ chọn vị trí");
-                          }
-                        }}
-                        className={
-                          mapSelectMode
-                            ? "bg-cyan-500 text-white border-cyan-500"
-                            : "text-xs"
-                        }
-                      >
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {mapSelectMode ? "Đang chọn..." : "Chọn trên bản đồ"}
-                      </Button>
-                      {selectedLocation && (
+            {/* Bản đồ */}
+            <Card className="glass relative z-20">
+              <CardContent className="p-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-cyan-400" />
+                      Vị trí
+                    </h3>
+                    {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
+                    {data?.address && (
+                      <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant={mapSelectMode ? "default" : "outline"}
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleMapClick();
+                            setMapSelectMode(!mapSelectMode);
+                            if (!mapSelectMode) {
+                              toast.info("Nhấn vào bản đồ để chọn vị trí");
+                            } else {
+                              toast.info("Đã tắt chế độ chọn vị trí");
+                            }
                           }}
-                          className="text-xs"
+                          className={
+                            mapSelectMode
+                              ? "bg-cyan-500 text-white border-cyan-500"
+                              : "text-xs"
+                          }
                         >
-                          Thay đổi vị trí
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {mapSelectMode ? "Đang chọn..." : "Chọn trên bản đồ"}
                         </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div
-                  ref={mapContainerRef}
-                  className={`relative w-full rounded-lg overflow-hidden border border-cyan-500/20 transition-colors ${
-                    data?.address
-                      ? "cursor-pointer hover:border-cyan-500/40"
-                      : "cursor-default"
-                  }`}
-                  style={{ height: "300px", minHeight: "300px" }}
-                  onClick={data?.address ? handleMapClick : undefined}
-                >
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{
-                      border: 0,
-                      display: "block",
-                      pointerEvents:
-                        data?.address && mapSelectMode ? "none" : "auto",
-                    }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={getMapUrl()}
-                  />
+                        {selectedLocation && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMapClick();
+                            }}
+                            className="text-xs"
+                          >
+                            Thay đổi vị trí
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    ref={mapContainerRef}
+                    className={`relative w-full rounded-lg overflow-hidden border border-cyan-500/20 transition-colors ${
+                      data?.address
+                        ? "cursor-pointer hover:border-cyan-500/40"
+                        : "cursor-default"
+                    }`}
+                    style={{ height: "300px", minHeight: "300px" }}
+                    onClick={data?.address ? handleMapClick : undefined}
+                  >
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{
+                        border: 0,
+                        display: "block",
+                        pointerEvents:
+                          data?.address && mapSelectMode ? "none" : "auto",
+                      }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={getMapUrl()}
+                    />
 
-                  {/* Overlay cho chế độ chọn vị trí - chỉ hiển thị nếu có data.address */}
-                  {data?.address && mapSelectMode && (
-                    <div className="absolute inset-0 bg-transparent cursor-crosshair z-20">
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-cyan-500/50">
-                          <p className="text-sm font-medium text-cyan-400 flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            Nhấn vào bản đồ để chọn vị trí
+                    {/* Overlay cho chế độ chọn vị trí - chỉ hiển thị nếu có data.address */}
+                    {data?.address && mapSelectMode && (
+                      <div className="absolute inset-0 bg-transparent cursor-crosshair z-20">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-cyan-500/50">
+                            <p className="text-sm font-medium text-cyan-400 flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Nhấn vào bản đồ để chọn vị trí
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overlay click để mở dialog chọn vị trí - chỉ hiển thị nếu có data.address */}
+                    {data?.address && !selectedLocation && !mapSelectMode && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none z-10">
+                        <div className="text-center text-white">
+                          <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
+                          <p className="text-sm font-medium">
+                            Nhấn để chọn vị trí
                           </p>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Overlay click để mở dialog chọn vị trí - chỉ hiển thị nếu có data.address */}
-                  {data?.address && !selectedLocation && !mapSelectMode && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none z-10">
-                      <div className="text-center text-white">
-                        <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
-                        <p className="text-sm font-medium">
-                          Nhấn để chọn vị trí
-                        </p>
+                    {/* Loading overlay khi đang chọn vị trí */}
+                    {selectingLocation && (
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-30">
+                        <div className="bg-background rounded-lg px-4 py-2 flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-sm text-muted-foreground">
+                            Đang lấy thông tin vị trí...
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Loading overlay khi đang chọn vị trí */}
-                  {selectingLocation && (
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-30">
-                      <div className="bg-background rounded-lg px-4 py-2 flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm text-muted-foreground">
-                          Đang lấy thông tin vị trí...
-                        </p>
-                      </div>
+                    )}
+                  </div>
+                  {selectedLocation && (
+                    <div className="text-sm text-muted-foreground pt-2">
+                      <p className="font-semibold text-white mb-1">Địa chỉ:</p>
+                      <p>{selectedLocation.address}</p>
+                      <p className="text-xs mt-1">
+                        Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                        {selectedLocation.lng.toFixed(6)}
+                      </p>
                     </div>
                   )}
                 </div>
-                {selectedLocation && (
-                  <div className="text-sm text-muted-foreground pt-2">
-                    <p className="font-semibold text-white mb-1">Địa chỉ:</p>
-                    <p>{selectedLocation.address}</p>
-                    <p className="text-xs mt-1">
-                      Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
-                      {selectedLocation.lng.toFixed(6)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        <div className="mt-12 w-full relative z-0 clear-both">
+        <div className="mt-12  clear-both">
           <Card className="glass">
             <CardContent className="p-4">
               <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
