@@ -57,6 +57,7 @@ api.interceptors.response.use(
       const isRefreshTokenRequest = originalRequest.url?.includes(
         "/api/users/refresh-token"
       );
+      debugger;
 
       // Neu la refresh token request ma van bi 401 -> token khong hop le, logout
       if (isRefreshTokenRequest) {

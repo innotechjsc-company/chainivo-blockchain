@@ -44,6 +44,7 @@ export function CancelSaleDialog({
   const walletAddress = useAppSelector(
     (state) => state.wallet.wallet?.address || ""
   );
+  const isMinted = nft?.isMinted ?? false;
 
   const getNftBasePrice = (nftItem: NFTItem | null): number => {
     if (!nftItem) return 0;
@@ -109,6 +110,12 @@ export function CancelSaleDialog({
   };
 
   const handleOpenConfirmModal = async () => {
+    if (!isMinted) {
+      setFeeError(null);
+      setWithdrawalFeeInfo(null);
+      setConfirmModalOpen(true);
+      return;
+    }
     setConfirmModalOpen(true);
     setFeeError(null);
     setFeeLoading(true);
@@ -155,23 +162,49 @@ export function CancelSaleDialog({
           setLoading(false);
           return;
         }
-      }
 
-      const response = await NFTService.cancelNFTSale(nft.id);
+        const response = await NFTService.cancelNFTSale(
+          nft.id,
+          transferResult?.transactionHash
+        );
 
-      if (response.success) {
-        ToastService.success("Hủy đăng bán NFT thành công!", {
-          description: `${nft.name} đã được xoá khỏi marketplace`,
-        });
-        setConfirmModalOpen(false);
-        onOpenChange(false);
-        onSuccess(); // Trigger refetch danh sach NFT
-      } else {
-        ToastService.error(response.error || "Không thể hủy đăng bán NFT");
+        if (response.success) {
+          ToastService.success("Hủy đăng bán NFT thành công!", {
+            description: `${nft.name} đã được xoá khỏi marketplace`,
+          });
+          setConfirmModalOpen(false);
+          onOpenChange(false);
+          onSuccess(); // Trigger refetch danh sach NFT
+        } else {
+          ToastService.error(response.error || "Không thể hủy đăng bán NFT");
+        }
       }
     } catch (error: any) {
       ToastService.error("Đã xảy ra lỗi khi hủy đăng bán NFT");
       console.error("Cancel sale error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmCancelWithoutFee = async () => {
+    if (!nft) return;
+    setLoading(true);
+    try {
+      const response = await NFTService.cancelNFTSale(nft.id);
+      if (response.success) {
+        ToastService.success("Hủy NFT thành công!", {
+          description: `${nft.name} đã được xoá khỏi danh sách.`,
+        });
+        setConfirmModalOpen(false);
+        onOpenChange(false);
+        onSuccess();
+      } else {
+        ToastService.error(response.error || "Không thể hủy NFT");
+      }
+    } catch (error: any) {
+      ToastService.error("Đã xảy ra lỗi khi hủy NFT");
+      console.error("Cancel sale (non-minted) error:", error);
     } finally {
       setLoading(false);
     }
@@ -192,8 +225,14 @@ export function CancelSaleDialog({
           <DialogHeader>
             <DialogTitle>Hủy đăng bán NFT</DialogTitle>
             <DialogDescription>
-              Bạn chắc chắn muốn hủy đăng bán{" "}
-              <span className="font-semibold">{nft.name}</span>?
+              {isMinted ? (
+                <>
+                  Bạn chắc chắn muốn hủy đăng bán{" "}
+                  <span className="font-semibold">{nft.name}</span>?
+                </>
+              ) : (
+                "Bạn có chắc chắn muốn hủy NFT này?"
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -264,26 +303,34 @@ export function CancelSaleDialog({
           </DialogHeader>
 
           <div className="space-y-3">
-            {feeLoading ? (
-              <div className="flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                <Spinner className="h-4 w-4" />
-                <span>Đang tính phí hủy...</span>
-              </div>
-            ) : feeError ? (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {feeError}
-              </div>
+            {isMinted ? (
+              feeLoading ? (
+                <div className="flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  <Spinner className="h-4 w-4" />
+                  <span>Đang tính phí hủy...</span>
+                </div>
+              ) : feeError ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {feeError}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nếu đồng ý, bạn sẽ mất phí{" "}
+                  <span className="font-semibold text-primary">
+                    {withdrawalFeeInfo?.amount?.toLocaleString("vi-VN") || 0}{" "}
+                    CAN
+                  </span>{" "}
+                  {withdrawalFeeInfo?.type === "percentage" &&
+                  withdrawalFeeInfo?.value
+                    ? `(tương đương ${withdrawalFeeInfo.value}% giá NFT)`
+                    : "(phí cố định)"}
+                  .
+                </p>
+              )
             ) : (
               <p className="text-sm text-muted-foreground">
-                Nếu đồng ý, bạn sẽ mất phí{" "}
-                <span className="font-semibold text-primary">
-                  {withdrawalFeeInfo?.amount.toLocaleString("vi-VN") || 0} CAN
-                </span>{" "}
-                {withdrawalFeeInfo?.type === "percentage" &&
-                withdrawalFeeInfo?.value
-                  ? `(tương đương ${withdrawalFeeInfo.value}% giá NFT)`
-                  : "(phí cố định)"}
-                .
+                NFT chưa được mint trên blockchain nên bạn có thể hủy ngay lập
+                tức.
               </p>
             )}
 
@@ -307,8 +354,10 @@ export function CancelSaleDialog({
             <Button
               type="button"
               variant="destructive"
-              onClick={handleConfirmCancel}
-              disabled={loading || feeLoading || !!feeError}
+              onClick={
+                isMinted ? handleConfirmCancel : handleConfirmCancelWithoutFee
+              }
+              disabled={loading || (isMinted && (feeLoading || !!feeError))}
             >
               {loading ? "Đang xử lý..." : "Đồng ý"}
             </Button>

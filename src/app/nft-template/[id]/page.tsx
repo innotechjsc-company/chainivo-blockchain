@@ -780,44 +780,49 @@ function CollapsibleDescription({
 
   if (isExpanded) {
     return (
-      <div className="">
+      <div className="relative">
         <div
-          className="text-muted-foreground leading-relaxed overflow-y-auto h-[700px]"
+          className="text-muted-foreground leading-relaxed overflow-y-auto pr-20"
+          style={{ maxHeight: maxHeight ?? 700 }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        <div className="text-right">
-          <button
-            type="button"
-            className="text-primary text-sm font-medium hover:underline cursor-pointer"
-            onClick={() => setIsExpanded(false)}
-          >
-            Thu gọn
-          </button>
-        </div>
+        <button
+          type="button"
+          className="absolute bottom-0 right-0 text-primary text-sm font-medium hover:underline cursor-pointer bg-background px-2 py-1"
+          onClick={() => setIsExpanded(false)}
+        >
+          Thu gọn
+        </button>
       </div>
     );
   }
 
   return (
     <div className="relative w-full">
-      <div className="flex items-center gap-2">
-        <span
-          className={`text-muted-foreground leading-relaxed flex-1 ${
-            isMultiLine ? "truncate" : ""
-          }`}
+      <p
+        className="text-muted-foreground leading-relaxed pr-20"
+        style={
+          isMultiLine
+            ? {
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }
+            : undefined
+        }
+      >
+        {collapsedText}
+      </p>
+      {isMultiLine && (
+        <button
+          type="button"
+          className="absolute bottom-0 right-0 text-primary text-sm font-medium hover:underline cursor-pointer bg-background px-2 py-1"
+          onClick={() => setIsExpanded(true)}
         >
-          {collapsedText}
-        </span>
-        {isMultiLine && (
-          <button
-            type="button"
-            className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
-            onClick={() => setIsExpanded(true)}
-          >
-            Xem thêm
-          </button>
-        )}
-      </div>
+          Xem thêm
+        </button>
+      )}
       <span
         ref={measureRef}
         className="invisible absolute left-0 top-0 w-full whitespace-normal leading-relaxed pointer-events-none select-none"
