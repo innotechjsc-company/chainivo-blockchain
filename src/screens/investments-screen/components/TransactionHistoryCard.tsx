@@ -35,9 +35,8 @@ export const TransactionHistoryCard = ({
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     useEffect(() => {
-      console.log("check-transactions", transactions)
-      debugger
-    }, [transactions])
+      console.log("check-transactions", transactions);
+    }, [transactions]);
 
     if (diffInSeconds < 60) return "Vừa xong";
     if (diffInSeconds < 3600)
@@ -132,8 +131,8 @@ export const TransactionHistoryCard = ({
                             {tx.status === "completed"
                               ? "Hoàn thành"
                               : tx.status === "pending"
-                                ? "Đang xử lý"
-                                : "Thất bại"}
+                              ? "Đang xử lý"
+                              : "Thất bại"}
                           </Badge>
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(tx?.createdAt ?? ""))}

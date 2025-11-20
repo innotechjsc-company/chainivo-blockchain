@@ -19,7 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { formatNumber } from "@/utils/formatters";
 import { Send } from "lucide-react";
-import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import {
+  config,
+  LINK_CHECK_TRANSACTION_AMO_MINT,
+  TOKEN_DEAULT_CURRENCY,
+} from "@/api/config";
 import { NFTService } from "@/api/services/nft-service";
 import { FeeService } from "@/api/services";
 import { toast } from "sonner";
@@ -112,6 +116,12 @@ export default function NFTCard({
 
   // Nếu có props cũ (type, onListForSale, onClick), tự động enable showActions
   const shouldShowActions = showActions || type !== undefined;
+
+  const nftTokenId =
+    (nft as any)?.tokenId ??
+    (nft as any)?.token_id ??
+    (nft as any)?.nft?.tokenId ??
+    (nft as any)?.nft?.token_id;
 
   const getNftBasePrice = (): number => {
     const basePrice =
@@ -314,17 +324,14 @@ export default function NFTCard({
       let calculatedAmount = 0;
       if (feeValue > 0 && feeType === "percentage") {
         calculatedAmount = (nftPrice * feeValue) / 100;
-        debugger;
       } else if (feeValue > 0 && feeType === "fixed") {
         calculatedAmount = feeValue;
-        debugger;
       }
       setMintingFeeDetails({
         type: feeType,
         value: feeValue,
       });
       setMintingFeeAmount(calculatedAmount);
-      debugger;
       if (!mintingFeeConfig || feeValue === 0) {
         toast.info(
           "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
@@ -430,7 +437,6 @@ export default function NFTCard({
           responseData?.token?.id ??
           (nft as any)?.tokenId ??
           (nft as any)?.token_id;
-        debugger;
         // Tạo link tra cứu giao dịch
         const explorerUrl = contractAddress
           ? `https://amoy.polygonscan.com/token/${contractAddress}${
@@ -635,9 +641,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
         </h3>
 
         {/* Mô tả - Fixed height */}
-        <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem]">
-          {(nft as any)?.description || "—"}
-        </p>
+        <div className="space-y-1 min-h-[2.5rem]">
+          <p className="text-sm text-gray-400 line-clamp-2">
+            {(nft as any)?.description || "—"}
+          </p>
+        </div>
 
         {/* Mystery Box layout - riêng biệt */}
         {nft.type === "mysteryBox" ? (
@@ -736,13 +744,23 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                     {(nft as any).isStaking === true ? "Có" : "Chưa"}
                   </span>
                 </div>
-                {/* Minted status - Fixed height */}
                 <div className="flex items-center justify-between min-h-[1.5rem]">
                   <span className="text-sm text-gray-400">Minted:</span>
                   <span className="text-sm font-medium text-gray-100">
                     {(nft as any).isMinted === true ? "Đã Mint" : "Chưa Mint"}
                   </span>
                 </div>
+                {nft.isMinted && nftTokenId && (
+                  <a
+                    href={`${LINK_CHECK_TRANSACTION_AMO_MINT}${config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS}?a=${nftTokenId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Xem trên Polygon Scan
+                  </a>
+                )}
               </div>
             )}
 
@@ -926,32 +944,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                   <p className="text-xs font-mono break-all">
                     {withdrawResult.transactionHash}
                   </p>
-                </div>
-              )}
-
-              {withdrawResult?.explorerUrl && (
-                <div className="pt-3 border-t border-green-500/20">
-                  <a
-                    href={withdrawResult.explorerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      />
-                    </svg>
-                    Xem trên Polygon Scan
-                  </a>
                 </div>
               )}
             </div>
