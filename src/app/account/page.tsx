@@ -17,7 +17,17 @@ import {
   PieChart,
   Users,
   Copy,
+  Menu,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
@@ -69,6 +79,7 @@ export default function AccountManagementPage() {
     const sectionParam = searchParams.get("section");
     return sectionParam ?? "profile";
   });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = useAppSelector((state) => state.auth.user);
   const walletSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -330,6 +341,17 @@ export default function AccountManagementPage() {
     "kim cương": "text-purple-500",
   };
 
+  const tabs = [
+    { value: "profile", label: "Hồ sơ", icon: User },
+    // { value: "wallet", label: "Ví", icon: Wallet },
+    { value: "my-nft", label: "NFT của tôi", icon: Image },
+    { value: "nft-co-phan", label: "NFT cổ phần", icon: PieChart },
+    { value: "referral", label: "Mã giới thiệu", icon: Users },
+    { value: "history", label: "Lịch sử", icon: History },
+    { value: "digitizing-request", label: "Số hóa NFT", icon: FileText },
+    { value: "settings", label: "Cài đặt", icon: Settings },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -343,60 +365,61 @@ export default function AccountManagementPage() {
             onValueChange={handleTabChange}
             className="flex flex-col md:flex-row gap-6 w-full items-start"
           >
-            <TabsList className="flex flex-col w-full md:w-64 shrink-0 h-auto bg-transparent space-y-2 p-0">
-              <TabsTrigger
-                value="profile"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <User className="w-4 h-4 mr-2" />
-                Hồ sơ
-              </TabsTrigger>
-              {/* <TabsTrigger value="wallet" className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                <Wallet className="w-4 h-4 mr-2" />
-                Ví
-              </TabsTrigger> */}
-              <TabsTrigger
-                value="my-nft"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <Image className="w-4 h-4 mr-2" />
-                NFT của tôi
-              </TabsTrigger>
-              <TabsTrigger
-                value="nft-co-phan"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <PieChart className="w-4 h-4 mr-2" />
-                NFT cổ phần
-              </TabsTrigger>
-              <TabsTrigger
-                value="referral"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Mã giới thiệu
-              </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <History className="w-4 h-4 mr-2" />
-                Lịch sử
-              </TabsTrigger>
-              <TabsTrigger
-                value="digitizing-request"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Số hóa NFT
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Cài đặt
-              </TabsTrigger>
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden w-full mb-4">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Menu className="mr-2 h-4 w-4" />
+                    {tabs.find((t) => t.value === tabValue)?.label ||
+                      "Menu tài khoản"}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle>Menu tài khoản</SheetTitle>
+                    <SheetDescription>
+                      Quản lý tài khoản và cài đặt của bạn
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex flex-col space-y-2 mt-4">
+                    {tabs.map((tab) => (
+                      <SheetClose key={tab.value} asChild>
+                        <Button
+                          variant={
+                            tabValue === tab.value ? "secondary" : "ghost"
+                          }
+                          className={`justify-start ${
+                            tabValue === tab.value
+                              ? "bg-primary/10 text-primary"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            handleTabChange(tab.value);
+                          }}
+                        >
+                          <tab.icon className="mr-2 h-4 w-4" />
+                          {tab.label}
+                        </Button>
+                      </SheetClose>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <TabsList className="hidden md:flex flex-col w-64 shrink-0 h-auto bg-transparent space-y-2 p-0">
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  <tab.icon className="w-4 h-4 mr-2" />
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <div className="flex-1 min-w-0">
