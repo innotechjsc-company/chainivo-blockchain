@@ -1175,7 +1175,7 @@ export default function InvestmentNFTDetailPage() {
             }}
           >
             {/* Price */}
-            <div className="glass rounded-xl p-4">
+            <div className="glass rounded-xl p-2">
               <div className="text-sm text-muted-foreground mb-1">
                 Giá/cổ phần
               </div>
@@ -1407,51 +1407,12 @@ export default function InvestmentNFTDetailPage() {
             {/* Bản đồ */}
             <Card className="glass">
               <CardContent>
-                <div className="space-y-2">
+                <div>
                   <div className="flex items-center justify-between">
-                    {/* Chỉ hiển thị nút chọn vị trí nếu có data.address */}
-                    {data?.address && (
-                      <div className="flex gap-2">
-                        <Button
-                          variant={mapSelectMode ? "default" : "outline"}
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMapSelectMode(!mapSelectMode);
-                            if (!mapSelectMode) {
-                              toast.info("Nhấn vào bản đồ để chọn vị trí");
-                            } else {
-                              toast.info("Đã tắt chế độ chọn vị trí");
-                            }
-                          }}
-                          className={
-                            mapSelectMode
-                              ? "bg-cyan-500 text-white border-cyan-500"
-                              : "text-xs"
-                          }
-                        >
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {mapSelectMode ? "Đang chọn..." : "Chọn trên bản đồ"}
-                        </Button>
-                        {selectedLocation && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMapClick();
-                            }}
-                            className="text-xs"
-                          >
-                            Thay đổi vị trí
-                          </Button>
-                        )}
-                      </div>
-                    )}
                     <button
                       type="button"
                       onClick={handleOpenGoogleMaps}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                      className="text-xs text-cyan-400 hover:text-cyan-300  cursor-pointer pb-1"
                     >
                       Xem chi tiết trên Google Maps
                     </button>
