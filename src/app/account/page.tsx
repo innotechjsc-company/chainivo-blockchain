@@ -143,13 +143,13 @@ export default function AccountManagementPage() {
     }
 
     if (trimmedName.length > 100) {
-      return "Ten khong duoc vuot qua 100 ky tu ";
+      return "Tên không được vượt quá 100 ký tự";
     }
 
     // Regex: chu cai (a-z, A-Z), chu Viet co dau, so (0-9), khoang trang
     const nameRegex = /^[a-zA-Z0-9\u00C0-\u1EF9\s]+$/;
     if (!nameRegex.test(trimmedName)) {
-      return "Ten chi duoc chua chu cai, so va khoang trang";
+      return "Tên chỉ được chứa chữ cái, số và khoảng trắng";
     }
 
     return null;
@@ -164,7 +164,7 @@ export default function AccountManagementPage() {
     const hasAvatarChange = selectedAvatar !== null;
 
     if (!hasNameChange && !hasAvatarChange) {
-      setUpdateError("Vui long cap nhat ten hoac anh dai dien");
+      setUpdateError("Vui lòng cập nhật tên hoặc ảnh đại diện");
       return;
     }
 
@@ -193,7 +193,9 @@ export default function AccountManagementPage() {
           uploadedAvatarId = uploadResponse.data.id;
           formData.append("avatar", uploadedAvatarId);
         } else {
-          setUpdateError(uploadResponse.error || "Loi khi upload anh dai dien");
+          setUpdateError(
+            uploadResponse.error || "Lỗi khi tải lên ảnh đại diện"
+          );
           setUpdateLoading(false);
           return;
         }
@@ -210,18 +212,18 @@ export default function AccountManagementPage() {
         setSelectedAvatar(null);
         setAvatarPreview(null);
 
-        setUpdateSuccess("Cap nhat profile thanh cong");
+        setUpdateSuccess("Cập nhật hồ sơ thành công");
 
         setTimeout(() => setUpdateSuccess(null), 3000);
       } else {
         setUpdateError(
           response.error ||
-          response.message ||
-          "Co loi xay ra khi cap nhat profile"
+            response.message ||
+            "Có lỗi xảy ra khi cập nhật hồ sơ"
         );
       }
     } catch (error: any) {
-      setUpdateError(error.message || "Khong the cap nhat profile");
+      setUpdateError(error.message || "Không thể cập nhật hồ sơ");
     } finally {
       setUpdateLoading(false);
     }
@@ -419,10 +421,11 @@ export default function AccountManagementPage() {
                       Hạng thành viên
                     </div>
                     <div
-                      className={`text-2xl font-bold capitalize ${tierColors[
-                        (user as any)?.rank?.name?.toLowerCase() || "dong"
-                      ]
-                        }`}
+                      className={`text-2xl font-bold capitalize ${
+                        tierColors[
+                          (user as any)?.rank?.name?.toLowerCase() || "dong"
+                        ]
+                      }`}
                     >
                       {(user as any)?.rank?.name || "Đồng"}
                     </div>
@@ -432,7 +435,9 @@ export default function AccountManagementPage() {
                       Tổng đầu tư
                     </div>
                     <div className="text-2xl font-bold gradient-text">
-                      ${profile?.total_invested?.toLocaleString()}
+                      $
+                      {(user as any)?.totalInvestmentAmount?.toLocaleString() ||
+                        0}
                     </div>
                   </div>
                 </div>
@@ -489,16 +494,17 @@ export default function AccountManagementPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isActive && !user?.isSuspended
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-red-500/20 text-red-500"
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isActive && !user?.isSuspended
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-red-500/20 text-red-500"
+                          }`}
                         >
                           {user?.isSuspended
                             ? "Đã bị khóa"
                             : user?.isActive
-                              ? "Hoạt động"
-                              : "Không hoạt động"}
+                            ? "Hoạt động"
+                            : "Không hoạt động"}
                         </span>
                       </div>
                       {user?.suspensionReason && (
@@ -532,10 +538,11 @@ export default function AccountManagementPage() {
                           Xác minh Email
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isEmailVerified
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-gray-500/20 text-gray-500"
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isEmailVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
                         >
                           {user?.isEmailVerified
                             ? "Đã xác minh"
@@ -549,10 +556,11 @@ export default function AccountManagementPage() {
                           Xác minh KYC
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isKYCVerified
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-gray-500/20 text-gray-500"
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isKYCVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
                         >
                           {user?.isKYCVerified
                             ? "Đã xác minh"
@@ -566,10 +574,11 @@ export default function AccountManagementPage() {
                           Xác minh Ví
                         </span>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user?.isWalletVerified
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-gray-500/20 text-gray-500"
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isWalletVerified
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-gray-500/20 text-gray-500"
+                          }`}
                         >
                           {user?.isWalletVerified
                             ? "Đã xác minh"
@@ -699,7 +708,7 @@ export default function AccountManagementPage() {
                   <div className="text-center py-12">
                     <p className="text-red-500 mb-4">{txHistoryError}</p>
                     <Button variant="outline" onClick={refetchTxHistory}>
-                      Thu lai
+                      Thử lại
                     </Button>
                   </div>
                 )}
