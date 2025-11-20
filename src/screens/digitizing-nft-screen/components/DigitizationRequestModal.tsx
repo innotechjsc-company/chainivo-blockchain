@@ -104,6 +104,7 @@ export function DigitizationRequestModal({
   const [calculatedFee, setCalculatedFee] = useState(0);
   const [payingFee, setPayingFee] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string>("");
+  const [typeFee, setTypeFee] = useState<string>("");
 
   // Lấy wallet address từ Redux store
   const walletAddress = useAppSelector(
@@ -267,6 +268,7 @@ export function DigitizationRequestModal({
         }
 
         if (appraisalFeeValue > 0) {
+          setTypeFee(appraisalFee?.type || "");
           setAppraisalFee(appraisalFeeValue);
           setCalculatedFee(calculatedFeeAmount);
         }
@@ -1293,9 +1295,7 @@ export function DigitizationRequestModal({
                 </span>
                 <span className="font-semibold text-primary">
                   {appraisalFee}{" "}
-                  {(appraisalFee as any)?.type === "percentage"
-                    ? "%"
-                    : TOKEN_DEAULT_CURRENCY}
+                  {typeFee === "percentage" ? "%" : TOKEN_DEAULT_CURRENCY}
                 </span>
               </div>
 
