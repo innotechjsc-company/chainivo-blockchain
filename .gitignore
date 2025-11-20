@@ -51,3 +51,5 @@ next-env.d.ts
 .cursor/
 
 anly-by-steve
+
+/logs
