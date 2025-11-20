@@ -32,6 +32,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { LoadingSpinner } from "@/lib/loadingSpinner";
 import { LocalStorageService } from "@/services";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuthValidation } from "@/hooks";
 
 export default function InvestmentNFTDetailPage() {
   const params = useParams();
@@ -44,7 +45,7 @@ export default function InvestmentNFTDetailPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] =
     useState<boolean>(false);
-  const user = useAppSelector((state) => state.auth.user);
+  const { validateAuth, walletAddress, user } = useAuthValidation();
   const [showConnectModal, setShowConnectModal] = useState<boolean>(false);
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [shareDetail, setShareDetail] = useState<any[]>([]);
@@ -163,6 +164,18 @@ export default function InvestmentNFTDetailPage() {
 
   const handleBuyNFT = async () => {
     if (!data || buyLoading) return;
+
+    // Validate authentication and wallet connection
+    if (
+      !validateAuth({
+        requireWallet: true,
+        customAuthMessage: "Vui lòng đăng nhập để mua NFT",
+        customWalletMessage: "Vui lòng kết nối ví để mua NFT",
+      })
+    ) {
+      return;
+    }
+
     setBuyLoading(true);
 
     try {

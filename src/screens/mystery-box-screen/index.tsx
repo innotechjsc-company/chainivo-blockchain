@@ -14,7 +14,7 @@ import {
   type OpenBoxResponse,
 } from "@/api/services/mystery-box-service";
 import TransferService from "@/services/TransferService";
-import { useAppSelector } from "@/stores";
+import { useAuthValidation } from "@/hooks";
 import type { MysteryBoxData } from "./hooks/useMysteryBoxData";
 
 export default function MysteryBoxScreen() {
@@ -22,7 +22,7 @@ export default function MysteryBoxScreen() {
   const { boxes, isLoading, error } = useMysteryBoxData();
   const { filters, setFilters, filteredBoxes, resetFilters, hasActiveFilters } =
     useMysteryBoxFilters(boxes);
-  const user = useAppSelector((state) => state.auth.user);
+  const { validateAuth, walletAddress, user } = useAuthValidation();
 
   // Purchase states
   const [selectedBox, setSelectedBox] = useState<MysteryBoxData | null>(null);
@@ -69,10 +69,19 @@ export default function MysteryBoxScreen() {
 
   // Handler for confirmed purchase
   const handleConfirmPurchase = async () => {
-    if (!selectedBox || !user?.walletAddress) {
-      toast.error("Vui lòng kết nối ví trước khi mua hộp");
+    if (!selectedBox) return;
+
+    // Validate authentication and wallet connection
+    if (
+      !validateAuth({
+        requireWallet: true,
+        customAuthMessage: "Vui lòng đăng nhập để mua hộp",
+        customWalletMessage: "Vui lòng kết nối ví trước khi mua hộp",
+      })
+    ) {
       return;
     }
+
     try {
       setIsPurchasing(true);
       setIsModalOpen(false);
@@ -81,7 +90,7 @@ export default function MysteryBoxScreen() {
       setIsOpening(true);
       setIsApiLoading(true);
       const transferResult = await TransferService.sendCanTransfer({
-        fromAddress: user.walletAddress,
+        fromAddress: walletAddress!,
         amountCan: Number(selectedBox.price.amount),
       });
       toast.success("Chuyển token thành công!");
