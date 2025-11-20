@@ -8,7 +8,7 @@ import { AuthService } from "./services/auth-service";
 
 const api: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
-  timeout: 10000,
+  timeout: 100000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -59,7 +59,7 @@ api.interceptors.response.use(
       );
       debugger;
 
-      // Neu la refresh token request ma van bi 401 -> token khong hop le, logout
+      // Neu la refresh token request ma van bi 401 ->FA token khong hop le, logout
       if (isRefreshTokenRequest) {
         try {
           LocalStorageService.clearAuthData();
