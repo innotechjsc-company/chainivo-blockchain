@@ -78,6 +78,18 @@ export function DigitizationRequestModal({
   const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
   const [gettingLocation, setGettingLocation] = useState<boolean>(false);
 
+  // State cho address autocomplete
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    Array<{
+      display_name: string;
+      lat: string;
+      lon: string;
+    }>
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState<boolean>(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -193,8 +205,9 @@ export function DigitizationRequestModal({
       newErrors.availablePercentage =
         "Phần trăm số cổ phần phải là số từ 1 đến 100";
     }
-    if (!formData.address.trim()) {
-      newErrors.address = "Vị trí đặt tài sản là bắt buộc";
+    if (!selectedLocation && !formData.address.trim()) {
+      newErrors.address =
+        "Vị trí đặt tài sản là bắt buộc. Vui lòng chọn vị trí trên bản đồ.";
     }
     if (!formData.senderName.trim()) {
       newErrors.senderName = "Tên người gửi là bắt buộc";
@@ -409,6 +422,20 @@ export function DigitizationRequestModal({
       // Gửi description dưới dạng JSON string
       const descriptionJson = JSON.stringify(formData.description.trim());
 
+      // Tạo address JSON string nếu đã chọn vị trí trên bản đồ
+      let addressValue: string;
+      if (selectedLocation) {
+        // Gửi address dưới dạng JSON string chứa address, lat, long
+        addressValue = JSON.stringify({
+          address: selectedLocation.address || formData.address.trim(),
+          lat: selectedLocation.lat,
+          long: selectedLocation.lng,
+        });
+      } else {
+        // Fallback: nếu không có selectedLocation, dùng formData.address
+        addressValue = formData.address.trim();
+      }
+
       const requestPayload: any = {
         name: formData.name.trim(),
         description: formData.fullDescription.trim(),
@@ -417,17 +444,11 @@ export function DigitizationRequestModal({
         documents: documentIds.length > 0 ? documentIds : undefined,
         price: Number(parseNumberFromFormatted(formData.price)),
         availablePercentage: Number(formData.availablePercentage),
-        address: formData.address.trim(),
+        address: addressValue,
         senderName: formData.senderName.trim(),
         senderPhoneNumber: formData.senderPhoneNumber.trim(),
         senderEmail: formData.senderEmail.trim(),
       };
-
-      // Thêm lat và lng nếu đã chọn vị trí
-      if (selectedLocation) {
-        requestPayload.latitude = selectedLocation.lat;
-        requestPayload.longitude = selectedLocation.lng;
-      }
 
       // Thêm transactionHash nếu có thanh toán phí
       if (paymentTransactionHash) {
@@ -475,6 +496,8 @@ export function DigitizationRequestModal({
       setImageFile(null);
       setDocumentFiles([]);
       setSelectedLocation(null);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
       if (imageInputRef.current) {
         imageInputRef.current.value = "";
       }
@@ -555,6 +578,86 @@ export function DigitizationRequestModal({
       }&layer=mapnik&marker=${selectedLocation.lat},${selectedLocation.lng}`;
     }
     return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
+  };
+
+  // Hàm fetch address suggestions từ Nominatim API
+  const fetchAddressSuggestions = async (query: string) => {
+    if (!query || query.trim().length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      setLoadingSuggestions(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}&limit=5&addressdetails=1&countrycodes=vn`
+      );
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setAddressSuggestions(data);
+        setShowSuggestions(true);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error("Error fetching address suggestions:", error);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  // Debounced fetch suggestions
+  const debouncedFetchSuggestionsRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedFetchSuggestions = (query: string) => {
+    if (debouncedFetchSuggestionsRef.current) {
+      clearTimeout(debouncedFetchSuggestionsRef.current);
+    }
+    debouncedFetchSuggestionsRef.current = setTimeout(() => {
+      fetchAddressSuggestions(query);
+    }, 500);
+  };
+
+  // Handle address input change
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, address: value });
+
+    // Fetch suggestions nếu có đủ ký tự
+    if (value.trim().length >= 3) {
+      debouncedFetchSuggestions(value.trim());
+    } else {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      if (debouncedFetchSuggestionsRef.current) {
+        clearTimeout(debouncedFetchSuggestionsRef.current);
+      }
+    }
+  };
+
+  // Handle select suggestion
+  const handleSelectSuggestion = (suggestion: {
+    display_name: string;
+    lat: string;
+    lon: string;
+  }) => {
+    const location = {
+      lat: parseFloat(suggestion.lat),
+      lng: parseFloat(suggestion.lon),
+      address: suggestion.display_name,
+    };
+
+    setSelectedLocation(location);
+    setFormData({ ...formData, address: suggestion.display_name });
+    setAddressSuggestions([]);
+    setShowSuggestions(false);
+    toast.success("Đã chọn vị trí từ gợi ý");
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -986,16 +1089,61 @@ export function DigitizationRequestModal({
                 )}
               </div>
 
-              {/* Input địa chỉ cụ thể */}
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                placeholder="Nhập địa chỉ cụ thể (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
-                className={errors.address ? "border-red-500" : ""}
-              />
+              {/* Input địa chỉ cụ thể với autocomplete */}
+              <div className="relative">
+                <Input
+                  ref={addressInputRef}
+                  id="address"
+                  value={formData.address}
+                  onChange={handleAddressInputChange}
+                  onFocus={() => {
+                    if (addressSuggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay để cho phép click vào suggestion
+                    setTimeout(() => {
+                      setShowSuggestions(false);
+                    }, 200);
+                  }}
+                  placeholder="Nhập địa chỉ cụ thể (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
+                  className={errors.address ? "border-red-500" : ""}
+                />
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {loadingSuggestions ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        Đang tìm kiếm...
+                      </div>
+                    ) : (
+                      addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="w-full text-left px-4 py-3 hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium line-clamp-1">
+                                {suggestion.display_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {parseFloat(suggestion.lat).toFixed(6)},{" "}
+                                {parseFloat(suggestion.lon).toFixed(6)}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Hiển thị tọa độ nếu đã chọn */}
               {selectedLocation && (
@@ -1189,42 +1337,6 @@ export function DigitizationRequestModal({
         </DialogContent>
       </Dialog>
 
-      {/* Location Picker Dialog */}
-      <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
-        <DialogContent className="glass border-cyan-500/20 max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl">
-              Chọn vị trí trên Google Maps
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              <p>
-                Vui lòng mở Google Maps trong tab mới, chọn vị trí và nhập tọa
-                độ hoặc địa chỉ vào form bên dưới.
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                window.open(
-                  "https://www.google.com/maps",
-                  "_blank",
-                  "noopener,noreferrer"
-                );
-              }}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
-            >
-              <MapPin className="w-4 h-4 mr-2" />
-              Mở Google Maps
-            </Button>
-            <LocationPickerForm
-              onLocationSelected={handleLocationSelected}
-              onCancel={() => setShowLocationPicker(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Loading Spinner khi đang thanh toán phí */}
       {payingFee && <LoadingSpinner />}
     </>
@@ -1336,33 +1448,6 @@ function LocationPickerForm({
           placeholder="Nhập địa chỉ"
           className="bg-background/50 border-cyan-500/60"
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-white">Vĩ độ (Lat)</label>
-          <Input
-            type="number"
-            step="any"
-            value={lat}
-            onChange={(e) => setLat(e.target.value)}
-            placeholder="21.0285"
-            className="bg-background/50 border-cyan-500/60"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-white">
-            Kinh độ (Lng)
-          </label>
-          <Input
-            type="number"
-            step="any"
-            value={lng}
-            onChange={(e) => setLng(e.target.value)}
-            placeholder="105.8542"
-            className="bg-background/50 border-cyan-500/60"
-          />
-        </div>
       </div>
 
       <div className="flex gap-2 pt-2">

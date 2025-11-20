@@ -1044,65 +1044,6 @@ export default function InvestmentNFTDetailPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Bản đồ */}
-            <Card className="glass relative z-20 mb-8">
-              <CardContent className="p-3">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-white flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-cyan-400" />
-                      Vị trí
-                    </h3>
-                    {selectedLocation && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleMapClick}
-                        className="text-xs"
-                      >
-                        Thay đổi vị trí
-                      </Button>
-                    )}
-                  </div>
-                  <div
-                    className="relative w-full rounded-lg overflow-hidden border border-cyan-500/20 cursor-pointer hover:border-cyan-500/40 transition-colors"
-                    style={{ height: "300px", minHeight: "300px" }}
-                    onClick={handleMapClick}
-                  >
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0, display: "block" }}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={getMapUrl()}
-                    />
-                    {!selectedLocation && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none">
-                        <div className="text-center text-white">
-                          <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
-                          <p className="text-sm font-medium">
-                            Nhấn để chọn vị trí
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {selectedLocation && (
-                    <div className="text-sm text-muted-foreground pt-2">
-                      <p className="font-semibold text-white mb-1">Địa chỉ:</p>
-                      <p>{selectedLocation.address}</p>
-                      <p className="text-xs mt-1">
-                        Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
-                        {selectedLocation.lng.toFixed(6)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
           <div className="space-y-6">
             <Card ref={infoCardRef} className="glass">
@@ -1310,6 +1251,67 @@ export default function InvestmentNFTDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Bản đồ - Tách ra khỏi sticky container để tránh đè lên card lịch sử giao dịch */}
+        <div className="mt-8 w-full">
+          <Card className="glass relative z-20">
+            <CardContent className="p-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-cyan-400" />
+                    Vị trí
+                  </h3>
+                  {selectedLocation && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleMapClick}
+                      className="text-xs"
+                    >
+                      Thay đổi vị trí
+                    </Button>
+                  )}
+                </div>
+                <div
+                  className="relative w-full rounded-lg overflow-hidden border border-cyan-500/20 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                  style={{ height: "300px", minHeight: "300px" }}
+                  onClick={handleMapClick}
+                >
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, display: "block" }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={getMapUrl()}
+                  />
+                  {!selectedLocation && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none">
+                      <div className="text-center text-white">
+                        <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
+                        <p className="text-sm font-medium">
+                          Nhấn để chọn vị trí
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {selectedLocation && (
+                  <div className="text-sm text-muted-foreground pt-2">
+                    <p className="font-semibold text-white mb-1">Địa chỉ:</p>
+                    <p>{selectedLocation.address}</p>
+                    <p className="text-xs mt-1">
+                      Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                      {selectedLocation.lng.toFixed(6)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mt-12 w-full relative z-0 clear-both">
@@ -1535,42 +1537,6 @@ export default function InvestmentNFTDetailPage() {
                 Cho phép
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Location Picker Dialog */}
-        <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
-          <DialogContent className="glass border-cyan-500/20 max-w-4xl">
-            <DialogHeader>
-              <DialogTitle className="text-white text-xl">
-                Chọn vị trí trên Google Maps
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                <p>
-                  Vui lòng mở Google Maps trong tab mới, chọn vị trí và nhập tọa
-                  độ hoặc địa chỉ vào form bên dưới.
-                </p>
-              </div>
-              <Button
-                onClick={() => {
-                  window.open(
-                    "https://www.google.com/maps",
-                    "_blank",
-                    "noopener,noreferrer"
-                  );
-                }}
-                className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
-              >
-                <MapPin className="w-4 h-4 mr-2" />
-                Mở Google Maps
-              </Button>
-              <LocationPickerForm
-                onLocationSelected={handleLocationSelected}
-                onCancel={() => setShowLocationPicker(false)}
-              />
-            </div>
           </DialogContent>
         </Dialog>
 
