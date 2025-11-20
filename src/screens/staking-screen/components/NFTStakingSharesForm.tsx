@@ -310,7 +310,7 @@ export const NFTStakingSharesForm = ({
     <>
       <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
         <div
-          className="relative h-48 overflow-hidden"
+          className="relative h-50 overflow-hidden top-[-25px]"
           style={{
             backgroundImage: `url('/staking-nft-hero.jpg')`,
             backgroundSize: "cover",
@@ -331,7 +331,7 @@ export const NFTStakingSharesForm = ({
           </div>
         </div>
 
-        <CardContent className="staking-card-content pt-6 space-y-4">
+        <CardContent className="staking-card-content pt-2 space-y-4">
           <form onSubmit={handleSubmit} className="staking-form space-y-4">
             {selectedUserNFT && (
               <>

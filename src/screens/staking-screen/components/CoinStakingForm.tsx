@@ -364,7 +364,7 @@ export const CoinStakingForm = ({
     <>
       <Card className="staking-card overflow-hidden border-primary/30 shadow-lg">
         <div
-          className="relative h-48 overflow-hidden"
+          className="relative h-50 overflow-hidden top-[-25px]"
           style={{
             backgroundImage: `url('/staking-coin-hero.jpg')`,
             backgroundSize: "cover",
@@ -385,7 +385,7 @@ export const CoinStakingForm = ({
           </div>
         </div>
 
-        <CardContent className="staking-card-content pt-6 space-y-4">
+        <CardContent className="staking-card-content pt-4 space-y-4">
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">
