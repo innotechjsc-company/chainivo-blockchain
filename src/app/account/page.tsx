@@ -7,7 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, History, Settings, FileText } from "lucide-react";
+import {
+  User,
+  Wallet,
+  History,
+  Settings,
+  FileText,
+  Image,
+  PieChart,
+  Users,
+  Copy,
+  Menu,
+} from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { toast } from "sonner";
 import { useAppSelector, useAppDispatch } from "@/stores";
 import { WalletService } from "@/api/services/wallet-service";
 import { NFTService } from "@/api/services/nft-service";
@@ -58,6 +79,7 @@ export default function AccountManagementPage() {
     const sectionParam = searchParams.get("section");
     return sectionParam ?? "profile";
   });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = useAppSelector((state) => state.auth.user);
   const walletSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -244,8 +266,10 @@ export default function AccountManagementPage() {
       const address = user?.walletAddress || "";
       if (!address) return;
       await navigator.clipboard.writeText(address);
+      toast.success("Đã sao chép địa chỉ ví");
     } catch (err) {
       console.error("Failed to copy address:", err);
+      toast.error("Không thể sao chép địa chỉ ví");
     }
   };
   const referralCode = ((user as any)?.refCode as string) || "";
@@ -253,8 +277,10 @@ export default function AccountManagementPage() {
     try {
       if (!referralCode) return;
       await navigator.clipboard.writeText(referralCode);
+      toast.success("Đã sao chép mã giới thiệu");
     } catch (err) {
       console.error("Failed to copy referral code:", err);
+      toast.error("Không thể sao chép mã giới thiệu");
     }
   };
 
@@ -315,6 +341,17 @@ export default function AccountManagementPage() {
     "kim cương": "text-purple-500",
   };
 
+  const tabs = [
+    { value: "profile", label: "Hồ sơ", icon: User },
+    // { value: "wallet", label: "Ví", icon: Wallet },
+    { value: "my-nft", label: "NFT của tôi", icon: Image },
+    { value: "nft-co-phan", label: "NFT cổ phần", icon: PieChart },
+    { value: "referral", label: "Mã giới thiệu", icon: Users },
+    { value: "history", label: "Lịch sử", icon: History },
+    { value: "digitizing-request", label: "Số hóa NFT", icon: FileText },
+    { value: "settings", label: "Cài đặt", icon: Settings },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 pt-20 pb-12">
@@ -326,145 +363,181 @@ export default function AccountManagementPage() {
           <Tabs
             value={tabValue}
             onValueChange={handleTabChange}
-            className="w-full"
+            className="flex flex-col md:flex-row gap-6 w-full items-start"
           >
-            <TabsList className="grid w-full grid-cols-8 mb-8">
-              <TabsTrigger value="profile">
-                <User className="w-4 h-4 mr-2" />
-                Hồ sơ
-              </TabsTrigger>
-              {/* <TabsTrigger value="wallet">
-                <Wallet className="w-4 h-4 mr-2" />
-                Ví
-              </TabsTrigger> */}
-              <TabsTrigger value="my-nft">
-                <User className="w-4 h-4 mr-2" />
-                NFT của tôi
-              </TabsTrigger>
-              <TabsTrigger value="nft-co-phan">
-                <User className="w-4 h-4 mr-2" />
-                NFT cổ phần
-              </TabsTrigger>
-              <TabsTrigger value="referral">
-                <User className="w-4 h-4 mr-2" />
-                Mã giới thiệu
-              </TabsTrigger>
-              <TabsTrigger value="history">
-                <History className="w-4 h-4 mr-2" />
-                Lịch sử
-              </TabsTrigger>
-              <TabsTrigger value="digitizing-request">
-                <FileText className="w-4 h-4 mr-2" />
-                Số hóa NFT
-              </TabsTrigger>
-              <TabsTrigger value="settings">
-                <Settings className="w-4 h-4 mr-2" />
-                Cài đặt
-              </TabsTrigger>
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden w-full mb-4">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Menu className="mr-2 h-4 w-4" />
+                    {tabs.find((t) => t.value === tabValue)?.label ||
+                      "Menu tài khoản"}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle>Menu tài khoản</SheetTitle>
+                    <SheetDescription>
+                      Quản lý tài khoản và cài đặt của bạn
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex flex-col space-y-2 mt-4">
+                    {tabs.map((tab) => (
+                      <SheetClose key={tab.value} asChild>
+                        <Button
+                          variant={
+                            tabValue === tab.value ? "secondary" : "ghost"
+                          }
+                          className={`justify-start ${
+                            tabValue === tab.value
+                              ? "bg-primary/10 text-primary"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            handleTabChange(tab.value);
+                          }}
+                        >
+                          <tab.icon className="mr-2 h-4 w-4" />
+                          {tab.label}
+                        </Button>
+                      </SheetClose>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <TabsList className="hidden md:flex flex-col w-64 shrink-0 h-auto bg-transparent space-y-2 p-0">
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="w-full justify-start px-4 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  <tab.icon className="w-4 h-4 mr-2" />
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
-            <TabsContent value="profile">
-              <Card className="p-6 glass">
-                <div className="flex flex-col gap-6 mb-6">
-                  <div className="flex gap-6">
-                    <AvatarUpload
-                      currentAvatar={profile?.avatarUrl || ""}
-                      previewUrl={avatarPreview}
-                      userName={username}
-                      onAvatarSelect={handleAvatarSelect}
-                      disabled={updateLoading}
-                      error={selectedAvatar ? undefined : undefined}
-                    />
-                    <div className="flex-1">
-                      <div className="mb-4">
-                        <Label htmlFor="name">Tên hiển thị </Label>
-                        <Input
-                          id="name"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          className="mt-2"
-                          maxLength={100}
-                          disabled={updateLoading}
-                        />
-                      </div>
-                      {updateError && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {updateError}
-                        </p>
-                      )}
-                      {updateSuccess && (
-                        <p className="text-sm text-green-500 mt-1">
-                          {updateSuccess}
-                        </p>
-                      )}
-                      <Button
-                        onClick={handleUpdateProfile}
+            <div className="flex-1 min-w-0">
+              <TabsContent value="profile">
+                <Card className="p-6 glass">
+                  <div className="flex flex-col gap-6 mb-6">
+                    <div className="flex gap-6">
+                      <AvatarUpload
+                        currentAvatar={profile?.avatarUrl || ""}
+                        previewUrl={avatarPreview}
+                        userName={username}
+                        onAvatarSelect={handleAvatarSelect}
                         disabled={updateLoading}
+                        error={selectedAvatar ? undefined : undefined}
+                      />
+                      <div className="flex-1">
+                        <div className="mb-4">
+                          <Label htmlFor="name">Tên hiển thị </Label>
+                          <Input
+                            id="name"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="mt-2"
+                            maxLength={100}
+                            disabled={updateLoading}
+                          />
+                        </div>
+                        {updateError && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {updateError}
+                          </p>
+                        )}
+                        {updateSuccess && (
+                          <p className="text-sm text-green-500 mt-1">
+                            {updateSuccess}
+                          </p>
+                        )}
+                        <Button
+                          onClick={handleUpdateProfile}
+                          disabled={updateLoading}
+                        >
+                          {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Số dư TOKEN
+                      </div>
+                      <div className="text-2xl font-bold gradient-text">
+                        {canBalance?.toLocaleString()} {TOKEN_DEAULT_CURRENCY}
+                      </div>
+                    </div>
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Hạng thành viên
+                      </div>
+                      <div
+                        className={`text-2xl font-bold capitalize ${
+                          tierColors[
+                            (user as any)?.rank?.name?.toLowerCase() || "dong"
+                          ]
+                        }`}
                       >
-                        {updateLoading ? "Đang cập nhật..." : "Cập nhật"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Số dư TOKEN
-                    </div>
-                    <div className="text-2xl font-bold gradient-text">
-                      {canBalance?.toLocaleString()} {TOKEN_DEAULT_CURRENCY}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Hạng thành viên
-                    </div>
-                    <div
-                      className={`text-2xl font-bold capitalize ${
-                        tierColors[
-                          (user as any)?.rank?.name?.toLowerCase() || "dong"
-                        ]
-                      }`}
-                    >
-                      {(user as any)?.rank?.name || "Đồng"}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Tổng đầu tư
-                    </div>
-                    <div className="text-2xl font-bold gradient-text">
-                      $
-                      {(user as any)?.totalInvestmentAmount?.toLocaleString() ||
-                        0}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Thông tin tài khoản */}
-                <div className="mb-6 pt-6 border-t border-white/10">
-                  <h4 className="text-lg font-semibold mb-3">
-                    Thông tin tài khoản
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Email
-                      </div>
-                      <div className="text-base font-medium">
-                        {user?.email || "—"}
+                        {(user as any)?.rank?.name || "Đồng"}
                       </div>
                     </div>
                     <div className="glass p-4 rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">
-                        Địa chỉ ví
+                        Tổng đầu tư
                       </div>
-                      <div className="text-xs font-mono break-all">
-                        {user?.walletAddress || "Chưa kết nối"}
+                      <div className="text-2xl font-bold gradient-text">
+                        $
+                        {(
+                          user as any
+                        )?.totalInvestmentAmount?.toLocaleString() || 0}
                       </div>
                     </div>
-                    {/* <div className="glass p-4 rounded-lg">
+                  </div>
+
+                  {/* Thông tin tài khoản */}
+                  <div className="mb-6 pt-6 border-t border-white/10">
+                    <h4 className="text-lg font-semibold mb-3">
+                      Thông tin tài khoản
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Email
+                        </div>
+                        <div className="text-base font-medium">
+                          {user?.email || "—"}
+                        </div>
+                      </div>
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Địa chỉ ví
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-xs font-mono break-all">
+                            {user?.walletAddress || "Chưa kết nối"}
+                          </div>
+                          {user?.walletAddress && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={handleCopyAddress}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {/* <div className="glass p-4 rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">
                         Vai trò
                       </div>
@@ -472,314 +545,329 @@ export default function AccountManagementPage() {
                         {user?.role || "user"}
                       </div>
                     </div> */}
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Điểm tích lũy
-                      </div>
-                      <div className="text-base font-bold gradient-text">
-                        {user?.points?.toLocaleString() || 0} điểm
-                      </div>
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Mã giới thiệu
-                      </div>
-                      <div className="text-base font-mono font-medium">
-                        {user?.refCode || "—"}
-                      </div>
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Trạng thái tài khoản
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isActive && !user?.isSuspended
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-red-500/20 text-red-500"
-                          }`}
-                        >
-                          {user?.isSuspended
-                            ? "Đã bị khóa"
-                            : user?.isActive
-                            ? "Hoạt động"
-                            : "Không hoạt động"}
-                        </span>
-                      </div>
-                      {user?.suspensionReason && (
-                        <p className="text-xs text-red-500 mt-2">
-                          Lý do: {user.suspensionReason}
-                        </p>
-                      )}
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Ngày tạo tài khoản
-                      </div>
-                      <div className="text-base font-medium">
-                        {user?.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Trạng thái xác minh */}
-                <div className="mb-6">
-                  <h4 className="text-lg font-semibold mb-3">
-                    Trạng thái xác minh
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="glass p-4 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Xác minh Email
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isEmailVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
-                        >
-                          {user?.isEmailVerified
-                            ? "Đã xác minh"
-                            : "Chưa xác minh"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Xác minh KYC
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isKYCVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
-                        >
-                          {user?.isKYCVerified
-                            ? "Đã xác minh"
-                            : "Chưa xác minh"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Xác minh Ví
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isWalletVerified
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-gray-500/20 text-gray-500"
-                          }`}
-                        >
-                          {user?.isWalletVerified
-                            ? "Đã xác minh"
-                            : "Chưa xác minh"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bio nếu có */}
-                {user?.bio && (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold mb-3">Giới thiệu</h4>
-                    <div className="glass p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        {user.bio}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="wallet">
-              <div ref={walletSectionRef}>
-                <Card className="p-6 glass">
-                  <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
-
-                  {/* Wallet Balance Overview */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 glass rounded-lg">
-                      <div>
-                        <div className="font-semibold">Số dư CAN</div>
-                        <div className="text-2xl gradient-text font-bold">
-                          {canBalance?.toLocaleString()} CAN
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Điểm tích lũy
+                        </div>
+                        <div className="text-base font-bold gradient-text">
+                          {user?.points?.toLocaleString() || 0} điểm
                         </div>
                       </div>
-                      {/* <Button>Nạp tiền</Button> */}
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Mã giới thiệu
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-base font-mono font-medium">
+                            {user?.refCode || "—"}
+                          </div>
+                          {user?.refCode && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={handleCopyReferral}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Trạng thái tài khoản
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              user?.isActive && !user?.isSuspended
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-red-500/20 text-red-500"
+                            }`}
+                          >
+                            {user?.isSuspended
+                              ? "Đã bị khóa"
+                              : user?.isActive
+                              ? "Hoạt động"
+                              : "Không hoạt động"}
+                          </span>
+                        </div>
+                        {user?.suspensionReason && (
+                          <p className="text-xs text-red-500 mt-2">
+                            Lý do: {user.suspensionReason}
+                          </p>
+                        )}
+                      </div>
+                      <div className="glass p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Ngày tạo tài khoản
+                        </div>
+                        <div className="text-base font-medium">
+                          {user?.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : "—"}
+                        </div>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Trạng thái xác minh */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold mb-3">
+                      Trạng thái xác minh
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="glass p-4 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Xác minh Email
+                          </span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              user?.isEmailVerified
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-gray-500/20 text-gray-500"
+                            }`}
+                          >
+                            {user?.isEmailVerified
+                              ? "Đã xác minh"
+                              : "Chưa xác minh"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="glass p-4 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Xác minh KYC
+                          </span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              user?.isKYCVerified
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-gray-500/20 text-gray-500"
+                            }`}
+                          >
+                            {user?.isKYCVerified
+                              ? "Đã xác minh"
+                              : "Chưa xác minh"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="glass p-4 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Xác minh Ví
+                          </span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              user?.isWalletVerified
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-gray-500/20 text-gray-500"
+                            }`}
+                          >
+                            {user?.isWalletVerified
+                              ? "Đã xác minh"
+                              : "Chưa xác minh"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bio nếu có */}
+                  {user?.bio && (
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold mb-3">Giới thiệu</h4>
+                      <div className="glass p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {user.bio}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="wallet">
+                <div ref={walletSectionRef}>
+                  <Card className="p-6 glass">
+                    <h3 className="text-xl font-bold mb-6">Ví của tôi</h3>
+
+                    {/* Wallet Balance Overview */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-4 glass rounded-lg">
+                        <div>
+                          <div className="font-semibold">Số dư CAN</div>
+                          <div className="text-2xl gradient-text font-bold">
+                            {canBalance?.toLocaleString()} CAN
+                          </div>
+                        </div>
+                        {/* <Button>Nạp tiền</Button> */}
+                      </div>
+                      <div className="p-4 glass rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Địa chỉ ví
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
+                            {user?.walletAddress}{" "}
+                          </code>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs cursor-pointer"
+                            onClick={handleCopyAddress}
+                          >
+                            Sao chép
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="my-nft">
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
+                  <MyNFTCollection type="my-nft" />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="nft-co-phan">
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
+                  <MyNFTScreen type="investment" />
+                </Card>
+              </TabsContent>
+              <TabsContent value="referral">
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Mã giới thiệu:
+                    </span>
+                    <span className="font-mono text-lg text-primary">
+                      {referralCode || "Chưa có"}
+                    </span>
+                    {referralCode && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs cursor-pointer"
+                        onClick={handleCopyReferral}
+                      >
+                        Sao chép
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="history">
+                <Card className="p-6 glass space-y-6">
+                  <h3 className="text-xl font-bold">Lịch sử giao dịch</h3>
+
+                  {/* Transaction Stats Cards */}
+                  <TransactionStatsCards {...txStats} />
+
+                  {/* Filters */}
+                  <TransactionFilters
+                    filters={txFilters}
+                    onFilterChange={setTxFilter}
+                    onReset={resetTxFilters}
+                  />
+
+                  {/* Loading State */}
+                  {txHistoryLoading && (
+                    <div className="flex items-center justify-center py-12">
+                      <Spinner className="w-8 h-8 mr-2" />
+                      <span className="text-muted-foreground">
+                        Đang tải giao dịch...
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {txHistoryError && (
+                    <div className="text-center py-12">
+                      <p className="text-red-500 mb-4">{txHistoryError}</p>
+                      <Button variant="outline" onClick={refetchTxHistory}>
+                        Thử lại
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Transaction Table */}
+                  {!txHistoryLoading && !txHistoryError && (
+                    <>
+                      <TransactionTable transactions={txHistoryTransactions} />
+                      <TransactionPagination
+                        pagination={txPagination}
+                        onPageChange={txGoToPage}
+                      />
+                    </>
+                  )}
+                </Card>
+              </TabsContent>
+              <TabsContent value="digitizing-request">
+                <Card className="p-6 glass">
+                  <DigitizationRequestList />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="settings">
+                <Card className="p-6 glass">
+                  <h3 className="text-xl font-bold mb-4">Cài đặt</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 glass rounded-lg">
+                      <div>
+                        <div className="font-semibold">Email</div>
+                        <div className="text-sm text-muted-foreground">
+                          {user?.email}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 glass rounded-lg">
+                      <div>
+                        <div className="font-semibold">Mật khẩu</div>
+                        <div className="text-sm text-muted-foreground">
+                          ••••••••
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsChangePasswordOpen(true)}
+                      >
+                        Thay đổi
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 glass rounded-lg">
+                      <div>
+                        <div className="font-semibold">Xác thực 2FA</div>
+                        <div className="text-sm text-muted-foreground">
+                          Chưa bật
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Bật
+                      </Button>
+                    </div>
+
                     <div className="p-4 glass rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-2">
-                        Địa chỉ ví
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-muted/20 p-2 rounded text-sm">
-                          {user?.walletAddress}{" "}
-                        </code>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs cursor-pointer"
-                          onClick={handleCopyAddress}
-                        >
-                          Sao chép
-                        </Button>
-                      </div>
+                      <Button variant="destructive" onClick={handleSignOut}>
+                        Đăng xuất
+                      </Button>
                     </div>
                   </div>
                 </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="my-nft">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">NFT của tôi</h3>
-                <MyNFTCollection type="my-nft" />
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="nft-co-phan">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">NFT cổ phần</h3>
-                <MyNFTScreen type="investment" />
-              </Card>
-            </TabsContent>
-            <TabsContent value="referral">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-6">Mã giới thiệu</h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    Mã giới thiệu:
-                  </span>
-                  <span className="font-mono text-lg text-primary">
-                    {referralCode || "Chưa có"}
-                  </span>
-                  {referralCode && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs cursor-pointer"
-                      onClick={handleCopyReferral}
-                    >
-                      Sao chép
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="history">
-              <Card className="p-6 glass space-y-6">
-                <h3 className="text-xl font-bold">Lịch sử giao dịch</h3>
-
-                {/* Transaction Stats Cards */}
-                <TransactionStatsCards {...txStats} />
-
-                {/* Filters */}
-                <TransactionFilters
-                  filters={txFilters}
-                  onFilterChange={setTxFilter}
-                  onReset={resetTxFilters}
-                />
-
-                {/* Loading State */}
-                {txHistoryLoading && (
-                  <div className="flex items-center justify-center py-12">
-                    <Spinner className="w-8 h-8 mr-2" />
-                    <span className="text-muted-foreground">
-                      Đang tải giao dịch...
-                    </span>
-                  </div>
-                )}
-
-                {/* Error State */}
-                {txHistoryError && (
-                  <div className="text-center py-12">
-                    <p className="text-red-500 mb-4">{txHistoryError}</p>
-                    <Button variant="outline" onClick={refetchTxHistory}>
-                      Thử lại
-                    </Button>
-                  </div>
-                )}
-
-                {/* Transaction Table */}
-                {!txHistoryLoading && !txHistoryError && (
-                  <>
-                    <TransactionTable transactions={txHistoryTransactions} />
-                    <TransactionPagination
-                      pagination={txPagination}
-                      onPageChange={txGoToPage}
-                    />
-                  </>
-                )}
-              </Card>
-            </TabsContent>
-            <TabsContent value="digitizing-request">
-              <Card className="p-6 glass">
-                <DigitizationRequestList />
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="settings">
-              <Card className="p-6 glass">
-                <h3 className="text-xl font-bold mb-4">Cài đặt</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Email</div>
-                      <div className="text-sm text-muted-foreground">
-                        {user?.email}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Mật khẩu</div>
-                      <div className="text-sm text-muted-foreground">
-                        ••••••••
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsChangePasswordOpen(true)}
-                    >
-                      Thay đổi
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 glass rounded-lg">
-                    <div>
-                      <div className="font-semibold">Xác thực 2FA</div>
-                      <div className="text-sm text-muted-foreground">
-                        Chưa bật
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Bật
-                    </Button>
-                  </div>
-
-                  <div className="p-4 glass rounded-lg">
-                    <Button variant="destructive" onClick={handleSignOut}>
-                      Đăng xuất
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
+              </TabsContent>
+            </div>
           </Tabs>
         </div>
       </main>
