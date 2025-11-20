@@ -314,17 +314,14 @@ export default function NFTCard({
       let calculatedAmount = 0;
       if (feeValue > 0 && feeType === "percentage") {
         calculatedAmount = (nftPrice * feeValue) / 100;
-        debugger;
       } else if (feeValue > 0 && feeType === "fixed") {
         calculatedAmount = feeValue;
-        debugger;
       }
       setMintingFeeDetails({
         type: feeType,
         value: feeValue,
       });
       setMintingFeeAmount(calculatedAmount);
-      debugger;
       if (!mintingFeeConfig || feeValue === 0) {
         toast.info(
           "Hệ thống không yêu cầu phí minting cho NFT này. Bạn có thể rút trực tiếp."
@@ -430,7 +427,6 @@ export default function NFTCard({
           responseData?.token?.id ??
           (nft as any)?.tokenId ??
           (nft as any)?.token_id;
-        debugger;
         // Tạo link tra cứu giao dịch
         const explorerUrl = contractAddress
           ? `https://amoy.polygonscan.com/token/${contractAddress}${

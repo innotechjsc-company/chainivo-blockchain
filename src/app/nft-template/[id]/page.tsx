@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useMemo, useRef, useState, use } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -744,53 +744,87 @@ export default function NFTDetailPage() {
   );
 }
 
-function CollapsibleDescription({ html }: { html: string }) {
+function CollapsibleDescription({
+  html,
+  maxHeight,
+}: {
+  html: string;
+  maxHeight?: number;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [halfHeight, setHalfHeight] = useState<number>(0);
-  const descRef = useRef<HTMLDivElement | null>(null);
+  const [isMultiLine, setIsMultiLine] = useState(false);
+  const measureRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    const el = descRef.current;
-    if (!el) return;
-    const compute = () => {
-      const full = el.scrollHeight || 0;
-      setHalfHeight(Math.max(0, Math.floor(full / 2)));
-    };
-    const id = window.setTimeout(compute, 0);
-    window.addEventListener("resize", compute);
-    return () => {
-      window.clearTimeout(id);
-      window.removeEventListener("resize", compute);
-    };
+  const collapsedText = useMemo(() => {
+    if (!html) return "";
+    return html
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<\/p>/gi, " ")
+      .replace(/<\/?[^>]+(>|$)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }, [html]);
 
-  return (
-    <div>
-      <div className="relative">
+  useEffect(() => {
+    const measureEl = measureRef.current;
+    if (!measureEl) return;
+    const computedStyle = window.getComputedStyle(measureEl);
+    const lineHeight = parseFloat(computedStyle.lineHeight || "0");
+    if (!lineHeight) {
+      setIsMultiLine(false);
+      return;
+    }
+    const isOverflowing = measureEl.scrollHeight - 1 > lineHeight;
+    setIsMultiLine(isOverflowing);
+  }, [collapsedText]);
+
+  if (isExpanded) {
+    return (
+      <div className="">
         <div
-          ref={descRef}
-          className="text-muted-foreground mb-3 leading-relaxed transition-[max-height] duration-300 ease-in-out"
-          style={{
-            maxHeight: isExpanded
-              ? "none"
-              : halfHeight
-              ? `${halfHeight}px`
-              : "6rem",
-            overflow: "hidden",
-          }}
+          className="text-muted-foreground leading-relaxed overflow-y-auto h-[700px]"
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        {!isExpanded && (
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+        <div className="text-right">
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer"
+            onClick={() => setIsExpanded(false)}
+          >
+            Thu gọn
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full">
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-muted-foreground leading-relaxed flex-1 ${
+            isMultiLine ? "truncate" : ""
+          }`}
+        >
+          {collapsedText}
+        </span>
+        {isMultiLine && (
+          <button
+            type="button"
+            className="text-primary text-sm font-medium hover:underline cursor-pointer flex-shrink-0"
+            onClick={() => setIsExpanded(true)}
+          >
+            Xem thêm
+          </button>
         )}
       </div>
-      <button
-        type="button"
-        className="text-primary text-sm font-medium hover:underline cursor-pointer"
-        onClick={() => setIsExpanded((v) => !v)}
+      <span
+        ref={measureRef}
+        className="invisible absolute left-0 top-0 w-full whitespace-normal leading-relaxed pointer-events-none select-none"
+        aria-hidden="true"
       >
-        {isExpanded ? "Thu gọn" : "Xem thêm"}
-      </button>
+        {collapsedText}
+      </span>
     </div>
   );
 }
