@@ -86,6 +86,34 @@ const parseDescription = (description: string | undefined | null): string => {
   return description;
 };
 
+// Helper function để parse address và trả về object với address, lat, long
+const parseAddress = (
+  address: string | undefined | null
+): {
+  address: string;
+  lat?: number;
+  long?: number;
+} => {
+  if (!address) return { address: "—" };
+
+  try {
+    // Thử parse JSON nếu address là JSON string
+    const parsed = JSON.parse(address);
+    if (parsed && typeof parsed === "object") {
+      return {
+        address: parsed.address || address,
+        lat: parsed.lat,
+        long: parsed.long,
+      };
+    }
+  } catch (e) {
+    // Nếu không phải JSON, trả về address như plain text
+  }
+
+  // Nếu address là plain text, trả về trực tiếp
+  return { address };
+};
+
 export function DigitizationRequestList({
   onRefresh,
 }: DigitizationRequestListProps) {
@@ -469,11 +497,16 @@ export function DigitizationRequestList({
                   {/* Description */}
                   <div className="min-h-[60px]">
                     <div className="text-xs text-muted-foreground mb-1">
-                      Mô tả
+                      Mô tả chi tiết
                     </div>
-                    <div className="text-sm text-muted-foreground line-clamp-2 prose prose-sm max-w-none">
-                      {request.description || "—"}
-                    </div>
+                    <div
+                      className="text-sm text-muted-foreground line-clamp-2 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html: request.fullDescription
+                          ? parseDescription(request.fullDescription)
+                          : request.description || "—",
+                      }}
+                    />
                   </div>
 
                   {/* Address */}
@@ -486,7 +519,10 @@ export function DigitizationRequestList({
                         Địa chỉ
                       </div>
                       <div className="text-sm line-clamp-1">
-                        {request.address || "—"}
+                        {(() => {
+                          const parsedAddress = parseAddress(request.address);
+                          return parsedAddress.address;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -764,7 +800,9 @@ export function DigitizationRequestList({
 
               {/* Description */}
               <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">Mô tả</div>
+                <div className="text-xs text-muted-foreground">
+                  Mô tả chi tiết
+                </div>
                 <div
                   className="text-sm text-muted-foreground prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{
@@ -782,7 +820,32 @@ export function DigitizationRequestList({
                   <div className="text-xs text-muted-foreground mb-1">
                     Địa chỉ
                   </div>
-                  <div className="text-sm">{selectedRequest.address}</div>
+                  <div className="text-sm mb-2">
+                    {(() => {
+                      const parsedAddress = parseAddress(
+                        selectedRequest.address
+                      );
+                      return parsedAddress.address;
+                    })()}
+                  </div>
+                  {(() => {
+                    const parsedAddress = parseAddress(selectedRequest.address);
+                    if (parsedAddress.lat && parsedAddress.long) {
+                      const mapUrl = `https://www.google.com/maps?q=${parsedAddress.lat},${parsedAddress.long}`;
+                      return (
+                        <a
+                          href={mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1 transition-colors"
+                        >
+                          <MapPin className="w-3 h-3" />
+                          Xem vị trí trên bản đồ
+                        </a>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
 

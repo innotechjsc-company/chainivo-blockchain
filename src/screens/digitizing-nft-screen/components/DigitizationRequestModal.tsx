@@ -34,6 +34,7 @@ import {
   Italic,
   Underline,
   List,
+  MapPin,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -68,6 +69,27 @@ export function DigitizationRequestModal({
     senderEmail: "",
   });
 
+  // State cho location picker
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+  const [gettingLocation, setGettingLocation] = useState<boolean>(false);
+
+  // State cho address autocomplete
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    Array<{
+      display_name: string;
+      lat: string;
+      lon: string;
+    }>
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState<boolean>(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -82,6 +104,7 @@ export function DigitizationRequestModal({
   const [calculatedFee, setCalculatedFee] = useState(0);
   const [payingFee, setPayingFee] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string>("");
+  const [typeFee, setTypeFee] = useState<string>("");
 
   // Lấy wallet address từ Redux store
   const walletAddress = useAppSelector(
@@ -183,8 +206,9 @@ export function DigitizationRequestModal({
       newErrors.availablePercentage =
         "Phần trăm số cổ phần phải là số từ 1 đến 100";
     }
-    if (!formData.address.trim()) {
-      newErrors.address = "Vị trí đặt tài sản là bắt buộc";
+    if (!selectedLocation && !formData.address.trim()) {
+      newErrors.address =
+        "Vị trí đặt tài sản là bắt buộc. Vui lòng chọn vị trí trên bản đồ.";
     }
     if (!formData.senderName.trim()) {
       newErrors.senderName = "Tên người gửi là bắt buộc";
@@ -244,6 +268,7 @@ export function DigitizationRequestModal({
         }
 
         if (appraisalFeeValue > 0) {
+          setTypeFee(appraisalFee?.type || "");
           setAppraisalFee(appraisalFeeValue);
           setCalculatedFee(calculatedFeeAmount);
         }
@@ -399,6 +424,20 @@ export function DigitizationRequestModal({
       // Gửi description dưới dạng JSON string
       const descriptionJson = JSON.stringify(formData.description.trim());
 
+      // Tạo address JSON string nếu đã chọn vị trí trên bản đồ
+      let addressValue: string;
+      if (selectedLocation) {
+        // Gửi address dưới dạng JSON string chứa address, lat, long
+        addressValue = JSON.stringify({
+          address: selectedLocation.address || formData.address.trim(),
+          lat: selectedLocation.lat,
+          long: selectedLocation.lng,
+        });
+      } else {
+        // Fallback: nếu không có selectedLocation, dùng formData.address
+        addressValue = formData.address.trim();
+      }
+
       const requestPayload: any = {
         name: formData.name.trim(),
         description: formData.fullDescription.trim(),
@@ -407,7 +446,7 @@ export function DigitizationRequestModal({
         documents: documentIds.length > 0 ? documentIds : undefined,
         price: Number(parseNumberFromFormatted(formData.price)),
         availablePercentage: Number(formData.availablePercentage),
-        address: formData.address.trim(),
+        address: addressValue,
         senderName: formData.senderName.trim(),
         senderPhoneNumber: formData.senderPhoneNumber.trim(),
         senderEmail: formData.senderEmail.trim(),
@@ -458,6 +497,9 @@ export function DigitizationRequestModal({
       setImagePreview(null);
       setImageFile(null);
       setDocumentFiles([]);
+      setSelectedLocation(null);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
       if (imageInputRef.current) {
         imageInputRef.current.value = "";
       }
@@ -466,6 +508,158 @@ export function DigitizationRequestModal({
       }
       onOpenChange(false);
     }
+  };
+
+  const handleMapClick = () => {
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelected = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    setSelectedLocation(location);
+    setFormData({ ...formData, address: location.address });
+    setShowLocationPicker(false);
+    toast.success("Vị trí đã được chọn thành công");
+  };
+
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Reverse geocoding để lấy địa chỉ
+        let addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            addressText = data.display_name;
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        const location = {
+          lat: latitude,
+          lng: longitude,
+          address: addressText,
+        };
+
+        setSelectedLocation(location);
+        setFormData({ ...formData, address: addressText });
+        setGettingLocation(false);
+        toast.success("Đã lấy vị trí hiện tại thành công");
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error(
+          "Không thể lấy vị trí hiện tại. Vui lòng cho phép truy cập vị trí."
+        );
+        setGettingLocation(false);
+      }
+    );
+  };
+
+  const getMapUrl = () => {
+    if (selectedLocation) {
+      return `https://www.openstreetmap.org/export/embed.html?bbox=${
+        selectedLocation.lng - 0.01
+      },${selectedLocation.lat - 0.01},${selectedLocation.lng + 0.01},${
+        selectedLocation.lat + 0.01
+      }&layer=mapnik&marker=${selectedLocation.lat},${selectedLocation.lng}`;
+    }
+    return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
+  };
+
+  // Hàm fetch address suggestions từ Nominatim API
+  const fetchAddressSuggestions = async (query: string) => {
+    if (!query || query.trim().length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      setLoadingSuggestions(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}&limit=5&addressdetails=1&countrycodes=vn`
+      );
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setAddressSuggestions(data);
+        setShowSuggestions(true);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error("Error fetching address suggestions:", error);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  // Debounced fetch suggestions
+  const debouncedFetchSuggestionsRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedFetchSuggestions = (query: string) => {
+    if (debouncedFetchSuggestionsRef.current) {
+      clearTimeout(debouncedFetchSuggestionsRef.current);
+    }
+    debouncedFetchSuggestionsRef.current = setTimeout(() => {
+      fetchAddressSuggestions(query);
+    }, 500);
+  };
+
+  // Handle address input change
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, address: value });
+
+    // Fetch suggestions nếu có đủ ký tự
+    if (value.trim().length >= 3) {
+      debouncedFetchSuggestions(value.trim());
+    } else {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      if (debouncedFetchSuggestionsRef.current) {
+        clearTimeout(debouncedFetchSuggestionsRef.current);
+      }
+    }
+  };
+
+  // Handle select suggestion
+  const handleSelectSuggestion = (suggestion: {
+    display_name: string;
+    lat: string;
+    lon: string;
+  }) => {
+    const location = {
+      lat: parseFloat(suggestion.lat),
+      lng: parseFloat(suggestion.lon),
+      address: suggestion.display_name,
+    };
+
+    setSelectedLocation(location);
+    setFormData({ ...formData, address: suggestion.display_name });
+    setAddressSuggestions([]);
+    setShowSuggestions(false);
+    toast.success("Đã chọn vị trí từ gợi ý");
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -847,15 +1041,122 @@ export function DigitizationRequestModal({
               <Label htmlFor="address">
                 Vị trí đặt tài sản <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                placeholder="Nhập địa chỉ/vị trí tài sản"
-                className={errors.address ? "border-red-500" : ""}
-              />
+
+              {/* Bản đồ nhỏ */}
+              <div
+                className="relative w-full rounded-lg overflow-hidden border border-input hover:border-primary transition-colors"
+                style={{ height: "200px" }}
+              >
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: "block" }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={getMapUrl()}
+                />
+
+                {/* Nút chọn vị trí hiện tại */}
+                <div className="absolute top-2 right-2 z-10">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGetCurrentLocation();
+                    }}
+                    disabled={gettingLocation}
+                    className="bg-white/90 hover:bg-white text-primary shadow-md"
+                  >
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {gettingLocation ? "Đang lấy..." : "Vị trí hiện tại"}
+                  </Button>
+                </div>
+
+                {/* Overlay click để mở dialog chọn vị trí */}
+                {!selectedLocation && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/5 transition-colors cursor-pointer"
+                    onClick={handleMapClick}
+                  >
+                    <div className="text-center pointer-events-none">
+                      <MapPin className="w-6 h-6 mx-auto mb-1 text-primary" />
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Nhấn để chọn vị trí khác
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input địa chỉ cụ thể với autocomplete */}
+              <div className="relative">
+                <Input
+                  ref={addressInputRef}
+                  id="address"
+                  value={formData.address}
+                  onChange={handleAddressInputChange}
+                  onFocus={() => {
+                    if (addressSuggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay để cho phép click vào suggestion
+                    setTimeout(() => {
+                      setShowSuggestions(false);
+                    }, 200);
+                  }}
+                  placeholder="Nhập địa chỉ cụ thể (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
+                  className={errors.address ? "border-red-500" : ""}
+                />
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {loadingSuggestions ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        Đang tìm kiếm...
+                      </div>
+                    ) : (
+                      addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="w-full text-left px-4 py-3 hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium line-clamp-1">
+                                {suggestion.display_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {parseFloat(suggestion.lat).toFixed(6)},{" "}
+                                {parseFloat(suggestion.lon).toFixed(6)}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Hiển thị tọa độ nếu đã chọn */}
+              {selectedLocation && (
+                <div className="text-xs text-muted-foreground">
+                  <p>
+                    Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                    {selectedLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+              )}
+
               {errors.address && (
                 <p className="text-sm text-red-500">{errors.address}</p>
               )}
@@ -994,9 +1295,7 @@ export function DigitizationRequestModal({
                 </span>
                 <span className="font-semibold text-primary">
                   {appraisalFee}{" "}
-                  {(appraisalFee as any)?.type === "percentage"
-                    ? "%"
-                    : TOKEN_DEAULT_CURRENCY}
+                  {typeFee === "percentage" ? "%" : TOKEN_DEAULT_CURRENCY}
                 </span>
               </div>
 
@@ -1041,5 +1340,127 @@ export function DigitizationRequestModal({
       {/* Loading Spinner khi đang thanh toán phí */}
       {payingFee && <LoadingSpinner />}
     </>
+  );
+}
+
+function LocationPickerForm({
+  onLocationSelected,
+  onCancel,
+}: {
+  onLocationSelected: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLat(latitude.toString());
+        setLng(longitude.toString());
+
+        // Reverse geocoding để lấy địa chỉ
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Không thể lấy vị trí hiện tại");
+        setLoading(false);
+      }
+    );
+  };
+
+  const handleSubmit = () => {
+    if (!lat || !lng) {
+      toast.error("Vui lòng nhập tọa độ hoặc sử dụng vị trí hiện tại");
+      return;
+    }
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      toast.error("Tọa độ không hợp lệ");
+      return;
+    }
+
+    if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      toast.error("Tọa độ nằm ngoài phạm vi hợp lệ");
+      return;
+    }
+
+    onLocationSelected({
+      lat: latNum,
+      lng: lngNum,
+      address: address || `${latNum}, ${lngNum}`,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Hoặc sử dụng vị trí hiện tại
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGetCurrentLocation}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "Đang lấy vị trí..." : "Lấy vị trí hiện tại"}
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Địa chỉ (tùy chọn)
+        </label>
+        <Input
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Nhập địa chỉ"
+          className="bg-background/50 border-cyan-500/60"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          Hủy
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+        >
+          Xác nhận
+        </Button>
+      </div>
+    </div>
   );
 }
