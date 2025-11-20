@@ -38,7 +38,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
   const remainingShares: number = Number(nft?.availableShares ?? 0);
   const isSoldOut = remainingShares <= 0;
   const progressPercentage =
-    totalShares > 0 ? (soldShares / totalShares) * 100 : 0;
+    soldShares > 0 ? ((soldShares / (totalShares + soldShares)) * 100) : 0;
 
   const totalValue: number | string | undefined =
     nft?.totalValue ?? nft?.total_price ?? nft?.totalETH ?? nft?.priceTotal;
@@ -119,7 +119,7 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           Boolean((resp.data as any)?.isLike || (resp.data as any)?.isLiked)
         );
       }
-    } catch {}
+    } catch { }
   };
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -254,9 +254,8 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
 
         {/* Rarity Badge */}
         <Badge
-          className={`absolute top-4 right-4 z-10 ${
-            rarityColors[nft.rarity as keyof typeof rarityColors]
-          }`}
+          className={`absolute top-4 right-4 z-10 ${rarityColors[nft.rarity as keyof typeof rarityColors]
+            }`}
         >
           {getLevelBadge(nft.level as string)}
         </Badge>
@@ -282,13 +281,13 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-lg font-bold">
               {totalValue !== undefined
                 ? `${formatAmount(totalValue)} ${(
-                    nft?.currency || "ETH"
-                  ).toUpperCase()}`
+                  nft?.currency || "ETH"
+                ).toUpperCase()}`
                 : nft?.price
-                ? `${formatAmount(nft?.price)} ${(
+                  ? `${formatAmount(nft?.price)} ${(
                     nft?.currency || "ETH"
                   ).toUpperCase()}`
-                : "Thương lượng"}
+                  : "Thương lượng"}
             </div>
           </div>
           <div className="text-right">
@@ -296,8 +295,8 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
             <div className="text-lg font-bold">
               {pricePerShare !== undefined
                 ? `${formatNumber(pricePerShare)} ${(
-                    nft?.currency || "ETH"
-                  ).toUpperCase()}`
+                  nft?.currency || "ETH"
+                ).toUpperCase()}`
                 : "-"}
             </div>
           </div>
@@ -306,11 +305,9 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
         {/* Progress */}
         <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
           <span>Tiến trình bán</span>
-          {totalShares > 0 && (
-            <span>
-              {nft?.soldShares}/{nft?.availableShares + nft?.soldShares} cổ phần
-            </span>
-          )}
+          <span>
+            {nft?.soldShares}/{nft?.availableShares + nft?.soldShares} cổ phần
+          </span>
         </div>
         <Progress value={progressPercentage} className="h-2 mb-1" />
         <div className="text-xs text-cyan-400 mb-3">
@@ -322,11 +319,10 @@ export const NFTInvestmentCard = ({ nft, type }: NFTInvestmentCardProps) => {
           <Button
             variant="default"
             disabled={isSoldOut}
-            className={`flex-1 gap-2 text-white ${
-              isSoldOut
-                ? "bg-gray-500/60 cursor-not-allowed opacity-80"
-                : "bg-gradient-to-r from-cyan-500 to-purple-500 cursor-pointer hover:from-cyan-600 hover:to-purple-600"
-            }`}
+            className={`flex-1 gap-2 text-white ${isSoldOut
+              ? "bg-gray-500/60 cursor-not-allowed opacity-80"
+              : "bg-gradient-to-r from-cyan-500 to-purple-500 cursor-pointer hover:from-cyan-600 hover:to-purple-600"
+              }`}
             onClick={handleRestrictedInvestment}
           >
             <ShoppingCart className="w-4 h-4" />
