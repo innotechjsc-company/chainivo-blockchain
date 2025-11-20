@@ -1,21 +1,24 @@
 "use client";
 
-import { useSelector } from 'react-redux';
+import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, RefreshCw, AlertCircle, Lock } from "lucide-react";
 import { useRankData } from "./hooks/useRankData";
 import { useBuyRank } from "./hooks/useBuyRank";
-import { isRankEligible, getRankIneligibilityReason } from './utils/rankEligibility';
-import type { RootState } from '@/stores/store';
+import {
+  isRankEligible,
+  getRankIneligibilityReason,
+} from "./utils/rankEligibility";
+import type { RootState } from "@/stores/store";
 
 export const MembershipTiers = () => {
   // Fetch rank data
   const { tiers, loading, error, refetch } = useRankData();
 
-  // Buy rank handler
-  const { handleBuyRank, loading: buyLoading } = useBuyRank(() => {
-    // Callback khi mua thành công: refetch data
+  // Buy rank handler (fix: khong destructuring loading vi UseBuyRankReturn khong co loading)
+  const { handleBuyRank } = useBuyRank(() => {
+    // Callback khi mua thanh cong: refetch data
     refetch();
   });
 
@@ -77,17 +80,26 @@ export const MembershipTiers = () => {
 
               // Check eligibility
               const eligible = isRankEligible(tier.level, currentUserRankLevel);
-              const ineligibilityReason = getRankIneligibilityReason(tier.level, currentUserRankLevel);
+              const ineligibilityReason = getRankIneligibilityReason(
+                tier.level,
+                currentUserRankLevel
+              );
 
               // Check xem có phải rank hiện tại không
-              const isCurrentRank = currentUserRankLevel && tier.level === currentUserRankLevel;
-              const isLowerRank = currentUserRankLevel && parseInt(tier.level) < parseInt(currentUserRankLevel);
+              const isCurrentRank =
+                currentUserRankLevel && tier.level === currentUserRankLevel;
+              const isLowerRank =
+                currentUserRankLevel &&
+                parseInt(tier.level) < parseInt(currentUserRankLevel);
 
               return (
                 <Card
                   key={tier.id}
-                  className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${tier.popular ? "border-2 border-primary animate-glow" : ""
-                    } ${isCurrentRank ? "border-2 border-primary animate-glow" : ""}`}
+                  className={`glass rounded-2xl p-6 relative overflow-hidden transition-all hover:scale-105 ${
+                    tier.popular ? "border-2 border-primary animate-glow" : ""
+                  } ${
+                    isCurrentRank ? "border-2 border-primary animate-glow" : ""
+                  }`}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <CardContent className="p-0">
@@ -130,7 +142,9 @@ export const MembershipTiers = () => {
                       <div className="text-3xl font-bold gradient-text">
                         {tier.points}
                       </div>
-                      <div className="text-sm text-muted-foreground">Points</div>
+                      <div className="text-sm text-muted-foreground">
+                        Points
+                      </div>
                     </div>
 
                     {/* Benefits List */}
@@ -138,31 +152,33 @@ export const MembershipTiers = () => {
                       {tier.benefits.map((benefit, i) => (
                         <div key={i} className="flex items-start space-x-2">
                           <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-foreground/90">
-                            {benefit}
-                          </span>
+                          <span className="text-foreground/90">{benefit}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Action Button */}
                     <Button
-                      className={`w-full ${!isCurrentRank && eligible && !buyLoading
-                        ? "bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-foreground font-semibold transition-all duration-300 hover:scale-105"
-                        : ""
-                        }`}
+                      className={`w-full ${
+                        !isCurrentRank && eligible && !loading
+                          ? "bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-foreground font-semibold transition-all duration-300 hover:scale-105"
+                          : ""
+                      }`}
                       variant={tier.popular ? "default" : "outline"}
-                      onClick={() => !isCurrentRank && eligible && handleBuyRank(tier.id, tier.price)}
-                      disabled={isCurrentRank || !eligible || buyLoading}
+                      onClick={() =>
+                        !isCurrentRank &&
+                        eligible &&
+                        handleBuyRank(tier.id, tier.price)
+                      }
+                      disabled={isCurrentRank || !eligible || loading}
                     >
-                      {buyLoading
+                      {loading
                         ? "Đang xử lý..."
                         : isCurrentRank
-                          ? "Đang sở hữu"
-                          : !eligible
-                            ? ineligibilityReason
-                            : "Mua ngay"
-                      }
+                        ? "Đang sở hữu"
+                        : !eligible
+                        ? ineligibilityReason
+                        : "Mua ngay"}
                     </Button>
                   </CardContent>
                 </Card>

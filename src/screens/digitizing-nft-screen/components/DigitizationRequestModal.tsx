@@ -34,6 +34,7 @@ import {
   Italic,
   Underline,
   List,
+  MapPin,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -67,6 +68,15 @@ export function DigitizationRequestModal({
     senderPhoneNumber: "",
     senderEmail: "",
   });
+
+  // State cho location picker
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+  const [gettingLocation, setGettingLocation] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -413,6 +423,12 @@ export function DigitizationRequestModal({
         senderEmail: formData.senderEmail.trim(),
       };
 
+      // Thêm lat và lng nếu đã chọn vị trí
+      if (selectedLocation) {
+        requestPayload.latitude = selectedLocation.lat;
+        requestPayload.longitude = selectedLocation.lng;
+      }
+
       // Thêm transactionHash nếu có thanh toán phí
       if (paymentTransactionHash) {
         requestPayload.transactionHash = paymentTransactionHash;
@@ -458,6 +474,7 @@ export function DigitizationRequestModal({
       setImagePreview(null);
       setImageFile(null);
       setDocumentFiles([]);
+      setSelectedLocation(null);
       if (imageInputRef.current) {
         imageInputRef.current.value = "";
       }
@@ -466,6 +483,78 @@ export function DigitizationRequestModal({
       }
       onOpenChange(false);
     }
+  };
+
+  const handleMapClick = () => {
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelected = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    setSelectedLocation(location);
+    setFormData({ ...formData, address: location.address });
+    setShowLocationPicker(false);
+    toast.success("Vị trí đã được chọn thành công");
+  };
+
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Reverse geocoding để lấy địa chỉ
+        let addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            addressText = data.display_name;
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        const location = {
+          lat: latitude,
+          lng: longitude,
+          address: addressText,
+        };
+
+        setSelectedLocation(location);
+        setFormData({ ...formData, address: addressText });
+        setGettingLocation(false);
+        toast.success("Đã lấy vị trí hiện tại thành công");
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error(
+          "Không thể lấy vị trí hiện tại. Vui lòng cho phép truy cập vị trí."
+        );
+        setGettingLocation(false);
+      }
+    );
+  };
+
+  const getMapUrl = () => {
+    if (selectedLocation) {
+      return `https://www.openstreetmap.org/export/embed.html?bbox=${
+        selectedLocation.lng - 0.01
+      },${selectedLocation.lat - 0.01},${selectedLocation.lng + 0.01},${
+        selectedLocation.lat + 0.01
+      }&layer=mapnik&marker=${selectedLocation.lat},${selectedLocation.lng}`;
+    }
+    return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -847,15 +936,77 @@ export function DigitizationRequestModal({
               <Label htmlFor="address">
                 Vị trí đặt tài sản <span className="text-red-500">*</span>
               </Label>
+
+              {/* Bản đồ nhỏ */}
+              <div
+                className="relative w-full rounded-lg overflow-hidden border border-input hover:border-primary transition-colors"
+                style={{ height: "200px" }}
+              >
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: "block" }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={getMapUrl()}
+                />
+
+                {/* Nút chọn vị trí hiện tại */}
+                <div className="absolute top-2 right-2 z-10">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGetCurrentLocation();
+                    }}
+                    disabled={gettingLocation}
+                    className="bg-white/90 hover:bg-white text-primary shadow-md"
+                  >
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {gettingLocation ? "Đang lấy..." : "Vị trí hiện tại"}
+                  </Button>
+                </div>
+
+                {/* Overlay click để mở dialog chọn vị trí */}
+                {!selectedLocation && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/5 transition-colors cursor-pointer"
+                    onClick={handleMapClick}
+                  >
+                    <div className="text-center pointer-events-none">
+                      <MapPin className="w-6 h-6 mx-auto mb-1 text-primary" />
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Nhấn để chọn vị trí khác
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input địa chỉ cụ thể */}
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
-                placeholder="Nhập địa chỉ/vị trí tài sản"
+                placeholder="Nhập địa chỉ cụ thể (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
                 className={errors.address ? "border-red-500" : ""}
               />
+
+              {/* Hiển thị tọa độ nếu đã chọn */}
+              {selectedLocation && (
+                <div className="text-xs text-muted-foreground">
+                  <p>
+                    Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                    {selectedLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+              )}
+
               {errors.address && (
                 <p className="text-sm text-red-500">{errors.address}</p>
               )}
@@ -1038,8 +1189,193 @@ export function DigitizationRequestModal({
         </DialogContent>
       </Dialog>
 
+      {/* Location Picker Dialog */}
+      <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
+        <DialogContent className="glass border-cyan-500/20 max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl">
+              Chọn vị trí trên Google Maps
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Vui lòng mở Google Maps trong tab mới, chọn vị trí và nhập tọa
+                độ hoặc địa chỉ vào form bên dưới.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                window.open(
+                  "https://www.google.com/maps",
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              }}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Mở Google Maps
+            </Button>
+            <LocationPickerForm
+              onLocationSelected={handleLocationSelected}
+              onCancel={() => setShowLocationPicker(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Loading Spinner khi đang thanh toán phí */}
       {payingFee && <LoadingSpinner />}
     </>
+  );
+}
+
+function LocationPickerForm({
+  onLocationSelected,
+  onCancel,
+}: {
+  onLocationSelected: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLat(latitude.toString());
+        setLng(longitude.toString());
+
+        // Reverse geocoding để lấy địa chỉ
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Không thể lấy vị trí hiện tại");
+        setLoading(false);
+      }
+    );
+  };
+
+  const handleSubmit = () => {
+    if (!lat || !lng) {
+      toast.error("Vui lòng nhập tọa độ hoặc sử dụng vị trí hiện tại");
+      return;
+    }
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      toast.error("Tọa độ không hợp lệ");
+      return;
+    }
+
+    if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      toast.error("Tọa độ nằm ngoài phạm vi hợp lệ");
+      return;
+    }
+
+    onLocationSelected({
+      lat: latNum,
+      lng: lngNum,
+      address: address || `${latNum}, ${lngNum}`,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Hoặc sử dụng vị trí hiện tại
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGetCurrentLocation}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "Đang lấy vị trí..." : "Lấy vị trí hiện tại"}
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Địa chỉ (tùy chọn)
+        </label>
+        <Input
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Nhập địa chỉ"
+          className="bg-background/50 border-cyan-500/60"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">Vĩ độ (Lat)</label>
+          <Input
+            type="number"
+            step="any"
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+            placeholder="21.0285"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">
+            Kinh độ (Lng)
+          </label>
+          <Input
+            type="number"
+            step="any"
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+            placeholder="105.8542"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          Hủy
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+        >
+          Xác nhận
+        </Button>
+      </div>
+    </div>
   );
 }

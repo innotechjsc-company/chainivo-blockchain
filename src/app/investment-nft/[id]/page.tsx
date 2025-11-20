@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Heart, ArrowLeft, FileDown, Copy } from "lucide-react";
+import { Heart, ArrowLeft, FileDown, Copy, MapPin } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
 import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
@@ -56,6 +56,14 @@ export default function InvestmentNFTDetailPage() {
   const [totalCardsHeight, setTotalCardsHeight] = useState<number>(0);
   const [ownership, setOwnership] = useState<any>(null);
   const DETAIL_PANEL_MAX_HEIGHT = 645;
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [showLocationConfirmDialog, setShowLocationConfirmDialog] =
+    useState<boolean>(false);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
 
   const formatAmount = (value: unknown) => {
     const num = Number(value || 0);
@@ -319,6 +327,36 @@ export default function InvestmentNFTDetailPage() {
       return;
     }
     setCertificateModalOpen(true);
+  };
+
+  const handleMapClick = () => {
+    setShowLocationConfirmDialog(true);
+  };
+
+  const handleConfirmLocationAccess = () => {
+    setShowLocationConfirmDialog(false);
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelected = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    setSelectedLocation(location);
+    setShowLocationPicker(false);
+    toast.success("Vị trí đã được chọn thành công");
+  };
+
+  const getMapUrl = () => {
+    if (selectedLocation) {
+      return `https://www.openstreetmap.org/export/embed.html?bbox=${
+        selectedLocation.lng - 0.01
+      },${selectedLocation.lat - 0.01},${selectedLocation.lng + 0.01},${
+        selectedLocation.lat + 0.01
+      }&layer=mapnik&marker=${selectedLocation.lat},${selectedLocation.lng}`;
+    }
+    return `https://www.openstreetmap.org/export/embed.html?bbox=105.8,20.9,105.9,21.1&layer=mapnik&marker=21.0285,105.8542`;
   };
 
   const handleDownloadCertificatePdf = async () => {
@@ -631,9 +669,9 @@ export default function InvestmentNFTDetailPage() {
         {/* Loading Spinner - Initial Data Load */}
         {loading && <LoadingSpinner />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 relative z-10">
           {/* Image section */}
-          <div className="space-y-6">
+          <div className="space-y-6 mb-12 lg:mb-0 lg:pb-8">
             <div className="relative rounded-2xl overflow-hidden glass flex items-center justify-center">
               <img
                 src={imageSrc}
@@ -772,7 +810,7 @@ export default function InvestmentNFTDetailPage() {
 
           {/* Details section */}
           <div
-            className="space-y-6 lg:pr-3 lg:sticky lg:top-21"
+            className="space-y-6 lg:pr-3 lg:sticky lg:top-24 lg:self-start"
             style={{
               maxHeight: `${DETAIL_PANEL_MAX_HEIGHT}px`,
             }}
@@ -1006,6 +1044,65 @@ export default function InvestmentNFTDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Bản đồ */}
+            <Card className="glass relative z-20 mb-8">
+              <CardContent className="p-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-cyan-400" />
+                      Vị trí
+                    </h3>
+                    {selectedLocation && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleMapClick}
+                        className="text-xs"
+                      >
+                        Thay đổi vị trí
+                      </Button>
+                    )}
+                  </div>
+                  <div
+                    className="relative w-full rounded-lg overflow-hidden border border-cyan-500/20 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                    style={{ height: "300px", minHeight: "300px" }}
+                    onClick={handleMapClick}
+                  >
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, display: "block" }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={getMapUrl()}
+                    />
+                    {!selectedLocation && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors pointer-events-none">
+                        <div className="text-center text-white">
+                          <MapPin className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
+                          <p className="text-sm font-medium">
+                            Nhấn để chọn vị trí
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {selectedLocation && (
+                    <div className="text-sm text-muted-foreground pt-2">
+                      <p className="font-semibold text-white mb-1">Địa chỉ:</p>
+                      <p>{selectedLocation.address}</p>
+                      <p className="text-xs mt-1">
+                        Tọa độ: {selectedLocation.lat.toFixed(6)},{" "}
+                        {selectedLocation.lng.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
           <div className="space-y-6">
             <Card ref={infoCardRef} className="glass">
@@ -1215,7 +1312,7 @@ export default function InvestmentNFTDetailPage() {
           </div>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-12 w-full relative z-0 clear-both">
           <Card className="glass">
             <CardContent className="p-4">
               <h2 className="text-2xl font-bold mb-6">Lịch sử giao dịch</h2>
@@ -1406,6 +1503,77 @@ export default function InvestmentNFTDetailPage() {
             document.body
           )}
 
+        {/* Location Confirm Dialog */}
+        <Dialog
+          open={showLocationConfirmDialog}
+          onOpenChange={setShowLocationConfirmDialog}
+        >
+          <DialogContent className="glass border-cyan-500/20">
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">
+                Xác nhận truy cập vị trí
+              </DialogTitle>
+            </DialogHeader>
+            <div className="text-muted-foreground py-4">
+              <p>
+                Bạn có muốn chọn vị trí trên bản đồ không? Chúng tôi sẽ mở
+                Google Maps để bạn có thể chọn vị trí.
+              </p>
+            </div>
+            <DialogFooter className="gap-3 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setShowLocationConfirmDialog(false)}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirmLocationAccess}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold"
+              >
+                Cho phép
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Location Picker Dialog */}
+        <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
+          <DialogContent className="glass border-cyan-500/20 max-w-4xl">
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">
+                Chọn vị trí trên Google Maps
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  Vui lòng mở Google Maps trong tab mới, chọn vị trí và nhập tọa
+                  độ hoặc địa chỉ vào form bên dưới.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  window.open(
+                    "https://www.google.com/maps",
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
+                }}
+                className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Mở Google Maps
+              </Button>
+              <LocationPickerForm
+                onLocationSelected={handleLocationSelected}
+                onCancel={() => setShowLocationPicker(false)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Confirmation Modal */}
         <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <DialogContent
@@ -1519,6 +1687,155 @@ export default function InvestmentNFTDetailPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function LocationPickerForm({
+  onLocationSelected,
+  onCancel,
+}: {
+  onLocationSelected: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLat(latitude.toString());
+        setLng(longitude.toString());
+
+        // Reverse geocoding để lấy địa chỉ
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Không thể lấy vị trí hiện tại");
+        setLoading(false);
+      }
+    );
+  };
+
+  const handleSubmit = () => {
+    if (!lat || !lng) {
+      toast.error("Vui lòng nhập tọa độ hoặc sử dụng vị trí hiện tại");
+      return;
+    }
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      toast.error("Tọa độ không hợp lệ");
+      return;
+    }
+
+    if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      toast.error("Tọa độ nằm ngoài phạm vi hợp lệ");
+      return;
+    }
+
+    onLocationSelected({
+      lat: latNum,
+      lng: lngNum,
+      address: address || `${latNum}, ${lngNum}`,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Hoặc sử dụng vị trí hiện tại
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGetCurrentLocation}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "Đang lấy vị trí..." : "Lấy vị trí hiện tại"}
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-white">
+          Địa chỉ (tùy chọn)
+        </label>
+        <Input
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Nhập địa chỉ"
+          className="bg-background/50 border-cyan-500/60"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">Vĩ độ (Lat)</label>
+          <Input
+            type="number"
+            step="any"
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+            placeholder="21.0285"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">
+            Kinh độ (Lng)
+          </label>
+          <Input
+            type="number"
+            step="any"
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+            placeholder="105.8542"
+            className="bg-background/50 border-cyan-500/60"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          Hủy
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
+        >
+          Xác nhận
+        </Button>
+      </div>
     </div>
   );
 }
