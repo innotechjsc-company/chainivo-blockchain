@@ -568,7 +568,7 @@ h-9 px-4 py-2 has-[>svg]:px-3 gap-2 cursor-pointer
 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
 "
           >
-            Huỷ{" "}
+            {nft.isSale ? "Hủy bán" : "Hủy"}
           </Button>
         )}
       </div>
@@ -665,7 +665,11 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
             {/* Giá cho các loại NFT khác - Fixed height */}
             <div className="flex items-center justify-between min-h-[1.75rem]">
               <span className="text-sm text-gray-400">
-                {nft.type === "investment" ? "Giá/cổ phần:" : "Giá:"}
+                {nft.type === "investment"
+                  ? "Giá/cổ phần:"
+                  : nft.isSale
+                  ? "Giá bán:"
+                  : "Giá:"}
               </span>
               <span className="text-lg font-bold text-gray-100">
                 {formatNumber(
@@ -685,6 +689,22 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                 </span>
               </span>
             </div>
+
+            {nft.isSale && (
+              <div className="flex items-center justify-between min-h-[1.75rem]">
+                <span className="text-sm text-gray-400">Giá gốc:</span>
+                <span className="text-lg font-bold text-gray-100">
+                  {formatNumber((nft as any)?.nft?.price ?? nft.price ?? 0)}{" "}
+                  <span className="text-sm uppercase">
+                    {nft.currency
+                      ? nft.currency.toUpperCase()
+                      : (nft as any)?.nft?.currency
+                      ? (nft as any)?.nft?.currency.toUpperCase()
+                      : "CAN".toUpperCase()}
+                  </span>
+                </span>
+              </div>
+            )}
 
             {/* Investment-specific content */}
             {nft.type === "investment" &&
@@ -721,17 +741,6 @@ bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 text-white
                   <span className="text-sm text-gray-400">Minted:</span>
                   <span className="text-sm font-medium text-gray-100">
                     {(nft as any).isMinted === true ? "Đã Mint" : "Chưa Mint"}
-                  </span>
-                </div>
-              </div>
-            )}
-            {/* Trạng thái bán - Fixed height */}
-            {nft.isSale && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between min-h-[1.5rem]">
-                  <span className="text-sm text-gray-400">Trạng thái:</span>
-                  <span className="text-sm font-medium text-gray-100">
-                    Đã bán
                   </span>
                 </div>
               </div>
