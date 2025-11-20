@@ -3,7 +3,8 @@
 # Auto install: Git, Node.js 22.18, Bun, PM2
 # ============================================
 
-$ErrorActionPreference = "Stop"
+# Không dùng Stop để tránh lỗi khi command không tồn tại
+$ErrorActionPreference = "Continue"
 
 # Node.js version target
 $NODE_VERSION = "22.18.0"
@@ -47,15 +48,15 @@ function Print-Step {
 
 function Test-Git {
     try {
-        $gitVersion = (git --version 2>$null) -split ' ' | Select-Object -Last 1
+        $gitVersion = (git --version -ErrorAction SilentlyContinue) -split ' ' | Select-Object -Last 1
         if ($gitVersion) {
             Print-Success "Git đã được cài đặt (version: $gitVersion)"
             return $true
         }
     } catch {
-        Print-Info "Git chưa được cài đặt"
-        return $false
     }
+    Print-Info "Git chưa được cài đặt"
+    return $false
 }
 
 function Install-Git {
@@ -69,9 +70,16 @@ function Install-Git {
         exit 1
     }
     
-    choco install git -y
-    
-    Print-Success "Git đã được cài đặt thành công!"
+    try {
+        choco install git -y
+        if ($LASTEXITCODE -ne 0) {
+            throw "Chocolatey install failed"
+        }
+        Print-Success "Git đã được cài đặt thành công!"
+    } catch {
+        Print-Error "Không thể cài đặt Git. Vui lòng cài đặt thủ công."
+        exit 1
+    }
 }
 
 # ============================================
@@ -81,10 +89,13 @@ function Install-Git {
 function Test-NVM {
     $nvmPath = "$env:USERPROFILE\.nvm"
     if (Test-Path "$nvmPath\nvm.exe") {
-        $nvmVersion = & "$nvmPath\nvm.exe" version 2>$null
-        if ($nvmVersion) {
-            Print-Success "NVM đã được cài đặt (version: $nvmVersion)"
-            return $true
+        try {
+            $nvmVersion = & "$nvmPath\nvm.exe" version 2>&1 | Out-String
+            if ($nvmVersion -and $nvmVersion.Trim()) {
+                Print-Success "NVM đã được cài đặt (version: $($nvmVersion.Trim()))"
+                return $true
+            }
+        } catch {
         }
     }
     Print-Info "NVM chưa được cài đặt"
@@ -102,18 +113,26 @@ function Install-NVM {
         exit 1
     }
     
-    choco install nvm -y
-    
-    # Refresh environment variables
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    
-    Print-Success "NVM đã được cài đặt thành công!"
-    Print-Info "Vui lòng restart terminal sau khi cài đặt NVM"
+    try {
+        choco install nvm -y
+        if ($LASTEXITCODE -ne 0) {
+            throw "Chocolatey install failed"
+        }
+        
+        # Refresh environment variables
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        
+        Print-Success "NVM đã được cài đặt thành công!"
+        Print-Info "Vui lòng restart terminal sau khi cài đặt NVM"
+    } catch {
+        Print-Error "Không thể cài đặt NVM. Vui lòng cài đặt thủ công."
+        exit 1
+    }
 }
 
 function Test-NodeJS {
     try {
-        $nodeVersion = (node --version 2>$null) -replace 'v', ''
+        $nodeVersion = (node --version -ErrorAction SilentlyContinue) -replace 'v', ''
         if ($nodeVersion) {
             if ($nodeVersion -eq $NODE_VERSION) {
                 Print-Success "Node.js $NODE_VERSION đã được cài đặt"
@@ -124,9 +143,9 @@ function Test-NodeJS {
             }
         }
     } catch {
-        Print-Info "Node.js chưa được cài đặt"
-        return $false
     }
+    Print-Info "Node.js chưa được cài đặt"
+    return $false
 }
 
 function Install-NodeJS {
@@ -138,21 +157,34 @@ function Install-NodeJS {
         exit 1
     }
     
-    # Cài đặt Node.js version cụ thể
-    & "$nvmPath\nvm.exe" install $NODE_VERSION
-    & "$nvmPath\nvm.exe" use $NODE_VERSION
-    & "$nvmPath\nvm.exe" alias default $NODE_VERSION
-    
-    # Refresh PATH
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    
-    Print-Success "Node.js $NODE_VERSION đã được cài đặt thành công!"
-    
-    # Hiển thị thông tin
-    $nodeVersionInstalled = node --version
-    $npmVersion = npm --version
-    Print-Info "Node.js: $nodeVersionInstalled"
-    Print-Info "NPM: $npmVersion"
+    try {
+        # Cài đặt Node.js version cụ thể
+        & "$nvmPath\nvm.exe" install $NODE_VERSION
+        if ($LASTEXITCODE -ne 0) {
+            throw "NVM install failed"
+        }
+        
+        & "$nvmPath\nvm.exe" use $NODE_VERSION
+        & "$nvmPath\nvm.exe" alias default $NODE_VERSION
+        
+        # Refresh PATH
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        
+        Print-Success "Node.js $NODE_VERSION đã được cài đặt thành công!"
+        
+        # Hiển thị thông tin
+        try {
+            $nodeVersionInstalled = node --version -ErrorAction Stop
+            $npmVersion = npm --version -ErrorAction Stop
+            Print-Info "Node.js: $nodeVersionInstalled"
+            Print-Info "NPM: $npmVersion"
+        } catch {
+            Print-Info "Vui lòng restart terminal để sử dụng Node.js"
+        }
+    } catch {
+        Print-Error "Không thể cài đặt Node.js. Vui lòng thử lại."
+        exit 1
+    }
 }
 
 # ============================================
@@ -161,30 +193,37 @@ function Install-NodeJS {
 
 function Test-Bun {
     try {
-        $bunVersion = bun --version 2>$null
+        $bunVersion = bun --version -ErrorAction SilentlyContinue
         if ($bunVersion) {
             Print-Success "Bun đã được cài đặt (version: $bunVersion)"
             return $true
         }
     } catch {
-        Print-Info "Bun chưa được cài đặt"
-        return $false
     }
+    Print-Info "Bun chưa được cài đặt"
+    return $false
 }
 
 function Install-Bun {
     Print-Step "Đang cài đặt Bun..."
     
-    # Download và cài đặt Bun cho Windows
-    $bunInstaller = "$env:TEMP\bun-install.ps1"
-    Invoke-WebRequest -Uri "https://bun.sh/install" -OutFile $bunInstaller
-    & powershell -ExecutionPolicy Bypass -File $bunInstaller
-    
-    # Refresh PATH
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    
-    Print-Success "Bun đã được cài đặt thành công!"
-    Print-Info "Vui lòng restart terminal sau khi cài đặt Bun"
+    try {
+        # Download và cài đặt Bun cho Windows
+        $bunInstaller = "$env:TEMP\bun-install.ps1"
+        Invoke-WebRequest -Uri "https://bun.sh/install" -OutFile $bunInstaller -ErrorAction Stop
+        
+        & powershell -ExecutionPolicy Bypass -File $bunInstaller
+        
+        # Refresh PATH
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        
+        Print-Success "Bun đã được cài đặt thành công!"
+        Print-Info "Vui lòng restart terminal sau khi cài đặt Bun"
+    } catch {
+        Print-Error "Không thể cài đặt Bun. Vui lòng cài đặt thủ công:"
+        Print-Info "powershell -c `"irm bun.sh/install.ps1 | iex`""
+        exit 1
+    }
 }
 
 # ============================================
@@ -193,30 +232,37 @@ function Install-Bun {
 
 function Test-PM2 {
     try {
-        $pm2Version = pm2 --version 2>$null
+        $pm2Version = pm2 --version -ErrorAction SilentlyContinue
         if ($pm2Version) {
             Print-Success "PM2 đã được cài đặt (version: $pm2Version)"
             return $true
         }
     } catch {
-        Print-Info "PM2 chưa được cài đặt"
-        return $false
     }
+    Print-Info "PM2 chưa được cài đặt"
+    return $false
 }
 
 function Install-PM2 {
     Print-Step "Đang cài đặt PM2..."
     
-    npm install -g pm2
-    
-    Print-Success "PM2 đã được cài đặt thành công!"
-    
-    # Setup PM2 startup
-    Print-Step "Cấu hình PM2 startup..."
     try {
-        pm2 startup | Out-Null
+        npm install -g pm2
+        if ($LASTEXITCODE -ne 0) {
+            throw "NPM install failed"
+        }
+        Print-Success "PM2 đã được cài đặt thành công!"
+        
+        # Setup PM2 startup
+        Print-Step "Cấu hình PM2 startup..."
+        try {
+            pm2 startup 2>&1 | Out-Null
+        } catch {
+            Print-Info "PM2 startup có thể cần quyền administrator"
+        }
     } catch {
-        Print-Info "PM2 startup có thể cần quyền administrator"
+        Print-Error "Không thể cài đặt PM2. Vui lòng cài đặt thủ công: npm install -g pm2"
+        exit 1
     }
 }
 
@@ -263,11 +309,36 @@ function Main {
     Print-Success "Tất cả các dependencies đã được cài đặt thành công!"
     Write-Host ""
     Print-Info "Thông tin version:"
-    Write-Host "  • Git:     $((git --version) -split ' ' | Select-Object -Last 1)"
-    Write-Host "  • Node.js: $(node --version)"
-    Write-Host "  • NPM:     $(npm --version)"
-    Write-Host "  • Bun:     $(bun --version)"
-    Write-Host "  • PM2:     $(pm2 --version)"
+    try {
+        $gitVer = (git --version -ErrorAction SilentlyContinue) -split ' ' | Select-Object -Last 1
+        Write-Host "  • Git:     $gitVer"
+    } catch {
+        Write-Host "  • Git:     N/A"
+    }
+    try {
+        $nodeVer = node --version -ErrorAction SilentlyContinue
+        Write-Host "  • Node.js: $nodeVer"
+    } catch {
+        Write-Host "  • Node.js: N/A"
+    }
+    try {
+        $npmVer = npm --version -ErrorAction SilentlyContinue
+        Write-Host "  • NPM:     $npmVer"
+    } catch {
+        Write-Host "  • NPM:     N/A"
+    }
+    try {
+        $bunVer = bun --version -ErrorAction SilentlyContinue
+        Write-Host "  • Bun:     $bunVer"
+    } catch {
+        Write-Host "  • Bun:     N/A"
+    }
+    try {
+        $pm2Ver = pm2 --version -ErrorAction SilentlyContinue
+        Write-Host "  • PM2:     $pm2Ver"
+    } catch {
+        Write-Host "  • PM2:     N/A"
+    }
     Write-Host ""
     Print-Info "Lưu ý: Bạn có thể cần restart terminal để sử dụng NVM và Bun"
     Write-Host ""

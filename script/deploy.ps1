@@ -8,7 +8,8 @@ param(
     [string]$Mode = "full"
 )
 
-$ErrorActionPreference = "Stop"
+# Không dùng Stop để tránh lỗi khi command không tồn tại
+$ErrorActionPreference = "Continue"
 
 # Project config
 $APP_NAME = "chainivo-blockchain"
@@ -53,7 +54,7 @@ function Print-Step {
 
 function Test-NodeJS {
     try {
-        $nodeVersion = node --version 2>$null
+        $nodeVersion = node --version -ErrorAction Stop
         if ($nodeVersion) {
             Print-Success "Node.js: $nodeVersion"
             return $true
@@ -63,11 +64,12 @@ function Test-NodeJS {
         Print-Info "Chạy script setup-environment.ps1 để cài đặt"
         exit 1
     }
+    return $false
 }
 
 function Test-Bun {
     try {
-        $bunVersion = bun --version 2>$null
+        $bunVersion = bun --version -ErrorAction Stop
         if ($bunVersion) {
             Print-Success "Bun: $bunVersion"
             return $true
@@ -77,11 +79,12 @@ function Test-Bun {
         Print-Info "Cài đặt Bun: powershell -c `"irm bun.sh/install.ps1 | iex`""
         exit 1
     }
+    return $false
 }
 
 function Test-PM2 {
     try {
-        $pm2Version = pm2 --version 2>$null
+        $pm2Version = pm2 --version -ErrorAction Stop
         if ($pm2Version) {
             Print-Success "PM2: $pm2Version"
             return $true
@@ -91,6 +94,7 @@ function Test-PM2 {
         Print-Info "Chạy script setup-environment.ps1 để cài đặt"
         exit 1
     }
+    return $false
 }
 
 function Test-ProjectRoot {
@@ -109,28 +113,46 @@ function Test-ProjectRoot {
 function Install-Dependencies {
     Print-Step "Đang cài đặt dependencies..."
     
-    if ((Test-Path "bun.lockb") -or (Test-Path "bun.lock")) {
-        bun install --frozen-lockfile
-    } else {
-        bun install
+    try {
+        if ((Test-Path "bun.lockb") -or (Test-Path "bun.lock")) {
+            bun install --frozen-lockfile
+        } else {
+            bun install
+        }
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "Bun install failed"
+        }
+        
+        Print-Success "Dependencies đã được cài đặt thành công!"
+    } catch {
+        Print-Error "Không thể cài đặt dependencies. Vui lòng kiểm tra lại."
+        exit 1
     }
-    
-    Print-Success "Dependencies đã được cài đặt thành công!"
 }
 
 function Build-Project {
     Print-Step "Đang build project..."
     
-    # Xóa build cũ nếu có
-    if (Test-Path ".next") {
-        Print-Info "Xóa build cũ..."
-        Remove-Item -Recurse -Force .next
+    try {
+        # Xóa build cũ nếu có
+        if (Test-Path ".next") {
+            Print-Info "Xóa build cũ..."
+            Remove-Item -Recurse -Force .next -ErrorAction Stop
+        }
+        
+        # Build project
+        bun run build
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "Build failed"
+        }
+        
+        Print-Success "Build thành công!"
+    } catch {
+        Print-Error "Không thể build project. Vui lòng kiểm tra lại."
+        exit 1
     }
-    
-    # Build project
-    bun run build
-    
-    Print-Success "Build thành công!"
 }
 
 # ============================================
@@ -183,40 +205,65 @@ function New-LogsDir {
 }
 
 function Test-PM2Process {
-    $pm2List = pm2 list 2>$null
-    return $pm2List -match $APP_NAME
+    try {
+        $pm2List = pm2 list 2>&1 | Out-String
+        return $pm2List -match $APP_NAME
+    } catch {
+        return $false
+    }
 }
 
 function Stop-PM2Process {
     if (Test-PM2Process) {
         Print-Step "Đang dừng process PM2 cũ..."
-        pm2 delete $APP_NAME 2>$null
-        Print-Success "Đã dừng process cũ"
+        try {
+            pm2 delete $APP_NAME 2>&1 | Out-Null
+            Print-Success "Đã dừng process cũ"
+        } catch {
+            Print-Info "Không thể dừng process cũ (có thể đã dừng)"
+        }
     }
 }
 
 function Start-PM2Process {
     Print-Step "Đang khởi động ứng dụng với PM2..."
     
-    if (Test-Path "ecosystem.config.js") {
-        pm2 start ecosystem.config.js
-    } else {
-        pm2 start bun --name $APP_NAME -- start
+    try {
+        if (Test-Path "ecosystem.config.js") {
+            pm2 start ecosystem.config.js
+        } else {
+            pm2 start bun --name $APP_NAME -- start
+        }
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "PM2 start failed"
+        }
+        
+        Print-Success "Ứng dụng đã được khởi động thành công!"
+    } catch {
+        Print-Error "Không thể khởi động ứng dụng với PM2. Vui lòng kiểm tra lại."
+        exit 1
     }
-    
-    Print-Success "Ứng dụng đã được khởi động thành công!"
 }
 
 function Save-PM2Config {
     Print-Step "Lưu PM2 config..."
-    pm2 save
-    Print-Success "Đã lưu PM2 config"
+    try {
+        pm2 save 2>&1 | Out-Null
+        Print-Success "Đã lưu PM2 config"
+    } catch {
+        Print-Info "Không thể lưu PM2 config (có thể không cần thiết)"
+    }
 }
 
 function Show-PM2Status {
     Write-Host ""
     Print-Info "PM2 Process Status:"
-    pm2 list
+    try {
+        pm2 list
+    } catch {
+        Print-Error "Không thể hiển thị PM2 status"
+    }
     Write-Host ""
 }
 
@@ -275,8 +322,16 @@ function Deploy-Restart {
     
     if (Test-PM2Process) {
         Print-Step "Đang khởi động lại ứng dụng..."
-        pm2 restart $APP_NAME
-        Print-Success "Đã khởi động lại thành công!"
+        try {
+            pm2 restart $APP_NAME
+            if ($LASTEXITCODE -ne 0) {
+                throw "PM2 restart failed"
+            }
+            Print-Success "Đã khởi động lại thành công!"
+        } catch {
+            Print-Error "Không thể khởi động lại ứng dụng"
+            exit 1
+        }
     } else {
         Print-Error "Không tìm thấy process PM2: $APP_NAME"
         Print-Info "Chạy script với tham số 'full' để deploy mới"
@@ -301,7 +356,12 @@ function Show-Logs {
     Test-PM2
     
     if (Test-PM2Process) {
-        pm2 logs $APP_NAME --lines 50
+        try {
+            pm2 logs $APP_NAME --lines 50
+        } catch {
+            Print-Error "Không thể hiển thị logs"
+            exit 1
+        }
     } else {
         Print-Error "Không tìm thấy process PM2: $APP_NAME"
         exit 1
@@ -316,7 +376,11 @@ function Show-Status {
     
     if (Test-PM2Process) {
         Print-Info "Chi tiết process:"
-        pm2 describe $APP_NAME
+        try {
+            pm2 describe $APP_NAME
+        } catch {
+            Print-Error "Không thể hiển thị chi tiết process"
+        }
     }
 }
 
