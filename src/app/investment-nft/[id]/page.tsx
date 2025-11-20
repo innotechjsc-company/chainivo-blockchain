@@ -481,7 +481,7 @@ export default function InvestmentNFTDetailPage() {
     }
 
     if (!location) {
-      toast.error("Khong tim thay vi tri de mo ban do");
+      toast.error("Không tìm thấy vị trí để mở bản đồ");
       return;
     }
 
