@@ -13,26 +13,26 @@ interface TypeConfig {
 const TYPE_CONFIGS: Record<NFTType, TypeConfig> = {
   normal: {
     label: "NFT thường",
-    color: "text-blue-700 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-blue-700 dark:text-blue-300",
+    bgColor: "bg-blue-100 dark:bg-blue-900",
     icon: "🖼️",
   },
   rank: {
     label: "NFT hạng",
-    color: "text-emerald-700 dark:text-emerald-400",
-    bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+    color: "text-emerald-700 dark:text-emerald-300",
+    bgColor: "bg-emerald-100 dark:bg-emerald-900",
     icon: "🏆",
   },
   mysteryBox: {
     label: "NFT hộp bí ẩn",
-    color: "text-pink-700 dark:text-pink-400",
-    bgColor: "bg-pink-100 dark:bg-pink-900/30",
+    color: "text-pink-700 dark:text-pink-300",
+    bgColor: "bg-pink-100 dark:bg-pink-900",
     icon: "🎁",
   },
   investment: {
     label: "NFT đầu tư",
-    color: "text-amber-700 dark:text-amber-400",
-    bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    color: "text-amber-700 dark:text-amber-300",
+    bgColor: "bg-amber-100 dark:bg-amber-900",
     icon: "💰",
   },
 };

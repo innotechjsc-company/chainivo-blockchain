@@ -193,9 +193,7 @@ export default function AccountManagementPage() {
           uploadedAvatarId = uploadResponse.data.id;
           formData.append("avatar", uploadedAvatarId);
         } else {
-          setUpdateError(
-            uploadResponse.error || "Loi khi upload anh dai dien"
-          );
+          setUpdateError(uploadResponse.error || "Loi khi upload anh dai dien");
           setUpdateLoading(false);
           return;
         }
@@ -272,10 +270,12 @@ export default function AccountManagementPage() {
         };
         setProfile(newProfile);
         setUsername(newProfile.name);
-        dispatch(updateProfile({
-          name: userProfile.name,
-          avatarUrl: userProfile.avatarUrl,
-        }));
+        dispatch(
+          updateProfile({
+            name: userProfile.name,
+            avatarUrl: userProfile.avatarUrl,
+          })
+        );
 
         // Update localStorage as well to prevent useEffect from overwriting with stale data
         const currentUserInfo = LocalStorageService.getUserInfo();
@@ -306,9 +306,9 @@ export default function AccountManagementPage() {
   }
 
   const tierColors: Record<string, string> = {
-    "dong": "text-orange-600",
-    "bac": "text-gray-400",
-    "vang": "text-yellow-500",
+    dong: "text-orange-600",
+    bac: "text-gray-400",
+    vang: "text-yellow-500",
     "kim cuong": "text-purple-500",
     "kim cương": "text-purple-500",
   };
@@ -331,10 +331,10 @@ export default function AccountManagementPage() {
                 <User className="w-4 h-4 mr-2" />
                 Hồ sơ
               </TabsTrigger>
-              <TabsTrigger value="wallet">
+              {/* <TabsTrigger value="wallet">
                 <Wallet className="w-4 h-4 mr-2" />
                 Ví
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger value="my-nft">
                 <User className="w-4 h-4 mr-2" />
                 NFT của tôi
@@ -420,7 +420,9 @@ export default function AccountManagementPage() {
                     </div>
                     <div
                       className={`text-2xl font-bold capitalize ${
-                        tierColors[(user as any)?.rank?.name?.toLowerCase() || "dong"]
+                        tierColors[
+                          (user as any)?.rank?.name?.toLowerCase() || "dong"
+                        ]
                       }`}
                     >
                       {(user as any)?.rank?.name || "Đồng"}
@@ -436,56 +438,86 @@ export default function AccountManagementPage() {
                   </div>
                 </div>
 
-                {/* Thông tin chi tiết của user */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Email
+                {/* Thông tin tài khoản */}
+                <div className="mb-6 pt-6 border-t border-white/10">
+                  <h4 className="text-lg font-semibold mb-3">
+                    Thông tin tài khoản
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Email
+                      </div>
+                      <div className="text-base font-medium">
+                        {user?.email || "—"}
+                      </div>
                     </div>
-                    <div className="text-base font-medium">
-                      {user?.email || "—"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Địa chỉ ví
+                      </div>
+                      <div className="text-xs font-mono break-all">
+                        {user?.walletAddress || "Chưa kết nối"}
+                      </div>
                     </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Địa chỉ ví
+                    {/* <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Vai trò
+                      </div>
+                      <div className="text-base font-medium capitalize">
+                        {user?.role || "user"}
+                      </div>
+                    </div> */}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Điểm tích lũy
+                      </div>
+                      <div className="text-base font-bold gradient-text">
+                        {user?.points?.toLocaleString() || 0} điểm
+                      </div>
                     </div>
-                    <div className="text-xs font-mono break-all">
-                      {user?.walletAddress || "Chưa kết nối"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Mã giới thiệu
+                      </div>
+                      <div className="text-base font-mono font-medium">
+                        {user?.refCode || "—"}
+                      </div>
                     </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Vai trò
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Trạng thái tài khoản
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user?.isActive && !user?.isSuspended
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-red-500/20 text-red-500"
+                          }`}
+                        >
+                          {user?.isSuspended
+                            ? "Đã bị khóa"
+                            : user?.isActive
+                            ? "Hoạt động"
+                            : "Không hoạt động"}
+                        </span>
+                      </div>
+                      {user?.suspensionReason && (
+                        <p className="text-xs text-red-500 mt-2">
+                          Lý do: {user.suspensionReason}
+                        </p>
+                      )}
                     </div>
-                    <div className="text-base font-medium capitalize">
-                      {user?.role || "user"}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Điểm tích lũy
-                    </div>
-                    <div className="text-base font-bold gradient-text">
-                      {user?.points?.toLocaleString() || 0} điểm
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Mã giới thiệu
-                    </div>
-                    <div className="text-base font-mono font-medium">
-                      {user?.refCode || "—"}
-                    </div>
-                  </div>
-                  <div className="glass p-4 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Đăng nhập lần cuối
-                    </div>
-                    <div className="text-base font-medium">
-                      {user?.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString("vi-VN")
-                        : "—"}
+                    <div className="glass p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Ngày tạo tài khoản
+                      </div>
+                      <div className="text-base font-medium">
+                        {user?.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+                          : "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -564,50 +596,6 @@ export default function AccountManagementPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Thông tin tài khoản */}
-                <div className="mb-6 pt-6 border-t border-white/10">
-                  <h4 className="text-lg font-semibold mb-3">
-                    Thông tin tài khoản
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Trạng thái tài khoản
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user?.isActive && !user?.isSuspended
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-red-500/20 text-red-500"
-                          }`}
-                        >
-                          {user?.isSuspended
-                            ? "Đã bị khóa"
-                            : user?.isActive
-                            ? "Hoạt động"
-                            : "Không hoạt động"}
-                        </span>
-                      </div>
-                      {user?.suspensionReason && (
-                        <p className="text-xs text-red-500 mt-2">
-                          Lý do: {user.suspensionReason}
-                        </p>
-                      )}
-                    </div>
-                    <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Ngày tạo tài khoản
-                      </div>
-                      <div className="text-base font-medium">
-                        {user?.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </Card>
             </TabsContent>
 

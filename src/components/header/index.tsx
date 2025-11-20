@@ -249,36 +249,6 @@ export const Header = ({ session, onSignOut }: HeaderProps) => {
                   currentLanguage={language}
                   onLanguageChange={handleLanguageChange}
                 />
-                {/* <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="hidden md:flex cursor-pointer relative">
-                      Ví của tôi
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => router.push("/account?section=wallet")}
-                    >
-                      <Wallet className="w-4 h-4 mr-2" />
-                      Ví
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => router.push("/account?section=my-nft")}
-                    >
-                      <Image className="w-4 h-4 mr-2" />
-                      NFT của tôi
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push("/account?section=nft-co-phan")
-                      }
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      NFT cổ phần giúp tôi
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu> */}
                 <UserMenu
                   userProfile={userProfile}
                   onSignOut={handleSignOut}
