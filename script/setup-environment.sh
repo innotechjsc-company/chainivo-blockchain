@@ -43,7 +43,7 @@ print_step() {
     echo -e "${BLUE}→ $1${NC}"
 }
 
-# Kiem tra OS
+# Kiểm tra OS
 detect_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         OS="macos"
@@ -64,21 +64,21 @@ detect_os() {
 check_git() {
     if command -v git &> /dev/null; then
         GIT_VERSION=$(git --version | awk '{print $3}')
-        print_success "Git da duoc cai dat (version: $GIT_VERSION)"
+        print_success "Git đã được cài đặt (version: $GIT_VERSION)"
         return 0
     else
-        print_info "Git chua duoc cai dat"
+        print_info "Git chưa được cài đặt"
         return 1
     fi
 }
 
 install_git() {
-    print_step "Dang cai dat Git..."
+    print_step "Đang cài đặt Git..."
     
     if [[ "$OS" == "macos" ]]; then
-        # Kiem tra Homebrew
+        # Kiểm tra Homebrew
         if ! command -v brew &> /dev/null; then
-            print_error "Homebrew chua duoc cai dat. Vui long cai Homebrew truoc:"
+            print_error "Homebrew chưa được cài đặt. Vui lòng cài Homebrew trước:"
             print_info "https://brew.sh"
             exit 1
         fi
@@ -90,12 +90,12 @@ install_git() {
         elif command -v yum &> /dev/null; then
             sudo yum install -y git
         else
-            print_error "Package manager khong duoc ho tro"
+            print_error "Package manager không được hỗ trợ"
             exit 1
         fi
     fi
     
-    print_success "Git da duoc cai dat thanh cong!"
+    print_success "Git đã được cài đặt thành công!"
 }
 
 # ============================================
@@ -106,18 +106,18 @@ check_nvm() {
     if [ -s "$HOME/.nvm/nvm.sh" ]; then
         source "$HOME/.nvm/nvm.sh"
         NVM_VERSION=$(nvm --version 2>/dev/null || echo "unknown")
-        print_success "NVM da duoc cai dat (version: $NVM_VERSION)"
+        print_success "NVM đã được cài đặt (version: $NVM_VERSION)"
         return 0
     else
-        print_info "NVM chua duoc cai dat"
+        print_info "NVM chưa được cài đặt"
         return 1
     fi
 }
 
 install_nvm() {
-    print_step "Dang cai dat NVM..."
+    print_step "Đang cài đặt NVM..."
     
-    # Download va cai dat NVM
+    # Download và cài đặt NVM
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
     
     # Source NVM
@@ -143,42 +143,42 @@ install_nvm() {
         fi
     fi
     
-    print_success "NVM da duoc cai dat thanh cong!"
+    print_success "NVM đã được cài đặt thành công!"
 }
 
 check_nodejs() {
     if command -v node &> /dev/null; then
         CURRENT_NODE_VERSION=$(node --version | sed 's/v//')
         if [ "$CURRENT_NODE_VERSION" == "$NODE_VERSION" ]; then
-            print_success "Node.js $NODE_VERSION da duoc cai dat"
+            print_success "Node.js $NODE_VERSION đã được cài đặt"
             return 0
         else
-            print_info "Node.js version hien tai: $CURRENT_NODE_VERSION (can: $NODE_VERSION)"
+            print_info "Node.js version hiện tại: $CURRENT_NODE_VERSION (cần: $NODE_VERSION)"
             return 1
         fi
     else
-        print_info "Node.js chua duoc cai dat"
+        print_info "Node.js chưa được cài đặt"
         return 1
     fi
 }
 
 install_nodejs() {
-    print_step "Dang cai dat Node.js $NODE_VERSION..."
+    print_step "Đang cài đặt Node.js $NODE_VERSION..."
     
-    # Source NVM neu chua load
+    # Source NVM nếu chưa load
     if ! command -v nvm &> /dev/null; then
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     fi
     
-    # Cai dat Node.js version cu the
+    # Cài đặt Node.js version cụ thể
     nvm install "$NODE_VERSION"
     nvm use "$NODE_VERSION"
     nvm alias default "$NODE_VERSION"
     
-    print_success "Node.js $NODE_VERSION da duoc cai dat thanh cong!"
+    print_success "Node.js $NODE_VERSION đã được cài đặt thành công!"
     
-    # Hien thi thong tin
+    # Hiển thị thông tin
     NODE_VERSION_INSTALLED=$(node --version)
     NPM_VERSION=$(npm --version)
     print_info "Node.js: $NODE_VERSION_INSTALLED"
@@ -192,18 +192,18 @@ install_nodejs() {
 check_bun() {
     if command -v bun &> /dev/null; then
         BUN_VERSION=$(bun --version)
-        print_success "Bun da duoc cai dat (version: $BUN_VERSION)"
+        print_success "Bun đã được cài đặt (version: $BUN_VERSION)"
         return 0
     else
-        print_info "Bun chua duoc cai dat"
+        print_info "Bun chưa được cài đặt"
         return 1
     fi
 }
 
 install_bun() {
-    print_step "Dang cai dat Bun..."
+    print_step "Đang cài đặt Bun..."
     
-    # Download va cai dat Bun
+    # Download và cài đặt Bun
     curl -fsSL https://bun.sh/install | bash
     
     # Source Bun
@@ -229,7 +229,7 @@ install_bun() {
         fi
     fi
     
-    print_success "Bun da duoc cai dat thanh cong!"
+    print_success "Bun đã được cài đặt thành công!"
 }
 
 # ============================================
@@ -239,23 +239,23 @@ install_bun() {
 check_pm2() {
     if command -v pm2 &> /dev/null; then
         PM2_VERSION=$(pm2 --version)
-        print_success "PM2 da duoc cai dat (version: $PM2_VERSION)"
+        print_success "PM2 đã được cài đặt (version: $PM2_VERSION)"
         return 0
     else
-        print_info "PM2 chua duoc cai dat"
+        print_info "PM2 chưa được cài đặt"
         return 1
     fi
 }
 
 install_pm2() {
-    print_step "Dang cai dat PM2..."
+    print_step "Đang cài đặt PM2..."
     
     npm install -g pm2
     
-    print_success "PM2 da duoc cai dat thanh cong!"
+    print_success "PM2 đã được cài đặt thành công!"
     
     # Setup PM2 startup
-    print_step "Cau hinh PM2 startup..."
+    print_step "Cấu hình PM2 startup..."
     pm2 startup || true
 }
 
@@ -270,13 +270,13 @@ main() {
     detect_os
     
     # ====== GIT ======
-    print_header "1. KIEM TRA GIT"
+    print_header "1. KIỂM TRA GIT"
     if ! check_git; then
         install_git
     fi
     
     # ====== NVM ======
-    print_header "2. KIEM TRA NVM"
+    print_header "2. KIỂM TRA NVM"
     if ! check_nvm; then
         install_nvm
     fi
@@ -286,13 +286,13 @@ main() {
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     
     # ====== NODE.JS ======
-    print_header "3. KIEM TRA NODE.JS"
+    print_header "3. KIỂM TRA NODE.JS"
     if ! check_nodejs; then
         install_nodejs
     fi
     
     # ====== BUN ======
-    print_header "4. KIEM TRA BUN"
+    print_header "4. KIỂM TRA BUN"
     if ! check_bun; then
         install_bun
     fi
@@ -302,25 +302,25 @@ main() {
     export PATH="$BUN_INSTALL/bin:$PATH"
     
     # ====== PM2 ======
-    print_header "5. KIEM TRA PM2"
+    print_header "5. KIỂM TRA PM2"
     if ! check_pm2; then
         install_pm2
     fi
     
     # ====== SUMMARY ======
-    print_header "HOAN THANH CAI DAT"
+    print_header "HOÀN THÀNH CÀI ĐẶT"
     echo ""
-    print_success "Tat ca cac dependencies da duoc cai dat thanh cong!"
+    print_success "Tất cả các dependencies đã được cài đặt thành công!"
     echo ""
-    print_info "Thong tin version:"
+    print_info "Thông tin version:"
     echo "  • Git:     $(git --version | awk '{print $3}')"
     echo "  • Node.js: $(node --version)"
     echo "  • NPM:     $(npm --version)"
     echo "  • Bun:     $(bun --version)"
     echo "  • PM2:     $(pm2 --version)"
     echo ""
-    print_info "Luu y: Ban co the can restart terminal de su dung NVM va Bun"
-    print_info "Hoac chay: source ~/.zshrc (hoac ~/.bashrc)"
+    print_info "Lưu ý: Bạn có thể cần restart terminal để sử dụng NVM và Bun"
+    print_info "Hoặc chạy: source ~/.zshrc (hoặc ~/.bashrc)"
     echo ""
 }
 

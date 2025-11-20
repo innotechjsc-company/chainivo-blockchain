@@ -2,7 +2,7 @@
 
 # ============================================
 # Deploy Script cho Chainivo Blockchain
-# Auto build va chay project voi PM2
+# Auto build và chạy project với PM2
 # ============================================
 
 set -e  # Exit on error
@@ -50,8 +50,8 @@ print_step() {
 
 check_nodejs() {
     if ! command -v node &> /dev/null; then
-        print_error "Node.js chua duoc cai dat!"
-        print_info "Chay script setup-environment.sh de cai dat"
+        print_error "Node.js chưa được cài đặt!"
+        print_info "Chạy script setup-environment.sh để cài đặt"
         exit 1
     fi
     
@@ -61,8 +61,8 @@ check_nodejs() {
 
 check_bun() {
     if ! command -v bun &> /dev/null; then
-        print_error "Bun chua duoc cai dat!"
-        print_info "Cai dat Bun: curl -fsSL https://bun.sh/install | bash"
+        print_error "Bun chưa được cài đặt!"
+        print_info "Cài đặt Bun: curl -fsSL https://bun.sh/install | bash"
         exit 1
     fi
     
@@ -72,8 +72,8 @@ check_bun() {
 
 check_pm2() {
     if ! command -v pm2 &> /dev/null; then
-        print_error "PM2 chua duoc cai dat!"
-        print_info "Chay script setup-environment.sh de cai dat"
+        print_error "PM2 chưa được cài đặt!"
+        print_info "Chạy script setup-environment.sh để cài đặt"
         exit 1
     fi
     
@@ -83,11 +83,11 @@ check_pm2() {
 
 check_project_root() {
     if [ ! -f "package.json" ]; then
-        print_error "Khong tim thay package.json!"
-        print_info "Vui long chay script tu thu muc goc cua project"
+        print_error "Không tìm thấy package.json!"
+        print_info "Vui lòng chạy script từ thư mục gốc của project"
         exit 1
     fi
-    print_success "Tim thay package.json"
+    print_success "Tìm thấy package.json"
 }
 
 # ============================================
@@ -95,7 +95,7 @@ check_project_root() {
 # ============================================
 
 install_dependencies() {
-    print_step "Dang cai dat dependencies..."
+    print_step "Đang cài đặt dependencies..."
     
     if [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then
         bun install --frozen-lockfile
@@ -103,22 +103,22 @@ install_dependencies() {
         bun install
     fi
     
-    print_success "Dependencies da duoc cai dat thanh cong!"
+    print_success "Dependencies đã được cài đặt thành công!"
 }
 
 build_project() {
-    print_step "Dang build project..."
+    print_step "Đang build project..."
     
-    # Xoa build cu neu co
+    # Xóa build cũ nếu có
     if [ -d ".next" ]; then
-        print_info "Xoa build cu..."
+        print_info "Xóa build cũ..."
         rm -rf .next
     fi
     
     # Build project
     bun run build
     
-    print_success "Build thanh cong!"
+    print_success "Build thành công!"
 }
 
 # ============================================
@@ -127,7 +127,7 @@ build_project() {
 
 create_ecosystem_config() {
     if [ ! -f "ecosystem.config.js" ]; then
-        print_step "Tao file ecosystem.config.js..."
+        print_step "Tạo file ecosystem.config.js..."
         
         cat > ecosystem.config.js << 'EOF'
 module.exports = {
@@ -155,16 +155,16 @@ module.exports = {
 };
 EOF
         
-        print_success "Da tao ecosystem.config.js"
+        print_success "Đã tạo ecosystem.config.js"
     else
-        print_info "ecosystem.config.js da ton tai"
+        print_info "ecosystem.config.js đã tồn tại"
     fi
 }
 
 create_logs_dir() {
     if [ ! -d "logs" ]; then
         mkdir -p logs
-        print_success "Da tao thu muc logs"
+        print_success "Đã tạo thư mục logs"
     fi
 }
 
@@ -175,14 +175,14 @@ check_pm2_process() {
 
 stop_pm2_process() {
     if check_pm2_process; then
-        print_step "Dang dung process PM2 cu..."
+        print_step "Đang dừng process PM2 cũ..."
         pm2 delete "$APP_NAME" || true
-        print_success "Da dung process cu"
+        print_success "Đã dừng process cũ"
     fi
 }
 
 start_pm2_process() {
-    print_step "Dang khoi dong ung dung voi PM2..."
+    print_step "Đang khởi động ứng dụng với PM2..."
     
     if [ -f "ecosystem.config.js" ]; then
         pm2 start ecosystem.config.js
@@ -190,13 +190,13 @@ start_pm2_process() {
         pm2 start bun --name "$APP_NAME" -- start
     fi
     
-    print_success "Ung dung da duoc khoi dong thanh cong!"
+    print_success "Ứng dụng đã được khởi động thành công!"
 }
 
 save_pm2_config() {
-    print_step "Luu PM2 config..."
+    print_step "Lưu PM2 config..."
     pm2 save
-    print_success "Da luu PM2 config"
+    print_success "Đã lưu PM2 config"
 }
 
 show_pm2_status() {
@@ -227,11 +227,11 @@ deploy_full() {
     save_pm2_config
     show_pm2_status
     
-    print_header "DEPLOYMENT HOAN THANH"
-    print_success "Ung dung dang chay tai: http://localhost:$PORT"
+    print_header "DEPLOYMENT HOÀN THÀNH"
+    print_success "Ứng dụng đang chạy tại: http://localhost:$PORT"
     print_info "Xem logs: pm2 logs $APP_NAME"
-    print_info "Dung ung dung: pm2 stop $APP_NAME"
-    print_info "Khoi dong lai: pm2 restart $APP_NAME"
+    print_info "Dừng ứng dụng: pm2 stop $APP_NAME"
+    print_info "Khởi động lại: pm2 restart $APP_NAME"
 }
 
 deploy_quick() {
@@ -250,8 +250,8 @@ deploy_quick() {
     save_pm2_config
     show_pm2_status
     
-    print_header "DEPLOYMENT HOAN THANH"
-    print_success "Ung dung dang chay tai: http://localhost:$PORT"
+    print_header "DEPLOYMENT HOÀN THÀNH"
+    print_success "Ứng dụng đang chạy tại: http://localhost:$PORT"
 }
 
 deploy_restart() {
@@ -260,12 +260,12 @@ deploy_restart() {
     check_pm2
     
     if check_pm2_process; then
-        print_step "Dang khoi dong lai ung dung..."
+        print_step "Đang khởi động lại ứng dụng..."
         pm2 restart "$APP_NAME"
-        print_success "Da khoi dong lai thanh cong!"
+        print_success "Đã khởi động lại thành công!"
     else
-        print_error "Khong tim thay process PM2: $APP_NAME"
-        print_info "Chay script voi tham so 'full' de deploy moi"
+        print_error "Không tìm thấy process PM2: $APP_NAME"
+        print_info "Chạy script với tham số 'full' để deploy mới"
         exit 1
     fi
     
@@ -278,7 +278,7 @@ deploy_stop() {
     check_pm2
     stop_pm2_process
     
-    print_success "Ung dung da duoc dung"
+    print_success "Ứng dụng đã được dừng"
 }
 
 show_logs() {
@@ -289,7 +289,7 @@ show_logs() {
     if check_pm2_process; then
         pm2 logs "$APP_NAME" --lines 50
     else
-        print_error "Khong tim thay process PM2: $APP_NAME"
+        print_error "Không tìm thấy process PM2: $APP_NAME"
         exit 1
     fi
 }
@@ -301,7 +301,7 @@ show_status() {
     show_pm2_status
     
     if check_pm2_process; then
-        print_info "Chi tiet process:"
+        print_info "Chi tiết process:"
         pm2 describe "$APP_NAME"
     fi
 }
@@ -323,9 +323,9 @@ show_usage() {
     echo "  status    - Show PM2 status"
     echo ""
     echo -e "${BLUE}Examples:${NC}"
-    echo "  ./deploy.sh full     # Deployment lan dau"
-    echo "  ./deploy.sh quick    # Deploy nhanh sau khi sua code"
-    echo "  ./deploy.sh restart  # Khoi dong lai ung dung"
+    echo "  ./deploy.sh full     # Deployment lần đầu"
+    echo "  ./deploy.sh quick    # Deploy nhanh sau khi sửa code"
+    echo "  ./deploy.sh restart  # Khởi động lại ứng dụng"
     echo "  ./deploy.sh logs     # Xem logs"
 }
 
@@ -359,7 +359,7 @@ main() {
             show_usage
             ;;
         *)
-            print_error "Mode khong hop le: $MODE"
+            print_error "Mode không hợp lệ: $MODE"
             echo ""
             show_usage
             exit 1
