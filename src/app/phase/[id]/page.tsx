@@ -40,6 +40,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/services/ToastService";
 import { formatAmount } from "@/lib/utils";
+import { useAuthValidation } from "@/hooks";
 
 interface PhaseDetailPageProps {
   params: Promise<{
@@ -58,7 +59,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isInvestmentConfirmed, setIsInvestmentConfirmed] = useState<any>(null);
   const [buyLoading, setBuyLoading] = useState(false);
-  const { user } = useAuth();
+  const { validateAuth, walletAddress, user } = useAuthValidation();
   // Ref for auto-scroll to Investment Calculator
   const calculatorRef = useRef<HTMLDivElement>(null);
   // Unwrap the params Promise using React.use()
@@ -127,7 +128,7 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
 
   async function checkGasFeeUSDCTransfer(): Promise<any> {
     const result = await TransferService.checkGasFeeUSDCTransfer({
-      fromAddress: user?.walletAddress ?? "",
+      fromAddress: walletAddress || "",
       amount: parseFloat(investAmount) ?? 0,
     });
     return result;
@@ -211,7 +212,19 @@ export default function PhaseDetailPage({ params }: PhaseDetailPageProps) {
       : "from-purple-500 to-pink-600";
 
   const handleInvest = async () => {
-    if (!phase || buyLoading || !user?.walletAddress) return;
+    if (!phase || buyLoading) return;
+
+    // Validate authentication and wallet connection
+    if (
+      !validateAuth({
+        requireWallet: true,
+        customAuthMessage: "Vui lòng đăng nhập để đầu tư",
+        customWalletMessage: "Vui lòng kết nối ví để đầu tư",
+      })
+    ) {
+      return;
+    }
+
     setBuyLoading(true);
 
     try {

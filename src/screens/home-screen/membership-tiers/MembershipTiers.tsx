@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, RefreshCw, AlertCircle, Lock } from "lucide-react";
 import { ToastService } from "@/services";
+import { useAuthValidation } from "@/hooks";
+import { ConnectWalletDialog } from "@/components/wallet";
 import { useRankData } from "./hooks/useRankData";
 import { useBuyRank } from "./hooks/useBuyRank";
 import {
@@ -24,10 +27,15 @@ export const MembershipTiers = () => {
     refetch();
   });
 
-  // Lấy current user từ Redux
-  const { user: currentUser, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
+  // Use centralized auth validation hook
+  const { user: currentUser, checkAuthAndWallet } = useAuthValidation();
+
+  // Connect wallet modal states
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [selectedRank, setSelectedRank] = useState<{
+    id: string;
+    price: number;
+  } | null>(null);
 
   // Lấy level của rank hiện tại
   const currentUserRankLevel = currentUser?.rank?.level;
@@ -172,11 +180,25 @@ export const MembershipTiers = () => {
                           bg-gradient-to-r from-primary to-secondary text-foreground hover:from-primary/90 hover:to-secondary/90 hover:scale-105 disabled:opacity-70`}
                       variant={isCurrentRank ? "default" : "default"}
                       onClick={() => {
-                        if (!isAuthenticated) {
-                          ToastService.error("Vui lòng đăng nhập để mua hạng");
-                          return;
-                        }
                         if (!isCurrentRank && eligible) {
+                          // Check auth and wallet status
+                          const status = checkAuthAndWallet();
+
+                          if (status === "login_required") {
+                            ToastService.error(
+                              "Vui lòng đăng nhập để mua hạng"
+                            );
+                            return;
+                          }
+
+                          if (status === "wallet_required") {
+                            // Save selected rank and show connect modal
+                            setSelectedRank({ id: tier.id, price: tier.price });
+                            setShowConnectModal(true);
+                            return;
+                          }
+
+                          // Status is "ok" - proceed with purchase
                           handleBuyRank(tier.id, tier.price);
                         }
                       }}
@@ -222,6 +244,20 @@ export const MembershipTiers = () => {
           </div>
         </div>
       </div>
+
+      {/* Connect Wallet Modal */}
+      <ConnectWalletDialog
+        open={showConnectModal}
+        onOpenChange={setShowConnectModal}
+        title="Kết nối ví để mua hạng"
+        description="Vui lòng kết nối ví MetaMask để tiếp tục mua hạng thành viên."
+        onSuccess={() => {
+          // After successful wallet connection, proceed with purchase
+          if (selectedRank) {
+            handleBuyRank(selectedRank.id, selectedRank.price);
+          }
+        }}
+      />
 
       {/* Full Screen Loading Overlay */}
       {loadingRankId && (

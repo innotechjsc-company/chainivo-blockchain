@@ -7,6 +7,7 @@ import { RankService, UserService } from '@/api';
 import { ToastService, LocalStorageService } from '@/services';
 import { config } from '@/api/config';
 import { updateProfile } from '@/stores/authSlice';
+import { useAuthValidation } from '@/hooks';
 import type { RootState, AppDispatch } from '@/stores/store';
 
 interface UseBuyRankReturn {
@@ -25,22 +26,22 @@ export const useBuyRank = (onSuccess?: () => void): UseBuyRankReturn => {
   // Redux dispatch
   const dispatch = useDispatch<AppDispatch>();
 
-  // Lấy wallet address từ Redux store
-  const walletAddress = useSelector(
-    (state: RootState) => state.wallet?.wallet?.address || state.auth?.user?.walletAddress
-  );
+  // Use centralized auth validation hook
+  const { validateAuth, walletAddress } = useAuthValidation();
 
   const handleBuyRank = async (rankId: string, rankPrice: number) => {
     try {
       setLoadingRankId(rankId);
       setError(null);
 
-      // 1. Kiểm tra wallet đã kết nối chưa
-      if (!walletAddress) {
-        ToastService.error('Vui lòng kết nối ví trước khi mua hạng');
-        setError('Chưa kết nối ví');
-        return;
-      }
+      // 1. Validate authentication and wallet connection
+    if (!validateAuth({ 
+      requireWallet: true,
+      customAuthMessage: 'Vui lòng đăng nhập để mua hạng',
+      customWalletMessage: 'Vui lòng kết nối ví trước khi mua hạng'
+    })) {
+      return;
+    }
 
       // 2. Kiểm tra có MetaMask không
       if (typeof window.ethereum === 'undefined') {
