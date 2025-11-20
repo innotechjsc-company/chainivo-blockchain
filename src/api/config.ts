@@ -161,6 +161,8 @@ export const buildBlockchainUrl = (
 
 export const TOKEN_DEAULT_CURRENCY = "CAN";
 export const TOKEN_DEAULT_CURRENCY_INVESTMENT = "USDC";
+export const LINK_CHECK_TRANSACTION_AMO_MINT =
+  "https://amoy.polygonscan.com/token/";
 
 export const erc721Abi = [
   {

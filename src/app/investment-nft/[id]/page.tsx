@@ -11,7 +11,11 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Heart, ArrowLeft, FileDown, Copy, MapPin } from "lucide-react";
 import NFTService from "@/api/services/nft-service";
-import { config, TOKEN_DEAULT_CURRENCY } from "@/api/config";
+import {
+  config,
+  LINK_CHECK_TRANSACTION_AMO_MINT,
+  TOKEN_DEAULT_CURRENCY,
+} from "@/api/config";
 import { getLevelBadge, getNFTType } from "@/lib/utils";
 import {
   Dialog,
@@ -1064,9 +1068,16 @@ export default function InvestmentNFTDetailPage() {
                         </span>
                       </div>
                       <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
-                        <span className="flex-1 break-words whitespace-normal overflow-hidden text-ellipsis">
-                          {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS || "—"}
-                        </span>
+                        <a
+                          href={`${LINK_CHECK_TRANSACTION_AMO_MINT}${config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS}?a=${data?.tokenId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="text-cyan-400">
+                            {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS ||
+                              "—"}
+                          </span>
+                        </a>
                       </div>
                     </div>
                   </div>

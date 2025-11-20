@@ -464,14 +464,7 @@ export default function AccountManagementPage() {
                         {user?.walletAddress || "Chưa kết nối"}
                       </div>
                     </div>
-                    {/* <div className="glass p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Vai trò
-                      </div>
-                      <div className="text-base font-medium capitalize">
-                        {user?.role || "user"}
-                      </div>
-                    </div> */}
+
                     <div className="glass p-4 rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">
                         Điểm tích lũy
