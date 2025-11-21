@@ -26,27 +26,66 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    let isMounted = true;
+
     const fetchMyNFTs = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        const res = await NFTService.getMyNFTOwnerships({ page: 1, limit: 50 });
+        // Helper function để thêm timeout cho API calls
+        const withTimeout = <T,>(
+          promise: Promise<T>,
+          timeoutMs: number = 2000
+        ): Promise<T> => {
+          return Promise.race([
+            promise,
+            new Promise<T>((_, reject) =>
+              setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
+            ),
+          ]);
+        };
+
+        // Gọi API với timeout 2s
+        const res = await withTimeout(
+          NFTService.getMyNFTOwnerships({ page: 1, limit: 50 }),
+          2000
+        );
+
+        if (!isMounted) return;
+
         const items = res?.data?.ownerships ?? [];
-        // Loc client-side: chi lay NFT co type = 'investment'
+
+        // Tối ưu filter: chỉ lấy NFT có type = 'investment'
         const investmentNFTs = items.filter(
           (item: any) => item?.nft?.type === "investment"
         );
 
-        setNfts(investmentNFTs);
-        debugger;
+        if (isMounted) {
+          setNfts(investmentNFTs);
+        }
       } catch (err: unknown) {
-        setError("Khong the tai danh sach NFT co phan");
+        if (!isMounted) return;
+
+        const errorMessage =
+          err instanceof Error && err.message === "Request timeout"
+            ? "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại."
+            : "Khong the tai danh sach NFT co phan";
+
+        setError(errorMessage);
+        console.error("Error fetching NFTs:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchMyNFTs();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated]);
 
   const handleNFTAction = (

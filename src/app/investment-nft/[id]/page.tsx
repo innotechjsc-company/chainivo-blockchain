@@ -681,6 +681,18 @@ export default function InvestmentNFTDetailPage() {
   );
 
   useEffect(() => {
+    // Helper function để thêm timeout cho API calls
+    const withTimeout = <T,>(
+      promise: Promise<T>,
+      timeoutMs: number = 2000
+    ): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
+        ),
+      ]);
+    };
     const id = String(params?.id || "");
     if (!id) return;
 
@@ -689,82 +701,95 @@ export default function InvestmentNFTDetailPage() {
     (async () => {
       try {
         setLoading(true);
+
+        // Ưu tiên: Gọi NFT data trước (quan trọng nhất) - hiển thị ngay khi có
+        // Timeout 2s để đảm bảo không chờ quá lâu
+        try {
+          const nftResp = await withTimeout(
+            NFTService.getNFTInvestmentById(id),
+            2000
+          );
+
+          if (!isMounted) return;
+
+          if (nftResp?.success && nftResp.data) {
+            setData((nftResp.data as any).nft);
+            setOwnership((nftResp.data as any)?.userOwnership);
+          } else {
+            setData(null);
+          }
+        } catch (error) {
+          console.error("Error fetching NFT data:", error);
+          if (isMounted) {
+            setData(null);
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+
+        // Sau khi NFT data đã load, mới gọi các API khác (lazy load)
+        // Transaction history và share detail không quan trọng bằng, có thể load sau
+        if (!isMounted) return;
+
+        // Gọi transaction history và share detail song song (không block UI)
         setTransactionsLoading(true);
         if (user) {
           setShareDetailLoading(true);
         }
 
-        // Parallelize API calls: NFT data, transaction history, và share detail
-        // Transaction history và share detail không phụ thuộc vào NFT data nên có thể gọi song song
-        const promises = [
-          NFTService.getNFTInvestmentById(id),
-          NFTService.investmentNFTHistoryTransaction(id),
+        const secondaryPromises = [
+          withTimeout(
+            NFTService.investmentNFTHistoryTransaction(id),
+            3000
+          ).then(
+            (response: any) => {
+              if (!isMounted) return;
+              if (response && Array.isArray(response.docs)) {
+                setTransactions(response.docs);
+              } else {
+                setTransactions([]);
+              }
+            },
+            (error) => {
+              console.error("Error fetching transaction history:", error);
+              if (isMounted) {
+                setTransactions([]);
+              }
+            }
+          ),
         ];
 
         // Chỉ gọi share detail nếu có user
         if (user) {
-          promises.push(NFTService.getShareDetail({ nftId: id }));
-        }
-
-        const [nftResp, transactionResp, shareDetailResp] =
-          await Promise.allSettled(promises);
-
-        if (!isMounted) return;
-
-        // Handle NFT data response
-        if (nftResp.status === "fulfilled") {
-          const nftValue = nftResp.value as any;
-          if (nftValue?.success && nftValue.data) {
-            setData(nftValue.data.nft);
-            setOwnership(nftValue.data?.userOwnership);
-          } else {
-            setData(null);
-          }
-        } else {
-          setData(null);
-          if (nftResp.status === "rejected") {
-            console.error("Error fetching NFT data:", nftResp.reason);
-          }
-        }
-        setLoading(false);
-
-        // Handle transaction history response
-        if (transactionResp.status === "fulfilled") {
-          const response = transactionResp.value as any;
-          if (response && Array.isArray(response.docs)) {
-            setTransactions(response.docs);
-          } else {
-            setTransactions([]);
-          }
-        } else {
-          console.error(
-            "Error fetching transaction history:",
-            transactionResp.reason
+          secondaryPromises.push(
+            withTimeout(NFTService.getShareDetail({ nftId: id }), 3000).then(
+              (response: any) => {
+                if (!isMounted) return;
+                if (response.success && response.data) {
+                  setShareDetail(response.data?.dataDetail || []);
+                } else {
+                  setShareDetail([]);
+                }
+              },
+              (error) => {
+                console.error("Error fetching share detail:", error);
+                if (isMounted) {
+                  setShareDetail([]);
+                }
+              }
+            )
           );
-          setTransactions([]);
         }
-        setTransactionsLoading(false);
 
-        // Handle share detail response (chỉ nếu có user)
-        if (user) {
-          if (shareDetailResp && shareDetailResp.status === "fulfilled") {
-            const response = shareDetailResp.value as any;
-            if (response.success && response.data) {
-              setShareDetail(response.data?.dataDetail || []);
-            } else {
-              setShareDetail([]);
-            }
-          } else if (shareDetailResp) {
-            console.error(
-              "Error fetching share detail:",
-              shareDetailResp.reason
-            );
-            setShareDetail([]);
+        // Chờ tất cả secondary API calls hoàn thành (không block UI chính)
+        Promise.allSettled(secondaryPromises).finally(() => {
+          if (isMounted) {
+            setTransactionsLoading(false);
+            setShareDetailLoading(false);
           }
-          setShareDetailLoading(false);
-        } else {
-          setShareDetail([]);
-        }
+        });
       } catch (error) {
         console.error("Unexpected error in data fetching:", error);
         if (isMounted) {
@@ -2067,21 +2092,25 @@ function CollapsibleDescription({
   }, [collapsedText]);
 
   if (isExpanded) {
+    // Sử dụng maxHeight nếu có, nếu không thì dùng max-height hợp lý (50vh hoặc 400px)
+    const containerMaxHeight = maxHeight
+      ? `${maxHeight}px`
+      : "min(50vh, 400px)";
+
     return (
-      <div className="">
+      <div className="relative">
         <div
-          className="text-muted-foreground leading-relaxed overflow-y-auto h-[700px]"
+          className="text-muted-foreground leading-relaxed overflow-y-auto pr-20"
+          style={{ maxHeight: containerMaxHeight }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        <div className="text-right">
-          <button
-            type="button"
-            className="text-primary text-sm font-medium hover:underline cursor-pointer"
-            onClick={() => setIsExpanded(false)}
-          >
-            Thu gọn
-          </button>
-        </div>
+        <button
+          type="button"
+          className="absolute bottom-0 right-0 text-primary text-sm font-medium hover:underline cursor-pointer bg-background px-2 py-1"
+          onClick={() => setIsExpanded(false)}
+        >
+          Thu gọn
+        </button>
       </div>
     );
   }
