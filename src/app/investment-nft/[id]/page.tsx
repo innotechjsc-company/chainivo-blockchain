@@ -1099,11 +1099,12 @@ export default function InvestmentNFTDetailPage() {
                           )}
                         </span>
                       </div>
-                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
+                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2 flex-wrap">
                         <a
                           href={`${LINK_CHECK_TRANSACTION_AMO_MINT}${config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS}?a=${data?.tokenId}`}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="break-all break-words overflow-wrap-anywhere"
                         >
                           <span className="text-cyan-400">
                             {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS ||
