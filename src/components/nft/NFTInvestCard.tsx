@@ -604,20 +604,11 @@ export default function NFTInvestCard({
                     (nft as any)?.soldShares) !== undefined && (
                     <>
                       <InvestmentProgressBar
-                        soldShares={
-                          (nft as any)?.nft?.soldShares ??
-                          (nft as any)?.soldShares ??
-                          0
-                        }
+                        soldShares={(nft as any)?.shares ?? 0}
                         totalShares={
-                          Number((nft as any)?.nft?.soldShares) +
-                            Number((nft as any)?.nft?.availableShares) || 0
+                          Number((nft as any)?.nft?.totalShares) ?? 0
                         }
-                        totalInvestors={
-                          (nft as any)?.nft?.totalInvestors ??
-                          (nft as any)?.totalInvestors ??
-                          0
-                        }
+                        totalInvestors={(nft as any)?.nft?.totalInvestors ?? 0}
                         pricePerShare={
                           (nft as any)?.nft?.pricePerShare ??
                           (nft as any)?.pricePerShare ??
