@@ -34,16 +34,26 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
 
       try {
         // Helper function để thêm timeout cho API calls
-        const withTimeout = <T,>(
+        const withTimeout = async <T,>(
           promise: Promise<T>,
-          timeoutMs: number = 2000
+          timeoutMs: number = 8000
         ): Promise<T> => {
-          return Promise.race([
-            promise,
-            new Promise<T>((_, reject) =>
-              setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
-            ),
-          ]);
+          let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(
+              () => reject(new Error("Request timeout")),
+              timeoutMs
+            );
+          });
+
+          try {
+            return await Promise.race([promise, timeoutPromise]);
+          } finally {
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+          }
         };
 
         // Gọi API với timeout 2s
