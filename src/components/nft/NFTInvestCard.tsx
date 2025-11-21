@@ -460,7 +460,6 @@ export default function NFTInvestCard({
         cursor-pointer
         ${className}
       `}
-      onClick={handleCardClick}
     >
       {/* Badges overlay trên ảnh */}
       <div className="relative">
@@ -469,6 +468,7 @@ export default function NFTInvestCard({
           alt={nftName || "NFT"}
           className="w-full h-56 object-cover"
           onError={handleImageError}
+          onClick={handleCardClick}
         />
 
         {/* Badges trên góc trái */}
@@ -617,6 +617,7 @@ export default function NFTInvestCard({
                         currency={
                           (nft as any)?.nft?.currency ?? nft.currency ?? "CAN"
                         }
+                        nftId={(nft as any)?.nft?.id ?? nft.id ?? ""}
                       />
                       {(nft as any)?.nft?.investmentEndDate && (
                         <CountdownTimer
