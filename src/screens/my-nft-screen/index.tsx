@@ -1,6 +1,13 @@
 "use client";
 
-import React, { JSX, useEffect, useMemo, useState } from "react";
+import React, {
+  JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 
 import { useAppSelector } from "@/stores";
@@ -9,6 +16,35 @@ import type { NFTItem } from "@/types/NFT";
 import NFTInvestCard from "@/components/nft/NFTInvestCard";
 
 const FETCH_TIMEOUT_MS = 8000;
+const ITEMS_PER_PAGE = 6;
+
+interface FetchNFTParams {
+  pageToFetch: number;
+  isLoadMore?: boolean;
+  minimumItems?: number;
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error("Request timeout")),
+      timeoutMs
+    );
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
 
 export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
@@ -17,6 +53,12 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false);
+
+  const observerRef = useRef<HTMLDivElement | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   useEffect(() => {
     if (isAuthenticated === false) {
@@ -25,58 +67,96 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    let isMounted = true;
+  const fetchMyNFTs = useCallback(
+    async ({
+      pageToFetch,
+      isLoadMore = false,
+      minimumItems = ITEMS_PER_PAGE,
+    }: FetchNFTParams) => {
+      if (!isAuthenticated) return;
 
-    const fetchMyNFTs = async () => {
-      setIsLoading(true);
+      if (isLoadMore) {
+        setIsFetchingMore(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
 
+      let aggregatedNFTs: NFTItem[] = [];
+      let currentPage = pageToFetch;
+      let hasNextPage = false;
+
       try {
-        // Helper function để thêm timeout cho API calls
-        const withTimeout = async <T,>(
-          promise: Promise<T>,
-          timeoutMs: number = 8000
-        ): Promise<T> => {
-          let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-          const timeoutPromise = new Promise<never>((_, reject) => {
-            timeoutId = setTimeout(
-              () => reject(new Error("Request timeout")),
-              timeoutMs
-            );
-          });
-
-          try {
-            return await Promise.race([promise, timeoutPromise]);
-          } finally {
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
-          }
-        };
-
-        // Gọi API với timeout 8s
+        // Lap cho den khi thu du so luong toi thieu (chi ap dung khi load lan dau)
         const res = await withTimeout(
-          NFTService.getMyNFTOwnerships({ page: 1, limit: 50 }),
+          NFTService.getMyNFTOwnerships({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+          }),
           FETCH_TIMEOUT_MS
         );
 
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
 
-        const items = res?.data?.ownerships ?? [];
+        const processResponse = (response: any) => {
+          const items = response?.data?.ownerships ?? [];
+          return items.filter(
+            (item: any) => item?.nft?.type === "investment"
+          ) as NFTItem[];
+        };
 
-        // Tối ưu filter: chỉ lấy NFT có type = 'investment'
-        const investmentNFTs = items.filter(
-          (item: any) => item?.nft?.type === "investment"
+        let currentResponse = res;
+
+        while (true) {
+          if (!isMountedRef.current) return;
+
+          const investmentNFTs = processResponse(currentResponse);
+          aggregatedNFTs = [...aggregatedNFTs, ...investmentNFTs];
+
+          const pagination = currentResponse?.data?.pagination;
+          const serverHasNext =
+            typeof pagination?.hasNextPage === "boolean"
+              ? pagination.hasNextPage
+              : investmentNFTs.length === ITEMS_PER_PAGE;
+
+          hasNextPage = serverHasNext;
+
+          const shouldFetchMoreFirstLoad =
+            !isLoadMore &&
+            aggregatedNFTs.length < minimumItems &&
+            serverHasNext;
+
+          if (shouldFetchMoreFirstLoad) {
+            currentPage += 1;
+            currentResponse = await withTimeout(
+              NFTService.getMyNFTOwnerships({
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+              }),
+              FETCH_TIMEOUT_MS
+            );
+            continue;
+          }
+
+          break;
+        }
+
+        setNfts((prev) =>
+          isLoadMore ? [...prev, ...aggregatedNFTs] : aggregatedNFTs
         );
 
-        if (isMounted) {
-          setNfts(investmentNFTs);
-        }
+        setHasMore(hasNextPage);
+        setPage((prevPage) =>
+          hasNextPage ? currentPage + 1 : Math.max(prevPage, currentPage)
+        );
       } catch (err: unknown) {
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
 
         const errorMessage =
           err instanceof Error && err.message === "Request timeout"
@@ -86,18 +166,46 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
         setError(errorMessage);
         console.error("Error fetching NFTs:", err);
       } finally {
-        if (isMounted) {
+        if (!isMountedRef.current) return;
+
+        if (isLoadMore) {
+          setIsFetchingMore(false);
+        } else {
           setIsLoading(false);
         }
       }
-    };
+    },
+    [isAuthenticated]
+  );
 
-    fetchMyNFTs();
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    setNfts([]);
+    setPage(1);
+    setHasMore(true);
+
+    fetchMyNFTs({ pageToFetch: 1, minimumItems: ITEMS_PER_PAGE });
+  }, [isAuthenticated, fetchMyNFTs]);
+
+  useEffect(() => {
+    if (!observerRef.current) return;
+    if (!hasMore || isLoading || isFetchingMore || !!error) return;
+
+    const target = observerRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry?.isIntersecting) {
+        fetchMyNFTs({ pageToFetch: page, isLoadMore: true });
+      }
+    });
+
+    observer.observe(target);
 
     return () => {
-      isMounted = false;
+      observer.disconnect();
     };
-  }, [isAuthenticated]);
+  }, [fetchMyNFTs, page, hasMore, isLoading, isFetchingMore, error]);
 
   const handleNFTAction = (
     nft: NFTItem,
@@ -140,21 +248,31 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
       return <div className="py-10 text-center">Không có NFT đầu tư nào</div>;
     }
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {nfts.map((nft) => (
-          <NFTInvestCard
-            key={nft.id}
-            nft={nft}
-            showActions={true}
-            onActionClick={(nft, action) =>
-              handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
-            }
-            type={type}
-          />
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {nfts.map((nft) => (
+            <NFTInvestCard
+              key={nft.id}
+              nft={nft}
+              showActions={true}
+              onActionClick={(nft, action) =>
+                handleNFTAction(
+                  nft,
+                  action as "sell" | "buy" | "open" | "cancel"
+                )
+              }
+              type={type}
+            />
+          ))}
+        </div>
+        <div
+          ref={observerRef}
+          className="py-6 text-center text-sm text-gray-500"
+          aria-live="polite"
+        ></div>
+      </>
     );
-  }, [isLoading, error, nfts]);
+  }, [isLoading, error, nfts, type, isFetchingMore, hasMore]);
 
   return <div className="container mx-auto px-4 pt-4 pb-8">{content}</div>;
 }
