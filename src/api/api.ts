@@ -53,6 +53,7 @@ api.interceptors.response.use(
 
     // Neu loi 401 -> thu refresh token truoc khi logout
     if (error.response?.status === 401) {
+      debugger;
       // Kiem tra xem co phai la refresh token request khong (tranh vong lap)
       const isRefreshTokenRequest = originalRequest.url?.includes(
         "/api/users/refresh-token"
@@ -61,14 +62,18 @@ api.interceptors.response.use(
 
       // Neu la refresh token request ma van bi 401 ->FA token khong hop le, logout
       if (isRefreshTokenRequest) {
+        debugger;
         try {
           LocalStorageService.clearAuthData();
         } catch {}
         if (typeof window !== "undefined") {
+          debugger;
           ToastService.error(
             "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục"
           );
+          debugger;
           router.push("/auth?tab=login");
+          debugger;
         }
         return Promise.reject(error);
       }

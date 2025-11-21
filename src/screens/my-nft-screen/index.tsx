@@ -38,6 +38,7 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
         );
 
         setNfts(investmentNFTs);
+        debugger;
       } catch (err: unknown) {
         setError("Khong the tai danh sach NFT co phan");
       } finally {

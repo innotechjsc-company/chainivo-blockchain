@@ -610,9 +610,8 @@ export default function NFTInvestCard({
                           0
                         }
                         totalShares={
-                          (nft as any)?.nft?.totalShares ??
-                          (nft as any)?.totalShares ??
-                          0
+                          Number((nft as any)?.nft?.soldShares) +
+                            Number((nft as any)?.nft?.availableShares) || 0
                         }
                         totalInvestors={
                           (nft as any)?.nft?.totalInvestors ??
