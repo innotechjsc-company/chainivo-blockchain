@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/stores";
 import NFTService from "@/api/services/nft-service";
 import type { NFTItem } from "@/types/NFT";
-import { NFTCard } from "@/components/nft";
 import NFTInvestCard from "@/components/nft/NFTInvestCard";
+
+const FETCH_TIMEOUT_MS = 8000;
 
 export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
@@ -56,10 +57,10 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
           }
         };
 
-        // Gọi API với timeout 2s
+        // Gọi API với timeout 8s
         const res = await withTimeout(
           NFTService.getMyNFTOwnerships({ page: 1, limit: 50 }),
-          2000
+          FETCH_TIMEOUT_MS
         );
 
         if (!isMounted) return;
@@ -79,7 +80,7 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
 
         const errorMessage =
           err instanceof Error && err.message === "Request timeout"
-            ? "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại."
+            ? "Yeu cau mat qua nhieu thoi gian. Vui long thu lai."
             : "Khong the tai danh sach NFT co phan";
 
         setError(errorMessage);
@@ -102,7 +103,6 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
     nft: NFTItem,
     action: "sell" | "buy" | "open" | "cancel"
   ) => {
-    console.log(`Action ${action} on NFT:`, nft.id);
     // TODO: Implement action handlers (sell, buy, open mystery box, cancel listing)
     // - open: Open mystery box -> fetch rewards
     // - sell: List NFT for sale
