@@ -1,6 +1,13 @@
 "use client";
 
-import React, { JSX, useEffect, useMemo, useState } from "react";
+import React, {
+  JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 
 import { useAppSelector } from "@/stores";
@@ -9,6 +16,7 @@ import type { NFTItem } from "@/types/NFT";
 import NFTInvestCard from "@/components/nft/NFTInvestCard";
 
 const FETCH_TIMEOUT_MS = 8000;
+const INITIAL_FETCH_LIMIT = 6;
 
 export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const router = useRouter();
@@ -17,6 +25,13 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (isAuthenticated === false) {
@@ -25,79 +40,154 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
-    let isMounted = true;
-
-    const fetchMyNFTs = async () => {
-      setIsLoading(true);
-      setError(null);
+  const withTimeout = useCallback(
+    async <T,>(promise: Promise<T>): Promise<T> => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutRef.current = setTimeout(() => {
+          if (!isMountedRef.current) {
+            return;
+          }
+          reject(new Error("Request timeout"));
+        }, FETCH_TIMEOUT_MS);
+      });
 
       try {
-        // Helper function để thêm timeout cho API calls
-        const withTimeout = async <T,>(
-          promise: Promise<T>,
-          timeoutMs: number = 8000
-        ): Promise<T> => {
-          let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        return await Promise.race([promise, timeoutPromise]);
+      } finally {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }
+    },
+    []
+  );
 
-          const timeoutPromise = new Promise<never>((_, reject) => {
-            timeoutId = setTimeout(
-              () => reject(new Error("Request timeout")),
-              timeoutMs
-            );
-          });
+  const fetchMyNFTs = useCallback(
+    async (pageToFetch: number) => {
+      if (!isAuthenticated) return;
 
-          try {
-            return await Promise.race([promise, timeoutPromise]);
-          } finally {
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
-          }
-        };
+      const isFirstPage = pageToFetch === 1;
 
-        // Gọi API với timeout 8s
+      if (isFirstPage) {
+        setIsLoading(true);
+        setError(null);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      try {
         const res = await withTimeout(
-          NFTService.getMyNFTOwnerships({ page: 1, limit: 50 }),
-          FETCH_TIMEOUT_MS
+          NFTService.getMyNFTOwnerships({
+            page: pageToFetch,
+            limit: INITIAL_FETCH_LIMIT,
+          })
         );
 
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
 
-        const items = res?.data?.ownerships ?? [];
+        if (
+          !Array.isArray(res) &&
+          res &&
+          typeof res === "object" &&
+          "success" in res
+        ) {
+          const response = res as { success: boolean; error?: string };
+          if (!response.success) {
+            throw new Error(
+              response.error || "Khong the tai danh sach NFT co phan"
+            );
+          }
+        }
 
-        // Tối ưu filter: chỉ lấy NFT có type = 'investment'
-        const investmentNFTs = items.filter(
+        const ownerships = Array.isArray(res)
+          ? res
+          : Array.isArray((res as any)?.data?.ownerships)
+          ? (res as any).data.ownerships
+          : [];
+        const pagination = Array.isArray(res)
+          ? undefined
+          : (res as any)?.data?.pagination;
+
+        const investmentNFTs = ownerships.filter(
           (item: any) => item?.nft?.type === "investment"
         );
 
-        if (isMounted) {
-          setNfts(investmentNFTs);
-        }
+        setNfts((prev) =>
+          isFirstPage ? investmentNFTs : [...prev, ...investmentNFTs]
+        );
+        setCurrentPage(pageToFetch);
+
+        const nextHasMore =
+          typeof pagination?.hasNextPage === "boolean"
+            ? pagination.hasNextPage
+            : investmentNFTs.length === INITIAL_FETCH_LIMIT;
+        setHasMore(nextHasMore);
       } catch (err: unknown) {
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
 
         const errorMessage =
           err instanceof Error && err.message === "Request timeout"
             ? "Yeu cau mat qua nhieu thoi gian. Vui long thu lai."
+            : err instanceof Error
+            ? err.message
             : "Khong the tai danh sach NFT co phan";
 
-        setError(errorMessage);
+        if (pageToFetch === 1) {
+          setError(errorMessage);
+        }
         console.error("Error fetching NFTs:", err);
       } finally {
-        if (isMounted) {
+        if (!isMountedRef.current) return;
+        if (pageToFetch === 1) {
           setIsLoading(false);
+        } else {
+          setIsLoadingMore(false);
         }
       }
-    };
+    },
+    [isAuthenticated, withTimeout]
+  );
 
-    fetchMyNFTs();
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setNfts([]);
+    setHasMore(true);
+    setCurrentPage(1);
+    fetchMyNFTs(1);
+  }, [isAuthenticated, fetchMyNFTs]);
+
+  useEffect(() => {
+    if (!hasMore || isLoading || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchMyNFTs(currentPage + 1);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    const target = loadMoreRef.current;
+    if (target) {
+      observer.observe(target);
+    }
 
     return () => {
-      isMounted = false;
+      observer.disconnect();
     };
-  }, [isAuthenticated]);
+  }, [hasMore, isLoading, isLoadingMore, fetchMyNFTs, currentPage]);
 
   const handleNFTAction = (
     nft: NFTItem,
@@ -140,21 +230,33 @@ export default function MyNFTScreen({ type }: { type?: string }): JSX.Element {
       return <div className="py-10 text-center">Không có NFT đầu tư nào</div>;
     }
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {nfts.map((nft) => (
-          <NFTInvestCard
-            key={nft.id}
-            nft={nft}
-            showActions={true}
-            onActionClick={(nft, action) =>
-              handleNFTAction(nft, action as "sell" | "buy" | "open" | "cancel")
-            }
-            type={type}
-          />
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {nfts.map((nft) => (
+            <NFTInvestCard
+              key={nft.id}
+              nft={nft}
+              showActions={true}
+              onActionClick={(nft, action) =>
+                handleNFTAction(
+                  nft,
+                  action as "sell" | "buy" | "open" | "cancel"
+                )
+              }
+              type={type}
+            />
+          ))}
+        </div>
+      </>
     );
-  }, [isLoading, error, nfts]);
+  }, [isLoading, error, nfts, isLoadingMore, type]);
 
-  return <div className="container mx-auto px-4 pt-4 pb-8">{content}</div>;
+  return (
+    <div className="container mx-auto px-4 pt-4 pb-8">
+      {content}
+      {hasMore && nfts.length > 0 && (
+        <div ref={loadMoreRef} className="h-1 w-full" />
+      )}
+    </div>
+  );
 }
