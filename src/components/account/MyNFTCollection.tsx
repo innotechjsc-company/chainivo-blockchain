@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMyNFTCollection } from "@/hooks/useMyNFTCollection";
 import type { NFTFilterType } from "@/hooks/useMyNFTCollection";
 import { NFTStatsCards } from "./NFTStatsCards";
@@ -28,6 +28,7 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
     nfts,
     stats,
     loading,
+    loadingMore,
     error,
     filter,
     setFilter,
@@ -35,6 +36,8 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
     setAdvancedFilters,
     resetAdvancedFilters,
     refetch,
+    loadMore,
+    hasMore,
   } = useMyNFTCollection();
 
   // State cho List NFT Dialog
@@ -50,6 +53,24 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const router = useRouter();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, loading, loadingMore]);
 
   // Handler mở dialog đăng bán NFT
   const handleListForSale = (nft: NFTItem) => {
@@ -201,19 +222,32 @@ export function MyNFTCollection({ type }: MyNFTCollectionProps) {
               <p className="text-muted-foreground">Không có NFT nào</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {nfts.map((nft) => (
-                <NFTCard
-                  key={nft.id}
-                  nft={nft}
-                  type={type}
-                  onActionClick={handleActionClick as any}
-                  onListForSale={handleListForSale}
-                  onClick={() => onClickMyNFT(nft.id)}
-                  onRefreshNFTs={refetch}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {nfts.map((nft) => (
+                  <NFTCard
+                    key={nft.id}
+                    nft={nft}
+                    type={type}
+                    onActionClick={handleActionClick as any}
+                    onListForSale={handleListForSale}
+                    onClick={() => onClickMyNFT(nft.id)}
+                    onRefreshNFTs={refetch}
+                  />
+                ))}
+              </div>
+              <div
+                ref={sentinelRef}
+                className="flex items-center justify-center py-4"
+              >
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <LoadingSpinner />
+                    <span>Đang tải thêm...</span>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
