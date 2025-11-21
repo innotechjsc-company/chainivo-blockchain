@@ -38,10 +38,13 @@ const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
   },
 };
 
+const PAGE_LIMIT = 9;
+
 interface UseMyNFTCollectionResult {
   nfts: NFTItem[];
   stats: NFTStats;
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   filter: NFTFilterType;
   setFilter: (filter: NFTFilterType) => void;
@@ -50,6 +53,8 @@ interface UseMyNFTCollectionResult {
   resetAdvancedFilters: () => void;
   pagination: Pagination;
   refetch: () => void;
+  loadMore: () => void;
+  hasMore: boolean;
 }
 
 /**
@@ -67,6 +72,7 @@ interface UseMyNFTCollectionResult {
 export function useMyNFTCollection(): UseMyNFTCollectionResult {
   const [allNFTs, setAllNFTs] = useState<NFTItem[]>([]); // Luu toan bo NFT
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NFTFilterType>("all");
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(
@@ -74,46 +80,81 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
   );
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
-    limit: 20,
+    limit: PAGE_LIMIT,
     total: 0,
     totalPages: 0,
     hasNextPage: false,
     hasPrevPage: false,
   });
+  const [hasMore, setHasMore] = useState(true);
 
-  // Fetch TAT CA NFTs tu API (khong filter)
-  const fetchNFTs = useCallback(async () => {
+  // Fetch NFTs tu API theo tung trang
+  const fetchNFTs = useCallback(async (page = 1, append = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (page === 1) {
+        setLoading(true);
+        setError(null);
+      } else {
+        setLoadingMore(true);
+      }
 
-      // Fetch ALL NFTs - khong truyen isSale param
       const response = await NFTService.getNFTsByOwner({
-        page: 1,
-        limit: 100, // Tang limit de lay het NFT
+        page,
+        limit: PAGE_LIMIT,
         sortBy: "createdAt",
         sortOrder: "desc",
       });
 
-      if (response.success && response.data) {
-        setAllNFTs(response.data.nfts);
-        setPagination(response.data.pagination);
+      const data = response.data;
+      if (response.success && data) {
+        const paginationData: Pagination = data.pagination || {
+          page,
+          limit: PAGE_LIMIT,
+          total: (data.nfts ?? []).length,
+          totalPages: page,
+          hasNextPage: (data.nfts ?? []).length === PAGE_LIMIT,
+          hasPrevPage: page > 1,
+        };
+
+        setAllNFTs((prev) =>
+          page === 1 ? data.nfts : [...prev, ...data.nfts]
+        );
+        setPagination(paginationData);
+        setHasMore(Boolean(paginationData.hasNextPage));
       } else {
-        setError(response.message || "Khong the tai danh sach NFT");
-        setAllNFTs([]);
+        const message = response.message || "Khong the tai danh sach NFT";
+        setError(message);
+        if (!append) {
+          setAllNFTs([]);
+          setHasMore(false);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Loi khong xac dinh");
-      setAllNFTs([]);
+      const message = err instanceof Error ? err.message : "Loi khong xac dinh";
+      if (page === 1) {
+        setError(message);
+        setAllNFTs([]);
+        setHasMore(false);
+      }
     } finally {
-      setLoading(false);
+      if (page === 1) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
-  }, []); // Khong phu thuoc vao filter nua
+  }, []);
 
   // Fetch data khi mount
   useEffect(() => {
-    fetchNFTs();
+    fetchNFTs(1);
   }, [fetchNFTs]);
+
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || !pagination.hasNextPage) return;
+    const nextPage = (pagination.page || 1) + 1;
+    fetchNFTs(nextPage, true);
+  }, [fetchNFTs, loading, loadingMore, pagination]);
 
   // Filter NFTs o client-side dua tren filter state va advanced filters
   const nfts = useMemo(() => {
@@ -200,6 +241,7 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     nfts,
     stats,
     loading,
+    loadingMore,
     error,
     filter,
     setFilter: handleSetFilter,
@@ -207,7 +249,9 @@ export function useMyNFTCollection(): UseMyNFTCollectionResult {
     setAdvancedFilters,
     resetAdvancedFilters,
     pagination,
-    refetch: fetchNFTs,
+    refetch: () => fetchNFTs(1),
+    loadMore,
+    hasMore,
   };
 }
 

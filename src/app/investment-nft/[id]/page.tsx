@@ -212,44 +212,6 @@ export default function InvestmentNFTDetailPage() {
     }
   };
 
-  const fetchTransactionHistory = async () => {
-    try {
-      setTransactionsLoading(true);
-      const response = await NFTService.investmentNFTHistoryTransaction(
-        String(params?.id || "")
-      );
-      if (response && Array.isArray(response.docs)) {
-        setTransactions(response.docs);
-      } else {
-        setTransactions([]);
-      }
-    } catch (error) {
-      console.error("Error fetching transaction history:", error);
-      setTransactions([]);
-    } finally {
-      setTransactionsLoading(false);
-    }
-  };
-
-  const fetchShareDetail = async () => {
-    const nftId = String(params?.id || "");
-    if (!nftId || !user) return;
-
-    try {
-      setShareDetailLoading(true);
-      const response = await NFTService.getShareDetail({ nftId });
-      if (response.success && response.data) {
-        setShareDetail(response.data?.dataDetail);
-      } else {
-        setShareDetail([]);
-      }
-    } catch (error) {
-      console.error("Error fetching share detail:", error);
-      setShareDetail([]);
-    } finally {
-      setShareDetailLoading(false);
-    }
-  };
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
   const availableShares: number = Number(data?.availableShares ?? 0);
   const totalShares: number = Number(data?.availableShares + data?.soldShares);
@@ -719,6 +681,18 @@ export default function InvestmentNFTDetailPage() {
   );
 
   useEffect(() => {
+    // Helper function để thêm timeout cho API calls
+    const withTimeout = <T,>(
+      promise: Promise<T>,
+      timeoutMs: number = 2000
+    ): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
+        ),
+      ]);
+    };
     const id = String(params?.id || "");
     if (!id) return;
 
@@ -728,40 +702,110 @@ export default function InvestmentNFTDetailPage() {
       try {
         setLoading(true);
 
-        // Fetch NFT data
-        const nftResp = await NFTService.getNFTInvestmentById(id);
-        if (isMounted) {
+        // Ưu tiên: Gọi NFT data trước (quan trọng nhất) - hiển thị ngay khi có
+        // Timeout 2s để đảm bảo không chờ quá lâu
+        try {
+          const nftResp = await withTimeout(
+            NFTService.getNFTInvestmentById(id),
+            2000
+          );
+
+          if (!isMounted) return;
+
           if (nftResp?.success && nftResp.data) {
             setData((nftResp.data as any).nft);
             setOwnership((nftResp.data as any)?.userOwnership);
           } else {
             setData(null);
           }
-          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching NFT data:", error);
+          if (isMounted) {
+            setData(null);
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
+
+        // Sau khi NFT data đã load, mới gọi các API khác (lazy load)
+        // Transaction history và share detail không quan trọng bằng, có thể load sau
+        if (!isMounted) return;
+
+        // Gọi transaction history và share detail song song (không block UI)
+        setTransactionsLoading(true);
+        if (user) {
+          setShareDetailLoading(true);
+        }
+
+        const secondaryPromises = [
+          withTimeout(
+            NFTService.investmentNFTHistoryTransaction(id),
+            3000
+          ).then(
+            (response: any) => {
+              if (!isMounted) return;
+              if (response && Array.isArray(response.docs)) {
+                setTransactions(response.docs);
+              } else {
+                setTransactions([]);
+              }
+            },
+            (error) => {
+              console.error("Error fetching transaction history:", error);
+              if (isMounted) {
+                setTransactions([]);
+              }
+            }
+          ),
+        ];
+
+        // Chỉ gọi share detail nếu có user
+        if (user) {
+          secondaryPromises.push(
+            withTimeout(NFTService.getShareDetail({ nftId: id }), 3000).then(
+              (response: any) => {
+                if (!isMounted) return;
+                if (response.success && response.data) {
+                  setShareDetail(response.data?.dataDetail || []);
+                } else {
+                  setShareDetail([]);
+                }
+              },
+              (error) => {
+                console.error("Error fetching share detail:", error);
+                if (isMounted) {
+                  setShareDetail([]);
+                }
+              }
+            )
+          );
+        }
+
+        // Chờ tất cả secondary API calls hoàn thành (không block UI chính)
+        Promise.allSettled(secondaryPromises).finally(() => {
+          if (isMounted) {
+            setTransactionsLoading(false);
+            setShareDetailLoading(false);
+          }
+        });
       } catch (error) {
-        console.error("Error fetching NFT data:", error);
+        console.error("Unexpected error in data fetching:", error);
         if (isMounted) {
           setData(null);
+          setTransactions([]);
+          setShareDetail([]);
           setLoading(false);
+          setTransactionsLoading(false);
+          setShareDetailLoading(false);
         }
       }
     })();
 
-    // Fetch transaction history separately
-    fetchTransactionHistory();
-
-    // Fetch share detail
-    fetchShareDetail();
-
     return () => {
       isMounted = false;
     };
-  }, [params?.id, user]);
-
-  useEffect(() => {
-    fetchTransactionHistory();
-    fetchShareDetail();
   }, [params?.id, user]);
 
   // Parse và set selectedLocation từ data.address khi data được load
@@ -1080,11 +1124,12 @@ export default function InvestmentNFTDetailPage() {
                           )}
                         </span>
                       </div>
-                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2">
+                      <div className="text-xs font-semibold text-white leading-snug flex items-center gap-2 flex-wrap">
                         <a
                           href={`${LINK_CHECK_TRANSACTION_AMO_MINT}${config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS}?a=${data?.tokenId}`}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="break-all break-words overflow-wrap-anywhere"
                         >
                           <span className="text-cyan-400">
                             {config.WALLET_ADDRESSES.NFT_CONTRACT_ADDRESS ||
@@ -2047,21 +2092,25 @@ function CollapsibleDescription({
   }, [collapsedText]);
 
   if (isExpanded) {
+    // Sử dụng maxHeight nếu có, nếu không thì dùng max-height hợp lý (50vh hoặc 400px)
+    const containerMaxHeight = maxHeight
+      ? `${maxHeight}px`
+      : "min(50vh, 400px)";
+
     return (
-      <div className="">
+      <div className="relative">
         <div
-          className="text-muted-foreground leading-relaxed overflow-y-auto h-[700px]"
+          className="text-muted-foreground leading-relaxed overflow-y-auto pr-20"
+          style={{ maxHeight: containerMaxHeight }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        <div className="text-right">
-          <button
-            type="button"
-            className="text-primary text-sm font-medium hover:underline cursor-pointer"
-            onClick={() => setIsExpanded(false)}
-          >
-            Thu gọn
-          </button>
-        </div>
+        <button
+          type="button"
+          className="absolute bottom-0 right-0 text-primary text-sm font-medium hover:underline cursor-pointer bg-background px-2 py-1"
+          onClick={() => setIsExpanded(false)}
+        >
+          Thu gọn
+        </button>
       </div>
     );
   }
