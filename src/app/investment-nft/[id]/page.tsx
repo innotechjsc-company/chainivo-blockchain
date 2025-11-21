@@ -212,44 +212,6 @@ export default function InvestmentNFTDetailPage() {
     }
   };
 
-  const fetchTransactionHistory = async () => {
-    try {
-      setTransactionsLoading(true);
-      const response = await NFTService.investmentNFTHistoryTransaction(
-        String(params?.id || "")
-      );
-      if (response && Array.isArray(response.docs)) {
-        setTransactions(response.docs);
-      } else {
-        setTransactions([]);
-      }
-    } catch (error) {
-      console.error("Error fetching transaction history:", error);
-      setTransactions([]);
-    } finally {
-      setTransactionsLoading(false);
-    }
-  };
-
-  const fetchShareDetail = async () => {
-    const nftId = String(params?.id || "");
-    if (!nftId || !user) return;
-
-    try {
-      setShareDetailLoading(true);
-      const response = await NFTService.getShareDetail({ nftId });
-      if (response.success && response.data) {
-        setShareDetail(response.data?.dataDetail);
-      } else {
-        setShareDetail([]);
-      }
-    } catch (error) {
-      console.error("Error fetching share detail:", error);
-      setShareDetail([]);
-    } finally {
-      setShareDetailLoading(false);
-    }
-  };
   const sharesSold: number = Number(data?.soldShares ?? data?.sharesSold ?? 0);
   const availableShares: number = Number(data?.availableShares ?? 0);
   const totalShares: number = Number(data?.availableShares + data?.soldShares);
@@ -727,41 +689,98 @@ export default function InvestmentNFTDetailPage() {
     (async () => {
       try {
         setLoading(true);
+        setTransactionsLoading(true);
+        if (user) {
+          setShareDetailLoading(true);
+        }
 
-        // Fetch NFT data
-        const nftResp = await NFTService.getNFTInvestmentById(id);
-        if (isMounted) {
-          if (nftResp?.success && nftResp.data) {
-            setData((nftResp.data as any).nft);
-            setOwnership((nftResp.data as any)?.userOwnership);
+        // Parallelize API calls: NFT data, transaction history, và share detail
+        // Transaction history và share detail không phụ thuộc vào NFT data nên có thể gọi song song
+        const promises = [
+          NFTService.getNFTInvestmentById(id),
+          NFTService.investmentNFTHistoryTransaction(id),
+        ];
+
+        // Chỉ gọi share detail nếu có user
+        if (user) {
+          promises.push(NFTService.getShareDetail({ nftId: id }));
+        }
+
+        const [nftResp, transactionResp, shareDetailResp] =
+          await Promise.allSettled(promises);
+
+        if (!isMounted) return;
+
+        // Handle NFT data response
+        if (nftResp.status === "fulfilled") {
+          const nftValue = nftResp.value as any;
+          if (nftValue?.success && nftValue.data) {
+            setData(nftValue.data.nft);
+            setOwnership(nftValue.data?.userOwnership);
           } else {
             setData(null);
           }
-          setLoading(false);
+        } else {
+          setData(null);
+          if (nftResp.status === "rejected") {
+            console.error("Error fetching NFT data:", nftResp.reason);
+          }
+        }
+        setLoading(false);
+
+        // Handle transaction history response
+        if (transactionResp.status === "fulfilled") {
+          const response = transactionResp.value as any;
+          if (response && Array.isArray(response.docs)) {
+            setTransactions(response.docs);
+          } else {
+            setTransactions([]);
+          }
+        } else {
+          console.error(
+            "Error fetching transaction history:",
+            transactionResp.reason
+          );
+          setTransactions([]);
+        }
+        setTransactionsLoading(false);
+
+        // Handle share detail response (chỉ nếu có user)
+        if (user) {
+          if (shareDetailResp && shareDetailResp.status === "fulfilled") {
+            const response = shareDetailResp.value as any;
+            if (response.success && response.data) {
+              setShareDetail(response.data?.dataDetail || []);
+            } else {
+              setShareDetail([]);
+            }
+          } else if (shareDetailResp) {
+            console.error(
+              "Error fetching share detail:",
+              shareDetailResp.reason
+            );
+            setShareDetail([]);
+          }
+          setShareDetailLoading(false);
+        } else {
+          setShareDetail([]);
         }
       } catch (error) {
-        console.error("Error fetching NFT data:", error);
+        console.error("Unexpected error in data fetching:", error);
         if (isMounted) {
           setData(null);
+          setTransactions([]);
+          setShareDetail([]);
           setLoading(false);
+          setTransactionsLoading(false);
+          setShareDetailLoading(false);
         }
       }
     })();
 
-    // Fetch transaction history separately
-    fetchTransactionHistory();
-
-    // Fetch share detail
-    fetchShareDetail();
-
     return () => {
       isMounted = false;
     };
-  }, [params?.id, user]);
-
-  useEffect(() => {
-    fetchTransactionHistory();
-    fetchShareDetail();
   }, [params?.id, user]);
 
   // Parse và set selectedLocation từ data.address khi data được load
